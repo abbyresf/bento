@@ -1,0 +1,185 @@
+.meal-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.meal-card.past {
+  opacity: 0.7;
+}
+
+.meal-card.confirmed {
+  border: 2px solid #10b981;
+}
+
+/* Header */
+.meal-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.meal-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.meal-info h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.meal-time {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.past-badge,
+.confirmed-badge {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.past-badge {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.confirmed-badge {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+/* Location Tabs */
+.location-tabs {
+  display: flex;
+  gap: 0.25rem;
+  background: #f1f5f9;
+  padding: 0.25rem;
+  border-radius: 8px;
+}
+
+.location-tab {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.location-tab:hover {
+  color: #374151;
+}
+
+.location-tab.active {
+  background: white;
+  color: #1a1a2e;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Warnings */
+.meal-warnings {
+  padding: 0.75rem 1.25rem;
+  background: #fffbeb;
+  border-bottom: 1px solid #fef3c7;
+}
+
+.warning {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #92400e;
+  font-size: 0.85rem;
+}
+
+.warning svg {
+  flex-shrink: 0;
+}
+
+/* Meal Items */
+.meal-items {
+  padding: 0.75rem;
+}
+
+/* Footer */
+.meal-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+}
+
+.meal-totals {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.total-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+
+.total-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.total-label {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.confirm-btn {
+  padding: 0.5rem 1rem;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.confirm-btn:hover {
+  background: #059669;
+}
+
+@media (max-width: 640px) {
+  .meal-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .meal-totals {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .meal-card-footer {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+
+  .confirm-btn {
+    width: 100%;
+    text-align: center;
+  }
+}

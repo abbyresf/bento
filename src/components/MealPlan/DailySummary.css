@@ -1,0 +1,92 @@
+.daily-summary {
+  background: white;
+  border-radius: 16px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.daily-summary h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #64748b;
+  margin: 0 0 1rem 0;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.summary-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.summary-values {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.progress-bar {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.summary-item.good .progress-fill {
+  background: #10b981;
+}
+
+.summary-item.under .progress-fill {
+  background: #f59e0b;
+}
+
+.summary-item.over .progress-fill {
+  background: #ef4444;
+}
+
+.summary-percent {
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-align: right;
+}
+
+.summary-item.good .summary-percent {
+  color: #059669;
+}
+
+.summary-item.under .summary-percent {
+  color: #d97706;
+}
+
+.summary-item.over .summary-percent {
+  color: #dc2626;
+}
+
+@media (max-width: 640px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
