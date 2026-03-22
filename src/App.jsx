@@ -8,6 +8,7 @@ import './App.css';
 function App() {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [settingsVersion, setSettingsVersion] = useState(0);
 
   useEffect(() => {
     setHasCompletedOnboarding(isOnboardingComplete());
@@ -40,12 +41,19 @@ function App() {
   // Main app
   return (
     <div className="app">
-      <MealPlan onOpenSettings={() => setShowSettings(true)} />
+      <MealPlan onOpenSettings={() => setShowSettings(true)} settingsVersion={settingsVersion} />
 
       {showSettings && (
         <>
           <div className="settings-overlay" onClick={() => setShowSettings(false)} />
-          <Settings onClose={() => setShowSettings(false)} onReset={handleReset} />
+          <Settings
+            onClose={() => setShowSettings(false)}
+            onReset={handleReset}
+            onSave={() => {
+              setSettingsVersion((v) => v + 1);
+              setShowSettings(false);
+            }}
+          />
         </>
       )}
     </div>

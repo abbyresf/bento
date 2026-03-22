@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { generateTodaysMenu, hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
+import { fetchBrandeisMenu } from '../../services/menuFetcher';
 import { getNutritionTargets, getDietaryRestrictions, getRecentItemIds, addMealToHistory, setCachedMenu, getCachedMenu } from '../../utils/storage';
 import { optimizeDay, findAlternative } from '../../utils/mealOptimizer';
 import MealCard from './MealCard';
 import DailySummary from './DailySummary';
 import './MealPlan.css';
 
-export default function MealPlan({ onOpenSettings }) {
+export default function MealPlan({ onOpenSettings, settingsVersion = 0 }) {
   const [menu, setMenu] = useState(null);
   const [mealPlan, setMealPlan] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState({
@@ -22,28 +23,36 @@ export default function MealPlan({ onOpenSettings }) {
   const [loading, setLoading] = useState(true);
   const [usingCachedData, setUsingCachedData] = useState(false);
 
-  const loadMenuAndOptimize = useCallback(() => {
+  const loadMenuAndOptimize = useCallback(async (forceRefresh = false) => {
     setLoading(true);
 
-    // Try to get cached menu first
-    let menuData = getCachedMenu();
+    let menuData = null;
+    let usingCache = false;
+
+    if (!forceRefresh) {
+      menuData = getCachedMenu();
+      if (menuData) usingCache = true;
+    }
 
     if (!menuData) {
-      // Fetch fresh menu (using mock data)
-      menuData = generateTodaysMenu();
-      setCachedMenu(menuData);
-    } else {
-      setUsingCachedData(true);
+      try {
+        menuData = await fetchBrandeisMenu();
+        setCachedMenu(menuData);
+      } catch {
+        // Real fetch failed — fall back to mock data
+        menuData = generateTodaysMenu();
+        usingCache = true;
+      }
     }
 
     setMenu(menuData);
+    setUsingCachedData(usingCache);
 
-    // Get user preferences
+    // Always re-read preferences from storage so settings changes are picked up
     const targets = getNutritionTargets();
     const restrictions = getDietaryRestrictions();
     const recentItems = getRecentItemIds();
 
-    // Optimize meals
     if (targets) {
       const optimized = optimizeDay(menuData, targets, restrictions, recentItems);
       setMealPlan(optimized);
@@ -54,7 +63,19 @@ export default function MealPlan({ onOpenSettings }) {
 
   useEffect(() => {
     loadMenuAndOptimize();
-  }, [loadMenuAndOptimize]);
+  }, [loadMenuAndOptimize]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Re-optimize (without refetching menu) when settings change
+  useEffect(() => {
+    if (settingsVersion === 0 || !menu) return;
+    const targets = getNutritionTargets();
+    const restrictions = getDietaryRestrictions();
+    const recentItems = getRecentItemIds();
+    if (targets) {
+      const optimized = optimizeDay(menu, targets, restrictions, recentItems);
+      setMealPlan(optimized);
+    }
+  }, [settingsVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLocationChange = (meal, location) => {
     setSelectedLocation((prev) => ({ ...prev, [meal]: location }));
@@ -153,7 +174,8 @@ export default function MealPlan({ onOpenSettings }) {
     return (
       <div className="meal-plan-loading">
         <div className="spinner"></div>
-        <p>Planning your meals...</p>
+        <p className="loading-message">Fetching today's Brandeis menu…</p>
+        <p className="loading-sub">Optimizing your meal plan</p>
       </div>
     );
   }
@@ -174,7 +196,7 @@ export default function MealPlan({ onOpenSettings }) {
     <div className="meal-plan">
       <header className="meal-plan-header">
         <div className="header-content">
-          <h1>Today's Meal Plan</h1>
+          <h1>Bento</h1>
           <p className="date">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
         </div>
         <button className="settings-btn" onClick={onOpenSettings} aria-label="Settings">
@@ -187,7 +209,7 @@ export default function MealPlan({ onOpenSettings }) {
 
       {usingCachedData && (
         <div className="cache-warning">
-          Using cached menu data. <button onClick={() => { setUsingCachedData(false); loadMenuAndOptimize(); }}>Refresh</button>
+          Menu data may be outdated. <button onClick={() => loadMenuAndOptimize(true)}>Refresh</button>
         </div>
       )}
 

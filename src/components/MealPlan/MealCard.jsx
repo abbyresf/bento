@@ -28,7 +28,7 @@ export default function MealCard({
   };
 
   return (
-    <div className={`meal-card ${isPast ? 'past' : ''} ${isConfirmed ? 'confirmed' : ''}`}>
+    <div className={`meal-card meal-${meal} ${isPast ? 'past' : ''} ${isConfirmed ? 'confirmed' : ''}`}>
       <div className="meal-card-header">
         <div className="meal-info">
           <h3>{mealLabel}</h3>

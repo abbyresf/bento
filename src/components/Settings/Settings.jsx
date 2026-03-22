@@ -12,7 +12,7 @@ import {
 import { calculateNutritionTargets, ACTIVITY_LEVELS, GOALS } from '../../utils/tdeeCalculator';
 import './Settings.css';
 
-export default function Settings({ onClose, onReset }) {
+export default function Settings({ onClose, onReset, onSave }) {
   const [profile, setProfile] = useState(null);
   const [targets, setTargets] = useState(null);
   const [restrictions, setRestrictions] = useState(null);
@@ -114,8 +114,12 @@ export default function Settings({ onClose, onReset }) {
     setNutritionTargets(updatedTargets);
     setDietaryRestrictions(restrictions);
 
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    if (onSave) {
+      onSave();
+    } else {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
   };
 
   const handleClearHistory = () => {

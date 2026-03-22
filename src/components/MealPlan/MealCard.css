@@ -1,16 +1,35 @@
 .meal-card {
   background: white;
   border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+  border-left: 4px solid transparent;
+  transition: box-shadow 0.2s;
+}
+
+.meal-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.meal-card.meal-breakfast {
+  border-left-color: #f59e0b;
+}
+
+.meal-card.meal-lunch {
+  border-left-color: #3b82f6;
+}
+
+.meal-card.meal-dinner {
+  border-left-color: #8b5cf6;
 }
 
 .meal-card.past {
-  opacity: 0.7;
+  opacity: 0.65;
 }
 
 .meal-card.confirmed {
-  border: 2px solid #10b981;
+  border-left-color: #10b981;
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2), 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 /* Header */

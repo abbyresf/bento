@@ -426,7 +426,8 @@ export default function OnboardingWizard({ onComplete }) {
   return (
     <div className="onboarding-wizard">
       <div className="wizard-header">
-        <h1>NutriRecs</h1>
+        <div className="wizard-logo">🥗</div>
+        <h1>Bento</h1>
         <p className="subtitle">Brandeis Dining Meal Planner</p>
       </div>
 

@@ -37,9 +37,6 @@
   font-weight: 500;
   color: #1a1a2e;
   margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .food-reason {
@@ -216,8 +213,16 @@
 }
 
 @media (max-width: 640px) {
+  .food-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .food-item-main {
     flex-wrap: wrap;
+    position: relative;
+    padding-right: 2.5rem;
   }
 
   .food-item-macros {
@@ -232,10 +237,5 @@
     position: absolute;
     right: 0.5rem;
     top: 0.5rem;
-  }
-
-  .food-item-main {
-    position: relative;
-    padding-right: 2.5rem;
   }
 }
