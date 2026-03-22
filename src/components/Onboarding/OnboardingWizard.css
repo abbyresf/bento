@@ -16,26 +16,23 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  border-radius: 16px;
   margin-bottom: 1rem;
-  font-size: 1.5rem;
 }
 
 .wizard-header h1 {
-  font-size: 1.875rem;
-  font-weight: 700;
-  color: #1a1a2e;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #243b55;
   margin: 0;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
 }
 
 .wizard-header .subtitle {
-  color: #64748b;
+  color: #94a3b8;
   margin-top: 0.375rem;
   font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
 }
 
 /* Progress Bar */
@@ -54,11 +51,11 @@
 }
 
 .progress-step.active {
-  background: #3b82f6;
+  background: #f47421;
 }
 
 .progress-step.completed {
-  background: #10b981;
+  background: #4cae70;
 }
 
 /* Step Content */
@@ -68,8 +65,8 @@
 
 .step-content h2 {
   font-size: 1.5rem;
-  font-weight: 600;
-  color: #1a1a2e;
+  font-weight: 700;
+  color: #243b55;
   margin: 0 0 0.5rem 0;
 }
 
@@ -96,7 +93,7 @@
 }
 
 .form-group label {
-  font-weight: 500;
+  font-weight: 600;
   color: #374151;
   font-size: 0.9rem;
 }
@@ -113,8 +110,8 @@
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #f47421;
+  box-shadow: 0 0 0 3px rgba(244, 116, 33, 0.12);
 }
 
 .form-group input.error {
@@ -182,14 +179,15 @@
 
 .activity-option.selected,
 .goal-option.selected {
-  border-color: #3b82f6;
-  background: #eff6ff;
+  border-color: #f47421;
+  background: #fff8f3;
 }
 
 .activity-option input,
 .goal-option input {
   margin-right: 1rem;
   margin-top: 0.25rem;
+  accent-color: #f47421;
 }
 
 .activity-content,
@@ -201,8 +199,8 @@
 
 .activity-label,
 .goal-label {
-  font-weight: 600;
-  color: #1a1a2e;
+  font-weight: 700;
+  color: #243b55;
 }
 
 .activity-description,
@@ -213,8 +211,8 @@
 
 .goal-adjustment {
   font-size: 0.8rem;
-  color: #3b82f6;
-  font-weight: 500;
+  color: #f47421;
+  font-weight: 600;
 }
 
 /* Dietary Toggles */
@@ -235,6 +233,7 @@
   cursor: pointer;
   transition: all 0.2s;
   font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .dietary-toggle:hover {
@@ -242,9 +241,10 @@
 }
 
 .dietary-toggle.active {
-  border-color: #10b981;
-  background: #ecfdf5;
-  color: #059669;
+  border-color: #4cae70;
+  background: #edfaf3;
+  color: #2e8a52;
+  font-weight: 600;
 }
 
 .dietary-toggle input {
@@ -260,7 +260,7 @@
 
 .restriction-section h3 {
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 700;
   color: #374151;
   margin: 0 0 0.75rem 0;
 }
@@ -285,6 +285,7 @@
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.9rem;
+  font-weight: 600;
   transition: background 0.2s;
 }
 
@@ -309,6 +310,7 @@
   font-size: 0.85rem;
   background: #f1f5f9;
   color: #475569;
+  font-weight: 500;
 }
 
 .tag.allergy {
@@ -317,8 +319,8 @@
 }
 
 .tag.avoid {
-  background: #fefce8;
-  color: #ca8a04;
+  background: #fff8f3;
+  color: #c05a12;
 }
 
 .tag button {
@@ -344,17 +346,18 @@
 }
 
 .summary-card {
-  background: #f8fafc;
+  background: #faf7f4;
   border-radius: 12px;
   padding: 1.5rem;
+  border: 1px solid #f0ebe4;
 }
 
 .summary-card h3 {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #94a3b8;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   margin: 0 0 1rem 0;
 }
 
@@ -373,8 +376,8 @@
 
 .target-value {
   font-size: 1.5rem;
-  font-weight: 700;
-  color: #1a1a2e;
+  font-weight: 800;
+  color: #243b55;
 }
 
 .target-label {
@@ -397,7 +400,7 @@
 
 .profile-list strong {
   color: #64748b;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .restriction-summary {
@@ -428,20 +431,20 @@
   padding: 0.875rem 2rem;
   border-radius: 8px;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .btn-primary {
-  background: #3b82f6;
+  background: #f47421;
   color: white;
   border: none;
   margin-left: auto;
 }
 
 .btn-primary:hover {
-  background: #2563eb;
+  background: #d9641a;
 }
 
 .btn-secondary {

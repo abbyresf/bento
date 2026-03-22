@@ -15,7 +15,7 @@
 }
 
 .food-item.expanded {
-  border-color: #3b82f6;
+  border-color: #f47421;
 }
 
 /* Main Row */
@@ -34,15 +34,16 @@
 
 .food-name {
   font-size: 0.95rem;
-  font-weight: 500;
-  color: #1a1a2e;
+  font-weight: 600;
+  color: #243b55;
   margin: 0;
 }
 
 .food-reason {
   font-size: 0.8rem;
-  color: #3b82f6;
+  color: #f47421;
   margin: 0.25rem 0 0.5rem 0;
+  font-weight: 500;
 }
 
 .food-tags {
@@ -57,11 +58,12 @@
   border-radius: 4px;
   background: #f1f5f9;
   color: #64748b;
+  font-weight: 600;
 }
 
 .food-tag.vegetarian {
-  background: #ecfdf5;
-  color: #059669;
+  background: #edfaf3;
+  color: #2e8a52;
 }
 
 .food-tag.vegan {
@@ -70,8 +72,8 @@
 }
 
 .food-tag.glutenFree {
-  background: #fef3c7;
-  color: #92400e;
+  background: #fff8f3;
+  color: #c05a12;
 }
 
 .food-tag.dairyFree {
@@ -105,14 +107,15 @@
 
 .macro-value {
   font-size: 0.9rem;
-  font-weight: 600;
-  color: #374151;
+  font-weight: 700;
+  color: #243b55;
 }
 
 .macro-label {
   font-size: 0.65rem;
   color: #94a3b8;
   text-transform: uppercase;
+  font-weight: 600;
 }
 
 /* Expand Button */
@@ -136,7 +139,7 @@
 /* Expanded Details */
 .food-item-details {
   padding: 1rem;
-  background: #f8fafc;
+  background: #faf7f4;
   border-top: 1px solid #e2e8f0;
 }
 
@@ -150,7 +153,7 @@
 
 .details-section h5 {
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -181,8 +184,8 @@
 
 .nutrition-value {
   font-size: 0.9rem;
-  font-weight: 500;
-  color: #374151;
+  font-weight: 600;
+  color: #243b55;
 }
 
 .all-tags {
@@ -202,13 +205,14 @@
   border: 1px solid #d1d5db;
   border-radius: 6px;
   font-size: 0.85rem;
-  color: #374151;
+  color: #243b55;
   cursor: pointer;
   transition: all 0.2s;
+  font-weight: 600;
 }
 
 .swap-btn:hover {
-  background: #f9fafb;
+  background: #f1f5f9;
   border-color: #9ca3af;
 }
 

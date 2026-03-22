@@ -4,6 +4,7 @@ import { fetchBrandeisMenu } from '../../services/menuFetcher';
 import { getNutritionTargets, getDietaryRestrictions, getRecentItemIds, addMealToHistory, setCachedMenu, getCachedMenu } from '../../utils/storage';
 import { optimizeDay, findAlternative } from '../../utils/mealOptimizer';
 import MealCard from './MealCard';
+import BentoLogo from '../BentoLogo';
 import DailySummary from './DailySummary';
 import './MealPlan.css';
 
@@ -196,7 +197,10 @@ export default function MealPlan({ onOpenSettings, settingsVersion = 0 }) {
     <div className="meal-plan">
       <header className="meal-plan-header">
         <div className="header-content">
-          <h1>Bento</h1>
+          <div className="header-brand">
+            <BentoLogo size={36} />
+            <h1>Bento</h1>
+          </div>
           <p className="tagline">Eat well. Every meal.</p>
           <p className="date">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
         </div>

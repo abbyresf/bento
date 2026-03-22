@@ -1,26 +1,26 @@
 .meal-card {
   background: white;
   border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(36, 59, 85, 0.08);
   overflow: hidden;
   border-left: 4px solid transparent;
   transition: box-shadow 0.2s;
 }
 
 .meal-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(36, 59, 85, 0.1);
 }
 
 .meal-card.meal-breakfast {
-  border-left-color: #f59e0b;
+  border-left-color: #f47421;
 }
 
 .meal-card.meal-lunch {
-  border-left-color: #3b82f6;
+  border-left-color: #4cae70;
 }
 
 .meal-card.meal-dinner {
-  border-left-color: #8b5cf6;
+  border-left-color: #243b55;
 }
 
 .meal-card.past {
@@ -28,8 +28,8 @@
 }
 
 .meal-card.confirmed {
-  border-left-color: #10b981;
-  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2), 0 1px 3px rgba(0, 0, 0, 0.08);
+  border-left-color: #4cae70;
+  box-shadow: 0 0 0 1px rgba(76, 174, 112, 0.2), 0 1px 3px rgba(36, 59, 85, 0.08);
 }
 
 /* Header */
@@ -49,8 +49,8 @@
 
 .meal-info h3 {
   font-size: 1.1rem;
-  font-weight: 600;
-  color: #1a1a2e;
+  font-weight: 700;
+  color: #243b55;
   margin: 0;
 }
 
@@ -64,6 +64,7 @@
   font-size: 0.75rem;
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
+  font-weight: 600;
 }
 
 .past-badge {
@@ -72,8 +73,8 @@
 }
 
 .confirmed-badge {
-  background: #ecfdf5;
-  color: #059669;
+  background: #edfaf3;
+  color: #2e8a52;
 }
 
 /* Location Tabs */
@@ -91,7 +92,7 @@
   background: transparent;
   color: #64748b;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
@@ -103,8 +104,8 @@
 
 .location-tab.active {
   background: white;
-  color: #1a1a2e;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  color: #243b55;
+  box-shadow: 0 1px 2px rgba(36, 59, 85, 0.12);
 }
 
 /* Closed dot on location tab */
@@ -139,7 +140,7 @@
 .location-closed p {
   margin: 0;
   font-size: 0.95rem;
-  font-weight: 500;
+  font-weight: 600;
   color: #64748b;
 }
 
@@ -152,8 +153,8 @@
 /* Warnings */
 .meal-warnings {
   padding: 0.75rem 1.25rem;
-  background: #fffbeb;
-  border-bottom: 1px solid #fef3c7;
+  background: #fff8f3;
+  border-bottom: 1px solid #fde8d4;
 }
 
 .warning {
@@ -179,7 +180,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.25rem;
-  background: #f8fafc;
+  background: #faf7f4;
   border-top: 1px solid #f1f5f9;
 }
 
@@ -196,8 +197,8 @@
 
 .total-value {
   font-size: 1rem;
-  font-weight: 600;
-  color: #1a1a2e;
+  font-weight: 700;
+  color: #243b55;
 }
 
 .total-label {
@@ -207,18 +208,18 @@
 
 .confirm-btn {
   padding: 0.5rem 1rem;
-  background: #10b981;
+  background: #f47421;
   color: white;
   border: none;
   border-radius: 6px;
   font-size: 0.85rem;
-  font-weight: 500;
+  font-weight: 700;
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .confirm-btn:hover {
-  background: #059669;
+  background: #d9641a;
 }
 
 @media (max-width: 640px) {

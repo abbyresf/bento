@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import BentoLogo from '../BentoLogo';
 import { ACTIVITY_LEVELS, GOALS, calculateNutritionTargets } from '../../utils/tdeeCalculator';
 import { setUserProfile, setNutritionTargets, setDietaryRestrictions, setOnboardingComplete } from '../../utils/storage';
 import './OnboardingWizard.css';
@@ -426,7 +427,9 @@ export default function OnboardingWizard({ onComplete }) {
   return (
     <div className="onboarding-wizard">
       <div className="wizard-header">
-        <div className="wizard-logo">🍱</div>
+        <div className="wizard-logo">
+          <BentoLogo size={64} />
+        </div>
         <h1>Bento</h1>
         <p className="subtitle">Eat well. Every meal.</p>
       </div>
