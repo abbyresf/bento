@@ -426,9 +426,9 @@ export default function OnboardingWizard({ onComplete }) {
   return (
     <div className="onboarding-wizard">
       <div className="wizard-header">
-        <div className="wizard-logo">🥗</div>
+        <div className="wizard-logo">🍱</div>
         <h1>Bento</h1>
-        <p className="subtitle">Brandeis Dining Meal Planner</p>
+        <p className="subtitle">Eat well. Every meal.</p>
       </div>
 
       <div className="progress-bar">

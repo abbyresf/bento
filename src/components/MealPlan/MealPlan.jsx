@@ -197,6 +197,7 @@ export default function MealPlan({ onOpenSettings, settingsVersion = 0 }) {
       <header className="meal-plan-header">
         <div className="header-content">
           <h1>Bento</h1>
+          <p className="tagline">Eat well. Every meal.</p>
           <p className="date">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
         </div>
         <button className="settings-btn" onClick={onOpenSettings} aria-label="Settings">
@@ -224,6 +225,8 @@ export default function MealPlan({ onOpenSettings, settingsVersion = 0 }) {
             isPast={hasMealPassed(meal)}
             shermanPlan={mealPlan.sherman[meal]}
             usdanPlan={mealPlan.usdan[meal]}
+            shermanOpen={menu?.locations?.sherman?.isOpen ?? true}
+            usdanOpen={menu?.locations?.usdan?.isOpen ?? true}
             selectedLocation={selectedLocation[meal]}
             onLocationChange={(loc) => handleLocationChange(meal, loc)}
             onSwapItem={(index, item) => handleSwapItem(meal, index, item)}

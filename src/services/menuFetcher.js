@@ -151,7 +151,7 @@ function parseLocationPage(html) {
   const meals = { breakfast: [], lunch: [], dinner: [] };
 
   const tabsEl = doc.getElementById('menu-tabs');
-  if (!tabsEl) return meals; // Location has no menu today (e.g. Usdan on weekends)
+  if (!tabsEl) return { meals, isOpen: false }; // Location has no menu today (e.g. Usdan on weekends)
 
   const tabLinks = tabsEl.querySelectorAll('.c-tabs-nav__link');
   const tabContents = tabsEl.querySelectorAll('.c-tab');
@@ -178,7 +178,7 @@ function parseLocationPage(html) {
     });
   });
 
-  return meals;
+  return { meals, isOpen: true };
 }
 
 // Fetch and parse the menu for one location
@@ -201,12 +201,11 @@ export async function fetchBrandeisMenu() {
   const locationResults = await Promise.all(
     Object.entries(locations).map(async ([locationId, locationConfig]) => {
       try {
-        const meals = await fetchLocationMenu(locationConfig, dateStr);
-        return [locationId, { ...locationConfig, meals }];
+        const { meals, isOpen } = await fetchLocationMenu(locationConfig, dateStr);
+        return [locationId, { ...locationConfig, meals, isOpen }];
       } catch (err) {
         console.warn(`Failed to fetch ${locationConfig.name}:`, err.message);
-        // Return location with empty meals rather than failing entirely
-        return [locationId, { ...locationConfig, meals: { breakfast: [], lunch: [], dinner: [] } }];
+        return [locationId, { ...locationConfig, meals: { breakfast: [], lunch: [], dinner: [] }, isOpen: false }];
       }
     })
   );

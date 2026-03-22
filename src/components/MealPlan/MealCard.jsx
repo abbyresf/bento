@@ -8,6 +8,8 @@ export default function MealCard({
   isPast,
   shermanPlan,
   usdanPlan,
+  shermanOpen,
+  usdanOpen,
   selectedLocation,
   onLocationChange,
   onSwapItem,
@@ -17,8 +19,9 @@ export default function MealCard({
   const [expandedItem, setExpandedItem] = useState(null);
 
   const currentPlan = selectedLocation === 'sherman' ? shermanPlan : usdanPlan;
+  const isCurrentLocationOpen = selectedLocation === 'sherman' ? shermanOpen : usdanOpen;
 
-  if (!currentPlan) return null;
+  if (!currentPlan && !shermanPlan && !usdanPlan) return null;
 
   const mealLabel = meal.charAt(0).toUpperCase() + meal.slice(1);
   const timeRange = `${mealTime.start > 12 ? mealTime.start - 12 : mealTime.start}${mealTime.start >= 12 ? 'pm' : 'am'} - ${mealTime.end > 12 ? mealTime.end - 12 : mealTime.end}${mealTime.end >= 12 ? 'pm' : 'am'}`;
@@ -43,12 +46,14 @@ export default function MealCard({
             onClick={() => onLocationChange('sherman')}
           >
             Sherman
+            {!shermanOpen && <span className="closed-dot" title="Closed today" />}
           </button>
           <button
             className={`location-tab ${selectedLocation === 'usdan' ? 'active' : ''}`}
             onClick={() => onLocationChange('usdan')}
           >
             Usdan
+            {!usdanOpen && <span className="closed-dot" title="Closed today" />}
           </button>
         </div>
       </div>
@@ -68,20 +73,28 @@ export default function MealCard({
         </div>
       )}
 
-      <div className="meal-items">
-        {currentPlan.items.map((item, index) => (
-          <FoodItem
-            key={item.id}
-            item={item}
-            isExpanded={expandedItem === item.id}
-            onToggleExpand={() => toggleExpanded(item.id)}
-            onSwap={() => onSwapItem(index, item)}
-            disabled={isConfirmed}
-          />
-        ))}
-      </div>
+      {!isCurrentLocationOpen ? (
+        <div className="location-closed">
+          <span className="closed-icon">🔒</span>
+          <p>Closed today</p>
+          <p className="closed-sub">Try the other location</p>
+        </div>
+      ) : (
+        <div className="meal-items">
+          {currentPlan?.items.map((item, index) => (
+            <FoodItem
+              key={item.id}
+              item={item}
+              isExpanded={expandedItem === item.id}
+              onToggleExpand={() => toggleExpanded(item.id)}
+              onSwap={() => onSwapItem(index, item)}
+              disabled={isConfirmed}
+            />
+          ))}
+        </div>
+      )}
 
-      <div className="meal-card-footer">
+      {isCurrentLocationOpen && <div className="meal-card-footer">
         <div className="meal-totals">
           <div className="total-item">
             <span className="total-value">{currentPlan.totals.calories}</span>
@@ -106,7 +119,7 @@ export default function MealCard({
             Mark as Eaten
           </button>
         )}
-      </div>
+      </div>}
     </div>
   );
 }

@@ -76,6 +76,13 @@
   margin: 0;
 }
 
+.header-content .tagline {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin: 0.1rem 0 0;
+  letter-spacing: 0.02em;
+}
+
 .header-content .date {
   color: #64748b;
   margin-top: 0.25rem;
