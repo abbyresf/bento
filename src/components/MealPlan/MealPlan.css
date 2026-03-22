@@ -70,19 +70,12 @@
   margin-bottom: 1.5rem;
 }
 
-.header-brand {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin-bottom: 0.1rem;
-}
-
-.header-brand h1 {
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: #243b55;
-  margin: 0;
-  letter-spacing: -0.02em;
+.header-logo {
+  height: 44px;
+  width: auto;
+  display: block;
+  mix-blend-mode: multiply;
+  margin-bottom: 0.05rem;
 }
 
 .header-content .tagline {
