@@ -15,7 +15,8 @@
 .wizard-logo-img {
   height: 160px;
   width: auto;
-  margin-bottom: 0.25rem;
+  margin-top: -40px;
+  margin-bottom: -50px;
 }
 
 .wizard-header .subtitle {
