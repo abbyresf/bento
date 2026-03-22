@@ -34,6 +34,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        globIgnores: ['logo.png'],
         runtimeCaching: [
           {
             // Cache the Brandeis dining pages for offline fallback
