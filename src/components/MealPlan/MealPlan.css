@@ -64,18 +64,17 @@
 
 /* Header */
 .meal-plan-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  position: relative;
+  text-align: center;
   margin-bottom: 1.5rem;
 }
 
 .header-logo {
-  height: 120px;
+  height: 240px;
   width: auto;
-  display: block;
-  margin-top: -42px;
-  margin-bottom: -48px;
+  display: inline-block;
+  margin-top: -88px;
+  margin-bottom: -92px;
 }
 
 .header-content .tagline {
@@ -94,6 +93,9 @@
 }
 
 .settings-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
   padding: 0.5rem;
   background: white;
   border: 1px solid #e2e8f0;
@@ -143,12 +145,8 @@
     padding: 1rem;
   }
 
-  .meal-plan-header {
-    flex-direction: column;
-    gap: 1rem;
-  }
-
   .settings-btn {
-    align-self: flex-end;
+    top: 0;
+    right: 0;
   }
 }
