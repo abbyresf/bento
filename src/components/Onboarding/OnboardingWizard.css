@@ -13,10 +13,10 @@
 }
 
 .wizard-logo-img {
-  height: 480px;
-  width: auto;
-  margin-top: -175px;
-  margin-bottom: -185px;
+  width: min(480px, 100%);
+  height: auto;
+  display: block;
+  margin: -22% auto -24%;
 }
 
 .wizard-header .subtitle {

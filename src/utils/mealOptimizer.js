@@ -71,6 +71,13 @@ function getVarietyPenalty(itemId, recentItemIds) {
   return recentItemIds.has(itemId) ? 100 : 0;
 }
 
+// Returns true for items that are toppings/add-ons rather than standalone meal items.
+// These should only be included after a substantial main item is already selected,
+// never as the primary pick (e.g. pumpkin seeds, chia seeds, flax seeds).
+function isSupplementItem(item) {
+  return item.nutrition.calories < 80 && item.nutrition.protein < 3;
+}
+
 // Categorize items by type (entree, side, beverage, etc.)
 function categorizeItems(items) {
   const categories = {
@@ -80,6 +87,7 @@ function categorizeItems(items) {
     salads: [],
     soups: [],
     breakfast: [],
+    bakery: [], // breads, rolls, pastries — sides/add-ons, not standalone entrees
   };
 
   for (const item of items) {
@@ -93,6 +101,8 @@ function categorizeItems(items) {
       categories.sides.push(item);
     } else if (item.station === 'breakfast') {
       categories.breakfast.push(item);
+    } else if (item.station === 'bakery') {
+      categories.bakery.push(item);
     } else {
       categories.entrees.push(item);
     }
@@ -101,8 +111,33 @@ function categorizeItems(items) {
   return categories;
 }
 
+// Penalize items that don't belong in the given meal context
+function getMealContextPenalty(item, mealType) {
+  if (!mealType) return 0;
+  const s = item.station;
+
+  if (mealType === 'breakfast') {
+    // Preferred breakfast stations — no penalty
+    if (['breakfast', 'bakery', 'beverage', 'allgood'].includes(s)) return 0;
+    // Sides/salads/soups can occasionally appear at breakfast (e.g. fruit, yogurt toppings)
+    // but should be strongly down-ranked relative to real breakfast items
+    if (['sides', 'salad', 'soup'].includes(s)) return 150;
+    // Full lunch/dinner stations have no place at breakfast
+    if (['grill', 'deli', 'pizza', 'entree'].includes(s)) return 300;
+    return 75; // Unknown station — mild penalty
+  }
+
+  if (mealType === 'lunch' || mealType === 'dinner') {
+    // Breakfast-station items should not appear at lunch or dinner
+    if (s === 'breakfast') return 300;
+    return 0;
+  }
+
+  return 0;
+}
+
 // Select best item from a list given constraints
-function selectBestItem(items, target, currentTotals, restrictions, recentItemIds, excludeIds = new Set()) {
+function selectBestItem(items, target, currentTotals, restrictions, recentItemIds, excludeIds = new Set(), mealType = null) {
   let bestItem = null;
   let bestScore = Infinity;
 
@@ -113,7 +148,8 @@ function selectBestItem(items, target, currentTotals, restrictions, recentItemId
     const baseScore = scoreItem(item, target, currentTotals);
     const softPenalty = getSoftPenalty(item, restrictions);
     const varietyPenalty = getVarietyPenalty(item.id, recentItemIds);
-    const totalScore = baseScore + softPenalty + varietyPenalty;
+    const contextPenalty = getMealContextPenalty(item, mealType);
+    const totalScore = baseScore + softPenalty + varietyPenalty + contextPenalty;
 
     if (totalScore < bestScore) {
       bestScore = totalScore;
@@ -156,106 +192,79 @@ function generateReason(item, target, currentTotals) {
 }
 
 // Optimize a single meal
-export function optimizeMeal(availableItems, mealTarget, restrictions, recentItemIds) {
+export function optimizeMeal(availableItems, mealTarget, restrictions, recentItemIds, mealType = null) {
   const categorized = categorizeItems(availableItems);
   const selected = [];
   const currentTotals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
   const usedIds = new Set();
   const warnings = [];
 
-  // Determine meal structure based on time of day
-  const isBreakfast = categorized.breakfast.length > 0;
+  // Use explicitly passed mealType; fall back to inferring from station labels only if not provided
+  const isBreakfast = mealType
+    ? mealType === 'breakfast'
+    : categorized.breakfast.length > 0;
+
+  // Helper to add a selected item and update running totals
+  function addItem(item, reason) {
+    selected.push({ ...item, reason: reason || generateReason(item, mealTarget, currentTotals) });
+    currentTotals.calories += item.nutrition.calories;
+    currentTotals.protein += item.nutrition.protein;
+    currentTotals.carbs += item.nutrition.carbs;
+    currentTotals.fat += item.nutrition.fat;
+    usedIds.add(item.id);
+  }
 
   if (isBreakfast) {
-    // Breakfast: 2-3 items from breakfast station + beverage
-    const targetItems = 3;
+    // Breakfast: pick 1-2 substantial main items first, then optionally one supplement.
+    // "Main" = not a supplement (not a topping/add-on with trivial calories/protein).
+    // This prevents pumpkin seeds / chia seeds from being the primary recommendation.
+    const mainPool = availableItems.filter((item) => !isSupplementItem(item));
+    const supplementPool = availableItems.filter((item) => isSupplementItem(item));
 
-    for (let i = 0; i < targetItems && categorized.breakfast.length > 0; i++) {
-      const item = selectBestItem(categorized.breakfast, mealTarget, currentTotals, restrictions, recentItemIds, usedIds);
-      if (item) {
-        selected.push({
-          ...item,
-          reason: generateReason(item, mealTarget, currentTotals),
-        });
-        currentTotals.calories += item.nutrition.calories;
-        currentTotals.protein += item.nutrition.protein;
-        currentTotals.carbs += item.nutrition.carbs;
-        currentTotals.fat += item.nutrition.fat;
-        usedIds.add(item.id);
-      }
+    // Pick up to 2 main items
+    for (let i = 0; i < 2; i++) {
+      const item = selectBestItem(mainPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, 'breakfast');
+      if (item) addItem(item);
+    }
+
+    // Only add a supplement (e.g. seeds on top of yogurt/oatmeal) if we already have
+    // at least one main and still have meaningful calorie headroom
+    if (selected.length > 0 && currentTotals.calories < mealTarget.calories * 0.75) {
+      const supp = selectBestItem(supplementPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, 'breakfast');
+      if (supp) addItem(supp);
     }
 
     // Add beverage
-    const beverage = selectBestItem(categorized.beverages, mealTarget, currentTotals, restrictions, recentItemIds, usedIds);
-    if (beverage) {
-      selected.push({
-        ...beverage,
-        reason: 'Beverage',
-      });
-      currentTotals.calories += beverage.nutrition.calories;
-      currentTotals.protein += beverage.nutrition.protein;
-      currentTotals.carbs += beverage.nutrition.carbs;
-      currentTotals.fat += beverage.nutrition.fat;
-    }
+    const beverage = selectBestItem(categorized.beverages, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, 'breakfast');
+    if (beverage) addItem(beverage, 'Beverage');
   } else {
-    // Lunch/Dinner: 1 entree + 1-2 sides + optional salad/soup + beverage
+    // Lunch/Dinner: 1 entree + optional side + optional salad/soup + optional bread + beverage.
+    // Bakery items (rolls, bread) are never entrees — they only appear as an extra alongside a real entree.
+    // Supplement-type items are skipped entirely for lunch/dinner.
 
-    // 1. Select entree
-    const entree = selectBestItem(categorized.entrees, mealTarget, currentTotals, restrictions, recentItemIds, usedIds);
-    if (entree) {
-      selected.push({
-        ...entree,
-        reason: generateReason(entree, mealTarget, currentTotals),
-      });
-      currentTotals.calories += entree.nutrition.calories;
-      currentTotals.protein += entree.nutrition.protein;
-      currentTotals.carbs += entree.nutrition.carbs;
-      currentTotals.fat += entree.nutrition.fat;
-      usedIds.add(entree.id);
-    }
+    // 1. Select entree (entrees pool already excludes bakery since categorizeItems splits them)
+    const entree = selectBestItem(categorized.entrees, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType);
+    if (entree) addItem(entree);
 
     // 2. Select side
-    const side = selectBestItem(categorized.sides, mealTarget, currentTotals, restrictions, recentItemIds, usedIds);
-    if (side) {
-      selected.push({
-        ...side,
-        reason: generateReason(side, mealTarget, currentTotals),
-      });
-      currentTotals.calories += side.nutrition.calories;
-      currentTotals.protein += side.nutrition.protein;
-      currentTotals.carbs += side.nutrition.carbs;
-      currentTotals.fat += side.nutrition.fat;
-      usedIds.add(side.id);
-    }
+    const side = selectBestItem(categorized.sides, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType);
+    if (side) addItem(side);
 
     // 3. Add salad if room in calorie budget
     if (currentTotals.calories < mealTarget.calories * 0.7) {
-      const salad = selectBestItem(categorized.salads, mealTarget, currentTotals, restrictions, recentItemIds, usedIds);
-      if (salad) {
-        selected.push({
-          ...salad,
-          reason: generateReason(salad, mealTarget, currentTotals),
-        });
-        currentTotals.calories += salad.nutrition.calories;
-        currentTotals.protein += salad.nutrition.protein;
-        currentTotals.carbs += salad.nutrition.carbs;
-        currentTotals.fat += salad.nutrition.fat;
-        usedIds.add(salad.id);
-      }
+      const salad = selectBestItem(categorized.salads, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType);
+      if (salad) addItem(salad);
     }
 
-    // 4. Add beverage
-    const beverage = selectBestItem(categorized.beverages, mealTarget, currentTotals, restrictions, recentItemIds, usedIds);
-    if (beverage) {
-      selected.push({
-        ...beverage,
-        reason: 'Beverage',
-      });
-      currentTotals.calories += beverage.nutrition.calories;
-      currentTotals.protein += beverage.nutrition.protein;
-      currentTotals.carbs += beverage.nutrition.carbs;
-      currentTotals.fat += beverage.nutrition.fat;
+    // 4. Optionally add a bread/roll alongside the entree (never as the only item)
+    if (entree && currentTotals.calories < mealTarget.calories * 0.85) {
+      const roll = selectBestItem(categorized.bakery, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType);
+      if (roll) addItem(roll);
     }
+
+    // 5. Add beverage
+    const beverage = selectBestItem(categorized.beverages, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType);
+    if (beverage) addItem(beverage, 'Beverage');
   }
 
   // Check if we hit targets reasonably
@@ -331,7 +340,8 @@ export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds,
         menu.locations.sherman.meals[meal],
         mealTargets[meal],
         restrictions,
-        recentItemIds
+        recentItemIds,
+        meal
       );
       result.sherman[meal] = shermanResult;
 
@@ -347,7 +357,8 @@ export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds,
         menu.locations.usdan.meals[meal],
         mealTargets[meal],
         restrictions,
-        recentItemIds
+        recentItemIds,
+        meal
       );
       result.usdan[meal] = usdanResult;
 

@@ -205,7 +205,8 @@ export async function fetchBrandeisMenu() {
         return [locationId, { ...locationConfig, meals, isOpen }];
       } catch (err) {
         console.warn(`Failed to fetch ${locationConfig.name}:`, err.message);
-        return [locationId, { ...locationConfig, meals: { breakfast: [], lunch: [], dinner: [] }, isOpen: false }];
+        // Fetch failure ≠ closed. Don't show "closed" just because the request failed.
+        return [locationId, { ...locationConfig, meals: { breakfast: [], lunch: [], dinner: [] }, isOpen: true }];
       }
     })
   );
