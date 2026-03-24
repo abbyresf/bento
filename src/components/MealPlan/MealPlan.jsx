@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { generateTodaysMenu, hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
 import { fetchBrandeisMenu } from '../../services/menuFetcher';
 import { getNutritionTargets, getDietaryRestrictions, getRecentItemIds, addMealToHistory, setCachedMenu, getCachedMenu } from '../../utils/storage';
-import { optimizeDay, findAlternative } from '../../utils/mealOptimizer';
+import { optimizeDay, findAlternatives } from '../../utils/mealOptimizer';
 import MealCard from './MealCard';
 import DailySummary from './DailySummary';
 import './MealPlan.css';
@@ -22,6 +22,7 @@ export default function MealPlan({ onOpenSettings, settingsVersion = 0 }) {
   });
   const [loading, setLoading] = useState(true);
   const [usingCachedData, setUsingCachedData] = useState(false);
+  const [itemAlternatives, setItemAlternatives] = useState({});
 
   const loadMenuAndOptimize = useCallback(async (forceRefresh = false) => {
     setLoading(true);
@@ -47,6 +48,7 @@ export default function MealPlan({ onOpenSettings, settingsVersion = 0 }) {
 
     setMenu(menuData);
     setUsingCachedData(usingCache);
+    setItemAlternatives({});
 
     // Always re-read preferences from storage so settings changes are picked up
     const targets = getNutritionTargets();
@@ -74,6 +76,7 @@ export default function MealPlan({ onOpenSettings, settingsVersion = 0 }) {
     if (targets) {
       const optimized = optimizeDay(menu, targets, restrictions, recentItems);
       setMealPlan(optimized);
+      setItemAlternatives({});
     }
   }, [settingsVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -81,67 +84,71 @@ export default function MealPlan({ onOpenSettings, settingsVersion = 0 }) {
     setSelectedLocation((prev) => ({ ...prev, [meal]: location }));
   };
 
-  const handleSwapItem = (meal, itemIndex, currentItem) => {
-    if (!menu || !mealPlan) return;
+  const handleLoadAlternatives = (meal, location, itemIndex, currentItem) => {
+    const key = `${location}-${meal}-${itemIndex}`;
+    setItemAlternatives((prev) => {
+      if (key in prev) return prev;
+      const currentMealPlan = mealPlan[location][meal];
+      const restrictions = getDietaryRestrictions();
+      const recentItems = getRecentItemIds();
+      const excludeIds = new Set(currentMealPlan.items.map((i) => i.id));
+      const alts = findAlternatives(
+        currentItem,
+        menu.locations[location].meals[meal],
+        currentMealPlan.target,
+        currentMealPlan.totals,
+        restrictions,
+        recentItems,
+        excludeIds,
+        4
+      );
+      return { ...prev, [key]: alts };
+    });
+  };
 
+  const handleSwapToItem = (meal, itemIndex, newItem) => {
+    if (!mealPlan) return;
     const location = selectedLocation[meal];
-    const currentMealPlan = mealPlan[location][meal];
-    const restrictions = getDietaryRestrictions();
-    const recentItems = getRecentItemIds();
+    const key = `${location}-${meal}-${itemIndex}`;
 
-    // Get IDs of other items in the meal to exclude
-    const excludeIds = new Set(currentMealPlan.items.map((item) => item.id));
+    setMealPlan((prev) => {
+      const newPlan = { ...prev };
+      const newItems = [...newPlan[location][meal].items];
+      newItems[itemIndex] = newItem;
 
-    const alternative = findAlternative(
-      currentItem,
-      menu.locations[location].meals[meal],
-      currentMealPlan.target,
-      currentMealPlan.totals,
-      restrictions,
-      recentItems,
-      excludeIds
-    );
+      const newTotals = newItems.reduce(
+        (acc, item) => ({
+          calories: acc.calories + item.nutrition.calories,
+          protein: acc.protein + item.nutrition.protein,
+          carbs: acc.carbs + item.nutrition.carbs,
+          fat: acc.fat + item.nutrition.fat,
+        }),
+        { calories: 0, protein: 0, carbs: 0, fat: 0 }
+      );
 
-    if (alternative) {
-      // Update the meal plan with the new item
-      setMealPlan((prev) => {
-        const newPlan = { ...prev };
-        const newItems = [...newPlan[location][meal].items];
-        newItems[itemIndex] = alternative;
+      newPlan[location][meal] = { ...newPlan[location][meal], items: newItems, totals: newTotals };
 
-        // Recalculate totals
-        const newTotals = newItems.reduce(
-          (acc, item) => ({
-            calories: acc.calories + item.nutrition.calories,
-            protein: acc.protein + item.nutrition.protein,
-            carbs: acc.carbs + item.nutrition.carbs,
-            fat: acc.fat + item.nutrition.fat,
-          }),
-          { calories: 0, protein: 0, carbs: 0, fat: 0 }
-        );
-
-        newPlan[location][meal] = {
-          ...newPlan[location][meal],
-          items: newItems,
-          totals: newTotals,
-        };
-
-        // Update daily totals
-        const dailyTotals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
-        ['breakfast', 'lunch', 'dinner'].forEach((m) => {
-          const loc = m === meal ? location : selectedLocation[m];
-          if (newPlan[loc] && newPlan[loc][m]) {
-            dailyTotals.calories += newPlan[loc][m].totals.calories;
-            dailyTotals.protein += newPlan[loc][m].totals.protein;
-            dailyTotals.carbs += newPlan[loc][m].totals.carbs;
-            dailyTotals.fat += newPlan[loc][m].totals.fat;
-          }
-        });
-        newPlan.dailyTotals[location] = dailyTotals;
-
-        return newPlan;
+      const dailyTotals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+      ['breakfast', 'lunch', 'dinner'].forEach((m) => {
+        const loc = m === meal ? location : selectedLocation[m];
+        if (newPlan[loc]?.[m]) {
+          dailyTotals.calories += newPlan[loc][m].totals.calories;
+          dailyTotals.protein += newPlan[loc][m].totals.protein;
+          dailyTotals.carbs += newPlan[loc][m].totals.carbs;
+          dailyTotals.fat += newPlan[loc][m].totals.fat;
+        }
       });
-    }
+      newPlan.dailyTotals[location] = dailyTotals;
+
+      return newPlan;
+    });
+
+    // Clear cached alternatives for this slot since the item changed
+    setItemAlternatives((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
   };
 
   const handleConfirmMeal = (meal) => {
@@ -229,7 +236,9 @@ export default function MealPlan({ onOpenSettings, settingsVersion = 0 }) {
             usdanOpen={menu?.locations?.usdan?.isOpen ?? true}
             selectedLocation={selectedLocation[meal]}
             onLocationChange={(loc) => handleLocationChange(meal, loc)}
-            onSwapItem={(index, item) => handleSwapItem(meal, index, item)}
+            itemAlternatives={itemAlternatives}
+            onLoadAlternatives={handleLoadAlternatives}
+            onSwapToItem={(index, newItem) => handleSwapToItem(meal, index, newItem)}
             isConfirmed={confirmedMeals[meal]}
             onConfirm={() => handleConfirmMeal(meal)}
           />

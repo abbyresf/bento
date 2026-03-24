@@ -319,6 +319,21 @@ export function findAlternative(currentItem, availableItems, mealTarget, current
   return null;
 }
 
+// Find multiple ranked alternatives for an item (for dropdown display)
+export function findAlternatives(currentItem, availableItems, mealTarget, currentMealTotals, restrictions, recentItemIds, excludeIds, count = 4) {
+  const results = [];
+  const cumExcludeIds = new Set(excludeIds);
+
+  for (let i = 0; i < count; i++) {
+    const alt = findAlternative(currentItem, availableItems, mealTarget, currentMealTotals, restrictions, recentItemIds, cumExcludeIds);
+    if (!alt) break;
+    results.push(alt);
+    cumExcludeIds.add(alt.id);
+  }
+
+  return results;
+}
+
 // Optimize full day across all meals
 export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds, mealDistribution = MEAL_DISTRIBUTION) {
   const mealTargets = calculateMealTargets(nutritionTargets, mealDistribution);
@@ -333,6 +348,10 @@ export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds,
     warnings: [],
   };
 
+  // Accumulate items used across meals today so later meals (dinner) avoid the
+  // same picks as earlier ones (lunch). Starts with history-based recent items.
+  const dailyUsedIds = new Set(recentItemIds);
+
   for (const meal of ['breakfast', 'lunch', 'dinner']) {
     // Optimize for Sherman
     if (menu.locations.sherman.meals[meal]) {
@@ -340,10 +359,11 @@ export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds,
         menu.locations.sherman.meals[meal],
         mealTargets[meal],
         restrictions,
-        recentItemIds,
+        dailyUsedIds,
         meal
       );
       result.sherman[meal] = shermanResult;
+      shermanResult.items.forEach((item) => dailyUsedIds.add(item.id));
 
       result.dailyTotals.sherman.calories += shermanResult.totals.calories;
       result.dailyTotals.sherman.protein += shermanResult.totals.protein;
@@ -357,10 +377,11 @@ export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds,
         menu.locations.usdan.meals[meal],
         mealTargets[meal],
         restrictions,
-        recentItemIds,
+        dailyUsedIds,
         meal
       );
       result.usdan[meal] = usdanResult;
+      usdanResult.items.forEach((item) => dailyUsedIds.add(item.id));
 
       result.dailyTotals.usdan.calories += usdanResult.totals.calories;
       result.dailyTotals.usdan.protein += usdanResult.totals.protein;

@@ -12,7 +12,9 @@ export default function MealCard({
   usdanOpen,
   selectedLocation,
   onLocationChange,
-  onSwapItem,
+  itemAlternatives,
+  onLoadAlternatives,
+  onSwapToItem,
   isConfirmed,
   onConfirm,
 }) {
@@ -87,7 +89,9 @@ export default function MealCard({
               item={item}
               isExpanded={expandedItem === item.id}
               onToggleExpand={() => toggleExpanded(item.id)}
-              onSwap={() => onSwapItem(index, item)}
+              alternatives={itemAlternatives?.[`${selectedLocation}-${meal}-${index}`] ?? null}
+              onLoadAlternatives={() => onLoadAlternatives(meal, selectedLocation, index, item)}
+              onSwapToItem={(newItem) => onSwapToItem(index, newItem)}
               disabled={isConfirmed}
             />
           ))}

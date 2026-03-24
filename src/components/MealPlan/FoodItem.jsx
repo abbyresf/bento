@@ -1,8 +1,16 @@
+import { useEffect } from 'react';
 import { DIETARY_TAGS } from '../../data/mockMenu';
 import './FoodItem.css';
 
-export default function FoodItem({ item, isExpanded, onToggleExpand, onSwap, disabled }) {
+export default function FoodItem({ item, isExpanded, onToggleExpand, alternatives, onLoadAlternatives, onSwapToItem, disabled }) {
   const { name, nutrition, reason, tags, station } = item;
+
+  // Auto-load alternatives the first time this item is expanded
+  useEffect(() => {
+    if (isExpanded && alternatives === null && !disabled) {
+      onLoadAlternatives?.();
+    }
+  }, [isExpanded]); // eslint-disable-line
 
   return (
     <div className={`food-item ${isExpanded ? 'expanded' : ''}`}>
@@ -99,15 +107,29 @@ export default function FoodItem({ item, isExpanded, onToggleExpand, onSwap, dis
           </div>
 
           {!disabled && (
-            <button className="swap-btn" onClick={(e) => { e.stopPropagation(); onSwap(); }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="17 1 21 5 17 9"></polyline>
-                <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
-                <polyline points="7 23 3 19 7 15"></polyline>
-                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
-              </svg>
-              Swap for Alternative
-            </button>
+            <div className="details-section alternatives-section">
+              <h5>Swap for</h5>
+              {alternatives === null ? (
+                <p className="alts-loading">Finding alternatives…</p>
+              ) : alternatives.length === 0 ? (
+                <p className="alts-empty">No alternatives available</p>
+              ) : (
+                <div className="alternatives-list">
+                  {alternatives.map((alt) => (
+                    <button
+                      key={alt.id}
+                      className="alt-item"
+                      onClick={(e) => { e.stopPropagation(); onSwapToItem(alt); }}
+                    >
+                      <span className="alt-name">{alt.name}</span>
+                      <span className="alt-macros">
+                        {alt.nutrition.calories} cal · {alt.nutrition.protein}g P · {alt.nutrition.carbs}g C · {alt.nutrition.fat}g F
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}
