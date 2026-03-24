@@ -111,6 +111,43 @@ function categorizeItems(items) {
   return categories;
 }
 
+// Keywords used to identify the dominant protein in a dish
+const PROTEIN_KEYWORDS = ['chicken', 'turkey', 'beef', 'pork', 'tuna', 'salmon', 'fish', 'shrimp', 'tofu', 'egg', 'ham', 'bacon', 'lamb', 'crab', 'lobster'];
+
+// Extract the dominant protein from an item's name + ingredients
+function extractMainProtein(item) {
+  const text = [item.name, ...item.ingredients].join(' ').toLowerCase();
+  for (const kw of PROTEIN_KEYWORDS) {
+    if (text.includes(kw)) return kw;
+  }
+  return null;
+}
+
+// Penalize items that would make the overall meal feel incoherent when combined
+// with already-selected items — e.g. a chicken entree + a chicken salad topping.
+function getWithinMealPenalty(item, selectedItems) {
+  if (selectedItems.length === 0) return 0;
+  let penalty = 0;
+  const itemProtein = extractMainProtein(item);
+  for (const sel of selectedItems) {
+    if (itemProtein && extractMainProtein(sel) === itemProtein) {
+      penalty += 300; // same primary protein already in this meal
+    }
+  }
+  return penalty;
+}
+
+// Returns true for salad-station items that are raw protein toppings rather than
+// complete salad dishes (e.g. "Sliced Grilled Chicken" at the salad bar).
+// These shouldn't be recommended as a standalone salad component.
+function isSaladTopping(item) {
+  if (item.station !== 'salad') return false;
+  // A real salad dish has meaningful carbs or fiber
+  if (item.nutrition.carbs >= 8 || (item.nutrition.fiber ?? 0) >= 2) return false;
+  // High-protein, low-carb/fiber salad-bar items are protein toppings
+  return item.nutrition.protein >= 8;
+}
+
 // Penalize items that don't belong in the given meal context
 function getMealContextPenalty(item, mealType) {
   if (!mealType) return 0;
@@ -137,7 +174,7 @@ function getMealContextPenalty(item, mealType) {
 }
 
 // Select best item from a list given constraints
-function selectBestItem(items, target, currentTotals, restrictions, recentItemIds, excludeIds = new Set(), mealType = null) {
+function selectBestItem(items, target, currentTotals, restrictions, recentItemIds, excludeIds = new Set(), mealType = null, selectedItems = []) {
   let bestItem = null;
   let bestScore = Infinity;
 
@@ -149,7 +186,8 @@ function selectBestItem(items, target, currentTotals, restrictions, recentItemId
     const softPenalty = getSoftPenalty(item, restrictions);
     const varietyPenalty = getVarietyPenalty(item.id, recentItemIds);
     const contextPenalty = getMealContextPenalty(item, mealType);
-    const totalScore = baseScore + softPenalty + varietyPenalty + contextPenalty;
+    const withinMealPenalty = getWithinMealPenalty(item, selectedItems);
+    const totalScore = baseScore + softPenalty + varietyPenalty + contextPenalty + withinMealPenalty;
 
     if (totalScore < bestScore) {
       bestScore = totalScore;
@@ -223,19 +261,19 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
 
     // Pick up to 2 main items
     for (let i = 0; i < 2; i++) {
-      const item = selectBestItem(mainPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, 'breakfast');
+      const item = selectBestItem(mainPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, 'breakfast', selected);
       if (item) addItem(item);
     }
 
     // Only add a supplement (e.g. seeds on top of yogurt/oatmeal) if we already have
     // at least one main and still have meaningful calorie headroom
     if (selected.length > 0 && currentTotals.calories < mealTarget.calories * 0.75) {
-      const supp = selectBestItem(supplementPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, 'breakfast');
+      const supp = selectBestItem(supplementPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, 'breakfast', selected);
       if (supp) addItem(supp);
     }
 
     // Add beverage
-    const beverage = selectBestItem(categorized.beverages, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, 'breakfast');
+    const beverage = selectBestItem(categorized.beverages, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, 'breakfast', selected);
     if (beverage) addItem(beverage, 'Beverage');
   } else {
     // Lunch/Dinner: 1 entree + optional side + optional salad/soup + optional bread + beverage.
@@ -243,27 +281,31 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
     // Supplement-type items are skipped entirely for lunch/dinner.
 
     // 1. Select entree (entrees pool already excludes bakery since categorizeItems splits them)
-    const entree = selectBestItem(categorized.entrees, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType);
+    const entree = selectBestItem(categorized.entrees, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected);
     if (entree) addItem(entree);
 
     // 2. Select side
-    const side = selectBestItem(categorized.sides, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType);
+    const side = selectBestItem(categorized.sides, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected);
     if (side) addItem(side);
 
-    // 3. Add salad if room in calorie budget
+    // 3. Add salad if room in calorie budget.
+    // Prefer complete salad dishes (have carbs/fiber) over bare protein toppings
+    // like "Sliced Grilled Chicken" — those are salad-bar add-ons, not meals.
     if (currentTotals.calories < mealTarget.calories * 0.7) {
-      const salad = selectBestItem(categorized.salads, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType);
+      const completeSalads = categorized.salads.filter((item) => !isSaladTopping(item));
+      const saladPool = completeSalads.length > 0 ? completeSalads : categorized.salads;
+      const salad = selectBestItem(saladPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected);
       if (salad) addItem(salad);
     }
 
     // 4. Optionally add a bread/roll alongside the entree (never as the only item)
     if (entree && currentTotals.calories < mealTarget.calories * 0.85) {
-      const roll = selectBestItem(categorized.bakery, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType);
+      const roll = selectBestItem(categorized.bakery, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected);
       if (roll) addItem(roll);
     }
 
     // 5. Add beverage
-    const beverage = selectBestItem(categorized.beverages, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType);
+    const beverage = selectBestItem(categorized.beverages, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected);
     if (beverage) addItem(beverage, 'Beverage');
   }
 
