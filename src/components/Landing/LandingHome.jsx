@@ -30,9 +30,10 @@ export default function LandingHome({ onGetStarted }) {
       {/* ── Hero ── */}
       <section className="lh-hero">
         <div className="lh-hero-inner">
-          <img src="/icons/icon.svg" alt="Bento" className="lh-hero-logo" />
+          <img src="/logo-cropped.png" alt="Bento" className="lh-hero-logo" />
           <h1 className="lh-hero-headline">
-            Eat Well.<br />Every Meal.
+             
+             Eat Well. Every Meal.
           </h1>
           <p className="lh-hero-sub">
             Bento turns your dining hall menu into a personalized meal plan built around your

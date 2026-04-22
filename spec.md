@@ -1,4 +1,4 @@
-# NutriRecs - Brandeis Dining Meal Planner
+# Bento - Brandeis Dining Meal Planner
 
 ## Overview
 A client-side React web application that generates personalized daily meal plans from Brandeis University dining halls (Sherman and Usdan) based on user nutrition preferences and dietary restrictions.

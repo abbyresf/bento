@@ -4,8 +4,9 @@
 
 /* ── Hero ── */
 .lh-hero {
-  background: linear-gradient(135deg, #243b55 0%, #1a2e45 100%);
-  color: white;
+  /*background: linear-gradient(135deg, #243b55 0%, #1a2e45 100%);*/
+  background: #faf7f4; 
+  /*color: white; */
   padding: 5rem 1.5rem 4rem;
   text-align: center;
 }
@@ -16,10 +17,13 @@
 }
 
 .lh-hero-logo {
-  height: 110px;
+  
+  height: 120px;
   width: auto;
+  
   display: block;
-  margin: 0 auto 1.5rem;
+  margin: 0 auto 3rem;
+  
 }
 
 .lh-hero-eyebrow {
@@ -36,13 +40,15 @@
   font-weight: 800;
   line-height: 1.1;
   margin: 0 0 1.25rem;
-  color: white;
+  /*color: white;*/
+  color: #243b55;
 }
 
 .lh-hero-sub {
   font-size: 1.05rem;
   line-height: 1.65;
-  color: #cbd5e1;
+  /*color: #cbd5e1;*/
+  color: #243b55;
   margin: 0 0 2.25rem;
 }
 
@@ -144,7 +150,8 @@
 .lh-section-heading {
   font-size: 1.75rem;
   font-weight: 800;
-  color: #243b55;
+  /*color: #243b55;*/
+  color: #faf7f4;
   margin: 0 0 1.25rem;
 }
 
@@ -170,7 +177,8 @@
 
 /* ── Features ── */
 .lh-features {
-  background: white;
+  /*background: white;*/
+  background: #243b55;
   padding: 4rem 1.5rem;
   border-top: 1px solid #e2e8f0;
 }
@@ -220,8 +228,8 @@
 .lh-bottom-cta {
   text-align: center;
   padding: 4rem 1.5rem 5rem;
-  background: linear-gradient(135deg, #243b55 0%, #1a2e45 100%);
-  color: white;
+  background: #243b55;
+  color: #faf7f4;
 }
 
 .lh-bottom-cta h2 {
@@ -232,7 +240,7 @@
 
 .lh-bottom-cta p {
   font-size: 1rem;
-  color: #cbd5e1;
+  color: #faf7f4;
   margin: 0 0 1.75rem;
 }
 

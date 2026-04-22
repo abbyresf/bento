@@ -20,7 +20,7 @@ export default function LandingPage({ onGetStarted }) {
       <header className="landing-nav">
         <div className="landing-nav-inner">
           <div className="landing-nav-logo">
-            <img src="/logo.png" alt="Bento" className="landing-logo-img" />
+            <img src="/logo-cropped.png" alt="Bento" className="landing-logo-img" />
           </div>
           <nav className="landing-nav-tabs">
             {TABS.map((tab) => (

@@ -19,7 +19,7 @@
 }
 
 .landing-logo-img {
-  height: 64px;
+  height: 40px;
   width: auto;
 }
 
@@ -72,6 +72,7 @@
   }
 
   .landing-logo-img {
-    height: 50px;
+    height: 100px;
+    margin: 0 auto;
   }
 }
