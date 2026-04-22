@@ -1,0 +1,258 @@
+.landing-home {
+  background: #faf7f4;
+}
+
+/* ── Hero ── */
+.lh-hero {
+  background: linear-gradient(135deg, #243b55 0%, #1a2e45 100%);
+  color: white;
+  padding: 5rem 1.5rem 4rem;
+  text-align: center;
+}
+
+.lh-hero-inner {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.lh-hero-logo {
+  height: 110px;
+  width: auto;
+  display: block;
+  margin: 0 auto 1.5rem;
+}
+
+.lh-hero-eyebrow {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #f47421;
+  margin: 0 0 1rem;
+}
+
+.lh-hero-headline {
+  font-size: clamp(2.4rem, 7vw, 4rem);
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 0 0 1.25rem;
+  color: white;
+}
+
+.lh-hero-sub {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: #cbd5e1;
+  margin: 0 0 2.25rem;
+}
+
+.lh-cta-btn {
+  display: inline-block;
+  background: #f47421;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 0.85rem 2rem;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.12s;
+}
+
+.lh-cta-btn:hover {
+  background: #e06318;
+  transform: translateY(-1px);
+}
+
+.lh-cta-btn:active {
+  transform: translateY(0);
+}
+
+/* ── Stats ── */
+.lh-stats {
+  background: white;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 2.5rem 1.5rem;
+}
+
+.lh-stats-inner {
+  max-width: 680px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.lh-stats-heading {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #243b55;
+  margin: 0;
+  text-align: center;
+  letter-spacing: 0.01em;
+}
+
+.lh-stats-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  width: 100%;
+}
+
+.lh-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 240px;
+}
+
+.lh-stat-number {
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: #f47421;
+  line-height: 1;
+}
+
+.lh-stat-label {
+  font-size: 0.88rem;
+  color: #64748b;
+  margin-top: 0.5rem;
+  line-height: 1.45;
+}
+
+.lh-stat-divider {
+  width: 1px;
+  height: 64px;
+  background: #e2e8f0;
+  flex-shrink: 0;
+}
+
+/* ── Story ── */
+.lh-story {
+  padding: 4rem 1.5rem;
+}
+
+.lh-story-inner {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.lh-section-heading {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #243b55;
+  margin: 0 0 1.25rem;
+}
+
+.lh-section-heading--centered {
+  text-align: center;
+}
+
+.lh-story-text {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: #475569;
+  margin: 0 0 1rem;
+}
+
+.lh-cta-secondary {
+  margin-top: 1.5rem;
+  background: #243b55;
+}
+
+.lh-cta-secondary:hover {
+  background: #1a2e45;
+}
+
+/* ── Features ── */
+.lh-features {
+  background: white;
+  padding: 4rem 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.lh-features-inner {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.lh-features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.lh-feature-card {
+  background: #faf7f4;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lh-feature-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.lh-feature-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #243b55;
+  margin: 0;
+}
+
+.lh-feature-desc {
+  font-size: 0.88rem;
+  color: #64748b;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ── Bottom CTA ── */
+.lh-bottom-cta {
+  text-align: center;
+  padding: 4rem 1.5rem 5rem;
+  background: linear-gradient(135deg, #243b55 0%, #1a2e45 100%);
+  color: white;
+}
+
+.lh-bottom-cta h2 {
+  font-size: 1.9rem;
+  font-weight: 800;
+  margin: 0 0 0.6rem;
+}
+
+.lh-bottom-cta p {
+  font-size: 1rem;
+  color: #cbd5e1;
+  margin: 0 0 1.75rem;
+}
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+  .lh-hero {
+    padding: 3.5rem 1.25rem 3rem;
+  }
+
+  .lh-stats-row {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .lh-stat-divider {
+    width: 60px;
+    height: 1px;
+  }
+
+  .lh-section-heading {
+    font-size: 1.45rem;
+  }
+}

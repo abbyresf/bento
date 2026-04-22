@@ -1,9 +1,12 @@
 import { useEffect } from 'react';
 import { DIETARY_TAGS } from '../../data/mockMenu';
+import { useFavorites } from '../../context/FavoritesContext';
 import './FoodItem.css';
 
-export default function FoodItem({ item, isExpanded, onToggleExpand, alternatives, onLoadAlternatives, onSwapToItem, disabled }) {
+export default function FoodItem({ item, isExpanded, onToggleExpand, alternatives, onLoadAlternatives, onSwapToItem, onRemove, disabled }) {
   const { name, nutrition, reason, tags, station } = item;
+  const { favoriteIds, toggleFavorite } = useFavorites();
+  const favorited = favoriteIds.has(item.id);
 
   // Auto-load alternatives the first time this item is expanded
   useEffect(() => {
@@ -11,6 +14,16 @@ export default function FoodItem({ item, isExpanded, onToggleExpand, alternative
       onLoadAlternatives?.();
     }
   }, [isExpanded]); // eslint-disable-line
+
+  const handleToggleFavorite = (e) => {
+    e.stopPropagation();
+    toggleFavorite(item);
+  };
+
+  const handleRemove = (e) => {
+    e.stopPropagation();
+    onRemove?.();
+  };
 
   return (
     <div className={`food-item ${isExpanded ? 'expanded' : ''}`}>
@@ -29,39 +42,64 @@ export default function FoodItem({ item, isExpanded, onToggleExpand, alternative
 
         <div className="food-item-macros">
           <div className="macro">
-            <span className="macro-value">{nutrition.calories}</span>
+            <span className="macro-value">{nutrition?.calories ?? '—'}</span>
             <span className="macro-label">cal</span>
           </div>
           <div className="macro">
-            <span className="macro-value">{nutrition.protein}g</span>
+            <span className="macro-value">{nutrition?.protein != null ? `${nutrition.protein}g` : '—'}</span>
             <span className="macro-label">P</span>
           </div>
           <div className="macro">
-            <span className="macro-value">{nutrition.carbs}g</span>
+            <span className="macro-value">{nutrition?.carbs != null ? `${nutrition.carbs}g` : '—'}</span>
             <span className="macro-label">C</span>
           </div>
           <div className="macro">
-            <span className="macro-value">{nutrition.fat}g</span>
+            <span className="macro-value">{nutrition?.fat != null ? `${nutrition.fat}g` : '—'}</span>
             <span className="macro-label">F</span>
           </div>
         </div>
 
-        <button
-          className="expand-btn"
-          aria-label={isExpanded ? 'Collapse details' : 'Expand details'}
-        >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            style={{ transform: isExpanded ? 'rotate(180deg)' : 'none' }}
+        <div className="food-item-actions">
+          <button
+            className={`favorite-btn ${favorited ? 'favorited' : ''}`}
+            onClick={handleToggleFavorite}
+            aria-label={favorited ? 'Remove from favorites' : 'Add to favorites'}
           >
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </button>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill={favorited ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+          </button>
+
+          <button
+            className="expand-btn"
+            aria-label={isExpanded ? 'Collapse details' : 'Expand details'}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              style={{ transform: isExpanded ? 'rotate(180deg)' : 'none' }}
+            >
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+
+          {onRemove && (
+            <button
+              className="remove-btn"
+              onClick={handleRemove}
+              aria-label="Remove item"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
 
       {isExpanded && (

@@ -174,6 +174,138 @@
   padding: 0.75rem;
 }
 
+/* Category groups */
+.meal-category-group {
+  margin-bottom: 0.25rem;
+}
+
+.meal-category-group:last-child {
+  margin-bottom: 0;
+}
+
+.meal-category-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  margin: 0.5rem 0.25rem 0.3rem;
+}
+
+/* Add to plate */
+.add-item-section {
+  margin-top: 0.5rem;
+}
+
+.add-item-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  background: none;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  justify-content: center;
+}
+
+.add-item-btn:hover,
+.add-item-btn.active {
+  border-color: #f47421;
+  color: #f47421;
+  background: #fff8f3;
+}
+
+.recommendations-panel {
+  margin-top: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: white;
+}
+
+.recommendations-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+  padding: 0.6rem 0.75rem 0.4rem;
+}
+
+.recs-loading,
+.recs-empty {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin: 0;
+  padding: 0.5rem 0.75rem 0.75rem;
+}
+
+.recommendations-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.rec-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  background: none;
+  border: none;
+  border-top: 1px solid #f1f5f9;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.rec-item:hover {
+  background: #fff8f3;
+}
+
+.rec-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.rec-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #243b55;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rec-reason {
+  font-size: 0.75rem;
+  color: #f47421;
+  font-weight: 500;
+}
+
+.rec-macros {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.rec-macros span {
+  font-size: 0.72rem;
+  color: #64748b;
+  white-space: nowrap;
+}
+
 /* Footer */
 .meal-card-footer {
   display: flex;

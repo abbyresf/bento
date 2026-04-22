@@ -173,8 +173,11 @@ function getMealContextPenalty(item, mealType) {
   return 0;
 }
 
+// Bonus applied to items the user has favorited (negative = improves score)
+const FAVORITE_BONUS = -80;
+
 // Select best item from a list given constraints
-function selectBestItem(items, target, currentTotals, restrictions, recentItemIds, excludeIds = new Set(), mealType = null, selectedItems = []) {
+function selectBestItem(items, target, currentTotals, restrictions, recentItemIds, excludeIds = new Set(), mealType = null, selectedItems = [], favoriteIds = new Set()) {
   let bestItem = null;
   let bestScore = Infinity;
 
@@ -187,7 +190,8 @@ function selectBestItem(items, target, currentTotals, restrictions, recentItemId
     const varietyPenalty = getVarietyPenalty(item.id, recentItemIds);
     const contextPenalty = getMealContextPenalty(item, mealType);
     const withinMealPenalty = getWithinMealPenalty(item, selectedItems);
-    const totalScore = baseScore + softPenalty + varietyPenalty + contextPenalty + withinMealPenalty;
+    const favoriteBonus = favoriteIds.has(item.id) ? FAVORITE_BONUS : 0;
+    const totalScore = baseScore + softPenalty + varietyPenalty + contextPenalty + withinMealPenalty + favoriteBonus;
 
     if (totalScore < bestScore) {
       bestScore = totalScore;
@@ -230,7 +234,7 @@ function generateReason(item, target, currentTotals) {
 }
 
 // Optimize a single meal
-export function optimizeMeal(availableItems, mealTarget, restrictions, recentItemIds, mealType = null) {
+export function optimizeMeal(availableItems, mealTarget, restrictions, recentItemIds, mealType = null, favoriteIds = new Set()) {
   const categorized = categorizeItems(availableItems);
   const selected = [];
   const currentTotals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
@@ -261,19 +265,19 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
 
     // Pick up to 2 main items
     for (let i = 0; i < 2; i++) {
-      const item = selectBestItem(mainPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, 'breakfast', selected);
+      const item = selectBestItem(mainPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, 'breakfast', selected, favoriteIds);
       if (item) addItem(item);
     }
 
     // Only add a supplement (e.g. seeds on top of yogurt/oatmeal) if we already have
     // at least one main and still have meaningful calorie headroom
     if (selected.length > 0 && currentTotals.calories < mealTarget.calories * 0.75) {
-      const supp = selectBestItem(supplementPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, 'breakfast', selected);
+      const supp = selectBestItem(supplementPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, 'breakfast', selected, favoriteIds);
       if (supp) addItem(supp);
     }
 
     // Add beverage
-    const beverage = selectBestItem(categorized.beverages, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, 'breakfast', selected);
+    const beverage = selectBestItem(categorized.beverages, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, 'breakfast', selected, favoriteIds);
     if (beverage) addItem(beverage, 'Beverage');
   } else {
     // Lunch/Dinner: 1 entree + optional side + optional salad/soup + optional bread + beverage.
@@ -281,11 +285,11 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
     // Supplement-type items are skipped entirely for lunch/dinner.
 
     // 1. Select entree (entrees pool already excludes bakery since categorizeItems splits them)
-    const entree = selectBestItem(categorized.entrees, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected);
+    const entree = selectBestItem(categorized.entrees, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected, favoriteIds);
     if (entree) addItem(entree);
 
     // 2. Select side
-    const side = selectBestItem(categorized.sides, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected);
+    const side = selectBestItem(categorized.sides, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected, favoriteIds);
     if (side) addItem(side);
 
     // 3. Add salad if room in calorie budget.
@@ -294,18 +298,18 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
     if (currentTotals.calories < mealTarget.calories * 0.7) {
       const completeSalads = categorized.salads.filter((item) => !isSaladTopping(item));
       const saladPool = completeSalads.length > 0 ? completeSalads : categorized.salads;
-      const salad = selectBestItem(saladPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected);
+      const salad = selectBestItem(saladPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected, favoriteIds);
       if (salad) addItem(salad);
     }
 
     // 4. Optionally add a bread/roll alongside the entree (never as the only item)
     if (entree && currentTotals.calories < mealTarget.calories * 0.85) {
-      const roll = selectBestItem(categorized.bakery, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected);
+      const roll = selectBestItem(categorized.bakery, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected, favoriteIds);
       if (roll) addItem(roll);
     }
 
     // 5. Add beverage
-    const beverage = selectBestItem(categorized.beverages, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected);
+    const beverage = selectBestItem(categorized.beverages, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected, favoriteIds);
     if (beverage) addItem(beverage, 'Beverage');
   }
 
@@ -376,8 +380,38 @@ export function findAlternatives(currentItem, availableItems, mealTarget, curren
   return results;
 }
 
+// Find personalized recommended additions for a meal (e.g. a 3rd item)
+// Uses the same scoring/penalty logic as the main optimizer, applied to the
+// remaining macro budget after existing items are already on the plate.
+export function findRecommendedAdditions(availableItems, mealTarget, currentTotals, restrictions, recentItemIds, excludeIds, mealType = null, selectedItems = [], count = 3, favoriteIds = new Set()) {
+  const results = [];
+  const cumExcludeIds = new Set(excludeIds);
+
+  for (let i = 0; i < count; i++) {
+    const candidate = selectBestItem(
+      availableItems,
+      mealTarget,
+      currentTotals,
+      restrictions,
+      recentItemIds,
+      cumExcludeIds,
+      mealType,
+      selectedItems,
+      favoriteIds
+    );
+    if (!candidate) break;
+    results.push({
+      ...candidate,
+      reason: generateReason(candidate, mealTarget, currentTotals),
+    });
+    cumExcludeIds.add(candidate.id);
+  }
+
+  return results;
+}
+
 // Optimize full day across all meals
-export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds, mealDistribution = MEAL_DISTRIBUTION) {
+export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds, mealDistribution = MEAL_DISTRIBUTION, favoriteIds = new Set()) {
   const mealTargets = calculateMealTargets(nutritionTargets, mealDistribution);
   const result = {
     sherman: {},
@@ -402,7 +436,8 @@ export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds,
         mealTargets[meal],
         restrictions,
         dailyUsedIds,
-        meal
+        meal,
+        favoriteIds
       );
       result.sherman[meal] = shermanResult;
       shermanResult.items.forEach((item) => dailyUsedIds.add(item.id));
@@ -420,7 +455,8 @@ export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds,
         mealTargets[meal],
         restrictions,
         dailyUsedIds,
-        meal
+        meal,
+        favoriteIds
       );
       result.usdan[meal] = usdanResult;
       usdanResult.items.forEach((item) => dailyUsedIds.add(item.id));

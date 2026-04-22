@@ -1,7 +1,7 @@
 .meal-plan {
   max-width: 900px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 1.5rem 1.5rem 5rem;
   min-height: 100vh;
 }
 
@@ -92,10 +92,8 @@
   font-weight: 500;
 }
 
-.settings-btn {
-  position: absolute;
-  top: 0;
-  right: 0;
+.settings-btn,
+.favorites-btn {
   padding: 0.5rem;
   background: white;
   border: 1px solid #e2e8f0;
@@ -105,9 +103,26 @@
   transition: all 0.2s;
 }
 
-.settings-btn:hover {
+.settings-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.favorites-btn {
+  position: absolute;
+  top: 0;
+  right: 2.75rem;
+}
+
+.settings-btn:hover,
+.favorites-btn:hover {
   background: #f1f5f9;
   color: #243b55;
+}
+
+.favorites-btn:hover svg {
+  color: #f47421;
 }
 
 /* Cache Warning */

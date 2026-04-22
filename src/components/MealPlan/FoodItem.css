@@ -118,14 +118,29 @@
   font-weight: 600;
 }
 
-/* Expand Button */
-.expand-btn {
-  padding: 0.5rem;
+/* Action buttons (favorite, expand, remove) */
+.food-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  flex-shrink: 0;
+}
+
+.expand-btn,
+.favorite-btn,
+.remove-btn {
+  padding: 0.4rem;
   background: none;
   border: none;
-  color: #94a3b8;
   cursor: pointer;
   transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.expand-btn {
+  color: #94a3b8;
 }
 
 .expand-btn:hover {
@@ -134,6 +149,26 @@
 
 .expand-btn svg {
   transition: transform 0.2s;
+}
+
+.favorite-btn {
+  color: #cbd5e1;
+}
+
+.favorite-btn:hover {
+  color: #f47421;
+}
+
+.favorite-btn.favorited {
+  color: #f47421;
+}
+
+.remove-btn {
+  color: #cbd5e1;
+}
+
+.remove-btn:hover {
+  color: #ef4444;
 }
 
 /* Expanded Details */
@@ -266,9 +301,11 @@
     margin-top: 0.5rem;
   }
 
-  .expand-btn {
+  .food-item-actions {
     position: absolute;
-    right: 0.5rem;
-    top: 0.5rem;
+    right: 0.25rem;
+    top: 0.25rem;
+    flex-direction: column;
+    gap: 0;
   }
 }

@@ -1,0 +1,54 @@
+.landing-contact {
+  background: #faf7f4;
+  min-height: calc(100vh - 60px);
+  padding: 3rem 1.5rem 5rem;
+}
+
+.contact-inner {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.contact-heading {
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: #243b55;
+  margin: 0 0 0.75rem;
+}
+
+.contact-sub {
+  font-size: 1rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0 0 2.5rem;
+}
+
+.contact-placeholder {
+  background: white;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 3rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.contact-placeholder-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.contact-placeholder p {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #475569;
+  margin: 0;
+}
+
+.contact-placeholder-sub {
+  font-size: 0.88rem !important;
+  color: #94a3b8 !important;
+  font-weight: 400 !important;
+}

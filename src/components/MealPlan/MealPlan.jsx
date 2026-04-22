@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { generateTodaysMenu, hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
 import { fetchBrandeisMenu } from '../../services/menuFetcher';
-import { getNutritionTargets, getDietaryRestrictions, getRecentItemIds, addMealToHistory, setCachedMenu, getCachedMenu } from '../../utils/storage';
-import { optimizeDay, findAlternatives } from '../../utils/mealOptimizer';
+import { getNutritionTargets, getDietaryRestrictions, getRecentItemIds, getFavoriteIds, addMealToHistory, setCachedMenu, getCachedMenu } from '../../utils/storage';
+import { optimizeDay, findAlternatives, findRecommendedAdditions } from '../../utils/mealOptimizer';
 import MealCard from './MealCard';
 import DailySummary from './DailySummary';
 import './MealPlan.css';
 
-export default function MealPlan({ onOpenSettings, settingsVersion = 0 }) {
+export default function MealPlan({ onOpenSettings, onOpenFavorites, settingsVersion = 0 }) {
   const [menu, setMenu] = useState(null);
   const [mealPlan, setMealPlan] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState({
@@ -23,6 +23,7 @@ export default function MealPlan({ onOpenSettings, settingsVersion = 0 }) {
   const [loading, setLoading] = useState(true);
   const [usingCachedData, setUsingCachedData] = useState(false);
   const [itemAlternatives, setItemAlternatives] = useState({});
+  const [recommendations, setRecommendations] = useState({ breakfast: null, lunch: null, dinner: null });
 
   const loadMenuAndOptimize = useCallback(async (forceRefresh = false) => {
     setLoading(true);
@@ -49,6 +50,7 @@ export default function MealPlan({ onOpenSettings, settingsVersion = 0 }) {
     setMenu(menuData);
     setUsingCachedData(usingCache);
     setItemAlternatives({});
+    setRecommendations({ breakfast: null, lunch: null, dinner: null });
 
     // Always re-read preferences from storage so settings changes are picked up
     const targets = getNutritionTargets();
@@ -56,7 +58,8 @@ export default function MealPlan({ onOpenSettings, settingsVersion = 0 }) {
     const recentItems = getRecentItemIds();
 
     if (targets) {
-      const optimized = optimizeDay(menuData, targets, restrictions, recentItems);
+      const favoriteIds = getFavoriteIds();
+      const optimized = optimizeDay(menuData, targets, restrictions, recentItems, undefined, favoriteIds);
       setMealPlan(optimized);
     }
 
@@ -74,14 +77,123 @@ export default function MealPlan({ onOpenSettings, settingsVersion = 0 }) {
     const restrictions = getDietaryRestrictions();
     const recentItems = getRecentItemIds();
     if (targets) {
-      const optimized = optimizeDay(menu, targets, restrictions, recentItems);
+      const favoriteIds = getFavoriteIds();
+      const optimized = optimizeDay(menu, targets, restrictions, recentItems, undefined, favoriteIds);
       setMealPlan(optimized);
       setItemAlternatives({});
+      setRecommendations({ breakfast: null, lunch: null, dinner: null });
     }
   }, [settingsVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLocationChange = (meal, location) => {
     setSelectedLocation((prev) => ({ ...prev, [meal]: location }));
+    setRecommendations((prev) => ({ ...prev, [meal]: null }));
+  };
+
+  const handleLoadRecommendations = (meal) => {
+    setRecommendations((prev) => {
+      if (prev[meal] !== null) return prev;
+      const location = selectedLocation[meal];
+      const currentMealPlan = mealPlan[location][meal];
+      const restrictions = getDietaryRestrictions();
+      const recentItems = getRecentItemIds();
+      const excludeIds = new Set(currentMealPlan.items.map((i) => i.id));
+      const favoriteIds = getFavoriteIds();
+      const recs = findRecommendedAdditions(
+        menu.locations[location].meals[meal],
+        currentMealPlan.target,
+        currentMealPlan.totals,
+        restrictions,
+        recentItems,
+        excludeIds,
+        meal,
+        currentMealPlan.items,
+        3,
+        favoriteIds
+      );
+      return { ...prev, [meal]: recs };
+    });
+  };
+
+  const handleAddItem = (meal, item) => {
+    const location = selectedLocation[meal];
+    setMealPlan((prev) => {
+      const currentItems = prev[location][meal].items;
+      // Guard: prevent double-add (React Strict Mode calls updaters twice)
+      if (currentItems.some((i) => i.id === item.id)) return prev;
+      const newItems = [...currentItems, { ...item, userAdded: true }];
+      const newTotals = newItems.reduce(
+        (acc, i) => ({
+          calories: acc.calories + (i.nutrition?.calories ?? 0),
+          protein: acc.protein + (i.nutrition?.protein ?? 0),
+          carbs: acc.carbs + (i.nutrition?.carbs ?? 0),
+          fat: acc.fat + (i.nutrition?.fat ?? 0),
+        }),
+        { calories: 0, protein: 0, carbs: 0, fat: 0 }
+      );
+      // Deep-copy the location level to avoid mutating prev[location]
+      const newPlan = {
+        ...prev,
+        [location]: {
+          ...prev[location],
+          [meal]: { ...prev[location][meal], items: newItems, totals: newTotals },
+        },
+      };
+
+      const dailyTotals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+      ['breakfast', 'lunch', 'dinner'].forEach((m) => {
+        const loc = m === meal ? location : selectedLocation[m];
+        if (newPlan[loc]?.[m]) {
+          dailyTotals.calories += newPlan[loc][m].totals.calories;
+          dailyTotals.protein += newPlan[loc][m].totals.protein;
+          dailyTotals.carbs += newPlan[loc][m].totals.carbs;
+          dailyTotals.fat += newPlan[loc][m].totals.fat;
+        }
+      });
+      newPlan.dailyTotals = { ...prev.dailyTotals, [location]: dailyTotals };
+      return newPlan;
+    });
+    setRecommendations((prev) => ({ ...prev, [meal]: null }));
+  };
+
+  const handleRemoveItem = (meal, itemId) => {
+    const location = selectedLocation[meal];
+    setMealPlan((prev) => {
+      const currentItems = prev[location][meal].items;
+      // Guard: bail if item not found (also protects against Strict Mode double-invocation)
+      if (!currentItems.some((i) => i.id === itemId)) return prev;
+      const newItems = currentItems.filter((i) => i.id !== itemId);
+      const newTotals = newItems.reduce(
+        (acc, i) => ({
+          calories: acc.calories + (i.nutrition?.calories ?? 0),
+          protein: acc.protein + (i.nutrition?.protein ?? 0),
+          carbs: acc.carbs + (i.nutrition?.carbs ?? 0),
+          fat: acc.fat + (i.nutrition?.fat ?? 0),
+        }),
+        { calories: 0, protein: 0, carbs: 0, fat: 0 }
+      );
+      // Deep-copy the location level to avoid mutating prev[location]
+      const newPlan = {
+        ...prev,
+        [location]: {
+          ...prev[location],
+          [meal]: { ...prev[location][meal], items: newItems, totals: newTotals },
+        },
+      };
+
+      const dailyTotals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+      ['breakfast', 'lunch', 'dinner'].forEach((m) => {
+        const loc = m === meal ? location : selectedLocation[m];
+        if (newPlan[loc]?.[m]) {
+          dailyTotals.calories += newPlan[loc][m].totals.calories;
+          dailyTotals.protein += newPlan[loc][m].totals.protein;
+          dailyTotals.carbs += newPlan[loc][m].totals.carbs;
+          dailyTotals.fat += newPlan[loc][m].totals.fat;
+        }
+      });
+      newPlan.dailyTotals = { ...prev.dailyTotals, [location]: dailyTotals };
+      return newPlan;
+    });
   };
 
   const handleLoadAlternatives = (meal, location, itemIndex, currentItem) => {
@@ -207,6 +319,11 @@ export default function MealPlan({ onOpenSettings, settingsVersion = 0 }) {
           <p className="tagline">Eat well. Every meal.</p>
           <p className="date">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
         </div>
+        <button className="favorites-btn" onClick={onOpenFavorites} aria-label="Favorites">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+        </button>
         <button className="settings-btn" onClick={onOpenSettings} aria-label="Settings">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="3"></circle>
@@ -239,6 +356,10 @@ export default function MealPlan({ onOpenSettings, settingsVersion = 0 }) {
             itemAlternatives={itemAlternatives}
             onLoadAlternatives={handleLoadAlternatives}
             onSwapToItem={(index, newItem) => handleSwapToItem(meal, index, newItem)}
+            recommendations={recommendations[meal]}
+            onLoadRecommendations={() => handleLoadRecommendations(meal)}
+            onAddItem={(item) => handleAddItem(meal, item)}
+            onRemoveItem={(itemId) => handleRemoveItem(meal, itemId)}
             isConfirmed={confirmedMeals[meal]}
             onConfirm={() => handleConfirmMeal(meal)}
           />

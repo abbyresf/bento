@@ -7,6 +7,8 @@ const KEYS = {
   MEAL_HISTORY: 'nutrirecs_meal_history',
   CACHED_MENU: 'nutrirecs_cached_menu',
   ONBOARDING_COMPLETE: 'nutrirecs_onboarding_complete',
+  FAVORITES: 'bento_favorites',
+  TERMS_ACCEPTED: 'bento_terms_accepted',
 };
 
 // Generic storage functions
@@ -128,6 +130,15 @@ export function setCachedMenu(menu) {
   });
 }
 
+// Terms acceptance
+export function isTermsAccepted() {
+  return getItem(KEYS.TERMS_ACCEPTED) === true;
+}
+
+export function setTermsAccepted() {
+  return setItem(KEYS.TERMS_ACCEPTED, true);
+}
+
 // Onboarding Status
 export function isOnboardingComplete() {
   return getItem(KEYS.ONBOARDING_COMPLETE) === true;
@@ -135,6 +146,38 @@ export function isOnboardingComplete() {
 
 export function setOnboardingComplete(complete) {
   return setItem(KEYS.ONBOARDING_COMPLETE, complete);
+}
+
+// Favorites — stored as full item snapshots so the management view
+// works even when the live menu isn't loaded.
+export function getFavorites() {
+  return getItem(KEYS.FAVORITES) || [];
+}
+
+export function getFavoriteIds() {
+  return new Set(getFavorites().map((f) => f.id));
+}
+
+export function isFavorite(itemId) {
+  return getFavorites().some((f) => f.id === itemId);
+}
+
+export function toggleFavorite(item) {
+  const favorites = getFavorites();
+  const idx = favorites.findIndex((f) => f.id === item.id);
+  if (idx >= 0) {
+    favorites.splice(idx, 1);
+  } else {
+    // Store only the fields needed for the management view + optimizer
+    favorites.push({
+      id: item.id,
+      name: item.name,
+      station: item.station,
+      nutrition: item.nutrition,
+      tags: item.tags,
+    });
+  }
+  return setItem(KEYS.FAVORITES, favorites);
 }
 
 // Clear all data
