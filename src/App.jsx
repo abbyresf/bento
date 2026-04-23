@@ -6,8 +6,6 @@ import MealPlan from './components/MealPlan/MealPlan';
 import Settings from './components/Settings/Settings';
 import Favorites from './components/Favorites/Favorites';
 import TermsGate from './components/Terms/TermsGate';
-import TermsPage from './components/Terms/TermsPage';
-import TabBar from './components/TabBar/TabBar';
 import { FavoritesProvider } from './context/FavoritesContext';
 import './App.css';
 
@@ -15,9 +13,9 @@ function App() {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(null);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(null);
   const [startingOnboarding, setStartingOnboarding] = useState(false);
-  const [activeTab, setActiveTab] = useState('today');
   const [showSettings, setShowSettings] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
+  const [showLanding, setShowLanding] = useState(false);
   const [settingsVersion, setSettingsVersion] = useState(0);
 
   useEffect(() => {
@@ -51,9 +49,9 @@ function App() {
     );
   }
 
-  // Step 1: Landing page (new users who haven't started onboarding)
-  if (!hasCompletedOnboarding && !startingOnboarding) {
-    return <LandingPage onGetStarted={() => setStartingOnboarding(true)} />;
+  // Step 1: Landing page (new users or returning via home button)
+  if ((!hasCompletedOnboarding && !startingOnboarding) || showLanding) {
+    return <LandingPage onGetStarted={() => { setStartingOnboarding(true); setShowLanding(false); }} />;
   }
 
   // Step 2: Onboarding wizard
@@ -70,17 +68,12 @@ function App() {
   return (
     <FavoritesProvider>
       <div className="app">
-        {activeTab === 'today' && (
-          <MealPlan
-            onOpenSettings={() => setShowSettings(true)}
-            onOpenFavorites={() => setShowFavorites(true)}
-            settingsVersion={settingsVersion}
-          />
-        )}
-
-        {activeTab === 'terms' && <TermsPage />}
-
-        <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+        <MealPlan
+          onOpenSettings={() => setShowSettings(true)}
+          onOpenFavorites={() => setShowFavorites(true)}
+          onGoHome={() => setShowLanding(true)}
+          settingsVersion={settingsVersion}
+        />
 
         {showFavorites && (
           <>

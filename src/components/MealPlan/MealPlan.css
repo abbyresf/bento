@@ -1,7 +1,7 @@
 .meal-plan {
   max-width: 900px;
   margin: 0 auto;
-  padding: 1.5rem 1.5rem 5rem;
+  padding: 1.5rem 1.5rem 2.5rem;
   min-height: 100vh;
 }
 
@@ -93,7 +93,8 @@
 }
 
 .settings-btn,
-.favorites-btn {
+.favorites-btn,
+.home-btn {
   padding: 0.5rem;
   background: white;
   border: 1px solid #e2e8f0;
@@ -115,8 +116,15 @@
   right: 2.75rem;
 }
 
+.home-btn {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
 .settings-btn:hover,
-.favorites-btn:hover {
+.favorites-btn:hover,
+.home-btn:hover {
   background: #f1f5f9;
   color: #243b55;
 }

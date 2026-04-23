@@ -7,7 +7,7 @@ import MealCard from './MealCard';
 import DailySummary from './DailySummary';
 import './MealPlan.css';
 
-export default function MealPlan({ onOpenSettings, onOpenFavorites, settingsVersion = 0 }) {
+export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, settingsVersion = 0 }) {
   const [menu, setMenu] = useState(null);
   const [mealPlan, setMealPlan] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState({
@@ -314,6 +314,12 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, settingsVers
   return (
     <div className="meal-plan">
       <header className="meal-plan-header">
+        <button className="home-btn" onClick={onGoHome} aria-label="Home">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </button>
         <div className="header-content">
           <img src="/logo.png" alt="Bento" className="header-logo" />
           <p className="tagline">Eat well. Every meal.</p>

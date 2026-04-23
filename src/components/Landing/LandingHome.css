@@ -150,8 +150,7 @@
 .lh-section-heading {
   font-size: 1.75rem;
   font-weight: 800;
-  /*color: #243b55;*/
-  color: #faf7f4;
+  color: #243b55;
   margin: 0 0 1.25rem;
 }
 
@@ -186,6 +185,10 @@
 .lh-features-inner {
   max-width: 860px;
   margin: 0 auto;
+}
+
+.lh-features .lh-section-heading {
+  color: #faf7f4;
 }
 
 .lh-features-grid {
@@ -228,8 +231,8 @@
 .lh-bottom-cta {
   text-align: center;
   padding: 4rem 1.5rem 5rem;
-  background: #243b55;
-  color: #faf7f4;
+  background: #faf7f4;
+  color: #243b55;
 }
 
 .lh-bottom-cta h2 {
@@ -240,7 +243,7 @@
 
 .lh-bottom-cta p {
   font-size: 1rem;
-  color: #faf7f4;
+  color: #243b55;
   margin: 0 0 1.75rem;
 }
 
@@ -248,6 +251,11 @@
 @media (max-width: 600px) {
   .lh-hero {
     padding: 3.5rem 1.25rem 3rem;
+  }
+
+  .lh-hero-logo {
+    height: 72px;
+    margin-bottom: 2rem;
   }
 
   .lh-stats-row {
