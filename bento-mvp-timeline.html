@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MVP Technical Timeline</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: #faf7f4;
+      color: #243b55;
+      padding: 3rem 2rem;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    /* ── Cover ── */
+    .cover {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .logo-box {
+      height: 52px;
+      width: auto;
+      flex-shrink: 0;
+    }
+
+    .cover h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .cover h1 span {
+      color: #f47421;
+    }
+
+    .subtitle {
+      font-size: 0.95rem;
+      color: #64748b;
+      margin-bottom: 2.5rem;
+      padding-left: 0.25rem;
+    }
+
+    /* ── Summary bar ── */
+    .summary-bar {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 3rem;
+      flex-wrap: wrap;
+    }
+
+    .summary-item {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 0.85rem 1.25rem;
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .summary-item .label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #94a3b8;
+      margin-bottom: 0.3rem;
+    }
+
+    .summary-item .value {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #243b55;
+    }
+
+    /* ── Phase blocks ── */
+    .phase {
+      margin-bottom: 2.5rem;
+      break-inside: avoid;
+    }
+
+    .phase-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .phase-pill {
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.3rem 0.85rem;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .phase-pill.p1 { background: #fde8d4; color: #c05a12; }
+    .phase-pill.p2 { background: #edfaf3; color: #2e8a52; }
+    .phase-pill.p3 { background: #e0f0ff; color: #1d6fa4; }
+    .phase-pill.p4 { background: #f0ecff; color: #6b3fb5; }
+
+    .phase-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+    }
+
+    .phase-dates {
+      margin-left: auto;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #94a3b8;
+      white-space: nowrap;
+    }
+
+    .phase-goal {
+      font-size: 0.88rem;
+      color: #64748b;
+      margin-bottom: 1rem;
+      padding-left: 0.25rem;
+      font-style: italic;
+    }
+
+    .tasks {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .task {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+
+    .task-tag {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      white-space: nowrap;
+      margin-top: 0.1rem;
+      flex-shrink: 0;
+    }
+
+    .tag-backend  { background: #fde8d4; color: #c05a12; }
+    .tag-auth     { background: #fef9c3; color: #92400e; }
+    .tag-frontend { background: #e0f0ff; color: #1d6fa4; }
+    .tag-data     { background: #edfaf3; color: #2e8a52; }
+    .tag-infra    { background: #f0ecff; color: #6b3fb5; }
+    .tag-product  { background: #fce7f3; color: #9d174d; }
+
+    .task-text {
+      font-size: 0.88rem;
+      line-height: 1.5;
+      color: #374151;
+    }
+
+    .task-text strong {
+      color: #243b55;
+      font-weight: 700;
+    }
+
+    .task-text .note {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      display: block;
+      margin-top: 0.15rem;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      border: none;
+      border-top: 1px solid #e2e8f0;
+      margin: 2rem 0;
+    }
+
+    /* ── Risk section ── */
+    .risks {
+      break-inside: avoid;
+    }
+
+    .risks h2 {
+      font-size: 1rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      color: #243b55;
+    }
+
+    .risk-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .risk-item {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      color: #374151;
+      line-height: 1.5;
+    }
+
+    .risk-item strong {
+      display: block;
+      color: #243b55;
+      font-weight: 700;
+      margin-bottom: 0.2rem;
+    }
+
+    /* ── Stack recommendation ── */
+    .stack {
+      break-inside: avoid;
+      margin-top: 2rem;
+    }
+
+    .stack h2 {
+      font-size: 1rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+    }
+
+    .stack-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+    }
+
+    .stack-item {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+    }
+
+    .stack-item .stack-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #94a3b8;
+      margin-bottom: 0.25rem;
+    }
+
+    .stack-item .stack-choice {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #f47421;
+    }
+
+    .stack-item .stack-reason {
+      font-size: 0.78rem;
+      color: #64748b;
+      margin-top: 0.2rem;
+      line-height: 1.4;
+    }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 3rem;
+      font-size: 0.78rem;
+      color: #94a3b8;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 1.5rem;
+    }
+
+    @media print {
+      body { background: white; padding: 1.5rem; }
+      .phase { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Cover -->
+  <div class="cover">
+    <img src="public/logo-cropped.png" alt="Bento" class="logo-box" />
+    <h1>Bento — <span>MVP Technical Timeline</span></h1>
+  </div>
+  <p class="subtitle">Target launch: August 2026 &nbsp;·&nbsp; Prepared April 2026</p>
+
+  <!-- Summary bar -->
+  <div class="summary-bar">
+    <div class="summary-item">
+      <div class="label">Timeline</div>
+      <div class="value">May → August 2026</div>
+    </div>
+    <div class="summary-item">
+      <div class="label">Phases</div>
+      <div class="value">4 phases</div>
+    </div>
+    <div class="summary-item">
+      <div class="label">Current stack</div>
+      <div class="value">React 19 + Vite</div>
+    </div>
+    <div class="summary-item">
+      <div class="label">MVP goal</div>
+      <div class="value">Launchable at school start</div>
+    </div>
+  </div>
+
+  <!-- Phase 1 -->
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-pill p1">Phase 1</div>
+      <div class="phase-title">Backend Foundation</div>
+      <div class="phase-dates">May 1 – May 31</div>
+    </div>
+    <p class="phase-goal">Replace localStorage with a real backend. Nothing else ships until this is solid.</p>
+    <div class="tasks">
+      <div class="task">
+        <span class="task-tag tag-infra">Infra</span>
+        <div class="task-text">
+          <strong>Choose and provision backend stack</strong>
+          <span class="note">Recommended: Supabase (Postgres + auth + real-time, generous free tier, fastest path to MVP). Alternative: Firebase if you prefer NoSQL.</span>
+        </div>
+      </div>
+      <div class="task">
+        <span class="task-tag tag-auth">Auth</span>
+        <div class="task-text">
+          <strong>Implement user authentication</strong>
+          <span class="note">Email/password + Google OAuth via Supabase Auth. Replace the current no-account model.</span>
+        </div>
+      </div>
+      <div class="task">
+        <span class="task-tag tag-data">Data</span>
+        <div class="task-text">
+          <strong>Design and migrate database schema</strong>
+          <span class="note">Tables: users, profiles (TDEE/goals/restrictions), meal_history, streaks, favorites. Mirror the current localStorage data model.</span>
+        </div>
+      </div>
+      <div class="task">
+        <span class="task-tag tag-backend">Backend</span>
+        <div class="task-text">
+          <strong>Replace all localStorage reads/writes with API calls</strong>
+          <span class="note">Swap out storage.js utilities for Supabase client calls. Keep the same interface so the rest of the app breaks minimally.</span>
+        </div>
+      </div>
+      <div class="task">
+        <span class="task-tag tag-frontend">Frontend</span>
+        <div class="task-text">
+          <strong>Build login / signup screens</strong>
+          <span class="note">Integrate into existing onboarding flow. New users sign up → onboard → saved to DB. Returning users log in → skip onboarding.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 2 -->
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-pill p2">Phase 2</div>
+      <div class="phase-title">Core New Features</div>
+      <div class="phase-dates">June 1 – June 30</div>
+    </div>
+    <p class="phase-goal">Ship the features that differentiate Bento: streaks, multi-university support, and deeper personalization.</p>
+    <div class="tasks">
+      <div class="task">
+        <span class="task-tag tag-backend">Backend</span>
+        <div class="task-text">
+          <strong>Streak tracking system</strong>
+          <span class="note">Track daily goal-meeting events server-side. Logic: if user confirms all meals and hits ≥80% of calorie/macro target, streak increments. Miss a day → reset. Store current streak + longest streak.</span>
+        </div>
+      </div>
+      <div class="task">
+        <span class="task-tag tag-frontend">Frontend</span>
+        <div class="task-text">
+          <strong>Streak UI</strong>
+          <span class="note">Streak counter on the meal plan header. Flame icon, current count, milestone celebrations at 7 / 30 / 100 days.</span>
+        </div>
+      </div>
+      <div class="task">
+        <span class="task-tag tag-backend">Backend</span>
+        <div class="task-text">
+          <strong>Abstract university / dining system</strong>
+          <span class="note">Move Brandeis-specific config (Nutrislice subdomain, location slugs, meal times) into a universities table. Each university row defines its dining provider, API config, and supported locations.</span>
+        </div>
+      </div>
+      <div class="task">
+        <span class="task-tag tag-data">Data</span>
+        <div class="task-text">
+          <strong>Onboard 2–3 additional universities</strong>
+          <span class="note">Priority targets: other Nutrislice-powered schools (easiest adapter reuse). Add a university selector to onboarding.</span>
+        </div>
+      </div>
+      <div class="task">
+        <span class="task-tag tag-product">Product</span>
+        <div class="task-text">
+          <strong>Deepen personalization with server-side history</strong>
+          <span class="note">With real meal history in DB, the optimizer can weight variety over a rolling 14-day window instead of the current session-only approach.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 3 -->
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-pill p3">Phase 3</div>
+      <div class="phase-title">Weekly Insights + Polish</div>
+      <div class="phase-dates">July 1 – July 24</div>
+    </div>
+    <p class="phase-goal">Make Bento feel smart and sticky. Insights give users a reason to come back every week.</p>
+    <div class="tasks">
+      <div class="task">
+        <span class="task-tag tag-backend">Backend</span>
+        <div class="task-text">
+          <strong>Weekly insights engine</strong>
+          <span class="note">Scheduled job (cron or Supabase Edge Function) runs every Sunday. Aggregates the week's confirmed meals: average macros vs targets, most-eaten foods, best and worst days, streak progress.</span>
+        </div>
+      </div>
+      <div class="task">
+        <span class="task-tag tag-frontend">Frontend</span>
+        <div class="task-text">
+          <strong>Insights tab / screen</strong>
+          <span class="note">Weekly summary card, macro trend charts (simple bar charts — no heavy charting library needed), streak history, personalized callout ("You hit your protein goal 6 out of 7 days!").</span>
+        </div>
+      </div>
+      <div class="task">
+        <span class="task-tag tag-product">Product</span>
+        <div class="task-text">
+          <strong>Email digest (optional but high-value)</strong>
+          <span class="note">Weekly insights email via Resend or Supabase + SendGrid. Users opt in during onboarding. Drives re-engagement with minimal engineering effort.</span>
+        </div>
+      </div>
+      <div class="task">
+        <span class="task-tag tag-frontend">Frontend</span>
+        <div class="task-text">
+          <strong>UI polish pass</strong>
+          <span class="note">Responsive audit across all screens, loading states, empty states, error handling for failed API calls. Bento should feel production-quality, not beta.</span>
+        </div>
+      </div>
+      <div class="task">
+        <span class="task-tag tag-infra">Infra</span>
+        <div class="task-text">
+          <strong>Set up staging environment</strong>
+          <span class="note">Separate Supabase project for staging. Deploy frontend to Vercel preview URL. Required before any beta users touch the app.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 4 -->
+  <div class="phase">
+    <div class="phase-header">
+      <div class="phase-pill p4">Phase 4</div>
+      <div class="phase-title">Beta → Launch</div>
+      <div class="phase-dates">July 25 – August 2026</div>
+    </div>
+    <p class="phase-goal">Get real users in before launch day. Fix what breaks. Ship confidently.</p>
+    <div class="tasks">
+      <div class="task">
+        <span class="task-tag tag-product">Product</span>
+        <div class="task-text">
+          <strong>Closed beta with 10–20 real users</strong>
+          <span class="note">Recruit from your university. Goal: find bugs and validate that the personalization actually feels useful before opening up.</span>
+        </div>
+      </div>
+      <div class="task">
+        <span class="task-tag tag-infra">Infra</span>
+        <div class="task-text">
+          <strong>Production infrastructure hardening</strong>
+          <span class="note">Row-level security on all Supabase tables, rate limiting on API routes, environment variable audit, error monitoring (Sentry free tier).</span>
+        </div>
+      </div>
+      <div class="task">
+        <span class="task-tag tag-product">Product</span>
+        <div class="task-text">
+          <strong>Update landing page for public launch</strong>
+          <span class="note">Add social proof from beta users, university logos, sign-up CTA with waitlist or direct access depending on confidence level.</span>
+        </div>
+      </div>
+      <div class="task">
+        <span class="task-tag tag-infra">Infra</span>
+        <div class="task-text">
+          <strong>Custom domain + production deploy</strong>
+          <span class="note">Point domain to Vercel, verify Supabase prod keys, confirm menu fetcher works in production (CORS proxy if needed).</span>
+        </div>
+      </div>
+      <div class="task">
+        <span class="task-tag tag-product">Product</span>
+        <div class="task-text">
+          <strong>Launch</strong>
+          <span class="note">Target: first week of August, before most universities' move-in dates. Coordinate with university dining contacts if possible for credibility.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- Recommended stack -->
+  <div class="stack">
+    <h2>Recommended Stack</h2>
+    <div class="stack-grid">
+      <div class="stack-item">
+        <div class="stack-label">Database + Auth</div>
+        <div class="stack-choice">Supabase</div>
+        <div class="stack-reason">Postgres, auth, and real-time out of the box. Free tier handles early scale. No separate auth service needed.</div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-label">Frontend</div>
+        <div class="stack-choice">React 19 + Vite</div>
+        <div class="stack-reason">Already built. No migration needed — just swap storage layer.</div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-label">Hosting</div>
+        <div class="stack-choice">Vercel</div>
+        <div class="stack-reason">Already configured (vercel.json exists). Free tier, instant deploys from git.</div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-label">Email</div>
+        <div class="stack-choice">Resend</div>
+        <div class="stack-reason">Simple API, generous free tier, works natively with Supabase Edge Functions.</div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-label">Error monitoring</div>
+        <div class="stack-choice">Sentry</div>
+        <div class="stack-reason">Free tier, React SDK is one import. Catch production errors before users report them.</div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-label">Scheduled jobs</div>
+        <div class="stack-choice">Supabase Edge Functions</div>
+        <div class="stack-reason">Run weekly insights cron inside your existing Supabase project. No separate job runner needed.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- Risks -->
+  <div class="risks">
+    <h2>Key Risks to Watch</h2>
+    <div class="risk-grid">
+      <div class="risk-item">
+        <strong>Dining API instability</strong>
+        The Nutrislice API is unofficial. Menu format changes or downtime will break meal generation. Mitigation: robust fallback to cached data, monitoring alerts.
+      </div>
+      <div class="risk-item">
+        <strong>Multi-university data variance</strong>
+        Each school's dining system structures data differently. Budget extra time per university beyond the first — the adapter pattern helps but won't eliminate all edge cases.
+      </div>
+      <div class="risk-item">
+        <strong>Auth complexity</strong>
+        Migrating from no-account to accounts is the biggest scope risk. Scope it tightly in Phase 1 — don't add social login until post-launch.
+      </div>
+      <div class="risk-item">
+        <strong>Scope creep</strong>
+        Four months is tight. If Phase 1 or 2 slip, drop the email digest before cutting any core features. Streaks and insights are differentiators — protect those.
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Bento &nbsp;·&nbsp; Confidential &nbsp;·&nbsp; April 2026
+  </footer>
+
+</body>
+</html>

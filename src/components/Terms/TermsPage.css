@@ -36,9 +36,10 @@
   line-height: 1.65;
   margin: 0;
   padding: 1rem 1.25rem;
-  background: #faf7f4;
+  background: white;
   border-radius: 10px;
   border-left: 3px solid #f47421;
+  box-shadow: 0 4px 16px rgba(36, 59, 85, 0.1);
 }
 
 .terms-page-section h2 {

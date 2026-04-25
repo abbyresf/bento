@@ -431,14 +431,10 @@ export default function OnboardingWizard({ onComplete }) {
       </div>
 
       <div className="progress-bar">
-        {STEPS.map((step, index) => (
-          <div
-            key={step}
-            className={`progress-step ${index <= currentStep ? 'active' : ''} ${
-              index < currentStep ? 'completed' : ''
-            }`}
-          />
-        ))}
+        <div
+          className="progress-fill"
+          style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
+        />
       </div>
 
       <form onSubmit={(e) => e.preventDefault()}>
