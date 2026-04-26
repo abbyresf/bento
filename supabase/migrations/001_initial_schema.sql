@@ -1,8 +1,8 @@
 -- Bento initial schema
--- Run this in the Supabase SQL editor after creating your project.
+-- Safe to re-run: uses IF NOT EXISTS throughout.
 
 -- ── Profiles ──────────────────────────────────────────────────────────
-create table public.profiles (
+create table if not exists public.profiles (
   id              uuid primary key references auth.users(id) on delete cascade,
   weight          numeric,
   weight_unit     text    default 'lbs',
@@ -17,7 +17,7 @@ create table public.profiles (
 );
 
 -- ── Nutrition targets ─────────────────────────────────────────────────
-create table public.nutrition_targets (
+create table if not exists public.nutrition_targets (
   id        uuid primary key default gen_random_uuid(),
   user_id   uuid not null references public.profiles(id) on delete cascade,
   calories  numeric,
@@ -29,7 +29,7 @@ create table public.nutrition_targets (
 );
 
 -- ── Dietary restrictions ──────────────────────────────────────────────
-create table public.dietary_restrictions (
+create table if not exists public.dietary_restrictions (
   id                  uuid primary key default gen_random_uuid(),
   user_id             uuid not null references public.profiles(id) on delete cascade,
   vegetarian          boolean default false,
@@ -46,17 +46,17 @@ create table public.dietary_restrictions (
 );
 
 -- ── Meal history ──────────────────────────────────────────────────────
-create table public.meal_history (
+create table if not exists public.meal_history (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null references public.profiles(id) on delete cascade,
   confirmed_at timestamptz default now(),
   items       jsonb not null default '[]'
 );
 
-create index meal_history_user_date on public.meal_history (user_id, confirmed_at desc);
+create index if not exists meal_history_user_date on public.meal_history (user_id, confirmed_at desc);
 
 -- ── Favorites ─────────────────────────────────────────────────────────
-create table public.favorites (
+create table if not exists public.favorites (
   id        uuid primary key default gen_random_uuid(),
   user_id   uuid not null references public.profiles(id) on delete cascade,
   item_id   text not null,
@@ -69,7 +69,7 @@ create table public.favorites (
 );
 
 -- ── Streaks ───────────────────────────────────────────────────────────
-create table public.streaks (
+create table if not exists public.streaks (
   id                  uuid primary key default gen_random_uuid(),
   user_id             uuid not null references public.profiles(id) on delete cascade,
   current_streak      integer default 0,
@@ -87,12 +87,26 @@ alter table public.favorites            enable row level security;
 alter table public.streaks              enable row level security;
 
 -- Each user can only read/write their own rows.
-create policy "own profile"      on public.profiles             for all using (auth.uid() = id);
-create policy "own targets"      on public.nutrition_targets    for all using (auth.uid() = user_id);
-create policy "own restrictions" on public.dietary_restrictions for all using (auth.uid() = user_id);
-create policy "own history"      on public.meal_history         for all using (auth.uid() = user_id);
-create policy "own favorites"    on public.favorites            for all using (auth.uid() = user_id);
-create policy "own streaks"      on public.streaks              for all using (auth.uid() = user_id);
+do $$ begin
+  if not exists (select 1 from pg_policies where policyname = 'own profile' and tablename = 'profiles') then
+    create policy "own profile" on public.profiles for all using (auth.uid() = id);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'own targets' and tablename = 'nutrition_targets') then
+    create policy "own targets" on public.nutrition_targets for all using (auth.uid() = user_id);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'own restrictions' and tablename = 'dietary_restrictions') then
+    create policy "own restrictions" on public.dietary_restrictions for all using (auth.uid() = user_id);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'own history' and tablename = 'meal_history') then
+    create policy "own history" on public.meal_history for all using (auth.uid() = user_id);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'own favorites' and tablename = 'favorites') then
+    create policy "own favorites" on public.favorites for all using (auth.uid() = user_id);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'own streaks' and tablename = 'streaks') then
+    create policy "own streaks" on public.streaks for all using (auth.uid() = user_id);
+  end if;
+end $$;
 
 -- ── Auto-create profile row on signup ────────────────────────────────
 create or replace function public.handle_new_user()
@@ -103,6 +117,7 @@ begin
 end;
 $$;
 
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
