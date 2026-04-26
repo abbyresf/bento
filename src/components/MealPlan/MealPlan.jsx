@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { generateTodaysMenu, hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
 import { fetchBrandeisMenu } from '../../services/menuFetcher';
-import { getNutritionTargets, getDietaryRestrictions, getRecentItemIds, getFavoriteIds, addMealToHistory, setCachedMenu, getCachedMenu } from '../../utils/storage';
+import { getNutritionTargets, getDietaryRestrictions, getRecentItemIds, getFavoriteIds, addMealToHistory, setCachedMenu, getCachedMenu } from '../../lib/db';
 import { optimizeDay, findAlternatives, findRecommendedAdditions } from '../../utils/mealOptimizer';
 import MealCard from './MealCard';
 import DailySummary from './DailySummary';
@@ -52,18 +52,21 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
     setItemAlternatives({});
     setRecommendations({ breakfast: null, lunch: null, dinner: null });
 
-    // Always re-read preferences from storage so settings changes are picked up
-    const targets = getNutritionTargets();
-    const restrictions = getDietaryRestrictions();
-    const recentItems = getRecentItemIds();
+    try {
+      const [targets, restrictions, recentItems] = await Promise.all([
+        getNutritionTargets(),
+        getDietaryRestrictions(),
+        getRecentItemIds(),
+      ]);
 
-    if (targets) {
-      const favoriteIds = getFavoriteIds();
-      const optimized = optimizeDay(menuData, targets, restrictions, recentItems, undefined, favoriteIds);
-      setMealPlan(optimized);
+      if (targets) {
+        const favoriteIds = await getFavoriteIds();
+        const optimized = optimizeDay(menuData, targets, restrictions, recentItems, undefined, favoriteIds);
+        setMealPlan(optimized);
+      }
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -73,16 +76,21 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
   // Re-optimize (without refetching menu) when settings change
   useEffect(() => {
     if (settingsVersion === 0 || !menu) return;
-    const targets = getNutritionTargets();
-    const restrictions = getDietaryRestrictions();
-    const recentItems = getRecentItemIds();
-    if (targets) {
-      const favoriteIds = getFavoriteIds();
-      const optimized = optimizeDay(menu, targets, restrictions, recentItems, undefined, favoriteIds);
-      setMealPlan(optimized);
-      setItemAlternatives({});
-      setRecommendations({ breakfast: null, lunch: null, dinner: null });
+    async function reoptimize() {
+      const [targets, restrictions, recentItems] = await Promise.all([
+        getNutritionTargets(),
+        getDietaryRestrictions(),
+        getRecentItemIds(),
+      ]);
+      if (targets) {
+        const favoriteIds = await getFavoriteIds();
+        const optimized = optimizeDay(menu, targets, restrictions, recentItems, undefined, favoriteIds);
+        setMealPlan(optimized);
+        setItemAlternatives({});
+        setRecommendations({ breakfast: null, lunch: null, dinner: null });
+      }
     }
+    reoptimize();
   }, [settingsVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLocationChange = (meal, location) => {
@@ -90,29 +98,29 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
     setRecommendations((prev) => ({ ...prev, [meal]: null }));
   };
 
-  const handleLoadRecommendations = (meal) => {
-    setRecommendations((prev) => {
-      if (prev[meal] !== null) return prev;
-      const location = selectedLocation[meal];
-      const currentMealPlan = mealPlan[location][meal];
-      const restrictions = getDietaryRestrictions();
-      const recentItems = getRecentItemIds();
-      const excludeIds = new Set(currentMealPlan.items.map((i) => i.id));
-      const favoriteIds = getFavoriteIds();
-      const recs = findRecommendedAdditions(
-        menu.locations[location].meals[meal],
-        currentMealPlan.target,
-        currentMealPlan.totals,
-        restrictions,
-        recentItems,
-        excludeIds,
-        meal,
-        currentMealPlan.items,
-        3,
-        favoriteIds
-      );
-      return { ...prev, [meal]: recs };
-    });
+  const handleLoadRecommendations = async (meal) => {
+    if (recommendations[meal] !== null) return;
+    const location = selectedLocation[meal];
+    const currentMealPlan = mealPlan[location][meal];
+    const [restrictions, recentItems, favoriteIds] = await Promise.all([
+      getDietaryRestrictions(),
+      getRecentItemIds(),
+      getFavoriteIds(),
+    ]);
+    const excludeIds = new Set(currentMealPlan.items.map((i) => i.id));
+    const recs = findRecommendedAdditions(
+      menu.locations[location].meals[meal],
+      currentMealPlan.target,
+      currentMealPlan.totals,
+      restrictions,
+      recentItems,
+      excludeIds,
+      meal,
+      currentMealPlan.items,
+      3,
+      favoriteIds
+    );
+    setRecommendations((prev) => ({ ...prev, [meal]: recs }));
   };
 
   const handleAddItem = (meal, item) => {
@@ -196,26 +204,26 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
     });
   };
 
-  const handleLoadAlternatives = (meal, location, itemIndex, currentItem) => {
+  const handleLoadAlternatives = async (meal, location, itemIndex, currentItem) => {
     const key = `${location}-${meal}-${itemIndex}`;
-    setItemAlternatives((prev) => {
-      if (key in prev) return prev;
-      const currentMealPlan = mealPlan[location][meal];
-      const restrictions = getDietaryRestrictions();
-      const recentItems = getRecentItemIds();
-      const excludeIds = new Set(currentMealPlan.items.map((i) => i.id));
-      const alts = findAlternatives(
-        currentItem,
-        menu.locations[location].meals[meal],
-        currentMealPlan.target,
-        currentMealPlan.totals,
-        restrictions,
-        recentItems,
-        excludeIds,
-        4
-      );
-      return { ...prev, [key]: alts };
-    });
+    if (key in itemAlternatives) return;
+    const currentMealPlan = mealPlan[location][meal];
+    const [restrictions, recentItems] = await Promise.all([
+      getDietaryRestrictions(),
+      getRecentItemIds(),
+    ]);
+    const excludeIds = new Set(currentMealPlan.items.map((i) => i.id));
+    const alts = findAlternatives(
+      currentItem,
+      menu.locations[location].meals[meal],
+      currentMealPlan.target,
+      currentMealPlan.totals,
+      restrictions,
+      recentItems,
+      excludeIds,
+      4
+    );
+    setItemAlternatives((prev) => ({ ...prev, [key]: alts }));
   };
 
   const handleSwapToItem = (meal, itemIndex, newItem) => {
@@ -238,7 +246,10 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
         { calories: 0, protein: 0, carbs: 0, fat: 0 }
       );
 
-      newPlan[location][meal] = { ...newPlan[location][meal], items: newItems, totals: newTotals };
+      newPlan[location] = {
+        ...newPlan[location],
+        [meal]: { ...newPlan[location][meal], items: newItems, totals: newTotals },
+      };
 
       const dailyTotals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
       ['breakfast', 'lunch', 'dinner'].forEach((m) => {
@@ -250,7 +261,7 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
           dailyTotals.fat += newPlan[loc][m].totals.fat;
         }
       });
-      newPlan.dailyTotals[location] = dailyTotals;
+      newPlan.dailyTotals = { ...prev.dailyTotals, [location]: dailyTotals };
 
       return newPlan;
     });
@@ -263,13 +274,10 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
     });
   };
 
-  const handleConfirmMeal = (meal) => {
+  const handleConfirmMeal = async (meal) => {
     const location = selectedLocation[meal];
     const mealItems = mealPlan[location][meal].items;
-
-    // Add to history for variety tracking
-    addMealToHistory(mealItems);
-
+    await addMealToHistory(mealItems);
     setConfirmedMeals((prev) => ({ ...prev, [meal]: true }));
   };
 

@@ -8,8 +8,10 @@ import {
   setDietaryRestrictions,
   clearMealHistory,
   clearAllData,
-} from '../../utils/storage';
+  deleteAccount,
+} from '../../lib/db';
 import { calculateNutritionTargets, ACTIVITY_LEVELS, GOALS } from '../../utils/tdeeCalculator';
+import UniversityPicker from '../common/UniversityPicker';
 import './Settings.css';
 
 export default function Settings({ onClose, onReset, onSave }) {
@@ -25,20 +27,23 @@ export default function Settings({ onClose, onReset, onSave }) {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    const loadedProfile = getUserProfile();
-    const loadedTargets = getNutritionTargets();
-    const loadedRestrictions = getDietaryRestrictions();
-
-    setProfile(loadedProfile);
-    setTargets(loadedTargets);
-    setRestrictions(loadedRestrictions);
-
-    if (loadedTargets) {
-      setCustomCalories(loadedTargets.calories.toString());
-      setCustomProtein(loadedTargets.macros.protein.toString());
-      setCustomCarbs(loadedTargets.macros.carbs.toString());
-      setCustomFat(loadedTargets.macros.fat.toString());
+    async function load() {
+      const [loadedProfile, loadedTargets, loadedRestrictions] = await Promise.all([
+        getUserProfile(),
+        getNutritionTargets(),
+        getDietaryRestrictions(),
+      ]);
+      setProfile(loadedProfile);
+      setTargets(loadedTargets);
+      setRestrictions(loadedRestrictions);
+      if (loadedTargets) {
+        setCustomCalories(loadedTargets.calories.toString());
+        setCustomProtein(loadedTargets.macros?.protein?.toString() ?? loadedTargets.protein?.toString() ?? '');
+        setCustomCarbs(loadedTargets.macros?.carbs?.toString() ?? loadedTargets.carbs?.toString() ?? '');
+        setCustomFat(loadedTargets.macros?.fat?.toString() ?? loadedTargets.fat?.toString() ?? '');
+      }
     }
+    load();
   }, []);
 
   const handleProfileChange = (field, value) => {
@@ -98,22 +103,20 @@ export default function Settings({ onClose, onReset, onSave }) {
     }));
   };
 
-  const handleSave = () => {
-    // Update targets with custom values
+  const handleSave = async () => {
     const updatedTargets = {
-      ...targets,
       calories: parseInt(customCalories) || targets.calories,
       macros: {
-        protein: parseInt(customProtein) || targets.macros.protein,
-        carbs: parseInt(customCarbs) || targets.macros.carbs,
-        fat: parseInt(customFat) || targets.macros.fat,
+        protein: parseInt(customProtein) || targets.macros?.protein,
+        carbs:   parseInt(customCarbs)   || targets.macros?.carbs,
+        fat:     parseInt(customFat)     || targets.macros?.fat,
       },
     };
-
-    setUserProfile(profile);
-    setNutritionTargets(updatedTargets);
-    setDietaryRestrictions(restrictions);
-
+    await Promise.all([
+      setUserProfile(profile),
+      setNutritionTargets(updatedTargets),
+      setDietaryRestrictions(restrictions),
+    ]);
     if (onSave) {
       onSave();
     } else {
@@ -122,16 +125,23 @@ export default function Settings({ onClose, onReset, onSave }) {
     }
   };
 
-  const handleClearHistory = () => {
+  const handleClearHistory = async () => {
     if (window.confirm('Clear your meal history? This will reset variety tracking.')) {
-      clearMealHistory();
+      await clearMealHistory();
       alert('Meal history cleared.');
     }
   };
 
-  const handleResetAll = () => {
+  const handleResetAll = async () => {
     if (window.confirm('Reset all data and start over? This cannot be undone.')) {
-      clearAllData();
+      await clearAllData();
+      onReset();
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (window.confirm('Permanently delete your account and all data? This cannot be undone.')) {
+      await deleteAccount();
       onReset();
     }
   };
@@ -160,6 +170,13 @@ export default function Settings({ onClose, onReset, onSave }) {
         <section className="settings-section">
           <h3>Profile</h3>
           <div className="settings-grid">
+            <div className="setting-item setting-item-full">
+              <label>University</label>
+              <UniversityPicker
+                value={profile.university ?? 'brandeis'}
+                onChange={(id) => handleProfileChange('university', id)}
+              />
+            </div>
             <div className="setting-item">
               <label>Weight ({profile.weightUnit})</label>
               <input
@@ -324,6 +341,9 @@ export default function Settings({ onClose, onReset, onSave }) {
             </button>
             <button className="btn-danger" onClick={handleResetAll}>
               Reset All Data
+            </button>
+            <button className="btn-danger" onClick={handleDeleteAccount}>
+              Delete Account
             </button>
           </div>
         </section>

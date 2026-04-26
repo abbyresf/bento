@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { ACTIVITY_LEVELS, GOALS, calculateNutritionTargets } from '../../utils/tdeeCalculator';
-import { setUserProfile, setNutritionTargets, setDietaryRestrictions, setOnboardingComplete } from '../../utils/storage';
+import { setUserProfile, setNutritionTargets, setDietaryRestrictions } from '../../lib/db';
+import { UNIVERSITIES } from '../../data/universities';
+import UniversityPicker from '../common/UniversityPicker';
 import './OnboardingWizard.css';
 
-const STEPS = ['basics', 'activity', 'goals', 'dietary', 'review'];
+const STEPS = ['university', 'basics', 'activity', 'goals', 'dietary', 'review'];
 
 export default function OnboardingWizard({ onComplete }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [profile, setProfile] = useState({
+    university: 'brandeis',
     weight: '',
     weightUnit: 'lbs',
     heightFeet: '',
@@ -42,7 +45,7 @@ export default function OnboardingWizard({ onComplete }) {
   };
 
   const handleNext = () => {
-    if (currentStep === 0 && !validateBasics()) return;
+    if (STEPS[currentStep] === 'basics' && !validateBasics()) return;
     setCurrentStep((prev) => Math.min(prev + 1, STEPS.length - 1));
   };
 
@@ -107,14 +110,26 @@ export default function OnboardingWizard({ onComplete }) {
     return targets;
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     const targets = calculateTargets();
-    setUserProfile(profile);
-    setNutritionTargets(targets);
-    setDietaryRestrictions(restrictions);
-    setOnboardingComplete(true);
+    await Promise.all([
+      setUserProfile(profile),
+      setNutritionTargets(targets),
+      setDietaryRestrictions(restrictions),
+    ]);
     onComplete();
   };
+
+  const renderUniversityStep = () => (
+    <div className="step-content">
+      <h2>Select your university</h2>
+      <p className="step-description">Bento pulls your dining hall's live menu each day.</p>
+      <UniversityPicker
+        value={profile.university}
+        onChange={(id) => handleProfileChange('university', id)}
+      />
+    </div>
+  );
 
   const renderBasicsStep = () => (
     <div className="step-content">
@@ -366,6 +381,9 @@ export default function OnboardingWizard({ onComplete }) {
             <h3>Your Profile</h3>
             <ul className="profile-list">
               <li>
+                <strong>University:</strong> {UNIVERSITIES.find((u) => u.id === profile.university)?.name}
+              </li>
+              <li>
                 <strong>TDEE:</strong> {targets.tdee} cal/day
               </li>
               <li>
@@ -408,6 +426,8 @@ export default function OnboardingWizard({ onComplete }) {
 
   const renderStep = () => {
     switch (STEPS[currentStep]) {
+      case 'university':
+        return renderUniversityStep();
       case 'basics':
         return renderBasicsStep();
       case 'activity':

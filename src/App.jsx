@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { isOnboardingComplete, setOnboardingComplete, isTermsAccepted, setTermsAccepted, clearAllData } from './utils/storage';
+import { supabase } from './lib/supabase';
+import { isOnboardingComplete, isTermsAccepted, setTermsAccepted, signOut } from './lib/db';
+import AuthScreen from './components/Auth/AuthScreen';
 import LandingPage from './components/Landing/LandingPage';
 import OnboardingWizard from './components/Onboarding/OnboardingWizard';
 import MealPlan from './components/MealPlan/MealPlan';
@@ -10,61 +12,78 @@ import { FavoritesProvider } from './context/FavoritesContext';
 import './App.css';
 
 function App() {
+  const [session, setSession] = useState(undefined); // undefined = loading
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(null);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(null);
-  const [startingOnboarding, setStartingOnboarding] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
+  const [showLanding, setShowLanding] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
-  const [showLanding, setShowLanding] = useState(false);
   const [settingsVersion, setSettingsVersion] = useState(0);
 
   useEffect(() => {
-    setHasCompletedOnboarding(isOnboardingComplete());
-    setHasAcceptedTerms(isTermsAccepted());
+    supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => setSession(s ?? null));
+    return () => subscription.unsubscribe();
   }, []);
 
-  const handleOnboardingComplete = () => {
-    setHasCompletedOnboarding(true);
-  };
+  useEffect(() => {
+    if (!session) return;
+    isOnboardingComplete().then(setHasCompletedOnboarding);
+    isTermsAccepted().then(setHasAcceptedTerms);
+  }, [session]);
 
-  const handleAcceptTerms = () => {
-    setTermsAccepted();
+  const handleOnboardingComplete = () => setHasCompletedOnboarding(true);
+
+  const handleAcceptTerms = async () => {
+    await setTermsAccepted();
     setHasAcceptedTerms(true);
   };
 
-  const handleReset = () => {
-    clearAllData();
-    setHasCompletedOnboarding(false);
-    setHasAcceptedTerms(false);
-    setStartingOnboarding(false);
+  const handleReset = async () => {
+    await signOut();
+    setHasCompletedOnboarding(null);
+    setHasAcceptedTerms(null);
     setShowSettings(false);
+    setShowAuth(false);
+    setShowLanding(false);
+    setSession(null);
   };
 
-  // Loading state — wait for both flags to be read from storage
-  if (hasCompletedOnboarding === null || hasAcceptedTerms === null) {
-    return (
-      <div className="app-loading">
-        <div className="spinner"></div>
-      </div>
-    );
+  // Waiting for auth to resolve
+  if (session === undefined) {
+    return <div className="app-loading"><div className="spinner"></div></div>;
   }
 
-  // Step 1: Landing page (new users or returning via home button)
-  if ((!hasCompletedOnboarding && !startingOnboarding) || showLanding) {
-    return <LandingPage onGetStarted={() => { setStartingOnboarding(true); setShowLanding(false); }} />;
+  // Not logged in: show landing page by default, auth screen when they click Get Started
+  if (!session) {
+    if (showAuth) {
+      return <AuthScreen onAuth={() => {}} />;
+    }
+    return <LandingPage onGetStarted={() => setShowAuth(true)} />;
   }
 
-  // Step 2: Onboarding wizard
+  // Logged in but user data still loading
+  if (hasCompletedOnboarding === null) {
+    return <div className="app-loading"><div className="spinner"></div></div>;
+  }
+
+  // Logged-in user viewing landing page (via home button)
+  if (showLanding) {
+    return <LandingPage onGetStarted={() => setShowLanding(false)} />;
+  }
+
+  // Onboarding
   if (!hasCompletedOnboarding) {
     return <OnboardingWizard onComplete={handleOnboardingComplete} />;
   }
 
-  // Step 2: Terms acceptance (shown once, after onboarding)
+  // Terms
   if (!hasAcceptedTerms) {
     return <TermsGate onAccept={handleAcceptTerms} />;
   }
 
-  // Step 3: Main app
+  // Main app
   return (
     <FavoritesProvider>
       <div className="app">

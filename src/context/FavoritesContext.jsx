@@ -1,14 +1,18 @@
-import { createContext, useContext, useState, useCallback } from 'react';
-import { getFavorites, toggleFavorite as storageToggle } from '../utils/storage';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { getFavorites, toggleFavorite as dbToggle } from '../lib/db';
 
 const FavoritesContext = createContext(null);
 
 export function FavoritesProvider({ children }) {
-  const [favorites, setFavorites] = useState(() => getFavorites());
+  const [favorites, setFavorites] = useState([]);
 
-  const toggleFavorite = useCallback((item) => {
-    storageToggle(item);
-    setFavorites(getFavorites());
+  useEffect(() => {
+    getFavorites().then(setFavorites);
+  }, []);
+
+  const toggleFavorite = useCallback(async (item) => {
+    await dbToggle(item);
+    setFavorites(await getFavorites());
   }, []);
 
   const favoriteIds = new Set(favorites.map((f) => f.id));

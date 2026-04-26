@@ -1,0 +1,142 @@
+.university-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.university-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.875rem;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.university-search {
+  width: 100%;
+  padding: 0.75rem 2.5rem 0.75rem 2.5rem;
+  border: 1.5px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: #243b55;
+  background: white;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.university-search:focus {
+  outline: none;
+  border-color: #f47421;
+  box-shadow: 0 0 0 3px rgba(244, 116, 33, 0.1);
+}
+
+.search-clear {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #94a3b8;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+.search-clear:hover {
+  color: #475569;
+}
+
+.university-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.university-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1.125rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  background: white;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+}
+
+.university-option:hover:not(:disabled) {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.university-option.selected {
+  border-color: #f47421;
+  background: #fff8f3;
+}
+
+.university-option.coming-soon {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.university-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.university-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.university-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #243b55;
+}
+
+.university-abbr {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.university-location {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.check-icon {
+  color: #f47421;
+  flex-shrink: 0;
+}
+
+.coming-soon-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #94a3b8;
+  background: #f1f5f9;
+  padding: 0.2rem 0.55rem;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+
+.university-empty {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  text-align: center;
+  padding: 1.5rem 0;
+  margin: 0;
+}

@@ -32,7 +32,7 @@ export default function FoodItem({ item, isExpanded, onToggleExpand, alternative
           <h4 className="food-name">{name}</h4>
           {reason && <p className="food-reason">{reason}</p>}
           <div className="food-tags">
-            {tags.slice(0, 3).map((tag) => (
+            {(tags ?? []).slice(0, 3).map((tag) => (
               <span key={tag} className={`food-tag ${tag}`}>
                 {DIETARY_TAGS[tag] || tag}
               </span>
@@ -106,7 +106,7 @@ export default function FoodItem({ item, isExpanded, onToggleExpand, alternative
         <div className="food-item-details">
           <div className="details-section">
             <h5>Station</h5>
-            <p>{station.charAt(0).toUpperCase() + station.slice(1)}</p>
+            <p>{station ? station.charAt(0).toUpperCase() + station.slice(1) : '—'}</p>
           </div>
 
           <div className="details-section">
@@ -136,7 +136,7 @@ export default function FoodItem({ item, isExpanded, onToggleExpand, alternative
           <div className="details-section">
             <h5>Dietary Info</h5>
             <div className="all-tags">
-              {tags.map((tag) => (
+              {(tags ?? []).map((tag) => (
                 <span key={tag} className={`food-tag ${tag}`}>
                   {DIETARY_TAGS[tag] || tag}
                 </span>

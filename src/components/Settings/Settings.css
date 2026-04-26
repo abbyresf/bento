@@ -91,6 +91,10 @@
   gap: 0.375rem;
 }
 
+.setting-item-full {
+  grid-column: 1 / -1;
+}
+
 .setting-item label {
   font-size: 0.85rem;
   font-weight: 600;
