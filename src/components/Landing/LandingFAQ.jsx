@@ -8,7 +8,7 @@ const FAQS = [
   },
   {
     q: 'How does Bento get the dining hall menu?',
-    a: 'Bento pulls the live Brandeis dining menu directly so your meal plan always reflects what\'s actually being served that day. No manual data entry required.',
+    a: 'Bento pulls your university\'s live dining menu directly so your meal plan always reflects what\'s actually being served that day. No manual data entry required.',
   },
   {
     q: 'Is this real medical or nutritional advice?',
@@ -20,15 +20,15 @@ const FAQS = [
   },
   {
     q: 'Will Bento remember my preferences?',
-    a: 'Yes. Your dietary restrictions, calorie goals, and favorited foods are all saved locally on your device. Favorites also get a boost in the recommendation engine so the more you use Bento, the better it fits your taste.',
+    a: 'Yes. Your dietary restrictions, calorie goals, and favorited foods are all saved to your account. Favorites also get a boost in the recommendation engine so the more you use Bento, the better it fits your taste.',
   },
   {
-    q: 'Which dining halls does Bento support?',
-    a: 'Bento currently supports Sherman and Usdan dining halls. Additional locations may be added in future updates.',
+    q: 'Which universities does Bento support?',
+    a: 'Bento currently supports Brandeis University dining halls. Additional locations will be added in future updates.',
   },
   {
     q: 'Can I use Bento if I have food allergies?',
-    a: 'Yes. During setup you can specify allergies and dietary preferences (gluten-free, vegan, nut-free, etc.) and Bento will filter recommendations accordingly. Always double-check with dining staff for your safety — menu data may occasionally be incomplete.',
+    a: 'Yes. During setup you can specify allergies and dietary preferences (gluten-free, vegan, nut-free, etc.) and Bento will filter recommendations accordingly. Always double-check with dining staff for your safety as menu data may occasionally be incomplete.',
   },
 ];
 
