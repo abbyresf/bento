@@ -1,0 +1,58 @@
+.streak-celebration {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 10, 0, 0.6);
+  backdrop-filter: blur(4px);
+  animation: celebFadeIn 0.25s ease;
+  cursor: pointer;
+}
+
+.streak-celebration-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  animation: celebPopIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.flame-pop {
+  font-size: 7rem;
+  line-height: 1;
+  animation: flameFlicker 0.45s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 24px rgba(255, 140, 0, 0.8));
+}
+
+.streak-day-label {
+  font-size: 3.5rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 16px rgba(244, 116, 33, 0.7);
+}
+
+.streak-caption {
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+@keyframes celebFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes celebPopIn {
+  from { transform: scale(0.4); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+@keyframes flameFlicker {
+  from { transform: scale(1)    rotate(-4deg); }
+  to   { transform: scale(1.12) rotate(4deg);  }
+}

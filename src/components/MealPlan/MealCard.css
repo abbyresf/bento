@@ -41,6 +41,21 @@
   border-bottom: 1px solid #f1f5f9;
 }
 
+.meal-card.collapsed .meal-card-header {
+  border-bottom: none;
+}
+
+.collapse-chevron {
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+  transform: rotate(-90deg);
+}
+
+.collapse-chevron.open {
+  transform: rotate(0deg);
+}
+
 .meal-info {
   display: flex;
   align-items: center;

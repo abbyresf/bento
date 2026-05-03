@@ -278,14 +278,15 @@ export async function getStreak() {
 
 export async function incrementStreak() {
   const id = await uid();
-  if (!id) return;
+  if (!id) return null;
   const today = new Date().toISOString().slice(0, 10);
   const streak = await getStreak();
-  if (streak.lastConfirmedDate === today) return; // already confirmed today
+  if (streak.lastConfirmedDate === today) return null; // already confirmed today
 
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const prevLongest = streak.longestStreak;
   const newCurrent = streak.lastConfirmedDate === yesterday ? streak.currentStreak + 1 : 1;
-  const newLongest = Math.max(newCurrent, streak.longestStreak);
+  const newLongest = Math.max(newCurrent, prevLongest);
 
   await supabase.from('streaks').upsert({
     user_id:             id,
@@ -293,6 +294,8 @@ export async function incrementStreak() {
     longest_streak:      newLongest,
     last_confirmed_date: today,
   }, { onConflict: 'user_id' });
+
+  return { currentStreak: newCurrent, longestStreak: newLongest, prevLongest };
 }
 
 // ── Onboarding / Terms ─────────────────────────────────────────────────────

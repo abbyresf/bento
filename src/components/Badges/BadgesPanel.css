@@ -1,0 +1,125 @@
+.badges-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: rgba(36, 59, 85, 0.3);
+  backdrop-filter: blur(2px);
+  animation: overlayFade 0.2s ease;
+}
+
+.badges-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 901;
+  width: 320px;
+  max-width: 100vw;
+  background: white;
+  box-shadow: -4px 0 24px rgba(36, 59, 85, 0.15);
+  display: flex;
+  flex-direction: column;
+  animation: panelSlideIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.badges-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.25rem 0.5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.badges-panel-header h2 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #243b55;
+  margin: 0;
+}
+
+.badges-panel-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #f1f5f9;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #64748b;
+  transition: background 0.15s;
+}
+
+.badges-panel-close:hover {
+  background: #e2e8f0;
+}
+
+.badges-panel-sub {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-weight: 500;
+  margin: 0;
+  padding: 0.5rem 1.25rem 0.75rem;
+}
+
+.badges-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.25rem 0;
+}
+
+.badge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.75rem 1.25rem;
+  transition: background 0.15s;
+}
+
+.badge-row:hover {
+  background: #faf7f4;
+}
+
+.badge-row.locked {
+  opacity: 0.5;
+}
+
+.badge-row-emoji {
+  font-size: 1.75rem;
+  flex-shrink: 0;
+  width: 40px;
+  text-align: center;
+}
+
+.badge-row-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.badge-row-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #243b55;
+}
+
+.badge-row-desc {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: 0.1rem;
+}
+
+.badge-row-check {
+  flex-shrink: 0;
+  color: #4cae70;
+}
+
+@keyframes overlayFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes panelSlideIn {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}

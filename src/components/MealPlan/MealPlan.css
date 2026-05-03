@@ -116,6 +116,37 @@
   right: 2.75rem;
 }
 
+.streak-btn {
+  position: absolute;
+  top: 0;
+  right: 5.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem 0.6rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.streak-btn:hover {
+  background: #fff8f3;
+  border-color: #f47421;
+}
+
+.streak-btn-flame {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.streak-btn-count {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #f47421;
+}
+
 .home-btn {
   position: absolute;
   top: 0;

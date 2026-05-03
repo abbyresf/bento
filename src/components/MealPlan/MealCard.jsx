@@ -41,6 +41,7 @@ export default function MealCard({
   isConfirmed,
   onConfirm,
 }) {
+  const [collapsed, setCollapsed] = useState(isPast);
   const [expandedItem, setExpandedItem] = useState(null);
   const [showRecommendations, setShowRecommendations] = useState(false);
 
@@ -74,16 +75,21 @@ export default function MealCard({
   };
 
   return (
-    <div className={`meal-card meal-${meal} ${isPast ? 'past' : ''} ${isConfirmed ? 'confirmed' : ''}`}>
-      <div className="meal-card-header">
+    <div className={`meal-card meal-${meal} ${isPast ? 'past' : ''} ${isConfirmed ? 'confirmed' : ''} ${collapsed ? 'collapsed' : ''}`}>
+      <div className="meal-card-header" onClick={isPast ? () => setCollapsed(prev => !prev) : undefined} style={isPast ? { cursor: 'pointer' } : undefined}>
         <div className="meal-info">
           <h3>{mealLabel}</h3>
           <span className="meal-time">{timeRange}</span>
           {isPast && <span className="past-badge">Past</span>}
           {isConfirmed && <span className="confirmed-badge">Confirmed</span>}
+          {isPast && (
+            <svg className={`collapse-chevron ${collapsed ? '' : 'open'}`} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          )}
         </div>
 
-        <div className="location-tabs">
+        <div className="location-tabs" onClick={e => e.stopPropagation()}>
           <button
             className={`location-tab ${selectedLocation === 'sherman' ? 'active' : ''}`}
             onClick={() => onLocationChange('sherman')}
@@ -101,7 +107,7 @@ export default function MealCard({
         </div>
       </div>
 
-      {currentPlan.warnings.length > 0 && (
+      {!collapsed && currentPlan.warnings.length > 0 && (
         <div className="meal-warnings">
           {currentPlan.warnings.map((warning, i) => (
             <div key={i} className="warning">
@@ -116,7 +122,7 @@ export default function MealCard({
         </div>
       )}
 
-      {!isCurrentLocationOpen ? (
+      {!collapsed && (!isCurrentLocationOpen ? (
         <div className="location-closed">
           <span className="closed-icon">🔒</span>
           <p>Closed today</p>
@@ -196,9 +202,9 @@ export default function MealCard({
             </div>
           )}
         </div>
-      )}
+      ))}
 
-      {isCurrentLocationOpen && <div className="meal-card-footer">
+      {!collapsed && isCurrentLocationOpen && <div className="meal-card-footer">
         <div className="meal-totals">
           <div className="total-item">
             <span className="total-value">{currentPlan.totals.calories || 0}</span>
@@ -218,7 +224,7 @@ export default function MealCard({
           </div>
         </div>
 
-        {!isConfirmed && !isPast && (
+        {!isConfirmed && (
           <button className="confirm-btn" onClick={onConfirm}>
             Mark as Eaten
           </button>

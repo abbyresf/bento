@@ -1,10 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { generateTodaysMenu, hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
 import { fetchBrandeisMenu } from '../../services/menuFetcher';
-import { getNutritionTargets, getDietaryRestrictions, getRecentItemIds, getFavoriteIds, addMealToHistory, setCachedMenu, getCachedMenu, incrementStreak } from '../../lib/db';
+import { getNutritionTargets, getDietaryRestrictions, getRecentItemIds, getFavoriteIds, addMealToHistory, setCachedMenu, getCachedMenu, incrementStreak, getStreak } from '../../lib/db';
+import { getNewBadge } from '../../data/badges';
 import { optimizeDay, findAlternatives, findRecommendedAdditions } from '../../utils/mealOptimizer';
 import MealCard from './MealCard';
 import DailySummary from './DailySummary';
+import StreakCelebration from '../Streak/StreakCelebration';
+import BadgeCelebration from '../Badges/BadgeCelebration';
+import BadgesPanel from '../Badges/BadgesPanel';
 import './MealPlan.css';
 
 export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, settingsVersion = 0 }) {
@@ -24,6 +28,11 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
   const [usingCachedData, setUsingCachedData] = useState(false);
   const [itemAlternatives, setItemAlternatives] = useState({});
   const [recommendations, setRecommendations] = useState({ breakfast: null, lunch: null, dinner: null });
+  const [streak, setStreak] = useState({ currentStreak: 0, longestStreak: 0 });
+  const [showStreakCelebration, setShowStreakCelebration] = useState(false);
+  const [pendingBadge, setPendingBadge] = useState(null);
+  const [newBadge, setNewBadge] = useState(null);
+  const [showBadgesPanel, setShowBadgesPanel] = useState(false);
 
   const loadMenuAndOptimize = useCallback(async (forceRefresh = false) => {
     setLoading(true);
@@ -71,6 +80,7 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
 
   useEffect(() => {
     loadMenuAndOptimize();
+    getStreak().then(s => setStreak(s));
   }, [loadMenuAndOptimize]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Re-optimize (without refetching menu) when settings change
@@ -282,7 +292,21 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
     setConfirmedMeals(updatedConfirmed);
     const allConfirmed = ['breakfast', 'lunch', 'dinner'].every(m => updatedConfirmed[m]);
     if (allConfirmed) {
-      await incrementStreak();
+      const result = await incrementStreak();
+      if (result) {
+        setStreak({ currentStreak: result.currentStreak, longestStreak: result.longestStreak });
+        const badge = getNewBadge(result.prevLongest, result.longestStreak);
+        setPendingBadge(badge);
+        setShowStreakCelebration(true);
+      }
+    }
+  };
+
+  const handleStreakCelebrationDismiss = () => {
+    setShowStreakCelebration(false);
+    if (pendingBadge) {
+      setNewBadge(pendingBadge);
+      setPendingBadge(null);
     }
   };
 
@@ -338,6 +362,12 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
           <p className="tagline">Eat well. Every meal.</p>
           <p className="date">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
         </div>
+        {streak.currentStreak > 0 && (
+          <button className="streak-btn" onClick={() => setShowBadgesPanel(true)} aria-label="Streak">
+            <span className="streak-btn-flame">🔥</span>
+            <span className="streak-btn-count">{streak.currentStreak}</span>
+          </button>
+        )}
         <button className="favorites-btn" onClick={onOpenFavorites} aria-label="Favorites">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
@@ -384,6 +414,27 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
           />
         ))}
       </div>
+
+      {showStreakCelebration && (
+        <StreakCelebration
+          streak={streak.currentStreak}
+          onDismiss={handleStreakCelebrationDismiss}
+        />
+      )}
+
+      {newBadge && (
+        <BadgeCelebration
+          badge={newBadge}
+          onDismiss={() => setNewBadge(null)}
+        />
+      )}
+
+      {showBadgesPanel && (
+        <BadgesPanel
+          longestStreak={streak.longestStreak}
+          onClose={() => setShowBadgesPanel(false)}
+        />
+      )}
     </div>
   );
 }
