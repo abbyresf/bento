@@ -1,5 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/dining/(.*)", "destination": "/api/dining" }
+    { "source": "/api/dining/(.*)", "destination": "/api/dining" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

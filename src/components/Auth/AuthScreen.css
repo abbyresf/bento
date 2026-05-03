@@ -22,7 +22,7 @@
 }
 
 .auth-logo {
-  height: 48px;
+  height: 64px;
   width: auto;
 }
 
@@ -167,6 +167,19 @@
   flex: 1;
   height: 1px;
   background: #e5e7eb;
+}
+
+.auth-subtitle {
+  font-size: 0.88rem;
+  color: #64748b;
+  margin: -0.5rem 0 0;
+  text-align: center;
+}
+
+.auth-forgot {
+  text-align: center;
+  font-size: 0.82rem;
+  margin-top: -0.25rem;
 }
 
 .auth-confirm h2 {

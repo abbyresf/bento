@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MVP Technical Timeline</title>
+  <link rel="icon" type="image/png" href="public/BentoNoWords.png" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
 
@@ -27,7 +28,7 @@
     }
 
     .logo-box {
-      height: 52px;
+      height: 68px;
       width: auto;
       flex-shrink: 0;
     }
@@ -146,6 +147,11 @@
       align-items: flex-start;
     }
 
+    .task.all-done {
+      border-color: #bbf7d0;
+      background: #f0fdf4;
+    }
+
     .task-tag {
       font-size: 0.68rem;
       font-weight: 700;
@@ -165,6 +171,11 @@
     .tag-infra    { background: #f0ecff; color: #6b3fb5; }
     .tag-product  { background: #fce7f3; color: #9d174d; }
 
+    .task-body {
+      flex: 1;
+      min-width: 0;
+    }
+
     .task-text {
       font-size: 0.88rem;
       line-height: 1.5;
@@ -181,6 +192,104 @@
       color: #94a3b8;
       display: block;
       margin-top: 0.15rem;
+    }
+
+    /* ── Steps ── */
+    .steps {
+      margin-top: 0.75rem;
+      padding-top: 0.65rem;
+      border-top: 1px dashed #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      cursor: pointer;
+      font-size: 0.81rem;
+      color: #374151;
+      line-height: 1.45;
+      padding: 0.15rem 0;
+      user-select: none;
+    }
+
+    .step input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 15px;
+      height: 15px;
+      min-width: 15px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 3px;
+      margin-top: 1px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
+      background: white;
+      flex-shrink: 0;
+    }
+
+    .step input[type="checkbox"]:checked {
+      background: #f47421;
+      border-color: #f47421;
+    }
+
+    .step input[type="checkbox"]:checked::after {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 1px;
+      width: 4px;
+      height: 8px;
+      border: 2px solid white;
+      border-top: none;
+      border-left: none;
+      transform: rotate(45deg);
+    }
+
+    .step.done .step-text {
+      text-decoration: line-through;
+      color: #94a3b8;
+    }
+
+    .step-text {
+      flex: 1;
+    }
+
+    .task-progress {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #94a3b8;
+      margin-top: 0.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .progress-bar-track {
+      flex: 1;
+      height: 4px;
+      background: #f1f5f9;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: #f47421;
+      border-radius: 999px;
+      transition: width 0.25s ease;
+    }
+
+    .progress-label {
+      white-space: nowrap;
+    }
+
+    .progress-label .done-count {
+      color: #f47421;
     }
 
     /* ── Divider ── */
@@ -292,7 +401,7 @@
 
   <!-- Cover -->
   <div class="cover">
-    <img src="public/logo-cropped.png" alt="Bento" class="logo-box" />
+    <img src="public/BentoNoWords.png" alt="Bento" class="logo-box" />
     <h1><span>MVP Technical Timeline</span></h1>
   </div>
   <p class="subtitle">Target launch: August 2026 &nbsp;·&nbsp; Prepared April 2026</p>
@@ -326,41 +435,113 @@
     </div>
     <p class="phase-goal">Replace localStorage with a real backend. Nothing else ships until this is solid.</p>
     <div class="tasks">
+
       <div class="task">
         <span class="task-tag tag-infra">Infra</span>
-        <div class="task-text">
-          <strong>Choose and provision backend stack</strong>
-          <span class="note">Recommended: Supabase (Postgres + auth + real-time, generous free tier, fastest path to MVP). Alternative: Firebase if you prefer NoSQL.</span>
+        <div class="task-body">
+          <div class="task-text">
+            <strong>Choose and provision backend stack</strong>
+            <span class="note">Recommended: Supabase (Postgres + auth + real-time, generous free tier, fastest path to MVP). Alternative: Firebase if you prefer NoSQL.</span>
+          </div>
+          <div class="steps">
+            <label class="step"><input type="checkbox" data-id="p1-t1-s1"><span class="step-text">Create a Supabase account at supabase.com</span></label>
+            <label class="step"><input type="checkbox" data-id="p1-t1-s2"><span class="step-text">Create a new Supabase project and copy the project URL and anon key</span></label>
+            <label class="step"><input type="checkbox" data-id="p1-t1-s3"><span class="step-text">Install Supabase JS client: <code>npm install @supabase/supabase-js</code></span></label>
+            <label class="step"><input type="checkbox" data-id="p1-t1-s4"><span class="step-text">Create <code>src/lib/supabase.js</code> and initialize the client with env vars</span></label>
+            <label class="step"><input type="checkbox" data-id="p1-t1-s5"><span class="step-text">Add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> to <code>.env</code></span></label>
+          </div>
+          <div class="task-progress">
+            <span class="progress-label"><span class="done-count">0</span>/5 steps</span>
+            <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+          </div>
         </div>
       </div>
+
       <div class="task">
         <span class="task-tag tag-auth">Auth</span>
-        <div class="task-text">
-          <strong>Implement user authentication</strong>
-          <span class="note">Email/password + Google OAuth via Supabase Auth. Replace the current no-account model.</span>
+        <div class="task-body">
+          <div class="task-text">
+            <strong>Implement user authentication</strong>
+            <span class="note">Email/password + Google OAuth via Supabase Auth. Replace the current no-account model.</span>
+          </div>
+          <div class="steps">
+            <label class="step"><input type="checkbox" data-id="p1-t2-s1"><span class="step-text">Enable Email/Password provider in Supabase Auth dashboard</span></label>
+            <label class="step"><input type="checkbox" data-id="p1-t2-s2"><span class="step-text">Enable Google OAuth in Supabase and configure Google Cloud credentials</span></label>
+            <label class="step"><input type="checkbox" data-id="p1-t2-s3"><span class="step-text">Create <code>src/hooks/useAuth.js</code> with auth context and session management</span></label>
+            <label class="step"><input type="checkbox" data-id="p1-t2-s4"><span class="step-text">Wrap <code>App.jsx</code> with <code>AuthProvider</code></span></label>
+            <label class="step"><input type="checkbox" data-id="p1-t2-s5"><span class="step-text">Add protected route logic — redirect unauthenticated users to login</span></label>
+            <label class="step"><input type="checkbox" data-id="p1-t2-s6"><span class="step-text">Test sign-up, login, logout, and Google OAuth end-to-end</span></label>
+          </div>
+          <div class="task-progress">
+            <span class="progress-label"><span class="done-count">0</span>/6 steps</span>
+            <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+          </div>
         </div>
       </div>
+
       <div class="task">
         <span class="task-tag tag-data">Data</span>
-        <div class="task-text">
-          <strong>Design and migrate database schema</strong>
-          <span class="note">Tables: users, profiles (TDEE/goals/restrictions), meal_history, streaks, favorites. Mirror the current localStorage data model.</span>
+        <div class="task-body">
+          <div class="task-text">
+            <strong>Design and migrate database schema</strong>
+            <span class="note">Tables: users, profiles (TDEE/goals/restrictions), meal_history, streaks, favorites. Mirror the current localStorage data model.</span>
+          </div>
+          <div class="steps">
+            <label class="step"><input type="checkbox" data-id="p1-t3-s1"><span class="step-text">Draft schema for all tables: users, profiles, meal_history, streaks, favorites</span></label>
+            <label class="step"><input type="checkbox" data-id="p1-t3-s2"><span class="step-text">Write SQL migration in Supabase SQL editor and execute it</span></label>
+            <label class="step"><input type="checkbox" data-id="p1-t3-s3"><span class="step-text">Enable Row Level Security (RLS) on each table</span></label>
+            <label class="step"><input type="checkbox" data-id="p1-t3-s4"><span class="step-text">Write RLS policies so users can only read and write their own rows</span></label>
+            <label class="step"><input type="checkbox" data-id="p1-t3-s5"><span class="step-text">Verify schema with manual test inserts and selects</span></label>
+          </div>
+          <div class="task-progress">
+            <span class="progress-label"><span class="done-count">0</span>/5 steps</span>
+            <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+          </div>
         </div>
       </div>
+
       <div class="task">
         <span class="task-tag tag-backend">Backend</span>
-        <div class="task-text">
-          <strong>Replace all localStorage reads/writes with API calls</strong>
-          <span class="note">Swap out storage.js utilities for Supabase client calls. Keep the same interface so the rest of the app breaks minimally.</span>
+        <div class="task-body">
+          <div class="task-text">
+            <strong>Replace all localStorage reads/writes with API calls</strong>
+            <span class="note">Swap out storage.js utilities for Supabase client calls. Keep the same interface so the rest of the app breaks minimally.</span>
+          </div>
+          <div class="steps">
+            <label class="step"><input type="checkbox" data-id="p1-t4-s1"><span class="step-text">Audit every <code>localStorage</code> usage across the codebase</span></label>
+            <label class="step"><input type="checkbox" data-id="p1-t4-s2"><span class="step-text">Create <code>src/services/db.js</code> with Supabase-backed CRUD wrappers matching the current storage interface</span></label>
+            <label class="step"><input type="checkbox" data-id="p1-t4-s3"><span class="step-text">Replace storage calls in onboarding, Settings, and MealPlan components</span></label>
+            <label class="step"><input type="checkbox" data-id="p1-t4-s4"><span class="step-text">Handle loading and error states from async Supabase calls throughout the UI</span></label>
+            <label class="step"><input type="checkbox" data-id="p1-t4-s5"><span class="step-text">Verify data persists correctly across sessions and devices</span></label>
+          </div>
+          <div class="task-progress">
+            <span class="progress-label"><span class="done-count">0</span>/5 steps</span>
+            <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+          </div>
         </div>
       </div>
+
       <div class="task">
         <span class="task-tag tag-frontend">Frontend</span>
-        <div class="task-text">
-          <strong>Build login / signup screens</strong>
-          <span class="note">Integrate into existing onboarding flow. New users sign up → onboard → saved to DB. Returning users log in → skip onboarding.</span>
+        <div class="task-body">
+          <div class="task-text">
+            <strong>Build login / signup screens</strong>
+            <span class="note">Integrate into existing onboarding flow. New users sign up → onboard → saved to DB. Returning users log in → skip onboarding.</span>
+          </div>
+          <div class="steps">
+            <label class="step"><input type="checkbox" data-id="p1-t5-s1"><span class="step-text">Create <code>LoginPage.jsx</code> with email/password form and Google OAuth button</span></label>
+            <label class="step"><input type="checkbox" data-id="p1-t5-s2"><span class="step-text">Create <code>SignupPage.jsx</code> with the same auth options</span></label>
+            <label class="step"><input type="checkbox" data-id="p1-t5-s3"><span class="step-text">Add <code>/login</code> and <code>/signup</code> routes to <code>App.jsx</code></span></label>
+            <label class="step"><input type="checkbox" data-id="p1-t5-s4"><span class="step-text">Route new users through onboarding after sign-up; returning users skip to meal plan</span></label>
+            <label class="step"><input type="checkbox" data-id="p1-t5-s5"><span class="step-text">Add forgot-password flow using Supabase's password reset email</span></label>
+          </div>
+          <div class="task-progress">
+            <span class="progress-label"><span class="done-count">0</span>/5 steps</span>
+            <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+          </div>
         </div>
       </div>
+
     </div>
   </div>
 
@@ -373,41 +554,108 @@
     </div>
     <p class="phase-goal">Ship the features that differentiate Bento: streaks, multi-university support, and deeper personalization.</p>
     <div class="tasks">
+
       <div class="task">
         <span class="task-tag tag-backend">Backend</span>
-        <div class="task-text">
-          <strong>Streak tracking system</strong>
-          <span class="note">Track daily goal-meeting events server-side. Logic: if user confirms all meals and hits ≥80% of calorie/macro target, streak increments. Miss a day → reset. Store current streak + longest streak.</span>
+        <div class="task-body">
+          <div class="task-text">
+            <strong>Streak tracking system</strong>
+            <span class="note">Track daily goal-meeting events server-side. Logic: if user confirms all meals and hits ≥80% of calorie/macro target, streak increments. Miss a day → reset. Store current streak + longest streak.</span>
+          </div>
+          <div class="steps">
+            <label class="step"><input type="checkbox" data-id="p2-t1-s1"><span class="step-text">Add <code>streaks</code> table: <code>(user_id, current_streak, longest_streak, last_date)</code></span></label>
+            <label class="step"><input type="checkbox" data-id="p2-t1-s2"><span class="step-text">Define the streak rule precisely: all meals confirmed + ≥80% of calorie/macro target</span></label>
+            <label class="step"><input type="checkbox" data-id="p2-t1-s3"><span class="step-text">Write <code>incrementStreak</code> and <code>resetStreak</code> functions triggered on meal confirmation</span></label>
+            <label class="step"><input type="checkbox" data-id="p2-t1-s4"><span class="step-text">Test streak increment, reset after a missed day, and longest-streak persistence</span></label>
+          </div>
+          <div class="task-progress">
+            <span class="progress-label"><span class="done-count">0</span>/4 steps</span>
+            <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+          </div>
         </div>
       </div>
+
       <div class="task">
         <span class="task-tag tag-frontend">Frontend</span>
-        <div class="task-text">
-          <strong>Streak UI</strong>
-          <span class="note">Streak counter on the meal plan header. Flame icon, current count, milestone celebrations at 7 / 30 / 100 days.</span>
+        <div class="task-body">
+          <div class="task-text">
+            <strong>Streak UI</strong>
+            <span class="note">Streak counter on the meal plan header. Flame icon, current count, milestone celebrations at 7 / 30 / 100 days.</span>
+          </div>
+          <div class="steps">
+            <label class="step"><input type="checkbox" data-id="p2-t2-s1"><span class="step-text">Create <code>StreakBadge.jsx</code> with flame icon and current streak count</span></label>
+            <label class="step"><input type="checkbox" data-id="p2-t2-s2"><span class="step-text">Add <code>StreakBadge</code> to the MealPlan header</span></label>
+            <label class="step"><input type="checkbox" data-id="p2-t2-s3"><span class="step-text">Build a <code>MilestoneCelebration.jsx</code> modal for 7 / 30 / 100-day milestones</span></label>
+            <label class="step"><input type="checkbox" data-id="p2-t2-s4"><span class="step-text">Trigger the celebration modal after each streak increment that hits a milestone</span></label>
+          </div>
+          <div class="task-progress">
+            <span class="progress-label"><span class="done-count">0</span>/4 steps</span>
+            <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+          </div>
         </div>
       </div>
+
       <div class="task">
         <span class="task-tag tag-backend">Backend</span>
-        <div class="task-text">
-          <strong>Abstract university / dining system</strong>
-          <span class="note">Move Brandeis-specific config (Nutrislice subdomain, location slugs, meal times) into a universities table. Each university row defines its dining provider, API config, and supported locations.</span>
+        <div class="task-body">
+          <div class="task-text">
+            <strong>Abstract university / dining system</strong>
+            <span class="note">Move Brandeis-specific config (Nutrislice subdomain, location slugs, meal times) into a universities table. Each university row defines its dining provider, API config, and supported locations.</span>
+          </div>
+          <div class="steps">
+            <label class="step"><input type="checkbox" data-id="p2-t3-s1"><span class="step-text">Create <code>universities</code> table: <code>(id, name, dining_provider, api_config, location_slugs)</code></span></label>
+            <label class="step"><input type="checkbox" data-id="p2-t3-s2"><span class="step-text">Seed the table with Brandeis config extracted from <code>menuFetcher.js</code></span></label>
+            <label class="step"><input type="checkbox" data-id="p2-t3-s3"><span class="step-text">Update <code>menuFetcher.js</code> to accept a university config object instead of hardcoded values</span></label>
+            <label class="step"><input type="checkbox" data-id="p2-t3-s4"><span class="step-text">Add <code>university_id</code> foreign key to the profiles table</span></label>
+          </div>
+          <div class="task-progress">
+            <span class="progress-label"><span class="done-count">0</span>/4 steps</span>
+            <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+          </div>
         </div>
       </div>
+
       <div class="task">
         <span class="task-tag tag-data">Data</span>
-        <div class="task-text">
-          <strong>Onboard 2–3 additional universities</strong>
-          <span class="note">Priority targets: other Nutrislice-powered schools (easiest adapter reuse). Add a university selector to onboarding.</span>
+        <div class="task-body">
+          <div class="task-text">
+            <strong>Onboard 2–3 additional universities</strong>
+            <span class="note">Priority targets: other Nutrislice-powered schools (easiest adapter reuse). Add a university selector to onboarding.</span>
+          </div>
+          <div class="steps">
+            <label class="step"><input type="checkbox" data-id="p2-t4-s1"><span class="step-text">Research and identify 2–3 Nutrislice-powered target schools</span></label>
+            <label class="step"><input type="checkbox" data-id="p2-t4-s2"><span class="step-text">Test Nutrislice API endpoints for each candidate school</span></label>
+            <label class="step"><input type="checkbox" data-id="p2-t4-s3"><span class="step-text">Insert each school's config row into the <code>universities</code> table</span></label>
+            <label class="step"><input type="checkbox" data-id="p2-t4-s4"><span class="step-text">Add a university selector step to the onboarding wizard</span></label>
+            <label class="step"><input type="checkbox" data-id="p2-t4-s5"><span class="step-text">End-to-end test: sign up → select each new university → generate meal plan</span></label>
+          </div>
+          <div class="task-progress">
+            <span class="progress-label"><span class="done-count">0</span>/5 steps</span>
+            <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+          </div>
         </div>
       </div>
+
       <div class="task">
         <span class="task-tag tag-product">Product</span>
-        <div class="task-text">
-          <strong>Deepen personalization with server-side history</strong>
-          <span class="note">With real meal history in DB, the optimizer can weight variety over a rolling 14-day window instead of the current session-only approach.</span>
+        <div class="task-body">
+          <div class="task-text">
+            <strong>Deepen personalization with server-side history</strong>
+            <span class="note">With real meal history in DB, the optimizer can weight variety over a rolling 14-day window instead of the current session-only approach.</span>
+          </div>
+          <div class="steps">
+            <label class="step"><input type="checkbox" data-id="p2-t5-s1"><span class="step-text">Query the last 14 days of <code>meal_history</code> from Supabase when building a meal plan</span></label>
+            <label class="step"><input type="checkbox" data-id="p2-t5-s2"><span class="step-text">Update optimizer to deprioritize foods eaten more than twice in the 14-day window</span></label>
+            <label class="step"><input type="checkbox" data-id="p2-t5-s3"><span class="step-text">Verify variety improves with synthetic history data</span></label>
+            <label class="step"><input type="checkbox" data-id="p2-t5-s4"><span class="step-text">Add index on <code>(user_id, date)</code> in meal_history if query performance is slow</span></label>
+          </div>
+          <div class="task-progress">
+            <span class="progress-label"><span class="done-count">0</span>/4 steps</span>
+            <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+          </div>
         </div>
       </div>
+
     </div>
   </div>
 
@@ -420,41 +668,110 @@
     </div>
     <p class="phase-goal">Make Bento feel smart and sticky. Insights give users a reason to come back every week.</p>
     <div class="tasks">
+
       <div class="task">
         <span class="task-tag tag-backend">Backend</span>
-        <div class="task-text">
-          <strong>Weekly insights engine</strong>
-          <span class="note">Scheduled job (cron or Supabase Edge Function) runs every Sunday. Aggregates the week's confirmed meals: average macros vs targets, most-eaten foods, best and worst days, streak progress.</span>
+        <div class="task-body">
+          <div class="task-text">
+            <strong>Weekly insights engine</strong>
+            <span class="note">Scheduled job (cron or Supabase Edge Function) runs every Sunday. Aggregates the week's confirmed meals: average macros vs targets, most-eaten foods, best and worst days, streak progress.</span>
+          </div>
+          <div class="steps">
+            <label class="step"><input type="checkbox" data-id="p3-t1-s1"><span class="step-text">Create <code>weekly_summaries</code> table: <code>(user_id, week_start, avg_macros, top_foods, best_day, streak_progress)</code></span></label>
+            <label class="step"><input type="checkbox" data-id="p3-t1-s2"><span class="step-text">Write <code>generate-weekly-insights</code> Supabase Edge Function with aggregation query</span></label>
+            <label class="step"><input type="checkbox" data-id="p3-t1-s3"><span class="step-text">Deploy and manually invoke the Edge Function to verify output is correct</span></label>
+            <label class="step"><input type="checkbox" data-id="p3-t1-s4"><span class="step-text">Schedule with <code>pg_cron</code> (or Supabase's built-in scheduler) to run every Sunday at midnight</span></label>
+          </div>
+          <div class="task-progress">
+            <span class="progress-label"><span class="done-count">0</span>/4 steps</span>
+            <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+          </div>
         </div>
       </div>
+
       <div class="task">
         <span class="task-tag tag-frontend">Frontend</span>
-        <div class="task-text">
-          <strong>Insights tab / screen</strong>
-          <span class="note">Weekly summary card, macro trend charts (simple bar charts — no heavy charting library needed), streak history, personalized callout ("You hit your protein goal 6 out of 7 days!").</span>
+        <div class="task-body">
+          <div class="task-text">
+            <strong>Insights tab / screen</strong>
+            <span class="note">Weekly summary card, macro trend charts (simple bar charts — no heavy charting library needed), streak history, personalized callout ("You hit your protein goal 6 out of 7 days!").</span>
+          </div>
+          <div class="steps">
+            <label class="step"><input type="checkbox" data-id="p3-t2-s1"><span class="step-text">Create <code>InsightsPage.jsx</code> component</span></label>
+            <label class="step"><input type="checkbox" data-id="p3-t2-s2"><span class="step-text">Add "Insights" tab to the app's navigation bar</span></label>
+            <label class="step"><input type="checkbox" data-id="p3-t2-s3"><span class="step-text">Build <code>WeeklySummaryCard.jsx</code> with CSS-only macro comparison bars (no charting library)</span></label>
+            <label class="step"><input type="checkbox" data-id="p3-t2-s4"><span class="step-text">Add streak history section showing current and past streaks</span></label>
+            <label class="step"><input type="checkbox" data-id="p3-t2-s5"><span class="step-text">Add personalized callout text: "You hit your protein goal X/7 days this week"</span></label>
+          </div>
+          <div class="task-progress">
+            <span class="progress-label"><span class="done-count">0</span>/5 steps</span>
+            <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+          </div>
         </div>
       </div>
+
       <div class="task">
         <span class="task-tag tag-product">Product</span>
-        <div class="task-text">
-          <strong>Email digest (optional but high-value)</strong>
-          <span class="note">Weekly insights email via Resend or Supabase + SendGrid. Users opt in during onboarding. Drives re-engagement with minimal engineering effort.</span>
+        <div class="task-body">
+          <div class="task-text">
+            <strong>Email digest (optional but high-value)</strong>
+            <span class="note">Weekly insights email via Resend or Supabase + SendGrid. Users opt in during onboarding. Drives re-engagement with minimal engineering effort.</span>
+          </div>
+          <div class="steps">
+            <label class="step"><input type="checkbox" data-id="p3-t3-s1"><span class="step-text">Sign up for Resend and add the API key to Supabase Edge Function secrets</span></label>
+            <label class="step"><input type="checkbox" data-id="p3-t3-s2"><span class="step-text">Design an HTML email template for the weekly digest</span></label>
+            <label class="step"><input type="checkbox" data-id="p3-t3-s3"><span class="step-text">Add email opt-in toggle to onboarding (or Settings page)</span></label>
+            <label class="step"><input type="checkbox" data-id="p3-t3-s4"><span class="step-text">Call Resend API from within the <code>generate-weekly-insights</code> Edge Function for opted-in users</span></label>
+            <label class="step"><input type="checkbox" data-id="p3-t3-s5"><span class="step-text">Test end-to-end: trigger function manually → verify email is received</span></label>
+          </div>
+          <div class="task-progress">
+            <span class="progress-label"><span class="done-count">0</span>/5 steps</span>
+            <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+          </div>
         </div>
       </div>
+
       <div class="task">
         <span class="task-tag tag-frontend">Frontend</span>
-        <div class="task-text">
-          <strong>UI polish pass</strong>
-          <span class="note">Responsive audit across all screens, loading states, empty states, error handling for failed API calls. Bento should feel production-quality, not beta.</span>
+        <div class="task-body">
+          <div class="task-text">
+            <strong>UI polish pass</strong>
+            <span class="note">Responsive audit across all screens, loading states, empty states, error handling for failed API calls. Bento should feel production-quality, not beta.</span>
+          </div>
+          <div class="steps">
+            <label class="step"><input type="checkbox" data-id="p3-t4-s1"><span class="step-text">Audit every screen on mobile (375px) and desktop — log all layout and spacing issues</span></label>
+            <label class="step"><input type="checkbox" data-id="p3-t4-s2"><span class="step-text">Add loading skeleton components to all data-fetching views</span></label>
+            <label class="step"><input type="checkbox" data-id="p3-t4-s3"><span class="step-text">Add empty-state copy and visuals for MealPlan, Insights, and Favorites</span></label>
+            <label class="step"><input type="checkbox" data-id="p3-t4-s4"><span class="step-text">Wrap async calls in error boundaries with user-friendly fallback UI</span></label>
+            <label class="step"><input type="checkbox" data-id="p3-t4-s5"><span class="step-text">Final typography and spacing review against the design system</span></label>
+          </div>
+          <div class="task-progress">
+            <span class="progress-label"><span class="done-count">0</span>/5 steps</span>
+            <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+          </div>
         </div>
       </div>
+
       <div class="task">
         <span class="task-tag tag-infra">Infra</span>
-        <div class="task-text">
-          <strong>Set up staging environment</strong>
-          <span class="note">Separate Supabase project for staging. Deploy frontend to Vercel preview URL. Required before any beta users touch the app.</span>
+        <div class="task-body">
+          <div class="task-text">
+            <strong>Set up staging environment</strong>
+            <span class="note">Separate Supabase project for staging. Deploy frontend to Vercel preview URL. Required before any beta users touch the app.</span>
+          </div>
+          <div class="steps">
+            <label class="step"><input type="checkbox" data-id="p3-t5-s1"><span class="step-text">Create a second Supabase project named <code>bento-staging</code></span></label>
+            <label class="step"><input type="checkbox" data-id="p3-t5-s2"><span class="step-text">Add staging Supabase keys as Vercel environment variables scoped to Preview</span></label>
+            <label class="step"><input type="checkbox" data-id="p3-t5-s3"><span class="step-text">Confirm Vercel preview deploys point to staging Supabase — not production</span></label>
+            <label class="step"><input type="checkbox" data-id="p3-t5-s4"><span class="step-text">Run a full sign-up → onboard → generate plan → confirm meals flow on staging</span></label>
+          </div>
+          <div class="task-progress">
+            <span class="progress-label"><span class="done-count">0</span>/4 steps</span>
+            <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+          </div>
         </div>
       </div>
+
     </div>
   </div>
 
@@ -467,41 +784,112 @@
     </div>
     <p class="phase-goal">Get real users in before launch day. Fix what breaks. Ship confidently.</p>
     <div class="tasks">
+
       <div class="task">
         <span class="task-tag tag-product">Product</span>
-        <div class="task-text">
-          <strong>Closed beta with 10–20 real users</strong>
-          <span class="note">Recruit from your university. Goal: find bugs and validate that the personalization actually feels useful before opening up.</span>
+        <div class="task-body">
+          <div class="task-text">
+            <strong>Closed beta with 10–20 real users</strong>
+            <span class="note">Recruit from your university. Goal: find bugs and validate that the personalization actually feels useful before opening up.</span>
+          </div>
+          <div class="steps">
+            <label class="step"><input type="checkbox" data-id="p4-t1-s1"><span class="step-text">Write beta recruitment message and share with university contacts / group chats</span></label>
+            <label class="step"><input type="checkbox" data-id="p4-t1-s2"><span class="step-text">Send beta users the staging URL and a quick-start guide</span></label>
+            <label class="step"><input type="checkbox" data-id="p4-t1-s3"><span class="step-text">Create a feedback form (Notion, Typeform, or Google Form)</span></label>
+            <label class="step"><input type="checkbox" data-id="p4-t1-s4"><span class="step-text">Triage feedback weekly and maintain a prioritized bug list</span></label>
+            <label class="step"><input type="checkbox" data-id="p4-t1-s5"><span class="step-text">Fix all critical bugs before the public launch date</span></label>
+          </div>
+          <div class="task-progress">
+            <span class="progress-label"><span class="done-count">0</span>/5 steps</span>
+            <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+          </div>
         </div>
       </div>
+
       <div class="task">
         <span class="task-tag tag-infra">Infra</span>
-        <div class="task-text">
-          <strong>Production infrastructure hardening</strong>
-          <span class="note">Row-level security on all Supabase tables, rate limiting on API routes, environment variable audit, error monitoring (Sentry free tier).</span>
+        <div class="task-body">
+          <div class="task-text">
+            <strong>Production infrastructure hardening</strong>
+            <span class="note">Row-level security on all Supabase tables, rate limiting on API routes, environment variable audit, error monitoring (Sentry free tier).</span>
+          </div>
+          <div class="steps">
+            <label class="step"><input type="checkbox" data-id="p4-t2-s1"><span class="step-text">Verify RLS is enabled and tested on every Supabase table</span></label>
+            <label class="step"><input type="checkbox" data-id="p4-t2-s2"><span class="step-text">Configure Supabase rate limiting for auth and API endpoints</span></label>
+            <label class="step"><input type="checkbox" data-id="p4-t2-s3"><span class="step-text">Run <code>git grep</code> to confirm no secrets or API keys are committed to the repo</span></label>
+            <label class="step"><input type="checkbox" data-id="p4-t2-s4"><span class="step-text">Install Sentry: <code>npm install @sentry/react @sentry/vite-plugin</code></span></label>
+            <label class="step"><input type="checkbox" data-id="p4-t2-s5"><span class="step-text">Add Sentry DSN to env vars and initialize it in <code>main.jsx</code></span></label>
+          </div>
+          <div class="task-progress">
+            <span class="progress-label"><span class="done-count">0</span>/5 steps</span>
+            <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+          </div>
         </div>
       </div>
+
       <div class="task">
         <span class="task-tag tag-product">Product</span>
-        <div class="task-text">
-          <strong>Update landing page for public launch</strong>
-          <span class="note">Add social proof from beta users, university logos, sign-up CTA with waitlist or direct access depending on confidence level.</span>
+        <div class="task-body">
+          <div class="task-text">
+            <strong>Update landing page for public launch</strong>
+            <span class="note">Add social proof from beta users, university logos, sign-up CTA with waitlist or direct access depending on confidence level.</span>
+          </div>
+          <div class="steps">
+            <label class="step"><input type="checkbox" data-id="p4-t3-s1"><span class="step-text">Collect 2–3 testimonial quotes from beta users (with permission)</span></label>
+            <label class="step"><input type="checkbox" data-id="p4-t3-s2"><span class="step-text">Add university logos or a "used at X schools" badge to the landing page</span></label>
+            <label class="step"><input type="checkbox" data-id="p4-t3-s3"><span class="step-text">Write final launch copy: headline, value prop, and feature highlights</span></label>
+            <label class="step"><input type="checkbox" data-id="p4-t3-s4"><span class="step-text">Add sign-up / waitlist CTA button with a clear call-to-action</span></label>
+            <label class="step"><input type="checkbox" data-id="p4-t3-s5"><span class="step-text">QA landing page on mobile and across browsers</span></label>
+          </div>
+          <div class="task-progress">
+            <span class="progress-label"><span class="done-count">0</span>/5 steps</span>
+            <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+          </div>
         </div>
       </div>
+
       <div class="task">
         <span class="task-tag tag-infra">Infra</span>
-        <div class="task-text">
-          <strong>Custom domain + production deploy</strong>
-          <span class="note">Point domain to Vercel, verify Supabase prod keys, confirm menu fetcher works in production (CORS proxy if needed).</span>
+        <div class="task-body">
+          <div class="task-text">
+            <strong>Custom domain + production deploy</strong>
+            <span class="note">Point domain to Vercel, verify Supabase prod keys, confirm menu fetcher works in production (CORS proxy if needed).</span>
+          </div>
+          <div class="steps">
+            <label class="step"><input type="checkbox" data-id="p4-t4-s1"><span class="step-text">Purchase or confirm ownership of the production domain</span></label>
+            <label class="step"><input type="checkbox" data-id="p4-t4-s2"><span class="step-text">Add domain to Vercel and configure DNS (A / CNAME records)</span></label>
+            <label class="step"><input type="checkbox" data-id="p4-t4-s3"><span class="step-text">Swap all Vercel env vars to production Supabase keys</span></label>
+            <label class="step"><input type="checkbox" data-id="p4-t4-s4"><span class="step-text">Deploy to production and verify menu fetcher works (check CORS proxy if needed)</span></label>
+            <label class="step"><input type="checkbox" data-id="p4-t4-s5"><span class="step-text">Run smoke test: sign up → onboard → generate plan → confirm meals → check streaks</span></label>
+          </div>
+          <div class="task-progress">
+            <span class="progress-label"><span class="done-count">0</span>/5 steps</span>
+            <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+          </div>
         </div>
       </div>
+
       <div class="task">
         <span class="task-tag tag-product">Product</span>
-        <div class="task-text">
-          <strong>Launch</strong>
-          <span class="note">Target: first week of August, before most universities' move-in dates. Coordinate with university dining contacts if possible for credibility.</span>
+        <div class="task-body">
+          <div class="task-text">
+            <strong>Launch</strong>
+            <span class="note">Target: first week of August, before most universities' move-in dates. Coordinate with university dining contacts if possible for credibility.</span>
+          </div>
+          <div class="steps">
+            <label class="step"><input type="checkbox" data-id="p4-t5-s1"><span class="step-text">Confirm final launch date (target: first week of August)</span></label>
+            <label class="step"><input type="checkbox" data-id="p4-t5-s2"><span class="step-text">Draft launch announcement for social media / university Slack or Discord</span></label>
+            <label class="step"><input type="checkbox" data-id="p4-t5-s3"><span class="step-text">Post announcement on launch day</span></label>
+            <label class="step"><input type="checkbox" data-id="p4-t5-s4"><span class="step-text">Monitor Sentry for errors in the first 24–48 hours</span></label>
+            <label class="step"><input type="checkbox" data-id="p4-t5-s5"><span class="step-text">Reach out to university dining contacts for partnership or credibility opportunities</span></label>
+          </div>
+          <div class="task-progress">
+            <span class="progress-label"><span class="done-count">0</span>/5 steps</span>
+            <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+          </div>
         </div>
       </div>
+
     </div>
   </div>
 
@@ -572,6 +960,96 @@
   <footer>
     Bento &nbsp;·&nbsp; Confidential &nbsp;·&nbsp; April 2026
   </footer>
+
+  <script>
+    const STORAGE_KEY = 'bento-timeline-v1';
+
+    function loadState() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+      catch { return {}; }
+    }
+
+    function saveState(state) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function updateProgress(taskEl) {
+      const checkboxes = taskEl.querySelectorAll('.step input[type="checkbox"]');
+      const total = checkboxes.length;
+      const done = Array.from(checkboxes).filter(cb => cb.checked).length;
+      const pct = total ? Math.round((done / total) * 100) : 0;
+
+      const countEl = taskEl.querySelector('.done-count');
+      const fillEl = taskEl.querySelector('.progress-bar-fill');
+      const totalEl = taskEl.querySelector('.progress-label');
+
+      if (countEl) countEl.textContent = done;
+      if (fillEl) fillEl.style.width = pct + '%';
+      if (totalEl) {
+        const totalText = totalEl.textContent.replace(/^\d+/, done);
+        totalEl.innerHTML = totalEl.innerHTML.replace(/<span class="done-count">\d+<\/span>/, `<span class="done-count">${done}</span>`);
+      }
+
+      taskEl.classList.toggle('all-done', done === total && total > 0);
+    }
+
+    const SEEDED_KEY = 'bento-timeline-seeded-v1';
+    const PRE_COMPLETED = new Set([
+      // p1-t1: all 5 — Supabase fully provisioned
+      'p1-t1-s1','p1-t1-s2','p1-t1-s3','p1-t1-s4','p1-t1-s5',
+      // p1-t2: all 6 — auth + Google OAuth + forgot password complete
+      'p1-t2-s1','p1-t2-s2','p1-t2-s3','p1-t2-s4','p1-t2-s5','p1-t2-s6',
+      // p1-t3: all 5 — schema + RLS complete
+      'p1-t3-s1','p1-t3-s2','p1-t3-s3','p1-t3-s4','p1-t3-s5',
+      // p1-t4: all 5 — localStorage fully replaced
+      'p1-t4-s1','p1-t4-s2','p1-t4-s3','p1-t4-s4','p1-t4-s5',
+      // p1-t5: all 5 — auth screens, /login + /signup routes, return-user routing, forgot password
+      'p1-t5-s1','p1-t5-s2','p1-t5-s3','p1-t5-s4','p1-t5-s5',
+      // p2-t1: all 4 — streak table, logic, and wired to meal confirmation
+      'p2-t1-s1','p2-t1-s2','p2-t1-s3','p2-t1-s4',
+      // p2-t3: steps 1, 2, 4 — universities.js + picker + profiles.university (s3 fetcher not abstracted)
+      'p2-t3-s1','p2-t3-s2','p2-t3-s4',
+      // p2-t5: steps 1-3 — 14-day query + optimizer variety penalty (s4 index not added)
+      'p2-t5-s1','p2-t5-s2','p2-t5-s3',
+    ]);
+
+    function init() {
+      const state = loadState();
+
+      if (!localStorage.getItem(SEEDED_KEY)) {
+        PRE_COMPLETED.forEach(id => { state[id] = true; });
+        saveState(state);
+        localStorage.setItem(SEEDED_KEY, '1');
+      }
+
+      const checkboxes = document.querySelectorAll('.step input[type="checkbox"]');
+
+      checkboxes.forEach(cb => {
+        const id = cb.dataset.id;
+        if (state[id]) {
+          cb.checked = true;
+          cb.closest('.step').classList.add('done');
+        }
+
+        cb.addEventListener('change', () => {
+          const s = loadState();
+          if (cb.checked) {
+            s[cb.dataset.id] = true;
+            cb.closest('.step').classList.add('done');
+          } else {
+            delete s[cb.dataset.id];
+            cb.closest('.step').classList.remove('done');
+          }
+          saveState(s);
+          updateProgress(cb.closest('.task'));
+        });
+      });
+
+      document.querySelectorAll('.task').forEach(updateProgress);
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
 
 </body>
 </html>

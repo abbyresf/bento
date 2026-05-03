@@ -1,15 +1,18 @@
 import { useState } from 'react';
-import { signIn, signUp, signInWithGoogle } from '../../lib/db';
+import { useNavigate } from 'react-router-dom';
+import { signIn, signUp, signInWithGoogle, resetPasswordForEmail } from '../../lib/db';
 import './AuthScreen.css';
 
-export default function AuthScreen({ onAuth }) {
-  const [mode, setMode] = useState('login'); // 'login' | 'signup'
+export default function AuthScreen({ onAuth, initialMode = 'login' }) {
+  const navigate = useNavigate();
+  const [mode, setMode] = useState(initialMode); // 'login' | 'signup' | 'forgot'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState(null);
   const [confirmSent, setConfirmSent] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,6 +26,20 @@ export default function AuthScreen({ onAuth }) {
         await signIn(email, password);
         onAuth();
       }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      await resetPasswordForEmail(email);
+      setResetSent(true);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -55,6 +72,41 @@ export default function AuthScreen({ onAuth }) {
               Back to log in
             </button>
           </div>
+        ) : resetSent ? (
+          <div className="auth-confirm">
+            <h2>Check your email</h2>
+            <p>We sent a password reset link to <strong>{email}</strong>. Click it to choose a new password.</p>
+            <button className="auth-link" onClick={() => { setMode('login'); setResetSent(false); }}>
+              Back to log in
+            </button>
+          </div>
+        ) : mode === 'forgot' ? (
+          <>
+            <h2 className="auth-title">Reset your password</h2>
+            <p className="auth-subtitle">Enter your email and we'll send you a reset link.</p>
+            <form onSubmit={handleForgotPassword} className="auth-form">
+              <div className="auth-field">
+                <label>Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@university.edu"
+                  required
+                  autoComplete="email"
+                />
+              </div>
+              {error && <p className="auth-error">{error}</p>}
+              <button type="submit" className="auth-btn" disabled={loading}>
+                {loading ? 'Sending…' : 'Send reset link'}
+              </button>
+            </form>
+            <p className="auth-switch">
+              <button className="auth-link" onClick={() => { setMode('login'); setError(null); }}>
+                Back to log in
+              </button>
+            </p>
+          </>
         ) : (
           <>
             <h2 className="auth-title">{mode === 'login' ? 'Welcome back' : 'Create your account'}</h2>
@@ -106,11 +158,21 @@ export default function AuthScreen({ onAuth }) {
               <button type="submit" className="auth-btn" disabled={loading || googleLoading}>
                 {loading ? 'Please wait…' : mode === 'login' ? 'Log in' : 'Create account'}
               </button>
+
+              {mode === 'login' && (
+                <button
+                  type="button"
+                  className="auth-link auth-forgot"
+                  onClick={() => { setMode('forgot'); setError(null); }}
+                >
+                  Forgot password?
+                </button>
+              )}
             </form>
 
             <p className="auth-switch">
               {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
-              <button className="auth-link" onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(null); }}>
+              <button className="auth-link" onClick={() => { setError(null); navigate(mode === 'login' ? '/signup' : '/login'); }}>
                 {mode === 'login' ? 'Sign up' : 'Log in'}
               </button>
             </p>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { generateTodaysMenu, hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
 import { fetchBrandeisMenu } from '../../services/menuFetcher';
-import { getNutritionTargets, getDietaryRestrictions, getRecentItemIds, getFavoriteIds, addMealToHistory, setCachedMenu, getCachedMenu } from '../../lib/db';
+import { getNutritionTargets, getDietaryRestrictions, getRecentItemIds, getFavoriteIds, addMealToHistory, setCachedMenu, getCachedMenu, incrementStreak } from '../../lib/db';
 import { optimizeDay, findAlternatives, findRecommendedAdditions } from '../../utils/mealOptimizer';
 import MealCard from './MealCard';
 import DailySummary from './DailySummary';
@@ -278,7 +278,12 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
     const location = selectedLocation[meal];
     const mealItems = mealPlan[location][meal].items;
     await addMealToHistory(mealItems);
-    setConfirmedMeals((prev) => ({ ...prev, [meal]: true }));
+    const updatedConfirmed = { ...confirmedMeals, [meal]: true };
+    setConfirmedMeals(updatedConfirmed);
+    const allConfirmed = ['breakfast', 'lunch', 'dinner'].every(m => updatedConfirmed[m]);
+    if (allConfirmed) {
+      await incrementStreak();
+    }
   };
 
   const calculateSelectedDayTotals = () => {
