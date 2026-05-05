@@ -6,6 +6,7 @@ import { getNewBadge } from '../../data/badges';
 import { optimizeDay, findAlternatives, findRecommendedAdditions } from '../../utils/mealOptimizer';
 import MealCard from './MealCard';
 import DailySummary from './DailySummary';
+import StreakBadge from '../Streak/StreakBadge';
 import StreakCelebration from '../Streak/StreakCelebration';
 import BadgeCelebration from '../Badges/BadgeCelebration';
 import BadgesPanel from '../Badges/BadgesPanel';
@@ -28,7 +29,7 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
   const [usingCachedData, setUsingCachedData] = useState(false);
   const [itemAlternatives, setItemAlternatives] = useState({});
   const [recommendations, setRecommendations] = useState({ breakfast: null, lunch: null, dinner: null });
-  const [streak, setStreak] = useState({ currentStreak: 0, longestStreak: 0 });
+  const [streak, setStreak] = useState({ currentStreak: 0, longestStreak: 0, lastConfirmedDate: null });
   const [showStreakCelebration, setShowStreakCelebration] = useState(false);
   const [pendingBadge, setPendingBadge] = useState(null);
   const [newBadge, setNewBadge] = useState(null);
@@ -294,7 +295,7 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
     if (allConfirmed) {
       const result = await incrementStreak();
       if (result) {
-        setStreak({ currentStreak: result.currentStreak, longestStreak: result.longestStreak });
+        setStreak({ currentStreak: result.currentStreak, longestStreak: result.longestStreak, lastConfirmedDate: new Date().toISOString().slice(0, 10) });
         const badge = getNewBadge(result.prevLongest, result.longestStreak);
         setPendingBadge(badge);
         setShowStreakCelebration(true);
@@ -362,11 +363,8 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
           <p className="tagline">Eat well. Every meal.</p>
           <p className="date">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
         </div>
-        {streak.currentStreak > 0 && (
-          <button className="streak-btn" onClick={() => setShowBadgesPanel(true)} aria-label="Streak">
-            <span className="streak-btn-flame">🔥</span>
-            <span className="streak-btn-count">{streak.currentStreak}</span>
-          </button>
+        {streak.currentStreak > 0 && streak.lastConfirmedDate === new Date().toISOString().slice(0, 10) && (
+          <StreakBadge streak={streak.currentStreak} onClick={() => setShowBadgesPanel(true)} />
         )}
         <button className="favorites-btn" onClick={onOpenFavorites} aria-label="Favorites">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

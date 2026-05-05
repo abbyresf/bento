@@ -1,40 +1,14 @@
-// Menu fetcher for Brandeis University dining (brandeishospitality.com)
+// Generic dining menu fetcher.
 //
-// Brandeis uses a custom WordPress-based dining CMS. Menu data is embedded
-// directly in the HTML of each location page as inline JSON inside hidden divs.
-// This fetcher scrapes those pages and parses the data into our standard shape.
+// fetchDiningMenu(config) accepts a university config object and returns menus
+// in the standard shape. See BRANDEIS_CONFIG below for the expected shape.
 //
 // CORS: In development, Vite proxies /api/dining/* → brandeishospitality.com.
-//       In production, set VITE_CORS_PROXY_URL to a CORS proxy endpoint.
+//       In production, a Vercel serverless function handles the same path.
 
-// Brandeis-specific configuration — easy to move to a config file later
-const BRANDEIS = {
-  locations: {
-    sherman: {
-      id: 'sherman',
-      slug: 'the-farm-table-at-sherman-2',
-      name: 'Farm Table at Sherman',
-      shortName: 'Sherman',
-    },
-    usdan: {
-      id: 'usdan',
-      slug: 'lower-usdan',
-      name: 'Usdan Kitchen',
-      shortName: 'Usdan',
-    },
-  },
-};
+// ── Brandeis helpers ──────────────────────────────────────────────────────────
 
-// Return the URL to use for a Brandeis dining location page.
-// Both dev (Vite proxy) and production (Vercel serverless function) use /api/dining/*,
-// so no environment variable is needed — the routing just works in both cases.
-function getDiningUrl(locationSlug, dateStr) {
-  return `/api/dining/locations/${locationSlug}/?date=${dateStr}`;
-}
-
-// Map a tab label (from the site) to our meal period keys.
-// Returns null for periods we don't show (Light Lunch, Mid-Day Dining, etc.)
-function tabLabelToMealPeriod(label) {
+function brandeisTabLabelToMealPeriod(label) {
   const l = label.toLowerCase();
   if (l.includes('breakfast') || l.includes('brunch') || l.includes('continental')) return 'breakfast';
   if (l.includes('lunch')) return 'lunch';
@@ -42,8 +16,7 @@ function tabLabelToMealPeriod(label) {
   return null;
 }
 
-// Map a station name from the site to our internal station keys
-function parseStation(stationName) {
+function brandeisParseStation(stationName) {
   const s = stationName.toLowerCase();
   if (s.includes('allgood') && s.includes('salad')) return 'salad';
   if (s.includes('allgood')) return 'allgood';
@@ -59,39 +32,33 @@ function parseStation(stationName) {
   return 'entree';
 }
 
-// Map Brandeis preference html_attribute values to our dietary tag keys
-function mapPreference(attr) {
+function brandeisMapPreference(attr) {
   switch (attr) {
-    case 'vegan': return ['vegan', 'vegetarian'];
-    case 'vegetarian': return ['vegetarian'];
+    case 'vegan':              return ['vegan', 'vegetarian'];
+    case 'vegetarian':         return ['vegetarian'];
     case 'made_without_gluten': return ['glutenFree'];
-    case 'dairy_free': return ['dairyFree'];
-    case 'nut_free': return ['nutFree'];
-    case 'halal': return ['halal'];
-    case 'kosher': return ['kosher'];
-    default: return [];
+    case 'dairy_free':         return ['dairyFree'];
+    case 'nut_free':           return ['nutFree'];
+    case 'halal':              return ['halal'];
+    case 'kosher':             return ['kosher'];
+    default:                   return [];
   }
 }
 
-// Extract a numeric nutrition value from the facts array by label
 function getNutritionValue(facts, label) {
   const fact = facts.find((f) => f.label.toLowerCase().includes(label.toLowerCase()));
   return fact ? Math.round(Number(fact.value) || 0) : 0;
 }
 
-// Parse one menu item <li> element into our standard food item shape
-function parseMenuItemEl(liEl, mealPeriod, stationName) {
+function brandeisParseMenuItemEl(liEl, mealPeriod, stationName) {
   const link = liEl.querySelector('a.show-nutrition');
   if (!link) return null;
 
   const name = link.textContent.trim();
   if (!name) return null;
 
-  // The recipe ID is in the link's data-recipe attribute
   const recipeId = link.getAttribute('data-recipe');
-  const nutritionEl = recipeId
-    ? liEl.querySelector(`#recipe-nutrition-${recipeId}`)
-    : null;
+  const nutritionEl = recipeId ? liEl.querySelector(`#recipe-nutrition-${recipeId}`) : null;
 
   let nutrition = { calories: 0, protein: 0, carbs: 0, fat: 0, sodium: 0, fiber: 0, sugar: 0 };
   let tags = [];
@@ -104,30 +71,26 @@ function parseMenuItemEl(liEl, mealPeriod, stationName) {
 
       nutrition = {
         calories: getNutritionValue(facts, 'calorie'),
-        protein: getNutritionValue(facts, 'protein'),
-        carbs: getNutritionValue(facts, 'carbohydrate'),
-        fat: getNutritionValue(facts, 'total fat'),
-        sodium: getNutritionValue(facts, 'sodium'),
-        fiber: getNutritionValue(facts, 'fiber'),
-        sugar: getNutritionValue(facts, 'sugar'),
+        protein:  getNutritionValue(facts, 'protein'),
+        carbs:    getNutritionValue(facts, 'carbohydrate'),
+        fat:      getNutritionValue(facts, 'total fat'),
+        sodium:   getNutritionValue(facts, 'sodium'),
+        fiber:    getNutritionValue(facts, 'fiber'),
+        sugar:    getNutritionValue(facts, 'sugar'),
       };
 
-      // Build dietary tags from preferences
       const tagSet = new Set();
       for (const pref of data.preferences || []) {
-        for (const tag of mapPreference(pref.html_attribute)) {
-          tagSet.add(tag);
-        }
+        for (const tag of brandeisMapPreference(pref.html_attribute)) tagSet.add(tag);
       }
       tags = Array.from(tagSet);
 
-      // Parse ingredients from the ingredient list string
       if (data.ingredients_list) {
         ingredients = data.ingredients_list
           .split(',')
           .map((s) => s.trim().toLowerCase())
           .filter(Boolean)
-          .slice(0, 20); // cap to avoid huge arrays
+          .slice(0, 20);
       }
     } catch {
       // Nutrition JSON malformed — continue with empty values
@@ -137,7 +100,7 @@ function parseMenuItemEl(liEl, mealPeriod, stationName) {
   return {
     id: `bh_${recipeId || name.replace(/\W+/g, '_').toLowerCase()}`,
     name,
-    station: parseStation(stationName),
+    station: brandeisParseStation(stationName),
     meal: mealPeriod,
     nutrition,
     tags,
@@ -145,13 +108,12 @@ function parseMenuItemEl(liEl, mealPeriod, stationName) {
   };
 }
 
-// Parse a full location page HTML string into our meals structure
-function parseLocationPage(html) {
+function brandeisParseLocationPage(html) {
   const doc = new DOMParser().parseFromString(html, 'text/html');
   const meals = { breakfast: [], lunch: [], dinner: [] };
 
   const tabsEl = doc.getElementById('menu-tabs');
-  if (!tabsEl) return { meals, isOpen: false }; // Location has no menu today (e.g. Usdan on weekends)
+  if (!tabsEl) return { meals, isOpen: false };
 
   const tabLinks = tabsEl.querySelectorAll('.c-tabs-nav__link');
   const tabContents = tabsEl.querySelectorAll('.c-tab');
@@ -160,19 +122,18 @@ function parseLocationPage(html) {
     const labelEl = link.querySelector('.c-tabs-nav__link-inner');
     if (!labelEl) return;
 
-    const mealPeriod = tabLabelToMealPeriod(labelEl.textContent);
-    if (!mealPeriod) return; // Skip Light Lunch, Mid-Day Dining, etc.
+    const mealPeriod = brandeisTabLabelToMealPeriod(labelEl.textContent);
+    if (!mealPeriod) return;
 
     const tabContent = tabContents[i];
     if (!tabContent) return;
 
-    const stations = tabContent.querySelectorAll('.menu-station');
-    stations.forEach((stationEl) => {
+    tabContent.querySelectorAll('.menu-station').forEach((stationEl) => {
       const stationNameEl = stationEl.querySelector('h4');
       const stationName = stationNameEl ? stationNameEl.textContent.trim() : '';
 
       stationEl.querySelectorAll('li.menu-item-li').forEach((liEl) => {
-        const item = parseMenuItemEl(liEl, mealPeriod, stationName);
+        const item = brandeisParseMenuItemEl(liEl, mealPeriod, stationName);
         if (item) meals[mealPeriod].push(item);
       });
     });
@@ -181,31 +142,48 @@ function parseLocationPage(html) {
   return { meals, isOpen: true };
 }
 
-// Fetch and parse the menu for one location
-async function fetchLocationMenu(locationConfig, dateStr) {
-  const url = getDiningUrl(locationConfig.slug, dateStr);
-  const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${locationConfig.slug}`);
-  const html = await res.text();
-  return parseLocationPage(html);
-}
+// ── Brandeis config ───────────────────────────────────────────────────────────
 
-// Fetch today's full menu for all Brandeis dining locations.
+export const BRANDEIS_CONFIG = {
+  locations: {
+    sherman: {
+      id: 'sherman',
+      slug: 'the-farm-table-at-sherman-2',
+      name: 'Farm Table at Sherman',
+      shortName: 'Sherman',
+    },
+    usdan: {
+      id: 'usdan',
+      slug: 'lower-usdan',
+      name: 'Usdan Kitchen',
+      shortName: 'Usdan',
+    },
+  },
+  getDiningUrl(slug, dateStr) {
+    return `/api/dining/locations/${slug}/?date=${dateStr}`;
+  },
+  parseLocationPage: brandeisParseLocationPage,
+};
+
+// ── Generic fetcher ───────────────────────────────────────────────────────────
+
+// Fetch today's full menu for all locations defined in config.
 // Returns the same shape as generateTodaysMenu() in mockMenu.js.
-// Throws if all fetches fail — callers handle the fallback.
-export async function fetchBrandeisMenu() {
-  const date = new Date();
-  const dateStr = date.toISOString().split('T')[0];
-  const { locations } = BRANDEIS;
+// Throws if all fetches return empty menus — callers handle the fallback.
+export async function fetchDiningMenu(config) {
+  const dateStr = new Date().toISOString().split('T')[0];
 
   const locationResults = await Promise.all(
-    Object.entries(locations).map(async ([locationId, locationConfig]) => {
+    Object.entries(config.locations).map(async ([locationId, locationConfig]) => {
       try {
-        const { meals, isOpen } = await fetchLocationMenu(locationConfig, dateStr);
+        const url = config.getDiningUrl(locationConfig.slug, dateStr);
+        const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        if (!res.ok) throw new Error(`HTTP ${res.status} for ${locationConfig.slug}`);
+        const html = await res.text();
+        const { meals, isOpen } = config.parseLocationPage(html);
         return [locationId, { ...locationConfig, meals, isOpen }];
       } catch (err) {
         console.warn(`Failed to fetch ${locationConfig.name}:`, err.message);
-        // Fetch failure ≠ closed. Don't show "closed" just because the request failed.
         return [locationId, { ...locationConfig, meals: { breakfast: [], lunch: [], dinner: [] }, isOpen: true }];
       }
     })
@@ -216,7 +194,6 @@ export async function fetchBrandeisMenu() {
     locations: Object.fromEntries(locationResults),
   };
 
-  // If every location returned empty meals, the fetch effectively failed
   const totalItems = Object.values(result.locations)
     .flatMap((loc) => Object.values(loc.meals))
     .flat().length;
@@ -227,3 +204,6 @@ export async function fetchBrandeisMenu() {
 
   return result;
 }
+
+// Convenience wrapper — existing callers don't need to change
+export const fetchBrandeisMenu = () => fetchDiningMenu(BRANDEIS_CONFIG);
