@@ -416,9 +416,11 @@ export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds,
   const result = {
     sherman: {},
     usdan: {},
+    kosher: {},
     dailyTotals: {
       sherman: { calories: 0, protein: 0, carbs: 0, fat: 0 },
-      usdan: { calories: 0, protein: 0, carbs: 0, fat: 0 },
+      usdan:   { calories: 0, protein: 0, carbs: 0, fat: 0 },
+      kosher:  { calories: 0, protein: 0, carbs: 0, fat: 0 },
     },
     targets: nutritionTargets,
     warnings: [],
@@ -465,6 +467,25 @@ export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds,
       result.dailyTotals.usdan.protein += usdanResult.totals.protein;
       result.dailyTotals.usdan.carbs += usdanResult.totals.carbs;
       result.dailyTotals.usdan.fat += usdanResult.totals.fat;
+    }
+
+    // Optimize for Kosher Table
+    if (menu.locations.kosher?.meals[meal]) {
+      const kosherResult = optimizeMeal(
+        menu.locations.kosher.meals[meal],
+        mealTargets[meal],
+        restrictions,
+        dailyUsedIds,
+        meal,
+        favoriteIds
+      );
+      result.kosher[meal] = kosherResult;
+      kosherResult.items.forEach((item) => dailyUsedIds.add(item.id));
+
+      result.dailyTotals.kosher.calories += kosherResult.totals.calories;
+      result.dailyTotals.kosher.protein  += kosherResult.totals.protein;
+      result.dailyTotals.kosher.carbs    += kosherResult.totals.carbs;
+      result.dailyTotals.kosher.fat      += kosherResult.totals.fat;
     }
   }
 

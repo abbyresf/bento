@@ -11,12 +11,23 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
+
+// Load .env.local from project root
+try {
+  const envPath = resolve(new URL('.', import.meta.url).pathname, '..', '.env.local');
+  for (const line of readFileSync(envPath, 'utf8').split('\n')) {
+    const [k, v] = line.split('=');
+    if (k && v && !process.env[k.trim()]) process.env[k.trim()] = v.trim();
+  }
+} catch {}
 
 const SUPABASE_URL = 'https://jeexzjphglnpugsuznad.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!SERVICE_ROLE_KEY) {
-  console.error('Set SUPABASE_SERVICE_ROLE_KEY before running.');
+  console.error('Set SUPABASE_SERVICE_ROLE_KEY in .env.local or as an env var.');
   process.exit(1);
 }
 
@@ -24,9 +35,9 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
-// ── Reference date: today = 2026-05-04 (Monday) ───────────────────────────
+// ── Reference date: today (runtime date) ─────────────────────────────────
 function daysAgo(n) {
-  const d = new Date('2026-05-04T12:00:00Z');
+  const d = new Date();
   d.setDate(d.getDate() - n);
   return d.toISOString().slice(0, 10);
 }

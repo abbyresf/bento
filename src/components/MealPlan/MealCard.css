@@ -2,7 +2,6 @@
   background: white;
   border-radius: 16px;
   box-shadow: 0 1px 3px rgba(36, 59, 85, 0.08);
-  overflow: hidden;
   border-left: 4px solid transparent;
   transition: box-shadow 0.2s;
 }
@@ -92,48 +91,108 @@
   color: #2e8a52;
 }
 
-/* Location Tabs */
-.location-tabs {
+/* Location Picker */
+.location-picker {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.location-picker-btn {
   display: flex;
-  gap: 0.25rem;
-  background: #f1f5f9;
-  padding: 0.25rem;
-  border-radius: 8px;
-}
-
-.location-tab {
-  padding: 0.5rem 1rem;
-  border: none;
-  background: transparent;
-  color: #64748b;
-  font-size: 0.9rem;
-  font-weight: 600;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.location-tab:hover {
-  color: #374151;
-}
-
-.location-tab.active {
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.75rem;
   background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
   color: #243b55;
-  box-shadow: 0 1px 2px rgba(36, 59, 85, 0.12);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
 }
 
-/* Closed dot on location tab */
+.location-picker-btn:hover,
+.location-picker-btn.open {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.picker-chevron {
+  color: #94a3b8;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.picker-chevron.open {
+  transform: rotate(180deg);
+}
+
+.location-picker-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(36, 59, 85, 0.1);
+  min-width: 148px;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.location-picker-option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #374151;
+  gap: 0.4rem;
+  transition: background 0.1s;
+  text-align: left;
+}
+
+.location-picker-option:hover {
+  background: #f8fafc;
+}
+
+.location-picker-option.active {
+  color: #243b55;
+  font-weight: 700;
+}
+
+.location-picker-option .option-label {
+  flex: 1;
+}
+
+.location-picker-option .option-closed {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #ef4444;
+  background: #fef2f2;
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+}
+
+.location-picker-option svg {
+  color: #4cae70;
+  flex-shrink: 0;
+}
+
+/* Closed dot (used in picker button when selected location is closed) */
 .closed-dot {
   display: inline-block;
   width: 6px;
   height: 6px;
   background: #ef4444;
   border-radius: 50%;
-  margin-left: 5px;
-  vertical-align: middle;
-  position: relative;
-  top: -1px;
+  flex-shrink: 0;
 }
 
 /* Closed location state */
@@ -324,11 +383,31 @@
 /* Footer */
 .meal-card-footer {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 0.75rem;
   padding: 1rem 1.25rem;
   background: #faf7f4;
   border-top: 1px solid #f1f5f9;
+}
+
+.meal-footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.kosher-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #2e8a52;
+  background: #edfaf3;
+  border: 1px solid #bbf0d0;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  align-self: flex-start;
 }
 
 .meal-totals {

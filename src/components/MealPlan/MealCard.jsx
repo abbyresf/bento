@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import FoodItem from './FoodItem';
 import { STATIONS } from '../../data/mockMenu';
 import './MealCard.css';
 
-// Display order for station categories within a meal
 const CATEGORY_ORDER = ['breakfast', 'entree', 'grill', 'deli', 'pizza', 'allgood', 'sides', 'soup', 'salad', 'bakery', 'beverage'];
 
 function groupItemsByStation(items) {
@@ -13,12 +12,69 @@ function groupItemsByStation(items) {
     if (!groups[station]) groups[station] = [];
     groups[station].push({ item, index });
   });
-  // Sort groups by display order, unknown stations go last
   return Object.entries(groups).sort(([a], [b]) => {
     const ai = CATEGORY_ORDER.indexOf(a);
     const bi = CATEGORY_ORDER.indexOf(b);
     return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
   });
+}
+
+const LOCATION_OPTIONS = [
+  { id: 'usdan',   label: 'Usdan' },
+  { id: 'sherman', label: 'Farm Table' },
+  { id: 'kosher',  label: 'Kosher Table' },
+];
+
+function LocationPicker({ selectedLocation, onLocationChange, openByLocation }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const current = LOCATION_OPTIONS.find(l => l.id === selectedLocation);
+  const isClosed = openByLocation[selectedLocation] === false;
+
+  return (
+    <div className="location-picker" ref={ref} onClick={e => e.stopPropagation()}>
+      <button
+        className={`location-picker-btn ${open ? 'open' : ''}`}
+        onClick={() => setOpen(p => !p)}
+      >
+        {current?.label}
+        {isClosed && <span className="closed-dot" title="Closed today" />}
+        <svg className={`picker-chevron ${open ? 'open' : ''}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="location-picker-menu">
+          {LOCATION_OPTIONS.map(loc => {
+            const closed = openByLocation[loc.id] === false;
+            return (
+              <button
+                key={loc.id}
+                className={`location-picker-option ${selectedLocation === loc.id ? 'active' : ''}`}
+                onClick={() => { onLocationChange(loc.id); setOpen(false); }}
+              >
+                <span className="option-label">{loc.label}</span>
+                {closed && <span className="option-closed">Closed</span>}
+                {selectedLocation === loc.id && (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function MealCard({
@@ -27,8 +83,10 @@ export default function MealCard({
   isPast,
   shermanPlan,
   usdanPlan,
+  kosherPlan,
   shermanOpen,
   usdanOpen,
+  kosherOpen,
   selectedLocation,
   onLocationChange,
   itemAlternatives,
@@ -40,27 +98,33 @@ export default function MealCard({
   onRemoveItem,
   isConfirmed,
   onConfirm,
+  isKosherUser,
 }) {
   const [collapsed, setCollapsed] = useState(isPast);
   const [expandedItem, setExpandedItem] = useState(null);
   const [showRecommendations, setShowRecommendations] = useState(false);
 
-  const currentPlan = selectedLocation === 'sherman' ? shermanPlan : usdanPlan;
-  const isCurrentLocationOpen = selectedLocation === 'sherman' ? shermanOpen : usdanOpen;
+  const plansByLocation = { sherman: shermanPlan, usdan: usdanPlan, kosher: kosherPlan };
+  const openByLocation  = { sherman: shermanOpen,  usdan: usdanOpen,  kosher: kosherOpen };
+  const currentPlan = plansByLocation[selectedLocation] ?? usdanPlan;
+  const isCurrentLocationOpen = openByLocation[selectedLocation] ?? true;
 
-  // Load recommendations when panel opens
   useEffect(() => {
     if (showRecommendations && recommendations === null) {
       onLoadRecommendations?.();
     }
   }, [showRecommendations]); // eslint-disable-line
 
-  // Close recommendation panel when location changes
   useEffect(() => {
     setShowRecommendations(false);
   }, [selectedLocation]);
 
-  if (!currentPlan && !shermanPlan && !usdanPlan) return null;
+  if (!currentPlan && !shermanPlan && !usdanPlan && !kosherPlan) return null;
+
+  const allItemsKosher = currentPlan?.items?.length > 0 &&
+    currentPlan.items.every(i => i.tags?.includes('kosher'));
+  // Show badge: always at Kosher Table (it's certified by definition), or for kosher users at any location when all items are kosher
+  const showKosherBadge = allItemsKosher && (selectedLocation === 'kosher' || isKosherUser);
 
   const mealLabel = meal.charAt(0).toUpperCase() + meal.slice(1);
   const timeRange = `${mealTime.start > 12 ? mealTime.start - 12 : mealTime.start}${mealTime.start >= 12 ? 'pm' : 'am'} - ${mealTime.end > 12 ? mealTime.end - 12 : mealTime.end}${mealTime.end >= 12 ? 'pm' : 'am'}`;
@@ -89,22 +153,11 @@ export default function MealCard({
           )}
         </div>
 
-        <div className="location-tabs" onClick={e => e.stopPropagation()}>
-          <button
-            className={`location-tab ${selectedLocation === 'sherman' ? 'active' : ''}`}
-            onClick={() => onLocationChange('sherman')}
-          >
-            Sherman
-            {!shermanOpen && <span className="closed-dot" title="Closed today" />}
-          </button>
-          <button
-            className={`location-tab ${selectedLocation === 'usdan' ? 'active' : ''}`}
-            onClick={() => onLocationChange('usdan')}
-          >
-            Usdan
-            {!usdanOpen && <span className="closed-dot" title="Closed today" />}
-          </button>
-        </div>
+        <LocationPicker
+          selectedLocation={selectedLocation}
+          onLocationChange={onLocationChange}
+          openByLocation={openByLocation}
+        />
       </div>
 
       {!collapsed && currentPlan.warnings.length > 0 && (
@@ -126,7 +179,7 @@ export default function MealCard({
         <div className="location-closed">
           <span className="closed-icon">🔒</span>
           <p>Closed today</p>
-          <p className="closed-sub">Try the other location</p>
+          <p className="closed-sub">Try another location</p>
         </div>
       ) : (
         <div className="meal-items">
@@ -204,32 +257,44 @@ export default function MealCard({
         </div>
       ))}
 
-      {!collapsed && isCurrentLocationOpen && <div className="meal-card-footer">
-        <div className="meal-totals">
-          <div className="total-item">
-            <span className="total-value">{currentPlan.totals.calories || 0}</span>
-            <span className="total-label">cal</span>
-          </div>
-          <div className="total-item">
-            <span className="total-value">{currentPlan.totals.protein || 0}g</span>
-            <span className="total-label">protein</span>
-          </div>
-          <div className="total-item">
-            <span className="total-value">{currentPlan.totals.carbs || 0}g</span>
-            <span className="total-label">carbs</span>
-          </div>
-          <div className="total-item">
-            <span className="total-value">{currentPlan.totals.fat || 0}g</span>
-            <span className="total-label">fat</span>
+      {!collapsed && isCurrentLocationOpen && (
+        <div className="meal-card-footer">
+          {showKosherBadge && (
+            <div className="kosher-badge">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Kosher certified
+            </div>
+          )}
+          <div className="meal-footer-row">
+            <div className="meal-totals">
+              <div className="total-item">
+                <span className="total-value">{currentPlan.totals.calories || 0}</span>
+                <span className="total-label">cal</span>
+              </div>
+              <div className="total-item">
+                <span className="total-value">{currentPlan.totals.protein || 0}g</span>
+                <span className="total-label">protein</span>
+              </div>
+              <div className="total-item">
+                <span className="total-value">{currentPlan.totals.carbs || 0}g</span>
+                <span className="total-label">carbs</span>
+              </div>
+              <div className="total-item">
+                <span className="total-value">{currentPlan.totals.fat || 0}g</span>
+                <span className="total-label">fat</span>
+              </div>
+            </div>
+
+            {!isConfirmed && (
+              <button className="confirm-btn" onClick={onConfirm}>
+                Mark as Eaten
+              </button>
+            )}
           </div>
         </div>
-
-        {!isConfirmed && (
-          <button className="confirm-btn" onClick={onConfirm}>
-            Mark as Eaten
-          </button>
-        )}
-      </div>}
+      )}
     </div>
   );
 }

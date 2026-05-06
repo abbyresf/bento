@@ -150,13 +150,20 @@ export const BRANDEIS_CONFIG = {
       id: 'sherman',
       slug: 'the-farm-table-at-sherman-2',
       name: 'Farm Table at Sherman',
-      shortName: 'Sherman',
+      shortName: 'Farm Table',
     },
     usdan: {
       id: 'usdan',
       slug: 'lower-usdan',
       name: 'Usdan Kitchen',
       shortName: 'Usdan',
+    },
+    kosher: {
+      id: 'kosher',
+      slug: 'the-farm-table-at-sherman',
+      name: 'Kosher Table at Sherman',
+      shortName: 'Kosher',
+      allItemsKosher: true,
     },
   },
   getDiningUrl(slug, dateStr) {
@@ -181,6 +188,13 @@ export async function fetchDiningMenu(config) {
         if (!res.ok) throw new Error(`HTTP ${res.status} for ${locationConfig.slug}`);
         const html = await res.text();
         const { meals, isOpen } = config.parseLocationPage(html);
+        // Force-tag every item from an allItemsKosher location so the optimizer
+        // can safely include them for kosher dietary restrictions.
+        if (locationConfig.allItemsKosher) {
+          Object.values(meals).forEach(items =>
+            items.forEach(item => { if (!item.tags.includes('kosher')) item.tags.push('kosher'); })
+          );
+        }
         return [locationId, { ...locationConfig, meals, isOpen }];
       } catch (err) {
         console.warn(`Failed to fetch ${locationConfig.name}:`, err.message);
