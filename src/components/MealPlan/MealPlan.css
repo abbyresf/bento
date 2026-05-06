@@ -171,6 +171,32 @@
 
 @media (max-width: 640px) {
   .meal-plan {
-    padding: 1rem;
+    padding: 1rem 0.875rem 2rem;
+  }
+
+  .meals-timeline {
+    gap: 1rem;
+  }
+
+  /* Logo section: bigger and lower */
+  .header-logo {
+    height: 210px;
+    margin-top: -75px;
+    margin-bottom: -80px;
+  }
+
+  /* Action buttons move out of absolute positioning and sit below the date */
+  .header-right {
+    position: static;
+    display: flex;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-top: 0.875rem;
+  }
+
+  .settings-btn,
+  .favorites-btn,
+  .insights-btn {
+    padding: 0.5rem 0.65rem;
   }
 }
