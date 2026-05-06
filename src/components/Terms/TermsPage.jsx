@@ -11,7 +11,7 @@ export default function TermsPage() {
 
       <div className="terms-page-body">
         <p className="terms-page-intro">
-          Bento is a free meal planning tool for Brandeis University students. By using
+          Bento is a free meal planning tool for university students. By using
           this app you agreed to the following at first launch. These terms are provided
           here for your reference.
         </p>
