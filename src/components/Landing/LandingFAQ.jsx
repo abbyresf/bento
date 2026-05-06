@@ -4,7 +4,7 @@ import './LandingFAQ.css';
 const FAQS = [
   {
     q: 'Is Bento free to use?',
-    a: 'Yes — Bento is completely free for all Brandeis University students. No account, no subscription, no credit card.',
+    a: 'Yes. Bento is completely free for all university students. No account, no subscription, and no credit card needed.',
   },
   {
     q: 'How does Bento get the dining hall menu?',
@@ -28,7 +28,7 @@ const FAQS = [
   },
   {
     q: 'Can I use Bento if I have food allergies?',
-    a: 'Yes. During setup you can specify allergies and dietary preferences (gluten-free, vegan, nut-free, etc.) and Bento will filter recommendations accordingly. Always double-check with dining staff for your safety as menu data may occasionally be incomplete.',
+    a: 'Yes. During setup you can specify allergies and dietary preferences (gluten-free, vegan, nut-free, kosher, etc.) and Bento will filter recommendations accordingly. Always double-check with dining staff for your safety as menu data may occasionally be incomplete.',
   },
 ];
 

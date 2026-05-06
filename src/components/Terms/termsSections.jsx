@@ -35,10 +35,10 @@ const TERMS_SECTIONS = [
     heading: 'Menu & Nutrition Accuracy',
     body: (
       <>
-        Menu and nutrition data is sourced from Brandeis University dining systems and may
+        Menu and nutrition data is sourced from your university's dining systems and may
         not always be current, complete, or accurate. Recipes, ingredients, and portion
         sizes can change without notice. If you have a food allergy, intolerance, or other
-        medically significant dietary restriction, always verify directly with dining
+        medically significant dietary restriction, always verify directly with your school's dining
         services before consuming any item.
       </>
     ),
@@ -55,7 +55,7 @@ const TERMS_SECTIONS = [
       </>
     ),
   },
-  {
+  /*{
     id: 'your-data',
     heading: 'Your Data',
     body: (
@@ -65,7 +65,7 @@ const TERMS_SECTIONS = [
         transmitted to any server or shared with third parties.
       </>
     ),
-  },
+  },*/
 ];
 
 export default TERMS_SECTIONS;
