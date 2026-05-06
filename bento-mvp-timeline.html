@@ -993,7 +993,7 @@
       taskEl.classList.toggle('all-done', done === total && total > 0);
     }
 
-    const SEEDED_KEY = 'bento-timeline-seeded-v1';
+    const SEEDED_KEY = 'bento-timeline-seeded-v4';
     const PRE_COMPLETED = new Set([
       // p1-t1: all 5 — Supabase fully provisioned
       'p1-t1-s1','p1-t1-s2','p1-t1-s3','p1-t1-s4','p1-t1-s5',
@@ -1013,6 +1013,10 @@
       'p2-t3-s1','p2-t3-s2','p2-t3-s3','p2-t3-s4',
       // p2-t5: all 4 — 14-day query + optimizer variety penalty + index on (user_id, confirmed_at desc) in 001_initial_schema.sql
       'p2-t5-s1','p2-t5-s2','p2-t5-s3','p2-t5-s4',
+      // p3-t1: all 4 — weekly_summaries table (004 migration) + Edge Function with Deno.cron (Mon 00:05 UTC)
+      'p3-t1-s1','p3-t1-s2','p3-t1-s3','p3-t1-s4',
+      // p3-t2: all 5 — InsightsPanel slide-in + WeeklySummaryCard macro bars + callouts + streak history
+      'p3-t2-s1','p3-t2-s2','p3-t2-s3','p3-t2-s4','p3-t2-s5',
     ]);
 
     function init() {

@@ -94,6 +94,7 @@
 
 .settings-btn,
 .favorites-btn,
+.insights-btn,
 .home-btn {
   padding: 0.5rem;
   background: white;
@@ -102,20 +103,19 @@
   cursor: pointer;
   color: #64748b;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.settings-btn {
+.header-right {
   position: absolute;
   top: 0;
   right: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
-
-.favorites-btn {
-  position: absolute;
-  top: 0;
-  right: 2.75rem;
-}
-
 
 .home-btn {
   position: absolute;
@@ -125,12 +125,17 @@
 
 .settings-btn:hover,
 .favorites-btn:hover,
+.insights-btn:hover,
 .home-btn:hover {
   background: #f1f5f9;
   color: #243b55;
 }
 
 .favorites-btn:hover svg {
+  color: #f47421;
+}
+
+.insights-btn:hover svg {
   color: #f47421;
 }
 
@@ -167,10 +172,5 @@
 @media (max-width: 640px) {
   .meal-plan {
     padding: 1rem;
-  }
-
-  .settings-btn {
-    top: 0;
-    right: 0;
   }
 }

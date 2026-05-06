@@ -258,6 +258,59 @@ export async function toggleFavorite(item) {
   }
 }
 
+// ── Weekly summaries ───────────────────────────────────────────────────────
+
+export async function getWeeklySummaries(limit = 8) {
+  const id = await uid();
+  if (!id) return [];
+  const { data } = await supabase
+    .from('weekly_summaries')
+    .select('week_start, avg_calories, avg_protein, avg_carbs, avg_fat, top_foods, best_day, streak_at_end')
+    .eq('user_id', id)
+    .order('week_start', { ascending: false })
+    .limit(limit);
+  return data ?? [];
+}
+
+// Count how many days in the past 7 days each macro goal was hit (≥80% of target).
+export async function getDailyGoalHits() {
+  const id = await uid();
+  if (!id) return null;
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [{ data: history }, { data: targetsRaw }] = await Promise.all([
+    supabase.from('meal_history').select('items, confirmed_at').eq('user_id', id).gte('confirmed_at', sevenDaysAgo),
+    supabase.from('nutrition_targets').select('calories, protein, carbs, fat').eq('user_id', id).maybeSingle(),
+  ]);
+
+  if (!targetsRaw || !history?.length) return null;
+
+  const byDay = {};
+  for (const entry of history) {
+    const date = entry.confirmed_at.split('T')[0];
+    if (!byDay[date]) byDay[date] = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+    for (const item of entry.items ?? []) {
+      const n = item.nutrition ?? {};
+      byDay[date].calories += n.calories ?? 0;
+      byDay[date].protein  += n.protein  ?? 0;
+      byDay[date].carbs    += n.carbs    ?? 0;
+      byDay[date].fat      += n.fat      ?? 0;
+    }
+  }
+
+  const days = Object.values(byDay);
+  if (!days.length) return null;
+
+  return {
+    numDays:  days.length,
+    calories: days.filter(d => d.calories >= targetsRaw.calories * 0.8).length,
+    protein:  days.filter(d => d.protein  >= targetsRaw.protein  * 0.8).length,
+    carbs:    days.filter(d => d.carbs    >= targetsRaw.carbs    * 0.8).length,
+    fat:      days.filter(d => d.fat      >= targetsRaw.fat      * 0.8).length,
+    targets:  targetsRaw,
+  };
+}
+
 // ── Streaks ────────────────────────────────────────────────────────────────
 
 export async function getStreak() {

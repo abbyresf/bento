@@ -1,0 +1,104 @@
+.weekly-summary-card {
+  background: #faf7f4;
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.summary-week-range {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  margin: 0 0 0.85rem;
+}
+
+/* Macro bars */
+.macro-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.macro-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.macro-bar-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+  width: 56px;
+  flex-shrink: 0;
+}
+
+.macro-bar-track {
+  flex: 1;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.macro-bar-fill {
+  height: 100%;
+  background: #f47421;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.macro-bar-fill.over {
+  background: #4cae70;
+}
+
+.macro-bar-values {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+  width: 88px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* Extras */
+.summary-extras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.85rem;
+}
+
+.summary-extra-chip {
+  font-size: 0.75rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.summary-extra-chip strong {
+  color: #f47421;
+}
+
+.food-chip {
+  color: #64748b;
+}
+
+.macro-bar-fill.empty {
+  background: transparent;
+}
+
+.placeholder-chip {
+  color: #cbd5e1;
+  border-color: #f1f5f9;
+}
+
+.placeholder-text {
+  color: #cbd5e1 !important;
+}
