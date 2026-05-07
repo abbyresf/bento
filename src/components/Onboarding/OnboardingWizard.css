@@ -299,6 +299,22 @@
   display: none;
 }
 
+.allergen-contact-note {
+  font-size: 0.82rem;
+  color: #64748b;
+  margin: 0.75rem 0 0 0;
+}
+
+.allergen-contact-link {
+  color: #f47421;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.allergen-contact-link:hover {
+  text-decoration: underline;
+}
+
 /* Custom Restrictions */
 .custom-restrictions {
   display: flex;

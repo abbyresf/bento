@@ -20,6 +20,7 @@ function App() {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(null);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(null);
   const [showLanding, setShowLanding] = useState(false);
+  const [landingInitialTab, setLandingInitialTab] = useState('home');
   const [showSettings, setShowSettings] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
   const [showInsights, setShowInsights] = useState(false);
@@ -138,12 +139,14 @@ function App() {
 
   // Logged-in user viewing landing page (via home button)
   if (showLanding) {
-    return <LandingPage onGetStarted={() => setShowLanding(false)} />;
+    return <LandingPage onGetStarted={() => setShowLanding(false)} initialTab={landingInitialTab} />;
   }
+
+  const handleGoContact = () => { setLandingInitialTab('contact'); setShowLanding(true); };
 
   // Onboarding
   if (!hasCompletedOnboarding) {
-    return <OnboardingWizard onComplete={handleOnboardingComplete} />;
+    return <OnboardingWizard onComplete={handleOnboardingComplete} onGoContact={handleGoContact} />;
   }
 
   // Terms
@@ -178,6 +181,7 @@ function App() {
             <Settings
               onClose={() => setShowSettings(false)}
               onReset={handleReset}
+              onGoContact={handleGoContact}
               onSave={() => {
                 setSettingsVersion((v) => v + 1);
                 setShowSettings(false);

@@ -14,7 +14,7 @@ import { calculateNutritionTargets, ACTIVITY_LEVELS, GOALS } from '../../utils/t
 import UniversityPicker from '../common/UniversityPicker';
 import './Settings.css';
 
-export default function Settings({ onClose, onReset, onSave }) {
+export default function Settings({ onClose, onReset, onSave, onGoContact }) {
   const [profile, setProfile] = useState(null);
   const [targets, setTargets] = useState(null);
   const [restrictions, setRestrictions] = useState(null);
@@ -22,8 +22,6 @@ export default function Settings({ onClose, onReset, onSave }) {
   const [customProtein, setCustomProtein] = useState('');
   const [customCarbs, setCustomCarbs] = useState('');
   const [customFat, setCustomFat] = useState('');
-  const [allergyInput, setAllergyInput] = useState('');
-  const [avoidInput, setAvoidInput] = useState('');
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -67,40 +65,6 @@ export default function Settings({ onClose, onReset, onSave }) {
       }
       return newRestrictions;
     });
-  };
-
-  const addAllergy = () => {
-    if (allergyInput.trim()) {
-      setRestrictions((prev) => ({
-        ...prev,
-        allergies: [...(prev.allergies || []), allergyInput.trim()],
-      }));
-      setAllergyInput('');
-    }
-  };
-
-  const removeAllergy = (index) => {
-    setRestrictions((prev) => ({
-      ...prev,
-      allergies: prev.allergies.filter((_, i) => i !== index),
-    }));
-  };
-
-  const addAvoid = () => {
-    if (avoidInput.trim()) {
-      setRestrictions((prev) => ({
-        ...prev,
-        avoidIngredients: [...(prev.avoidIngredients || []), avoidInput.trim()],
-      }));
-      setAvoidInput('');
-    }
-  };
-
-  const removeAvoid = (index) => {
-    setRestrictions((prev) => ({
-      ...prev,
-      avoidIngredients: prev.avoidIngredients.filter((_, i) => i !== index),
-    }));
   };
 
   const handleSave = async () => {
@@ -318,51 +282,10 @@ export default function Settings({ onClose, onReset, onSave }) {
             </div>
           </div>
 
-          <div className="custom-restrictions">
-            <div className="restriction-section">
-              <h4>Allergies</h4>
-              <div className="tag-input">
-                <input
-                  type="text"
-                  value={allergyInput}
-                  onChange={(e) => setAllergyInput(e.target.value)}
-                  placeholder="Add allergen..."
-                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addAllergy())}
-                />
-                <button type="button" onClick={addAllergy}>Add</button>
-              </div>
-              <div className="tags">
-                {(restrictions.allergies || []).map((allergy, i) => (
-                  <span key={i} className="tag allergy">
-                    {allergy}
-                    <button type="button" onClick={() => removeAllergy(i)}>&times;</button>
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="restriction-section">
-              <h4>Prefer to Avoid</h4>
-              <div className="tag-input">
-                <input
-                  type="text"
-                  value={avoidInput}
-                  onChange={(e) => setAvoidInput(e.target.value)}
-                  placeholder="Add ingredient..."
-                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addAvoid())}
-                />
-                <button type="button" onClick={addAvoid}>Add</button>
-              </div>
-              <div className="tags">
-                {(restrictions.avoidIngredients || []).map((item, i) => (
-                  <span key={i} className="tag avoid">
-                    {item}
-                    <button type="button" onClick={() => removeAvoid(i)}>&times;</button>
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
+          <p className="allergen-contact-note">
+            Is your allergen not listed?{' '}
+            <a href="#" className="allergen-contact-link" onClick={(e) => { e.preventDefault(); onGoContact?.(); }}>Contact us</a>
+          </p>
         </section>
 
         {/* Data Management Section */}

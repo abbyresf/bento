@@ -10,9 +10,12 @@ export default function LandingContact() {
         </p>
         <div className="contact-placeholder">
           <span className="contact-placeholder-icon">✉️</span>
-          <p>Contact form coming soon.</p>
+          <p>
+            Email us at{' '}
+            <a href="mailto:bentodining@gmail.com" className="contact-email-link">bentodining@gmail.com</a>
+          </p>
           <p className="contact-placeholder-sub">
-            In the meantime, reach out to the Bento team directly.
+            We typically respond within 1–2 business days.
           </p>
         </div>
       </div>

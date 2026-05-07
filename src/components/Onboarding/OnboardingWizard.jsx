@@ -7,7 +7,7 @@ import './OnboardingWizard.css';
 
 const STEPS = ['university', 'basics', 'activity', 'goals', 'dietary', 'review'];
 
-export default function OnboardingWizard({ onComplete }) {
+export default function OnboardingWizard({ onComplete, onGoContact }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [profile, setProfile] = useState({
     university: 'brandeis',
@@ -39,8 +39,6 @@ export default function OnboardingWizard({ onComplete }) {
     allergies: [],
     avoidIngredients: [],
   });
-  const [allergyInput, setAllergyInput] = useState('');
-  const [avoidInput, setAvoidInput] = useState('');
   const [errors, setErrors] = useState({});
 
   const validateBasics = () => {
@@ -77,40 +75,6 @@ export default function OnboardingWizard({ onComplete }) {
       }
       return newRestrictions;
     });
-  };
-
-  const addAllergy = () => {
-    if (allergyInput.trim()) {
-      setRestrictions((prev) => ({
-        ...prev,
-        allergies: [...prev.allergies, allergyInput.trim()],
-      }));
-      setAllergyInput('');
-    }
-  };
-
-  const removeAllergy = (index) => {
-    setRestrictions((prev) => ({
-      ...prev,
-      allergies: prev.allergies.filter((_, i) => i !== index),
-    }));
-  };
-
-  const addAvoid = () => {
-    if (avoidInput.trim()) {
-      setRestrictions((prev) => ({
-        ...prev,
-        avoidIngredients: [...prev.avoidIngredients, avoidInput.trim()],
-      }));
-      setAvoidInput('');
-    }
-  };
-
-  const removeAvoid = (index) => {
-    setRestrictions((prev) => ({
-      ...prev,
-      avoidIngredients: prev.avoidIngredients.filter((_, i) => i !== index),
-    }));
   };
 
   const calculateTargets = () => {
@@ -342,51 +306,10 @@ export default function OnboardingWizard({ onComplete }) {
         </div>
       </div>
 
-      <div className="custom-restrictions">
-        <div className="restriction-section">
-          <h3>Allergies (will never recommend)</h3>
-          <div className="tag-input">
-            <input
-              type="text"
-              value={allergyInput}
-              onChange={(e) => setAllergyInput(e.target.value)}
-              placeholder="e.g., shellfish, soy"
-              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addAllergy())}
-            />
-            <button type="button" onClick={addAllergy}>Add</button>
-          </div>
-          <div className="tags">
-            {restrictions.allergies.map((allergy, i) => (
-              <span key={i} className="tag allergy">
-                {allergy}
-                <button type="button" onClick={() => removeAllergy(i)}>&times;</button>
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="restriction-section">
-          <h3>Prefer to Avoid (will deprioritize)</h3>
-          <div className="tag-input">
-            <input
-              type="text"
-              value={avoidInput}
-              onChange={(e) => setAvoidInput(e.target.value)}
-              placeholder="e.g., red meat, sugar"
-              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addAvoid())}
-            />
-            <button type="button" onClick={addAvoid}>Add</button>
-          </div>
-          <div className="tags">
-            {restrictions.avoidIngredients.map((item, i) => (
-              <span key={i} className="tag avoid">
-                {item}
-                <button type="button" onClick={() => removeAvoid(i)}>&times;</button>
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
+      <p className="allergen-contact-note">
+        Is your allergen not listed?{' '}
+        <a href="#" className="allergen-contact-link" onClick={(e) => { e.preventDefault(); onGoContact?.(); }}>Contact us</a>
+      </p>
     </div>
   );
 

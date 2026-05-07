@@ -12,8 +12,8 @@ const TABS = [
   { id: 'contact', label: 'Contact' },
 ];
 
-export default function LandingPage({ onGetStarted }) {
-  const [activeTab, setActiveTab] = useState('home');
+export default function LandingPage({ onGetStarted, initialTab = 'home' }) {
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   return (
     <div className="landing-page">
