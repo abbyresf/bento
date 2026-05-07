@@ -24,10 +24,18 @@ export default function OnboardingWizard({ onComplete }) {
     vegetarian: false,
     vegan: false,
     glutenFree: false,
-    dairyFree: false,
-    nutFree: false,
     halal: false,
     kosher: false,
+    // Structured allergens (from Brandeis allergens_list)
+    milk: false,
+    eggs: false,
+    wheat: false,
+    soy: false,
+    fish: false,
+    shellfish: false,
+    treeNuts: false,
+    peanuts: false,
+    sesame: false,
     allergies: [],
     avoidIngredients: [],
   });
@@ -276,26 +284,62 @@ export default function OnboardingWizard({ onComplete }) {
     <div className="step-content">
       <h2>Dietary Preferences</h2>
       <p className="step-description">Select any dietary restrictions or preferences.</p>
+      <p className="step-allergy-notice">
+        ⚠️ Bento filters suggestions based on dining hall data, which may be incomplete. If you have a serious food allergy, always confirm ingredients with dining staff before eating.
+      </p>
 
-      <div className="dietary-toggles">
-        {[
-          { key: 'vegetarian', label: 'Vegetarian' },
-          { key: 'vegan', label: 'Vegan' },
-          { key: 'glutenFree', label: 'Gluten-Free' },
-          { key: 'dairyFree', label: 'Dairy-Free' },
-          { key: 'nutFree', label: 'Nut-Free' },
-          { key: 'halal', label: 'Halal' },
-          { key: 'kosher', label: 'Kosher' },
-        ].map(({ key, label }) => (
-          <label key={key} className={`dietary-toggle ${restrictions[key] ? 'active' : ''}`}>
-            <input
-              type="checkbox"
-              checked={restrictions[key]}
-              onChange={() => handleRestrictionChange(key)}
-            />
-            <span>{label}</span>
-          </label>
-        ))}
+      <div className="restriction-section">
+        <h3>Dietary Preferences</h3>
+        <div className="dietary-toggles">
+          {[
+            { key: 'vegetarian', label: 'Vegetarian' },
+            { key: 'vegan', label: 'Vegan' },
+            { key: 'glutenFree', label: 'Gluten-Free' },
+            { key: 'halal', label: 'Halal' },
+            { key: 'kosher', label: 'Kosher' },
+          ].map(({ key, label }) => (
+            <label key={key} className={`dietary-toggle ${restrictions[key] ? 'active' : ''}`}>
+              <input
+                type="checkbox"
+                checked={restrictions[key]}
+                onChange={() => handleRestrictionChange(key)}
+              />
+              <span>{label}</span>
+            </label>
+          ))}
+        </div>
+        {restrictions.halal && (
+          <p className="dietary-unlabeled-notice">
+            ⚠ Brandeis Dining doesn't label halal items — always confirm with dining staff.
+          </p>
+        )}
+      </div>
+
+      <div className="restriction-section">
+        <h3>Allergens to Avoid</h3>
+        <p className="allergen-section-desc">Items containing these allergens will never be recommended.</p>
+        <div className="allergen-grid">
+          {[
+            { key: 'milk',      label: 'Milk' },
+            { key: 'eggs',      label: 'Eggs' },
+            { key: 'wheat',     label: 'Wheat' },
+            { key: 'soy',       label: 'Soy' },
+            { key: 'fish',      label: 'Fish' },
+            { key: 'shellfish', label: 'Shellfish' },
+            { key: 'treeNuts',  label: 'Tree Nuts' },
+            { key: 'peanuts',   label: 'Peanuts' },
+            { key: 'sesame',    label: 'Sesame' },
+          ].map(({ key, label }) => (
+            <label key={key} className={`allergen-toggle ${restrictions[key] ? 'active' : ''}`}>
+              <input
+                type="checkbox"
+                checked={restrictions[key]}
+                onChange={() => handleRestrictionChange(key)}
+              />
+              <span>{label}</span>
+            </label>
+          ))}
+        </div>
       </div>
 
       <div className="custom-restrictions">
@@ -395,9 +439,11 @@ export default function OnboardingWizard({ onComplete }) {
             </ul>
           </div>
 
-          {(restrictions.vegetarian ||
-            restrictions.vegan ||
-            restrictions.glutenFree ||
+          {(restrictions.vegetarian || restrictions.vegan || restrictions.glutenFree ||
+            restrictions.halal || restrictions.kosher ||
+            restrictions.milk || restrictions.eggs || restrictions.wheat || restrictions.soy ||
+            restrictions.fish || restrictions.shellfish || restrictions.treeNuts ||
+            restrictions.peanuts || restrictions.sesame ||
             restrictions.allergies.length > 0) && (
             <div className="summary-card">
               <h3>Dietary Restrictions</h3>
@@ -405,10 +451,17 @@ export default function OnboardingWizard({ onComplete }) {
                 {restrictions.vegetarian && <span className="tag">Vegetarian</span>}
                 {restrictions.vegan && <span className="tag">Vegan</span>}
                 {restrictions.glutenFree && <span className="tag">Gluten-Free</span>}
-                {restrictions.dairyFree && <span className="tag">Dairy-Free</span>}
-                {restrictions.nutFree && <span className="tag">Nut-Free</span>}
                 {restrictions.halal && <span className="tag">Halal</span>}
                 {restrictions.kosher && <span className="tag">Kosher</span>}
+                {restrictions.milk      && <span className="tag allergy">Milk</span>}
+                {restrictions.eggs      && <span className="tag allergy">Eggs</span>}
+                {restrictions.wheat     && <span className="tag allergy">Wheat</span>}
+                {restrictions.soy       && <span className="tag allergy">Soy</span>}
+                {restrictions.fish      && <span className="tag allergy">Fish</span>}
+                {restrictions.shellfish && <span className="tag allergy">Shellfish</span>}
+                {restrictions.treeNuts  && <span className="tag allergy">Tree Nuts</span>}
+                {restrictions.peanuts   && <span className="tag allergy">Peanuts</span>}
+                {restrictions.sesame    && <span className="tag allergy">Sesame</span>}
                 {restrictions.allergies.map((a, i) => (
                   <span key={i} className="tag allergy">{a}</span>
                 ))}

@@ -13,7 +13,7 @@ import BadgesPanel from '../Badges/BadgesPanel';
 import InsightsPanel from '../Insights/InsightsPanel';
 import './MealPlan.css';
 
-export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, settingsVersion = 0 }) {
+export default function MealPlan({ onOpenSettings, onOpenFavorites, onOpenInsights, onGoHome, settingsVersion = 0, showInsights, onCloseInsights }) {
   const [menu, setMenu] = useState(null);
   const [mealPlan, setMealPlan] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState({
@@ -27,9 +27,10 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
       const stored = JSON.parse(localStorage.getItem('bento_confirmed_meals') || '{}');
       const today = new Date().toISOString().slice(0, 10);
       if (stored.date === today) return stored.meals;
-    } catch {}
+    } catch { /* localStorage unavailable */ }
     return { breakfast: false, lunch: false, dinner: false };
   });
+  const [confirmingMeals, setConfirmingMeals] = useState({ breakfast: false, lunch: false, dinner: false });
   const [loading, setLoading] = useState(true);
   const [usingCachedData, setUsingCachedData] = useState(false);
   const [itemAlternatives, setItemAlternatives] = useState({});
@@ -40,17 +41,15 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
   const [pendingBadge, setPendingBadge] = useState(null);
   const [newBadge, setNewBadge] = useState(null);
   const [showBadgesPanel, setShowBadgesPanel] = useState(false);
-  const [showInsightsPanel, setShowInsightsPanel] = useState(false);
 
   const loadMenuAndOptimize = useCallback(async (forceRefresh = false) => {
     setLoading(true);
 
     let menuData = null;
-    let usingCache = false;
+    let fetchFailed = false;
 
     if (!forceRefresh) {
       menuData = getCachedMenu();
-      if (menuData) usingCache = true;
     }
 
     if (!menuData) {
@@ -60,12 +59,12 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
       } catch {
         // Real fetch failed — fall back to mock data
         menuData = generateTodaysMenu();
-        usingCache = true;
+        fetchFailed = true;
       }
     }
 
     setMenu(menuData);
-    setUsingCachedData(usingCache);
+    setUsingCachedData(fetchFailed);
     setItemAlternatives({});
     setRecommendations({ breakfast: null, lunch: null, dinner: null });
 
@@ -91,7 +90,7 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
   useEffect(() => {
     loadMenuAndOptimize();
     getStreak().then(s => setStreak(s));
-  }, [loadMenuAndOptimize]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loadMenuAndOptimize]);
 
   // Set kosher table as default location on first load for kosher users
   useEffect(() => {
@@ -113,6 +112,17 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
         getRecentItemIds(),
       ]);
       setRestrictions(fetchedRestrictions);
+      // Auto-switch to kosher table when kosher restriction is enabled/disabled
+      if (fetchedRestrictions.kosher) {
+        setSelectedLocation({ breakfast: 'kosher', lunch: 'kosher', dinner: 'kosher' });
+      } else {
+        // Reset to default location if kosher was turned off
+        setSelectedLocation(prev => {
+          const defaultLoc = Object.keys(menu.locations ?? {}).find(k => k !== 'kosher') ?? 'usdan';
+          const allKosher = Object.values(prev).every(l => l === 'kosher');
+          return allKosher ? { breakfast: defaultLoc, lunch: defaultLoc, dinner: defaultLoc } : prev;
+        });
+      }
       if (targets) {
         const favoriteIds = await getFavoriteIds();
         const optimized = optimizeDay(menu, targets, fetchedRestrictions, recentItems, undefined, favoriteIds);
@@ -306,15 +316,18 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
   };
 
   const handleConfirmMeal = async (meal) => {
+    if (confirmingMeals[meal] || confirmedMeals[meal]) return;
+    setConfirmingMeals(prev => ({ ...prev, [meal]: true }));
     const location = selectedLocation[meal];
     const mealItems = mealPlan[location][meal].items;
     await addMealToHistory(mealItems);
+    setConfirmingMeals(prev => ({ ...prev, [meal]: false }));
     const updatedConfirmed = { ...confirmedMeals, [meal]: true };
     setConfirmedMeals(updatedConfirmed);
     try {
       const today = new Date().toISOString().slice(0, 10);
       localStorage.setItem('bento_confirmed_meals', JSON.stringify({ date: today, meals: updatedConfirmed }));
-    } catch {}
+    } catch { /* localStorage unavailable */ }
     const allConfirmed = ['breakfast', 'lunch', 'dinner'].every(m => updatedConfirmed[m]);
     if (allConfirmed) {
       const result = await incrementStreak();
@@ -397,7 +410,7 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
               <StreakBadge streak={effectiveStreak} onClick={() => setShowBadgesPanel(true)} />
             ) : null;
           })()}
-          <button className="insights-btn" onClick={() => setShowInsightsPanel(true)} aria-label="Insights">
+          <button className="insights-btn" onClick={onOpenInsights} aria-label="Insights">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="18" y1="20" x2="18" y2="10" />
               <line x1="12" y1="20" x2="12" y2="4" />
@@ -450,6 +463,7 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
             onAddItem={(item) => handleAddItem(meal, item)}
             onRemoveItem={(itemId) => handleRemoveItem(meal, itemId)}
             isConfirmed={confirmedMeals[meal]}
+            isConfirming={confirmingMeals[meal]}
             onConfirm={() => handleConfirmMeal(meal)}
           />
         ))}
@@ -476,8 +490,8 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onGoHome, se
         />
       )}
 
-      {showInsightsPanel && (
-        <InsightsPanel onClose={() => setShowInsightsPanel(false)} />
+      {showInsights && (
+        <InsightsPanel onClose={onCloseInsights} />
       )}
     </div>
   );

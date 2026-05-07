@@ -264,25 +264,58 @@ export default function Settings({ onClose, onReset, onSave }) {
         {/* Dietary Restrictions Section */}
         <section className="settings-section">
           <h3>Dietary Restrictions</h3>
-          <div className="dietary-toggles">
-            {[
-              { key: 'vegetarian', label: 'Vegetarian' },
-              { key: 'vegan', label: 'Vegan' },
-              { key: 'glutenFree', label: 'Gluten-Free' },
-              { key: 'dairyFree', label: 'Dairy-Free' },
-              { key: 'nutFree', label: 'Nut-Free' },
-              { key: 'halal', label: 'Halal' },
-              { key: 'kosher', label: 'Kosher' },
-            ].map(({ key, label }) => (
-              <label key={key} className={`dietary-toggle ${restrictions[key] ? 'active' : ''}`}>
-                <input
-                  type="checkbox"
-                  checked={restrictions[key]}
-                  onChange={() => handleRestrictionToggle(key)}
-                />
-                <span>{label}</span>
-              </label>
-            ))}
+          <div className="restriction-section">
+            <h4>Dietary Preferences</h4>
+            <div className="dietary-toggles">
+              {[
+                { key: 'vegetarian', label: 'Vegetarian' },
+                { key: 'vegan', label: 'Vegan' },
+                { key: 'glutenFree', label: 'Gluten-Free' },
+                { key: 'halal', label: 'Halal' },
+                { key: 'kosher', label: 'Kosher' },
+              ].map(({ key, label }) => (
+                <label key={key} className={`dietary-toggle ${restrictions[key] ? 'active' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={restrictions[key]}
+                    onChange={() => handleRestrictionToggle(key)}
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
+            {restrictions.halal && (
+              <p className="dietary-unlabeled-notice">
+                ⚠ Brandeis Dining doesn't label halal items — always confirm with dining staff.
+              </p>
+            )}
+          </div>
+
+          <div className="restriction-section">
+            <h4>Allergens to Avoid</h4>
+            <p className="allergen-section-desc">Items containing these allergens will never be recommended.</p>
+            <div className="allergen-grid">
+              {[
+                { key: 'milk',      label: 'Milk' },
+                { key: 'eggs',      label: 'Eggs' },
+                { key: 'wheat',     label: 'Wheat' },
+                { key: 'soy',       label: 'Soy' },
+                { key: 'fish',      label: 'Fish' },
+                { key: 'shellfish', label: 'Shellfish' },
+                { key: 'treeNuts',  label: 'Tree Nuts' },
+                { key: 'peanuts',   label: 'Peanuts' },
+                { key: 'sesame',    label: 'Sesame' },
+              ].map(({ key, label }) => (
+                <label key={key} className={`allergen-toggle ${restrictions[key] ? 'active' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={restrictions[key]}
+                    onChange={() => handleRestrictionToggle(key)}
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           <div className="custom-restrictions">

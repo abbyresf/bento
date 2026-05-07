@@ -57,7 +57,18 @@
 
 .step-description {
   color: #64748b;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
+}
+
+.step-allergy-notice {
+  font-size: 0.82rem;
+  color: #92400e;
+  background: #fff8f3;
+  border: 1px solid #fde8d4;
+  border-radius: 8px;
+  padding: 0.65rem 0.875rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.55;
 }
 
 /* Form Elements */
@@ -233,6 +244,58 @@
 }
 
 .dietary-toggle input {
+  display: none;
+}
+
+.dietary-unlabeled-notice {
+  font-size: 0.82rem;
+  color: #92400e;
+  background: #fff8f3;
+  border: 1px solid #fde8d4;
+  border-radius: 8px;
+  padding: 0.65rem 0.875rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0;
+  line-height: 1.55;
+}
+
+.allergen-section-desc {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0 0 0.75rem 0;
+}
+
+.allergen-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.allergen-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.75rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.allergen-toggle:hover {
+  border-color: #94a3b8;
+}
+
+.allergen-toggle.active {
+  border-color: #ef4444;
+  background: #fef2f2;
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.allergen-toggle input {
   display: none;
 }
 

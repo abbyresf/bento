@@ -22,6 +22,7 @@ function App() {
   const [showLanding, setShowLanding] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
+  const [showInsights, setShowInsights] = useState(false);
   const [settingsVersion, setSettingsVersion] = useState(0);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -155,8 +156,11 @@ function App() {
     <FavoritesProvider>
       <div className="app">
         <MealPlan
-          onOpenSettings={() => setShowSettings(true)}
-          onOpenFavorites={() => setShowFavorites(true)}
+          onOpenSettings={() => { setShowSettings(true); setShowFavorites(false); setShowInsights(false); }}
+          onOpenFavorites={() => { setShowFavorites(true); setShowSettings(false); setShowInsights(false); }}
+          onOpenInsights={() => { setShowInsights(true); setShowSettings(false); setShowFavorites(false); }}
+          showInsights={showInsights}
+          onCloseInsights={() => setShowInsights(false)}
           onGoHome={() => setShowLanding(true)}
           settingsVersion={settingsVersion}
         />

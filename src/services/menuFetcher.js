@@ -63,6 +63,7 @@ function brandeisParseMenuItemEl(liEl, mealPeriod, stationName) {
   let nutrition = { calories: 0, protein: 0, carbs: 0, fat: 0, sodium: 0, fiber: 0, sugar: 0 };
   let tags = [];
   let ingredients = [];
+  let allergens = [];
 
   if (nutritionEl) {
     try {
@@ -92,6 +93,13 @@ function brandeisParseMenuItemEl(liEl, mealPeriod, stationName) {
           .filter(Boolean)
           .slice(0, 20);
       }
+
+      if (data.allergens_list) {
+        allergens = data.allergens_list
+          .split(',')
+          .map((s) => s.trim().toLowerCase())
+          .filter(Boolean);
+      }
     } catch {
       // Nutrition JSON malformed — continue with empty values
     }
@@ -105,6 +113,7 @@ function brandeisParseMenuItemEl(liEl, mealPeriod, stationName) {
     nutrition,
     tags,
     ingredients,
+    allergens,
   };
 }
 

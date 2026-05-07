@@ -37,9 +37,44 @@ const TERMS_SECTIONS = [
       <>
         Menu and nutrition data is sourced from your university's dining systems and may
         not always be current, complete, or accurate. Recipes, ingredients, and portion
-        sizes can change without notice. If you have a food allergy, intolerance, or other
-        medically significant dietary restriction, always verify directly with your school's dining
-        services before consuming any item.
+        sizes can change without notice.{' '}
+        <strong>
+          If you have a food allergy, intolerance, or any other medically significant
+          dietary restriction, do not rely solely on Bento.
+        </strong>{' '}
+        Always verify ingredient and allergen information directly with dining staff before
+        consuming any item. Bento makes no guarantee that its allergy or dietary filters
+        are complete or error-free.
+      </>
+    ),
+  },
+  {
+    id: 'non-affiliation',
+    heading: 'No University Affiliation',
+    body: (
+      <>
+        Bento is an independent application and is{' '}
+        <strong>not affiliated with, endorsed by, or sponsored by</strong> Brandeis
+        University, its dining services, or any other university or institution. The
+        Brandeis name and related marks are the property of Brandeis University. Use of
+        those names within Bento is solely for the purpose of identifying the dining
+        locations being described.
+      </>
+    ),
+  },
+  {
+    id: 'your-data',
+    heading: 'Your Data & Privacy',
+    body: (
+      <>
+        To generate your meal plan, Bento collects and stores the following on secure
+        third-party servers (Supabase): your height, weight, age, sex, activity level,
+        dietary restrictions, food allergies, meal history, and favorited items. This data
+        is associated with your account and is used solely to personalize your meal
+        suggestions. It is not sold or shared with third parties.{' '}
+        <strong>You can permanently delete your account and all associated data</strong>{' '}
+        at any time from the Settings screen. Bento uses industry-standard security
+        practices, but no system is completely immune to breach — use the app accordingly.
       </>
     ),
   },
@@ -49,23 +84,13 @@ const TERMS_SECTIONS = [
     body: (
       <>
         By using Bento, you acknowledge and agree that the creator(s) of this application
-        are <strong>not liable</strong> for any health outcomes, adverse effects, dietary
-        decisions, or damages of any kind arising from your use of or reliance on this app
-        or its content. You use Bento voluntarily, at your own discretion and risk.
+        are <strong>not liable</strong> for any health outcomes, adverse effects, allergic
+        reactions, dietary decisions, data loss, or damages of any kind arising from your
+        use of or reliance on this app or its content. Nutritional information displayed
+        may be inaccurate. You use Bento voluntarily, at your own discretion and risk.
       </>
     ),
   },
-  /*{
-    id: 'your-data',
-    heading: 'Your Data',
-    body: (
-      <>
-        All data you enter (height, weight, goals, dietary preferences) is stored
-        exclusively on your device using your browser&apos;s local storage. Nothing is
-        transmitted to any server or shared with third parties.
-      </>
-    ),
-  },*/
 ];
 
 export default TERMS_SECTIONS;

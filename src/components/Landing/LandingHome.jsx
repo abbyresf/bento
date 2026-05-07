@@ -14,7 +14,7 @@ const FEATURES = [
   {
     icon: '🚫',
     title: 'Allergy & Diet Filters',
-    desc: 'Vegan, gluten-free, nut-free, and more. Filter once during setup and never worry again.',
+    desc: 'Vegan, gluten-free, nut-free, and more. Filter once during setup. Always confirm with dining staff for allergy safety.',
   },
   {
     icon: '📱',
@@ -79,7 +79,7 @@ export default function LandingHome({ onGetStarted }) {
             do it simply didn't exist, it became clear: this had to change.
           </p>
           <p className="lh-story-text">
-            Bento is the only app that works directly with your dining hall menu to build a plate
+            Bento works directly with your dining hall menu to build a plate
             that fits your goals in seconds. No guessing. No stress. Just food that works for you.
           </p>
         </div>

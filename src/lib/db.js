@@ -127,9 +127,37 @@ export async function setNutritionTargets(targets) {
 
 // ── Dietary Restrictions ───────────────────────────────────────────────────
 
+// Structured allergen keys stored as "__allergen:X" entries in the allergies JSONB array.
+// This avoids a schema migration while keeping allergen prefs alongside the existing data.
+const ALLERGEN_KEYS = ['milk', 'eggs', 'wheat', 'soy', 'fish', 'shellfish', 'treeNuts', 'peanuts', 'sesame'];
+const ALLERGEN_PREFIX = '__allergen:';
+
+function encodeAllergens(restrictions, freeTextAllergies) {
+  const encoded = ALLERGEN_KEYS
+    .filter(k => restrictions[k])
+    .map(k => `${ALLERGEN_PREFIX}${k}`);
+  return [...(freeTextAllergies ?? []), ...encoded];
+}
+
+function decodeAllergens(rawAllergies) {
+  const freeText = [];
+  const flags = {};
+  for (const a of rawAllergies ?? []) {
+    if (typeof a === 'string' && a.startsWith(ALLERGEN_PREFIX)) {
+      const key = a.slice(ALLERGEN_PREFIX.length);
+      flags[key] = true;
+    } else {
+      freeText.push(a);
+    }
+  }
+  return { freeText, flags };
+}
+
 const RESTRICTIONS_DEFAULT = {
-  vegetarian: false, vegan: false, glutenFree: false, dairyFree: false,
-  nutFree: false, halal: false, kosher: false, allergies: [], avoidIngredients: [],
+  vegetarian: false, vegan: false, glutenFree: false, halal: false, kosher: false,
+  milk: false, eggs: false, wheat: false, soy: false, fish: false,
+  shellfish: false, treeNuts: false, peanuts: false, sesame: false,
+  allergies: [], avoidIngredients: [],
 };
 
 export async function getDietaryRestrictions() {
@@ -141,15 +169,24 @@ export async function getDietaryRestrictions() {
     .eq('user_id', id)
     .single();
   if (!data) return RESTRICTIONS_DEFAULT;
+  const { freeText, flags } = decodeAllergens(data.allergies);
   return {
-    vegetarian:        data.vegetarian,
-    vegan:             data.vegan,
-    glutenFree:        data.gluten_free,
-    dairyFree:         data.dairy_free,
-    nutFree:           data.nut_free,
-    halal:             data.halal,
-    kosher:            data.kosher,
-    allergies:         data.allergies ?? [],
+    vegetarian:        data.vegetarian    ?? false,
+    vegan:             data.vegan         ?? false,
+    glutenFree:        data.gluten_free   ?? false,
+    halal:             data.halal         ?? false,
+    kosher:            data.kosher        ?? false,
+    // Structured allergens decoded from the allergies JSONB column
+    milk:              flags.milk         ?? false,
+    eggs:              flags.eggs         ?? false,
+    wheat:             flags.wheat        ?? false,
+    soy:               flags.soy          ?? false,
+    fish:              flags.fish         ?? false,
+    shellfish:         flags.shellfish    ?? false,
+    treeNuts:          flags.treeNuts     ?? false,
+    peanuts:           flags.peanuts      ?? false,
+    sesame:            flags.sesame       ?? false,
+    allergies:         freeText,
     avoidIngredients:  data.avoid_ingredients ?? [],
   };
 }
@@ -159,15 +196,15 @@ export async function setDietaryRestrictions(restrictions) {
   if (!id) return;
   await supabase.from('dietary_restrictions').upsert({
     user_id:           id,
-    vegetarian:        restrictions.vegetarian,
-    vegan:             restrictions.vegan,
-    gluten_free:       restrictions.glutenFree,
-    dairy_free:        restrictions.dairyFree,
-    nut_free:          restrictions.nutFree,
-    halal:             restrictions.halal,
-    kosher:            restrictions.kosher,
-    allergies:         restrictions.allergies,
-    avoid_ingredients: restrictions.avoidIngredients,
+    vegetarian:        restrictions.vegetarian  ?? false,
+    vegan:             restrictions.vegan       ?? false,
+    gluten_free:       restrictions.glutenFree  ?? false,
+    dairy_free:        false, // replaced by milk allergen
+    nut_free:          false, // replaced by treeNuts + peanuts allergens
+    halal:             restrictions.halal       ?? false,
+    kosher:            restrictions.kosher      ?? false,
+    allergies:         encodeAllergens(restrictions, restrictions.allergies),
+    avoid_ingredients: restrictions.avoidIngredients ?? [],
     updated_at:        new Date().toISOString(),
   }, { onConflict: 'user_id' });
 }
@@ -407,13 +444,15 @@ export function getCachedMenu() {
   try {
     const cached = JSON.parse(localStorage.getItem('bento_cached_menu'));
     if (!cached) return null;
-    if (cached.date === new Date().toDateString()) return cached.menu;
+    const today = new Date().toISOString().split('T')[0];
+    if (cached.date === today) return cached.menu;
     return null;
   } catch { return null; }
 }
 
 export function setCachedMenu(menu) {
   try {
-    localStorage.setItem('bento_cached_menu', JSON.stringify({ date: new Date().toDateString(), menu }));
-  } catch {}
+    const today = new Date().toISOString().split('T')[0];
+    localStorage.setItem('bento_cached_menu', JSON.stringify({ date: today, menu }));
+  } catch { /* localStorage unavailable */ }
 }

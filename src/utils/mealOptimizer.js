@@ -3,40 +3,54 @@
 
 import { MEAL_DISTRIBUTION, calculateMealTargets } from './tdeeCalculator';
 
-// Check if item passes hard dietary restrictions
-export function passesHardRestrictions(item, restrictions) {
-  // Check standard dietary tags
-  if (restrictions.vegetarian && !item.tags.includes('vegetarian')) return false;
-  if (restrictions.vegan && !item.tags.includes('vegan')) return false;
-  if (restrictions.glutenFree && !item.tags.includes('glutenFree')) return false;
-  if (restrictions.dairyFree && !item.tags.includes('dairyFree')) return false;
-  if (restrictions.nutFree && !item.tags.includes('nutFree')) return false;
-  if (restrictions.halal && !item.tags.includes('halal')) return false;
-  if (restrictions.kosher && !item.tags.includes('kosher')) return false;
+// Structured allergens Brandeis publishes in allergens_list.
+// Keys match restriction fields; values match the normalized allergens_list strings.
+const STRUCTURED_ALLERGENS = [
+  ['milk',      'milk'],
+  ['eggs',      'eggs'],
+  ['wheat',     'wheat'],
+  ['soy',       'soy'],
+  ['fish',      'fish'],
+  ['shellfish', 'shellfish'],
+  ['treeNuts',  'tree nuts'],
+  ['peanuts',   'peanuts'],
+  ['sesame',    'sesame'],
+];
 
-  // Check allergen ingredients (hard block)
+// Check if item passes hard dietary restrictions.
+export function passesHardRestrictions(item, restrictions) {
+  // Structured allergens — checked against item.allergens (scraped from allergens_list)
+  const itemAllergens = item.allergens || [];
+  for (const [key, allergenName] of STRUCTURED_ALLERGENS) {
+    if (restrictions[key] && itemAllergens.includes(allergenName)) return false;
+  }
+
+  // Free-text custom allergies — checked against ingredient text as fallback
   if (restrictions.allergies && restrictions.allergies.length > 0) {
-    const ingredientList = item.ingredients.join(' ').toLowerCase();
+    const ingredientText = [...(item.allergens || []), ...(item.ingredients || [])].join(' ').toLowerCase();
     for (const allergen of restrictions.allergies) {
-      if (ingredientList.includes(allergen.toLowerCase())) {
-        return false;
-      }
+      if (ingredientText.includes(allergen.toLowerCase())) return false;
     }
   }
 
+  // Dietary tag hard blocks (tags Brandeis actually labels)
+  // vegan items satisfy vegetarian too
+  if (restrictions.vegetarian && !item.tags.includes('vegetarian') && !item.tags.includes('vegan')) return false;
+  if (restrictions.vegan      && !item.tags.includes('vegan'))       return false;
+  if (restrictions.glutenFree && !item.tags.includes('glutenFree'))  return false;
+  if (restrictions.kosher     && !item.tags.includes('kosher'))       return false;
   return true;
 }
 
-// Check soft restrictions (preferences to avoid but not block)
+// Check soft restrictions (preferences to deprioritise but not hard-block)
 export function getSoftPenalty(item, restrictions) {
   let penalty = 0;
 
+  // Soft "prefer to avoid" ingredients
   if (restrictions.avoidIngredients && restrictions.avoidIngredients.length > 0) {
     const ingredientList = item.ingredients.join(' ').toLowerCase();
     for (const avoid of restrictions.avoidIngredients) {
-      if (ingredientList.includes(avoid.toLowerCase())) {
-        penalty += 50; // Soft penalty for avoided ingredients
-      }
+      if (ingredientList.includes(avoid.toLowerCase())) penalty += 50;
     }
   }
 
@@ -263,8 +277,12 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
     const mainPool = availableItems.filter((item) => !isSupplementItem(item));
     const supplementPool = availableItems.filter((item) => isSupplementItem(item));
 
-    // Pick up to 2 main items
+    // Pick up to 2 main items, then a 3rd if still well under target
     for (let i = 0; i < 2; i++) {
+      const item = selectBestItem(mainPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, 'breakfast', selected, favoriteIds);
+      if (item) addItem(item);
+    }
+    if (selected.length > 0 && currentTotals.calories < mealTarget.calories * 0.6) {
       const item = selectBestItem(mainPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, 'breakfast', selected, favoriteIds);
       if (item) addItem(item);
     }
@@ -318,7 +336,7 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
   const proteinPercent = (currentTotals.protein / mealTarget.protein) * 100;
 
   if (selected.length === 0) {
-    warnings.push('No items match your dietary restrictions for this meal');
+    warnings.push('No items available for this meal at this location');
   } else {
     if (caloriePercent < 70) {
       warnings.push(`Meal is under calorie target (${Math.round(caloriePercent)}%)`);
@@ -327,6 +345,11 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
     }
     if (proteinPercent < 60) {
       warnings.push('Consider adding protein-rich foods');
+    }
+
+    // Halal is not labeled by Brandeis — warn when active
+    if (restrictions.halal) {
+      warnings.push('Brandeis Dining doesn\'t label halal items — always verify with dining staff');
     }
   }
 

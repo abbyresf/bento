@@ -28,7 +28,11 @@ const FAQS = [
   },
   {
     q: 'Can I use Bento if I have food allergies?',
-    a: 'Yes. During setup you can specify allergies and dietary preferences (gluten-free, vegan, nut-free, kosher, etc.) and Bento will filter recommendations accordingly. Always double-check with dining staff for your safety as menu data may occasionally be incomplete.',
+    a: 'Yes, you can specify allergies and dietary preferences during setup and Bento will filter recommendations accordingly. However, Bento\'s allergy filters are based on dining hall data that may be incomplete or out of date. Do not rely solely on Bento for allergy safety. Always verify ingredients and allergens directly with dining staff before eating.',
+  },
+  {
+    q: 'Is Bento affiliated with Brandeis University?',
+    a: 'No. Bento is an independent application and is not affiliated with, endorsed by, or sponsored by Brandeis University or its dining services. Brandeis dining data is used solely to identify what is being served.',
   },
 ];
 

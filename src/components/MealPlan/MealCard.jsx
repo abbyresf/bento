@@ -97,6 +97,7 @@ export default function MealCard({
   onAddItem,
   onRemoveItem,
   isConfirmed,
+  isConfirming,
   onConfirm,
   isKosherUser,
 }) {
@@ -116,6 +117,8 @@ export default function MealCard({
   }, [showRecommendations]); // eslint-disable-line
 
   useEffect(() => {
+    // Reset recommendations panel when the user switches dining location
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setShowRecommendations(false);
   }, [selectedLocation]);
 
@@ -288,8 +291,8 @@ export default function MealCard({
             </div>
 
             {!isConfirmed && (
-              <button className="confirm-btn" onClick={onConfirm}>
-                Mark as Eaten
+              <button className="confirm-btn" onClick={onConfirm} disabled={isConfirming}>
+                {isConfirming ? 'Saving...' : 'Mark as Eaten'}
               </button>
             )}
           </div>
