@@ -50,8 +50,8 @@ export default function LandingPage({ onGetStarted, initialTab = 'home' }) {
       <footer className="landing-footer">
         <p className="landing-footer-disclaimer">
           Bento is an independent application and is not affiliated with, endorsed by, or
-          sponsored by Brandeis University or its dining services. Nutritional information
-          is provided for general planning purposes only and may not be accurate. Not a
+          sponsored by any university or its dining services. Nutritional information is
+          provided for general planning purposes only and may not be accurate. Not a
           substitute for professional medical or dietary advice. Always verify allergen
           information with dining staff.
         </p>

@@ -1,0 +1,368 @@
+.swipe-onboarding {
+  min-height: 100vh;
+  background: #faf7f4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 1rem 1.5rem;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+/* Header row */
+.swipe-top-bar {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.swipe-logo-sm {
+  height: 36px;
+  width: auto;
+}
+
+.swipe-skip-btn {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.swipe-skip-btn:hover {
+  background: #f1f5f9;
+  color: #243b55;
+}
+
+/* Titles */
+.swipe-titles {
+  text-align: center;
+  margin-bottom: 0.75rem;
+}
+
+.swipe-titles h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #243b55;
+  margin: 0 0 0.15rem;
+}
+
+.swipe-titles p {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* Progress */
+.swipe-progress-wrap {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.swipe-progress-track {
+  flex: 1;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.swipe-progress-fill {
+  height: 100%;
+  background: #f47421;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.swipe-progress-count {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+/* Card area */
+.swipe-card-area {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  flex: 1;
+  min-height: 220px;
+  max-height: 420px;
+  margin-bottom: 1.25rem;
+}
+
+.swipe-card {
+  position: absolute;
+  inset: 0;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(36, 59, 85, 0.12);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.swipe-card-back {
+  transform: scale(0.95) translateY(12px);
+  z-index: 1;
+  transition: transform 0.3s ease;
+}
+
+.swipe-card-front {
+  z-index: 2;
+  cursor: grab;
+}
+
+.swipe-card-front:active {
+  cursor: grabbing;
+}
+
+.swipe-card-stripe {
+  height: 7px;
+  flex-shrink: 0;
+}
+
+.swipe-card-body {
+  padding: 1.25rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  justify-content: center;
+}
+
+.swipe-station {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.swipe-item-name {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #243b55;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.swipe-item-cal {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 500;
+  margin: 0.15rem 0 0;
+}
+
+.swipe-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+.swipe-tag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #475569;
+  border-radius: 100px;
+  padding: 0.2rem 0.55rem;
+}
+
+/* Like / pass stamp overlays */
+.swipe-stamp {
+  position: absolute;
+  top: 1.25rem;
+  font-size: 1.1rem;
+  font-weight: 900;
+  padding: 0.3rem 0.7rem;
+  border-radius: 8px;
+  border-width: 3px;
+  border-style: solid;
+  pointer-events: none;
+  z-index: 10;
+  letter-spacing: 0.04em;
+  transition: opacity 0.05s linear;
+}
+
+.swipe-stamp-yes {
+  right: 1.25rem;
+  color: #22c55e;
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.swipe-stamp-no {
+  left: 1.25rem;
+  color: #ef4444;
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* Action buttons */
+.swipe-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.swipe-btn {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+
+.swipe-btn-no {
+  background: white;
+  color: #ef4444;
+}
+
+.swipe-btn-no:hover {
+  background: #fef2f2;
+  transform: scale(1.07);
+}
+
+.swipe-btn-yes {
+  background: white;
+  color: #f47421;
+}
+
+.swipe-btn-yes:hover {
+  background: #fff8f3;
+  transform: scale(1.07);
+}
+
+.swipe-status {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-align: center;
+  min-width: 80px;
+  margin: 0;
+}
+
+/* Loading / error / done screens */
+.swipe-centered {
+  justify-content: center;
+  gap: 1.25rem;
+  text-align: center;
+  padding: 2rem 1.5rem;
+}
+
+.swipe-loading-msg {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.swipe-logo {
+  height: 72px;
+  width: auto;
+}
+
+.swipe-done-emoji {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.swipe-done-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #243b55;
+  margin: 0;
+}
+
+.swipe-done-sub {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin: 0;
+  max-width: 300px;
+  line-height: 1.55;
+}
+
+.swipe-done-sub strong {
+  color: #243b55;
+}
+
+.swipe-done-btn {
+  padding: 0.85rem 2.25rem;
+  background: #f47421;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 0.25rem;
+}
+
+.swipe-done-btn:hover {
+  background: #d9641a;
+}
+
+@media (max-width: 400px) {
+  .swipe-item-name {
+    font-size: 1.15rem;
+  }
+
+  .swipe-btn {
+    width: 54px;
+    height: 54px;
+  }
+}
+
+/* Short phones (iPhone SE, older Android) */
+@media (max-height: 680px) {
+  .swipe-onboarding {
+    padding-top: 0.75rem;
+    padding-bottom: 1rem;
+  }
+
+  .swipe-top-bar {
+    margin-bottom: 0.5rem;
+  }
+
+  .swipe-titles {
+    margin-bottom: 0.5rem;
+  }
+
+  .swipe-titles h2 {
+    font-size: 1.1rem;
+  }
+
+  .swipe-progress-wrap {
+    margin-bottom: 0.625rem;
+  }
+
+  .swipe-card-area {
+    max-height: 290px;
+    margin-bottom: 0.875rem;
+  }
+
+  .swipe-btn {
+    width: 54px;
+    height: 54px;
+  }
+}

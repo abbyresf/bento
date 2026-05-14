@@ -1,4 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+
+// Local date (YYYY-MM-DD) — avoids UTC date rollover after 8pm Eastern
+const localDateStr = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 import { generateTodaysMenu, hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
 import { fetchBrandeisMenu } from '../../services/menuFetcher';
 import { getNutritionTargets, getDietaryRestrictions, getRecentItemIds, getFavoriteIds, addMealToHistory, setCachedMenu, getCachedMenu, incrementStreak, getStreak } from '../../lib/db';
@@ -24,9 +28,8 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onOpenInsigh
   const locationDefaultApplied = useRef(false);
   const [confirmedMeals, setConfirmedMeals] = useState(() => {
     try {
-      const stored = JSON.parse(localStorage.getItem('bento_confirmed_meals') || '{}');
-      const today = new Date().toISOString().slice(0, 10);
-      if (stored.date === today) return stored.meals;
+      const stored = JSON.parse(localStorage.getItem('bento_confirmed_meals_v2') || '{}');
+      if (stored.date === localDateStr()) return stored.meals;
     } catch { /* localStorage unavailable */ }
     return { breakfast: false, lunch: false, dinner: false };
   });
@@ -92,15 +95,31 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onOpenInsigh
     getStreak().then(s => setStreak(s));
   }, [loadMenuAndOptimize]);
 
-  // Set kosher table as default location on first load for kosher users
+  // On first load: if kosher user, default all meals to kosher table;
+  // otherwise auto-select the location that actually has items for each meal.
   useEffect(() => {
-    if (restrictions && !locationDefaultApplied.current) {
-      locationDefaultApplied.current = true;
-      if (restrictions.kosher) {
-        setSelectedLocation({ breakfast: 'kosher', lunch: 'kosher', dinner: 'kosher' });
-      }
+    if (!mealPlan || !restrictions || locationDefaultApplied.current) return;
+    locationDefaultApplied.current = true;
+
+    if (restrictions.kosher) {
+      setSelectedLocation({ breakfast: 'kosher', lunch: 'kosher', dinner: 'kosher' });
+      return;
     }
-  }, [restrictions]);
+
+    setSelectedLocation(prev => {
+      const next = { ...prev };
+      for (const meal of ['breakfast', 'lunch', 'dinner']) {
+        const currentItems = mealPlan[prev[meal]]?.[meal]?.items ?? [];
+        if (currentItems.length === 0) {
+          const bestLoc = ['sherman', 'usdan', 'kosher'].find(
+            loc => (mealPlan[loc]?.[meal]?.items ?? []).length > 0
+          );
+          if (bestLoc) next[meal] = bestLoc;
+        }
+      }
+      return next;
+    });
+  }, [mealPlan, restrictions]);
 
   // Re-optimize (without refetching menu) when settings change
   useEffect(() => {
@@ -325,14 +344,13 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onOpenInsigh
     const updatedConfirmed = { ...confirmedMeals, [meal]: true };
     setConfirmedMeals(updatedConfirmed);
     try {
-      const today = new Date().toISOString().slice(0, 10);
-      localStorage.setItem('bento_confirmed_meals', JSON.stringify({ date: today, meals: updatedConfirmed }));
+      localStorage.setItem('bento_confirmed_meals_v2', JSON.stringify({ date: localDateStr(), meals: updatedConfirmed }));
     } catch { /* localStorage unavailable */ }
     const allConfirmed = ['breakfast', 'lunch', 'dinner'].every(m => updatedConfirmed[m]);
     if (allConfirmed) {
       const result = await incrementStreak();
       if (result) {
-        setStreak({ currentStreak: result.currentStreak, longestStreak: result.longestStreak, lastConfirmedDate: new Date().toISOString().slice(0, 10) });
+        setStreak({ currentStreak: result.currentStreak, longestStreak: result.longestStreak, lastConfirmedDate: localDateStr() });
         const badge = getNewBadge(result.prevLongest, result.longestStreak);
         setPendingBadge(badge);
         setShowStreakCelebration(true);
@@ -368,7 +386,7 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onOpenInsigh
     return (
       <div className="meal-plan-loading">
         <div className="spinner"></div>
-        <p className="loading-message">Fetching today's Brandeis menu…</p>
+        <p className="loading-message">Fetching today's menu…</p>
         <p className="loading-sub">Optimizing your meal plan</p>
       </div>
     );
@@ -396,21 +414,22 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onOpenInsigh
           </svg>
         </button>
         <div className="header-content">
+          <img src="/logo-cropped.png" alt="Bento" className="header-logo-sm" />
           <img src="/logo.png" alt="Bento" className="header-logo" />
           <p className="tagline">Eat well. Every meal.</p>
           <p className="date">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
         </div>
         <div className="header-right">
           {(() => {
-            const today = new Date().toISOString().slice(0, 10);
-            const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+            const today = localDateStr();
+            const yesterday = localDateStr(new Date(Date.now() - 86400000));
             const active = streak.lastConfirmedDate === today || streak.lastConfirmedDate === yesterday;
             const effectiveStreak = active ? streak.currentStreak : 0;
             return effectiveStreak > 0 ? (
               <StreakBadge streak={effectiveStreak} onClick={() => setShowBadgesPanel(true)} />
             ) : null;
           })()}
-          <button className="insights-btn" onClick={onOpenInsights} aria-label="Insights">
+<button className="insights-btn" onClick={onOpenInsights} aria-label="Insights">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="18" y1="20" x2="18" y2="10" />
               <line x1="12" y1="20" x2="12" y2="4" />
@@ -452,6 +471,9 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onOpenInsigh
             shermanOpen={menu?.locations?.sherman?.isOpen ?? true}
             usdanOpen={menu?.locations?.usdan?.isOpen ?? true}
             kosherOpen={menu?.locations?.kosher?.isOpen ?? true}
+            shermanRawCount={menu?.locations?.sherman?.meals[meal]?.length ?? 0}
+            usdanRawCount={menu?.locations?.usdan?.meals[meal]?.length ?? 0}
+            kosherRawCount={menu?.locations?.kosher?.meals[meal]?.length ?? 0}
             isKosherUser={restrictions?.kosher ?? false}
             selectedLocation={selectedLocation[meal]}
             onLocationChange={(loc) => handleLocationChange(meal, loc)}

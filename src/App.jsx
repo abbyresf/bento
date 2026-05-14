@@ -5,6 +5,7 @@ import { isOnboardingComplete, isTermsAccepted, setTermsAccepted, signOut, updat
 import AuthScreen from './components/Auth/AuthScreen';
 import LandingPage from './components/Landing/LandingPage';
 import OnboardingWizard from './components/Onboarding/OnboardingWizard';
+import SwipeOnboarding from './components/Onboarding/SwipeOnboarding';
 import MealPlan from './components/MealPlan/MealPlan';
 import Settings from './components/Settings/Settings';
 import Favorites from './components/Favorites/Favorites';
@@ -20,6 +21,7 @@ function App() {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(null);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(null);
   const [showLanding, setShowLanding] = useState(false);
+  const [showSwipeOnboarding, setShowSwipeOnboarding] = useState(false);
   const [landingInitialTab, setLandingInitialTab] = useState('home');
   const [showSettings, setShowSettings] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
@@ -46,6 +48,14 @@ function App() {
     isOnboardingComplete().then(setHasCompletedOnboarding);
     isTermsAccepted().then(setHasAcceptedTerms);
   }, [session]);
+
+  // Show swipe onboarding once after profile + terms are done
+  useEffect(() => {
+    if (!session || !hasCompletedOnboarding || !hasAcceptedTerms) return;
+    if (localStorage.getItem('bento_swipe_done') !== '1') {
+      setShowSwipeOnboarding(true);
+    }
+  }, [session, hasCompletedOnboarding, hasAcceptedTerms]);
 
   const handleOnboardingComplete = () => setHasCompletedOnboarding(true);
 
@@ -152,6 +162,16 @@ function App() {
   // Terms
   if (!hasAcceptedTerms) {
     return <TermsGate onAccept={handleAcceptTerms} />;
+  }
+
+  // Swipe onboarding (shown once after profile + terms)
+  if (showSwipeOnboarding) {
+    return (
+      <SwipeOnboarding onDone={() => {
+        localStorage.setItem('bento_swipe_done', '1');
+        setShowSwipeOnboarding(false);
+      }} />
+    );
   }
 
   // Main app

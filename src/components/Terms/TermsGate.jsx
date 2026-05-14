@@ -9,7 +9,7 @@ export default function TermsGate({ onAccept }) {
     <div className="terms-screen">
       <div className="terms-card">
         <div className="terms-logo-row">
-          <img src="/logo.png" alt="Bento" className="terms-logo" />
+          <img src="/logo-cropped.png" alt="Bento" className="terms-logo" />
         </div>
 
         <h1 className="terms-title">Before you continue</h1>

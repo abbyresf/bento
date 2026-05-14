@@ -24,15 +24,15 @@ const FAQS = [
   },
   {
     q: 'Which universities does Bento support?',
-    a: 'Bento currently supports Brandeis University dining halls. Additional locations will be added in future updates.',
+    a: 'Bento is currently available at select universities, with more being added. During onboarding you can see which schools are supported and choose yours.',
   },
   {
     q: 'Can I use Bento if I have food allergies?',
     a: 'Yes, you can specify allergies and dietary preferences during setup and Bento will filter recommendations accordingly. However, Bento\'s allergy filters are based on dining hall data that may be incomplete or out of date. Do not rely solely on Bento for allergy safety. Always verify ingredients and allergens directly with dining staff before eating.',
   },
   {
-    q: 'Is Bento affiliated with Brandeis University?',
-    a: 'No. Bento is an independent application and is not affiliated with, endorsed by, or sponsored by Brandeis University or its dining services. Brandeis dining data is used solely to identify what is being served.',
+    q: 'Is Bento affiliated with my university?',
+    a: 'No. Bento is an independent application and is not affiliated with, endorsed by, or sponsored by any university or its dining services. Dining data is used solely to identify what is being served.',
   },
 ];
 

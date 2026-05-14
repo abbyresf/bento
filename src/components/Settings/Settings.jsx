@@ -250,7 +250,7 @@ export default function Settings({ onClose, onReset, onSave, onGoContact }) {
             </div>
             {restrictions.halal && (
               <p className="dietary-unlabeled-notice">
-                ⚠ Brandeis Dining doesn't label halal items — always confirm with dining staff.
+                ⚠ Your dining hall may not label halal items — always confirm with dining staff.
               </p>
             )}
           </div>

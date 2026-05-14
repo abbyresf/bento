@@ -54,11 +54,9 @@ const TERMS_SECTIONS = [
     body: (
       <>
         Bento is an independent application and is{' '}
-        <strong>not affiliated with, endorsed by, or sponsored by</strong> Brandeis
-        University, its dining services, or any other university or institution. The
-        Brandeis name and related marks are the property of Brandeis University. Use of
-        those names within Bento is solely for the purpose of identifying the dining
-        locations being described.
+        <strong>not affiliated with, endorsed by, or sponsored by</strong> any university
+        or institution. University names and dining data used within Bento are solely for
+        the purpose of identifying the dining locations being described.
       </>
     ),
   },

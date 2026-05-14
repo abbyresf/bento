@@ -169,34 +169,87 @@
   gap: 1.5rem;
 }
 
+/* Mobile-only inline logo (hidden on desktop) */
+.header-logo-sm {
+  display: none;
+}
+
 @media (max-width: 640px) {
   .meal-plan {
-    padding: 1rem 0.875rem 2rem;
+    padding: 0.75rem 0.875rem 2rem;
   }
 
   .meals-timeline {
     gap: 1rem;
   }
 
-  /* Logo section: bigger and lower */
-  .header-logo {
-    height: 210px;
-    margin-top: -75px;
-    margin-bottom: -80px;
+  /* Single-row compact header */
+  .meal-plan-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+    position: static;
   }
 
-  /* Action buttons move out of absolute positioning and sit below the date */
+  .home-btn {
+    position: static;
+    flex-shrink: 0;
+    padding: 0.4rem;
+  }
+
+  /* Show compact inline logo (icon only — crop text portion) */
+  .header-logo-sm {
+    display: block;
+    height: 28px;
+    width: 28px;
+    object-fit: cover;
+    object-position: left center;
+    flex-shrink: 0;
+  }
+
+  .header-logo {
+    display: none;
+  }
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .header-content .tagline {
+    display: none;
+  }
+
+  .header-content .date {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #64748b;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Action buttons stay inline at the right */
   .header-right {
     position: static;
     display: flex;
-    justify-content: center;
-    gap: 0.6rem;
-    margin-top: 0.875rem;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0;
+    flex-shrink: 0;
   }
 
   .settings-btn,
   .favorites-btn,
   .insights-btn {
-    padding: 0.5rem 0.65rem;
+    padding: 0.4rem;
   }
 }

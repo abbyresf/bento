@@ -116,12 +116,20 @@
 
 /* ── Mobile ── */
 @media (max-width: 600px) {
+  .landing-nav-inner {
+    padding: 0 0.875rem;
+  }
+
+  .landing-nav-tabs {
+    gap: 0.1rem;
+  }
+
   .landing-nav-tab {
-    padding: 0.4rem 0.6rem;
-    font-size: 0.82rem;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.8rem;
   }
 
   .landing-logo-img {
-    height: 36px;
+    height: 30px;
   }
 }

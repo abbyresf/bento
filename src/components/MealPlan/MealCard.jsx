@@ -25,7 +25,7 @@ const LOCATION_OPTIONS = [
   { id: 'kosher',  label: 'Kosher Table' },
 ];
 
-function LocationPicker({ selectedLocation, onLocationChange, openByLocation }) {
+function LocationPicker({ selectedLocation, onLocationChange, openByLocation, hasMenuByLocation }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -37,6 +37,7 @@ function LocationPicker({ selectedLocation, onLocationChange, openByLocation }) 
 
   const current = LOCATION_OPTIONS.find(l => l.id === selectedLocation);
   const isClosed = openByLocation[selectedLocation] === false;
+  const hasNoMenu = !isClosed && hasMenuByLocation[selectedLocation] === false;
 
   return (
     <div className="location-picker" ref={ref} onClick={e => e.stopPropagation()}>
@@ -46,6 +47,7 @@ function LocationPicker({ selectedLocation, onLocationChange, openByLocation }) 
       >
         {current?.label}
         {isClosed && <span className="closed-dot" title="Closed today" />}
+        {hasNoMenu && <span className="closed-dot no-menu-dot" title="No menu today" />}
         <svg className={`picker-chevron ${open ? 'open' : ''}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <polyline points="6 9 12 15 18 9" />
         </svg>
@@ -55,14 +57,16 @@ function LocationPicker({ selectedLocation, onLocationChange, openByLocation }) 
         <div className="location-picker-menu">
           {LOCATION_OPTIONS.map(loc => {
             const closed = openByLocation[loc.id] === false;
+            const noMenu = !closed && hasMenuByLocation[loc.id] === false;
             return (
               <button
                 key={loc.id}
-                className={`location-picker-option ${selectedLocation === loc.id ? 'active' : ''}`}
-                onClick={() => { onLocationChange(loc.id); setOpen(false); }}
+                className={`location-picker-option ${selectedLocation === loc.id ? 'active' : ''} ${closed || noMenu ? 'unavailable' : ''}`}
+                onClick={() => { if (!closed && !noMenu) { onLocationChange(loc.id); setOpen(false); } }}
               >
                 <span className="option-label">{loc.label}</span>
                 {closed && <span className="option-closed">Closed</span>}
+                {noMenu && <span className="option-no-menu">No menu</span>}
                 {selectedLocation === loc.id && (
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <polyline points="20 6 9 17 4 12" />
@@ -87,6 +91,9 @@ export default function MealCard({
   shermanOpen,
   usdanOpen,
   kosherOpen,
+  shermanRawCount,
+  usdanRawCount,
+  kosherRawCount,
   selectedLocation,
   onLocationChange,
   itemAlternatives,
@@ -107,6 +114,12 @@ export default function MealCard({
 
   const plansByLocation = { sherman: shermanPlan, usdan: usdanPlan, kosher: kosherPlan };
   const openByLocation  = { sherman: shermanOpen,  usdan: usdanOpen,  kosher: kosherOpen };
+  const hasMenuByLocation = {
+    sherman: shermanRawCount > 0,
+    usdan:   usdanRawCount   > 0,
+    kosher:  kosherRawCount  > 0,
+  };
+  const currentRawCount = { sherman: shermanRawCount, usdan: usdanRawCount, kosher: kosherRawCount }[selectedLocation] ?? 0;
   const currentPlan = plansByLocation[selectedLocation] ?? usdanPlan;
   const isCurrentLocationOpen = openByLocation[selectedLocation] ?? true;
 
@@ -160,6 +173,7 @@ export default function MealCard({
           selectedLocation={selectedLocation}
           onLocationChange={onLocationChange}
           openByLocation={openByLocation}
+          hasMenuByLocation={hasMenuByLocation}
         />
       </div>
 
@@ -183,6 +197,11 @@ export default function MealCard({
           <span className="closed-icon">🔒</span>
           <p>Closed today</p>
           <p className="closed-sub">Try another location</p>
+        </div>
+      ) : currentRawCount === 0 ? (
+        <div className="location-closed">
+          <p>No {meal} menu posted at this location today.</p>
+          <p className="closed-sub">Try switching to another dining hall above.</p>
         </div>
       ) : (
         <div className="meal-items">
@@ -260,7 +279,7 @@ export default function MealCard({
         </div>
       ))}
 
-      {!collapsed && isCurrentLocationOpen && (
+      {!collapsed && isCurrentLocationOpen && currentRawCount > 0 && (
         <div className="meal-card-footer">
           {showKosherBadge && (
             <div className="kosher-badge">

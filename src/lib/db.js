@@ -366,14 +366,19 @@ export async function getStreak() {
   };
 }
 
+// Local date string (YYYY-MM-DD) — avoids UTC rollover issues for late-night confirmations
+function localDateStr(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export async function incrementStreak() {
   const id = await uid();
   if (!id) return null;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateStr();
   const streak = await getStreak();
   if (streak.lastConfirmedDate === today) return null; // already confirmed today
 
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const yesterday = localDateStr(new Date(Date.now() - 86400000));
   const prevLongest = streak.longestStreak;
   const newCurrent = streak.lastConfirmedDate === yesterday ? streak.currentStreak + 1 : 1;
   const newLongest = Math.max(newCurrent, prevLongest);
@@ -433,26 +438,34 @@ export async function clearAllData() {
     supabase.from('nutrition_targets').delete().eq('user_id', id),
     supabase.from('dietary_restrictions').delete().eq('user_id', id),
     supabase.from('streaks').delete().eq('user_id', id),
+    supabase.from('weekly_summaries').delete().eq('user_id', id),
     supabase.from('profiles').update({ weight: null, age: null, terms_accepted: false }).eq('id', id),
   ]);
+  // Clear all local state so swipe onboarding, confirmed meals, and menu cache reset
+  ['bento_swipe_done', 'bento_confirmed_meals_v2', 'bento_cached_menu'].forEach(k => {
+    try { localStorage.removeItem(k); } catch { /* ignore */ }
+  });
   await signOut();
 }
 
 // ── Menu cache (stays local — ephemeral per device) ────────────────────────
+
+const CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours — refreshes in time for dinner to appear
 
 export function getCachedMenu() {
   try {
     const cached = JSON.parse(localStorage.getItem('bento_cached_menu'));
     if (!cached) return null;
     const today = new Date().toISOString().split('T')[0];
-    if (cached.date === today) return cached.menu;
-    return null;
+    if (cached.date !== today) return null;
+    if (Date.now() - cached.fetchedAt > CACHE_TTL_MS) return null;
+    return cached.menu;
   } catch { return null; }
 }
 
 export function setCachedMenu(menu) {
   try {
     const today = new Date().toISOString().split('T')[0];
-    localStorage.setItem('bento_cached_menu', JSON.stringify({ date: today, menu }));
+    localStorage.setItem('bento_cached_menu', JSON.stringify({ date: today, fetchedAt: Date.now(), menu }));
   } catch { /* localStorage unavailable */ }
 }
