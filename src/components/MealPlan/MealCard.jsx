@@ -36,8 +36,7 @@ function LocationPicker({ selectedLocation, onLocationChange, openByLocation, ha
   }, []);
 
   const current = LOCATION_OPTIONS.find(l => l.id === selectedLocation);
-  const isClosed = openByLocation[selectedLocation] === false;
-  const hasNoMenu = !isClosed && hasMenuByLocation[selectedLocation] === false;
+  const isClosed = openByLocation[selectedLocation] === false || hasMenuByLocation[selectedLocation] === false;
 
   return (
     <div className="location-picker" ref={ref} onClick={e => e.stopPropagation()}>
@@ -47,7 +46,6 @@ function LocationPicker({ selectedLocation, onLocationChange, openByLocation, ha
       >
         {current?.label}
         {isClosed && <span className="closed-dot" title="Closed today" />}
-        {hasNoMenu && <span className="closed-dot no-menu-dot" title="No menu today" />}
         <svg className={`picker-chevron ${open ? 'open' : ''}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <polyline points="6 9 12 15 18 9" />
         </svg>
@@ -56,17 +54,15 @@ function LocationPicker({ selectedLocation, onLocationChange, openByLocation, ha
       {open && (
         <div className="location-picker-menu">
           {LOCATION_OPTIONS.map(loc => {
-            const closed = openByLocation[loc.id] === false;
-            const noMenu = !closed && hasMenuByLocation[loc.id] === false;
+            const closed = openByLocation[loc.id] === false || hasMenuByLocation[loc.id] === false;
             return (
               <button
                 key={loc.id}
-                className={`location-picker-option ${selectedLocation === loc.id ? 'active' : ''} ${closed || noMenu ? 'unavailable' : ''}`}
-                onClick={() => { if (!closed && !noMenu) { onLocationChange(loc.id); setOpen(false); } }}
+                className={`location-picker-option ${selectedLocation === loc.id ? 'active' : ''} ${closed ? 'unavailable' : ''}`}
+                onClick={() => { if (!closed) { onLocationChange(loc.id); setOpen(false); } }}
               >
                 <span className="option-label">{loc.label}</span>
                 {closed && <span className="option-closed">Closed</span>}
-                {noMenu && <span className="option-no-menu">No menu</span>}
                 {selectedLocation === loc.id && (
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <polyline points="20 6 9 17 4 12" />

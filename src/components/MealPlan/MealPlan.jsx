@@ -106,6 +106,27 @@ export default function MealPlan({ settingsVersion = 0 }) {
     getStreak().then(s => setStreak(s));
   }, [loadMenuAndOptimize]);
 
+  // Retroactive streak check: if menu loads and all available meals are already confirmed
+  // (e.g. confirmed before deploy or in a prior session), fire the streak now.
+  // incrementStreak() deduplicates by date so this is safe to call unconditionally.
+  useEffect(() => {
+    if (!menu) return;
+    const availableMeals = ['breakfast', 'lunch', 'dinner'].filter(m => {
+      const s = menu?.locations?.sherman?.meals?.[m]?.length ?? 0;
+      const u = menu?.locations?.usdan?.meals?.[m]?.length ?? 0;
+      const k = menu?.locations?.kosher?.meals?.[m]?.length ?? 0;
+      return s > 0 || u > 0 || k > 0;
+    });
+    if (availableMeals.length === 0 || !availableMeals.every(m => confirmedMeals[m])) return;
+    incrementStreak().then(result => {
+      if (!result) return;
+      setStreak({ currentStreak: result.currentStreak, longestStreak: result.longestStreak, lastConfirmedDate: localDateStr() });
+      const badge = getNewBadge(result.prevLongest, result.longestStreak);
+      setPendingBadge(badge);
+      setShowStreakCelebration(true);
+    });
+  }, [menu]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Re-render every minute so hasMealPassed() stays current while the page is open
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 60000);
@@ -367,7 +388,13 @@ export default function MealPlan({ settingsVersion = 0 }) {
     try {
       localStorage.setItem('bento_confirmed_meals_v2', JSON.stringify({ date: localDateStr(), meals: updatedConfirmed }));
     } catch { /* localStorage unavailable */ }
-    const allConfirmed = ['breakfast', 'lunch', 'dinner'].every(m => updatedConfirmed[m]);
+    const availableMeals = ['breakfast', 'lunch', 'dinner'].filter(m => {
+      const s = menu?.locations?.sherman?.meals?.[m]?.length ?? 0;
+      const u = menu?.locations?.usdan?.meals?.[m]?.length ?? 0;
+      const k = menu?.locations?.kosher?.meals?.[m]?.length ?? 0;
+      return s > 0 || u > 0 || k > 0;
+    });
+    const allConfirmed = availableMeals.length > 0 && availableMeals.every(m => updatedConfirmed[m]);
     if (allConfirmed) {
       const result = await incrementStreak();
       if (result) {
