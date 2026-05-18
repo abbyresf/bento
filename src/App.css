@@ -34,6 +34,33 @@
   }
 }
 
+.help-btn {
+  position: fixed;
+  bottom: 80px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: white;
+  border: 1.5px solid #e2e8f0;
+  color: #64748b;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(36, 59, 85, 0.12);
+  z-index: 100;
+  transition: all 0.15s;
+}
+
+.help-btn:hover {
+  background: #f1f5f9;
+  color: #243b55;
+  border-color: #cbd5e1;
+}
+
 .settings-overlay {
   position: fixed;
   top: 0;

@@ -1,0 +1,151 @@
+.install-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(36, 59, 85, 0.4);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.install-sheet {
+  width: 100%;
+  background: white;
+  border-radius: 24px 24px 0 0;
+  padding: 1rem 1.5rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: slideUp 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.install-handle {
+  width: 36px;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  margin-bottom: 1.5rem;
+}
+
+.install-logo {
+  height: 52px;
+  width: auto;
+  margin-bottom: 1rem;
+}
+
+.install-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #243b55;
+  margin: 0 0 0.5rem;
+}
+
+.install-sub {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin: 0 0 1.5rem;
+  line-height: 1.5;
+  max-width: 300px;
+}
+
+/* Android install */
+.install-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.install-btn {
+  width: 100%;
+  padding: 0.875rem;
+  background: #f47421;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.install-btn:hover {
+  background: #d9641a;
+}
+
+.install-dismiss {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+.install-dismiss:hover {
+  color: #64748b;
+}
+
+/* iOS steps */
+.install-ios-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+.ios-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  text-align: left;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+}
+
+.ios-step-num {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  background: #f47421;
+  color: white;
+  border-radius: 50%;
+  font-size: 0.78rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.ios-step-text {
+  font-size: 0.9rem;
+  color: #374151;
+  line-height: 1.45;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.ios-share-icon {
+  width: 16px;
+  height: 16px;
+  color: #3b82f6;
+  flex-shrink: 0;
+  display: inline-block;
+}

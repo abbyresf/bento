@@ -1,0 +1,115 @@
+.tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(36, 59, 85, 0.45);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.tutorial-sheet {
+  position: relative;
+  width: 100%;
+  background: white;
+  border-radius: 24px 24px 0 0;
+  padding: 1rem 1.5rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: slideUp 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.tutorial-handle {
+  width: 36px;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  margin-bottom: 0.75rem;
+}
+
+.tutorial-skip {
+  position: absolute;
+  top: 1.1rem;
+  right: 1.25rem;
+  background: none;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.tutorial-skip:hover {
+  color: #64748b;
+}
+
+.tutorial-emoji {
+  font-size: 2.75rem;
+  line-height: 1;
+  margin: 0.5rem 0 1rem;
+}
+
+.tutorial-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #243b55;
+  margin: 0 0 0.6rem;
+}
+
+.tutorial-body {
+  font-size: 0.9rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0 0 1.5rem;
+  max-width: 300px;
+}
+
+.tutorial-dots {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+}
+
+.tutorial-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  transition: background 0.2s;
+}
+
+.tutorial-dot.active {
+  background: #f47421;
+  width: 20px;
+  border-radius: 4px;
+}
+
+.tutorial-next {
+  width: 100%;
+  padding: 0.875rem;
+  background: #f47421;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.tutorial-next:hover {
+  background: #d9641a;
+}

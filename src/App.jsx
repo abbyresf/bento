@@ -11,8 +11,17 @@ import Favorites from './components/Favorites/Favorites';
 import InsightsPanel from './components/Insights/InsightsPanel';
 import BottomNav from './components/Nav/BottomNav';
 import TermsGate from './components/Terms/TermsGate';
+import InstallPrompt from './components/Install/InstallPrompt';
+import AppTutorial from './components/Install/AppTutorial';
 import { FavoritesProvider } from './context/FavoritesContext';
 import './App.css';
+
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
 
 function App() {
   const location = useLocation();
@@ -29,6 +38,12 @@ function App() {
   const [newPassword, setNewPassword] = useState('');
   const [resetError, setResetError] = useState(null);
   const [resetLoading, setResetLoading] = useState(false);
+  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [showHelpBtn, setShowHelpBtn] = useState(
+    () => localStorage.getItem('bento_tutorial_done') === '1'
+  );
 
   const isAuthRoute = location.pathname === '/login' || location.pathname === '/signup';
 
@@ -40,6 +55,24 @@ function App() {
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  // Capture the install prompt early — it fires before the user reaches the meal plan
+  useEffect(() => {
+    const handler = (e) => { e.preventDefault(); setDeferredInstallPrompt(e); };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  // Show install prompt 2s after landing on the meal plan (once, if not already prompted/installed)
+  useEffect(() => {
+    const isPreview = location.search.includes('preview_install');
+    if (!hasCompletedOnboarding || !hasAcceptedTerms) return;
+    if (isStandalone()) return;
+    if (!isPreview && localStorage.getItem('bento_install_prompted') === '1') return;
+    if (!isIOS() && !deferredInstallPrompt && !isPreview) return;
+    const t = setTimeout(() => setShowInstallPrompt(true), isPreview ? 500 : 2000);
+    return () => clearTimeout(t);
+  }, [hasCompletedOnboarding, hasAcceptedTerms, deferredInstallPrompt]);
 
   useEffect(() => {
     if (!session) return;
@@ -176,6 +209,41 @@ function App() {
           activeTab={activeTab}
           onTabChange={(tab) => setActiveTab(tab === activeTab && tab !== 'today' ? 'today' : tab)}
         />
+
+        {showInstallPrompt && (
+          <InstallPrompt
+            deferredPrompt={deferredInstallPrompt}
+            forceIOS={location.search.includes('preview_install=ios')}
+            onInstall={() => {
+              localStorage.setItem('bento_install_prompted', '1');
+              setShowInstallPrompt(false);
+              setShowTutorial(true);
+            }}
+            onDismiss={() => {
+              localStorage.setItem('bento_install_prompted', '1');
+              setShowInstallPrompt(false);
+              setShowTutorial(true);
+            }}
+          />
+        )}
+
+        {showTutorial && (
+          <AppTutorial onDone={() => {
+            localStorage.setItem('bento_tutorial_done', '1');
+            setShowTutorial(false);
+            setShowHelpBtn(true);
+          }} />
+        )}
+
+        {showHelpBtn && !showTutorial && !showInstallPrompt && (
+          <button
+            className="help-btn"
+            onClick={() => setShowTutorial(true)}
+            aria-label="Help"
+          >
+            ?
+          </button>
+        )}
       </div>
     </FavoritesProvider>
   );
