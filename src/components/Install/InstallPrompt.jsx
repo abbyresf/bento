@@ -1,11 +1,15 @@
 import './InstallPrompt.css';
 
-function isIOS() {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-}
+const ua = navigator.userAgent;
+const isIosDevice = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+const isIOSSafari  = isIosDevice && /Safari/.test(ua) && !/CriOS|FxiOS|OPiOS/.test(ua);
+const isIOSChrome  = isIosDevice && /CriOS/.test(ua);
+const isIOSOther   = isIosDevice && !isIOSSafari && !isIOSChrome;
 
 export default function InstallPrompt({ deferredPrompt, onInstall, onDismiss, forceIOS }) {
-  const ios = forceIOS || isIOS();
+  const iosSafari = forceIOS || isIOSSafari;
+  const iosChrome = !forceIOS && isIOSChrome;
+  const iosOther  = !forceIOS && isIOSOther;
 
   const handleInstall = async (e) => {
     e.stopPropagation();
@@ -32,7 +36,7 @@ export default function InstallPrompt({ deferredPrompt, onInstall, onDismiss, fo
         <h2 className="install-title">Add Bento to your home screen</h2>
         <p className="install-sub">Quick access to your meal plan every day — no browser needed.</p>
 
-        {ios ? (
+        {iosSafari && (
           <div className="install-ios-steps">
             <div className="ios-step">
               <span className="ios-step-num">1</span>
@@ -43,20 +47,46 @@ export default function InstallPrompt({ deferredPrompt, onInstall, onDismiss, fo
                   <polyline points="16 6 12 2 8 6" />
                   <line x1="12" y1="2" x2="12" y2="15" />
                 </svg>
-                at the bottom of your browser
+                at the bottom of your screen
               </div>
             </div>
             <div className="ios-step">
               <span className="ios-step-num">2</span>
-              <div className="ios-step-text">Scroll down and tap <strong>Add to Home Screen</strong></div>
+              <div className="ios-step-text">Tap <strong>Add to Home Screen</strong></div>
             </div>
             <div className="ios-step">
               <span className="ios-step-num">3</span>
-              <div className="ios-step-text">Tap <strong>Add</strong> in the top right</div>
+              <div className="ios-step-text">Tap <strong>Add</strong></div>
             </div>
             <button className="install-dismiss" onClick={handleDismiss}>Got it</button>
           </div>
-        ) : (
+        )}
+
+        {(iosChrome || iosOther) && (
+          <div className="install-ios-steps">
+            <div className="ios-step">
+              <span className="ios-step-num">1</span>
+              <div className="ios-step-text">
+                Tap the <strong>three dots</strong>
+                <svg className="ios-share-icon" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                  <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+                </svg>
+                menu
+              </div>
+            </div>
+            <div className="ios-step">
+              <span className="ios-step-num">2</span>
+              <div className="ios-step-text">Tap <strong>Add to Home Screen</strong></div>
+            </div>
+            <div className="ios-step">
+              <span className="ios-step-num">3</span>
+              <div className="ios-step-text">Tap <strong>Add</strong></div>
+            </div>
+            <button className="install-dismiss" onClick={handleDismiss}>Got it</button>
+          </div>
+        )}
+
+        {!iosSafari && !iosChrome && !iosOther && (
           <div className="install-actions">
             <button className="install-btn" onClick={handleInstall}>Add to Home Screen</button>
             <button className="install-dismiss" onClick={handleDismiss}>Maybe later</button>
