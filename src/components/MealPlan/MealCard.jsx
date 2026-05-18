@@ -111,6 +111,20 @@ export default function MealCard({
   const [collapsed, setCollapsed] = useState(isPast);
   const [expandedItem, setExpandedItem] = useState(null);
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const prevIsPastRef = useRef(isPast);
+
+  // Auto-collapse when meal time ends while the page is open
+  useEffect(() => {
+    if (isPast && !prevIsPastRef.current) {
+      setCollapsed(true);
+    }
+    prevIsPastRef.current = isPast;
+  }, [isPast]);
+
+  // Auto-collapse when meal is confirmed
+  useEffect(() => {
+    if (isConfirmed) setCollapsed(true);
+  }, [isConfirmed]);
 
   const plansByLocation = { sherman: shermanPlan, usdan: usdanPlan, kosher: kosherPlan };
   const openByLocation  = { sherman: shermanOpen,  usdan: usdanOpen,  kosher: kosherOpen };
@@ -156,17 +170,15 @@ export default function MealCard({
 
   return (
     <div className={`meal-card meal-${meal} ${isPast ? 'past' : ''} ${isConfirmed ? 'confirmed' : ''} ${collapsed ? 'collapsed' : ''}`}>
-      <div className="meal-card-header" onClick={isPast ? () => setCollapsed(prev => !prev) : undefined} style={isPast ? { cursor: 'pointer' } : undefined}>
+      <div className="meal-card-header" onClick={() => setCollapsed(prev => !prev)} style={{ cursor: 'pointer' }}>
         <div className="meal-info">
           <h3>{mealLabel}</h3>
           <span className="meal-time">{timeRange}</span>
           {isPast && <span className="past-badge">Past</span>}
           {isConfirmed && <span className="confirmed-badge">Confirmed</span>}
-          {isPast && (
-            <svg className={`collapse-chevron ${collapsed ? '' : 'open'}`} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          )}
+          <svg className={`collapse-chevron ${collapsed ? '' : 'open'}`} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
         </div>
 
         <LocationPicker
@@ -222,16 +234,15 @@ export default function MealCard({
                     alternatives={itemAlternatives?.[`${selectedLocation}-${meal}-${index}`] ?? null}
                     onLoadAlternatives={() => onLoadAlternatives(meal, selectedLocation, index, item)}
                     onSwapToItem={(newItem) => onSwapToItem(index, newItem)}
-                    onRemove={!isConfirmed ? () => onRemoveItem?.(item.id) : undefined}
-                    disabled={isConfirmed}
+                    onRemove={() => onRemoveItem?.(item.id)}
+                    disabled={false}
                   />
                 ))}
               </div>
             ));
           })()}
 
-          {!isConfirmed && !isPast && (
-            <div className="add-item-section">
+          <div className="add-item-section">
               <button
                 className={`add-item-btn ${showRecommendations ? 'active' : ''}`}
                 onClick={() => setShowRecommendations((prev) => !prev)}
@@ -274,8 +285,7 @@ export default function MealCard({
                   )}
                 </div>
               )}
-            </div>
-          )}
+          </div>
         </div>
       ))}
 

@@ -5,10 +5,11 @@ import { isOnboardingComplete, isTermsAccepted, setTermsAccepted, signOut, updat
 import AuthScreen from './components/Auth/AuthScreen';
 import LandingPage from './components/Landing/LandingPage';
 import OnboardingWizard from './components/Onboarding/OnboardingWizard';
-import SwipeOnboarding from './components/Onboarding/SwipeOnboarding';
 import MealPlan from './components/MealPlan/MealPlan';
 import Settings from './components/Settings/Settings';
 import Favorites from './components/Favorites/Favorites';
+import InsightsPanel from './components/Insights/InsightsPanel';
+import BottomNav from './components/Nav/BottomNav';
 import TermsGate from './components/Terms/TermsGate';
 import { FavoritesProvider } from './context/FavoritesContext';
 import './App.css';
@@ -17,15 +18,12 @@ function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [session, setSession] = useState(undefined); // undefined = loading
+  const [session, setSession] = useState(undefined);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(null);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(null);
   const [showLanding, setShowLanding] = useState(false);
-  const [showSwipeOnboarding, setShowSwipeOnboarding] = useState(false);
   const [landingInitialTab, setLandingInitialTab] = useState('home');
-  const [showSettings, setShowSettings] = useState(false);
-  const [showFavorites, setShowFavorites] = useState(false);
-  const [showInsights, setShowInsights] = useState(false);
+  const [activeTab, setActiveTab] = useState('today');
   const [settingsVersion, setSettingsVersion] = useState(0);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -49,14 +47,6 @@ function App() {
     isTermsAccepted().then(setHasAcceptedTerms);
   }, [session]);
 
-  // Show swipe onboarding once after profile + terms are done
-  useEffect(() => {
-    if (!session || !hasCompletedOnboarding || !hasAcceptedTerms) return;
-    if (localStorage.getItem('bento_swipe_done') !== '1') {
-      setShowSwipeOnboarding(true);
-    }
-  }, [session, hasCompletedOnboarding, hasAcceptedTerms]);
-
   const handleOnboardingComplete = () => setHasCompletedOnboarding(true);
 
   const handleAcceptTerms = async () => {
@@ -68,7 +58,7 @@ function App() {
     await signOut();
     setHasCompletedOnboarding(null);
     setHasAcceptedTerms(null);
-    setShowSettings(false);
+    setActiveTab('today');
     setShowLanding(false);
     setSession(null);
     navigate('/');
@@ -89,17 +79,14 @@ function App() {
     }
   };
 
-  // Waiting for auth to resolve
   if (session === undefined) {
     return <div className="app-loading"><div className="spinner"></div></div>;
   }
 
-  // Logged-in user hitting /login or /signup — bounce to app
   if (session && isAuthRoute) {
     return <Navigate to="/" replace />;
   }
 
-  // Password recovery — user clicked reset link in email
   if (passwordRecovery) {
     return (
       <div className="auth-screen">
@@ -129,7 +116,6 @@ function App() {
     );
   }
 
-  // Not logged in: /login and /signup show auth, everything else shows landing
   if (!session) {
     if (isAuthRoute) {
       return (
@@ -142,73 +128,54 @@ function App() {
     return <LandingPage onGetStarted={() => navigate('/login')} />;
   }
 
-  // Logged in but user data still loading
   if (hasCompletedOnboarding === null) {
     return <div className="app-loading"><div className="spinner"></div></div>;
   }
 
-  // Logged-in user viewing landing page (via home button)
   if (showLanding) {
     return <LandingPage onGetStarted={() => setShowLanding(false)} initialTab={landingInitialTab} />;
   }
 
   const handleGoContact = () => { setLandingInitialTab('contact'); setShowLanding(true); };
 
-  // Onboarding
   if (!hasCompletedOnboarding) {
     return <OnboardingWizard onComplete={handleOnboardingComplete} onGoContact={handleGoContact} />;
   }
 
-  // Terms
   if (!hasAcceptedTerms) {
     return <TermsGate onAccept={handleAcceptTerms} />;
   }
 
-  // Swipe onboarding (shown once after profile + terms)
-  if (showSwipeOnboarding) {
-    return (
-      <SwipeOnboarding onDone={() => {
-        localStorage.setItem('bento_swipe_done', '1');
-        setShowSwipeOnboarding(false);
-      }} />
-    );
-  }
-
-  // Main app
   return (
     <FavoritesProvider>
       <div className="app">
-        <MealPlan
-          onOpenSettings={() => { setShowSettings(true); setShowFavorites(false); setShowInsights(false); }}
-          onOpenFavorites={() => { setShowFavorites(true); setShowSettings(false); setShowInsights(false); }}
-          onOpenInsights={() => { setShowInsights(true); setShowSettings(false); setShowFavorites(false); }}
-          showInsights={showInsights}
-          onCloseInsights={() => setShowInsights(false)}
-          onGoHome={() => setShowLanding(true)}
-          settingsVersion={settingsVersion}
-        />
-
-        {showFavorites && (
-          <>
-            <div className="settings-overlay" onClick={() => setShowFavorites(false)} />
-            <Favorites onClose={() => setShowFavorites(false)} />
-          </>
-        )}
-
-        {showSettings && (
-          <>
-            <div className="settings-overlay" onClick={() => setShowSettings(false)} />
+        <div className="tab-content">
+          {activeTab === 'today' && (
+            <MealPlan settingsVersion={settingsVersion} />
+          )}
+          {activeTab === 'favorites' && (
+            <Favorites tabMode onClose={() => setActiveTab('today')} />
+          )}
+          {activeTab === 'insights' && (
+            <InsightsPanel tabMode onClose={() => setActiveTab('today')} />
+          )}
+          {activeTab === 'settings' && (
             <Settings
-              onClose={() => setShowSettings(false)}
+              tabMode
               onReset={handleReset}
               onGoContact={handleGoContact}
               onSave={() => {
-                setSettingsVersion((v) => v + 1);
-                setShowSettings(false);
+                setSettingsVersion(v => v + 1);
+                setActiveTab('today');
               }}
+              onClose={() => setActiveTab('today')}
             />
-          </>
-        )}
+          )}
+        </div>
+        <BottomNav
+          activeTab={activeTab}
+          onTabChange={(tab) => setActiveTab(tab === activeTab && tab !== 'today' ? 'today' : tab)}
+        />
       </div>
     </FavoritesProvider>
   );

@@ -10,6 +10,14 @@
   touch-action: none;
 }
 
+/* Embedded inside OnboardingWizard */
+.swipe-embedded {
+  min-height: auto;
+  flex: 1;
+  background: transparent;
+  padding: 0;
+}
+
 /* Header row */
 .swipe-top-bar {
   width: 100%;
@@ -113,12 +121,12 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  transition: transform 0.3s ease;
 }
 
 .swipe-card-back {
   transform: scale(0.95) translateY(12px);
   z-index: 1;
-  transition: transform 0.3s ease;
 }
 
 .swipe-card-front {

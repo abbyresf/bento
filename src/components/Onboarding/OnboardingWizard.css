@@ -27,20 +27,96 @@
   letter-spacing: 0.02em;
 }
 
-/* Progress Bar */
-.progress-bar {
+/* Section Progress */
+.section-progress {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.section-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.section-bar-track {
   height: 4px;
   background: #e2e8f0;
   border-radius: 2px;
-  margin-bottom: 2rem;
   overflow: hidden;
 }
 
-.progress-fill {
+.section-bar-fill {
   height: 100%;
   background: #f47421;
   border-radius: 2px;
-  transition: width 0.3s ease;
+  transition: width 0.35s ease;
+}
+
+.section-item.complete .section-bar-fill {
+  background: #4cae70;
+}
+
+.section-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.section-item.active .section-label {
+  color: #64748b;
+}
+
+.section-item.complete .section-label {
+  color: #4cae70;
+}
+
+/* Swipe step layout */
+.onboarding-wizard-swipe {
+  padding: 1rem 1rem 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.onboarding-wizard-swipe .section-progress {
+  margin-bottom: 0.5rem;
+}
+
+.swipe-step-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.swipe-step-logo {
+  height: 36px;
+  width: auto;
+}
+
+.swipe-step-skip {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.swipe-step-skip:hover {
+  background: #f1f5f9;
+  color: #243b55;
 }
 
 /* Step Content */

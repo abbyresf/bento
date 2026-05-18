@@ -4,7 +4,7 @@ import './Favorites.css';
 
 const STATION_ORDER = ['breakfast', 'entree', 'grill', 'deli', 'pizza', 'allgood', 'sides', 'soup', 'salad', 'bakery', 'beverage'];
 
-export default function Favorites({ onClose }) {
+export default function Favorites({ onClose, tabMode = false }) {
   const { favorites, toggleFavorite } = useFavorites();
 
   const handleUnfavorite = (item) => {
@@ -25,10 +25,10 @@ export default function Favorites({ onClose }) {
   });
 
   return (
-    <div className="favorites-panel">
+    <div className={`favorites-panel${tabMode ? ' favorites-panel-page' : ''}`}>
       <div className="favorites-header">
         <h2>Favorites</h2>
-        <button className="favorites-close-btn" onClick={onClose} aria-label="Close favorites">
+        <button className="favorites-close-btn" onClick={onClose} aria-label="Close">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>

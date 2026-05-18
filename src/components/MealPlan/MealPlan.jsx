@@ -14,10 +14,9 @@ import StreakBadge from '../Streak/StreakBadge';
 import StreakCelebration from '../Streak/StreakCelebration';
 import BadgeCelebration from '../Badges/BadgeCelebration';
 import BadgesPanel from '../Badges/BadgesPanel';
-import InsightsPanel from '../Insights/InsightsPanel';
 import './MealPlan.css';
 
-export default function MealPlan({ onOpenSettings, onOpenFavorites, onOpenInsights, onGoHome, settingsVersion = 0, showInsights, onCloseInsights }) {
+export default function MealPlan({ settingsVersion = 0 }) {
   const [menu, setMenu] = useState(null);
   const [mealPlan, setMealPlan] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState({
@@ -35,7 +34,7 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onOpenInsigh
   });
   const [confirmingMeals, setConfirmingMeals] = useState({ breakfast: false, lunch: false, dinner: false });
   const [loading, setLoading] = useState(true);
-  const [usingCachedData, setUsingCachedData] = useState(false);
+  const [usingCachedData, setUsingCachedData] = useState(null); // null | 'cache' | 'offline'
   const [itemAlternatives, setItemAlternatives] = useState({});
   const [recommendations, setRecommendations] = useState({ breakfast: null, lunch: null, dinner: null });
   const [restrictions, setRestrictions] = useState(null);
@@ -44,15 +43,27 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onOpenInsigh
   const [pendingBadge, setPendingBadge] = useState(null);
   const [newBadge, setNewBadge] = useState(null);
   const [showBadgesPanel, setShowBadgesPanel] = useState(false);
+  const [, setTick] = useState(0);
 
   const loadMenuAndOptimize = useCallback(async (forceRefresh = false) => {
     setLoading(true);
 
     let menuData = null;
-    let fetchFailed = false;
+    let cacheState = null; // null | 'cache' | 'offline'
 
     if (!forceRefresh) {
       menuData = getCachedMenu();
+      if (menuData) {
+        // Check age of cache
+        try {
+          const raw = JSON.parse(localStorage.getItem('bento_cached_menu'));
+          if (raw && Date.now() - raw.fetchedAt > 60 * 60 * 1000) {
+            cacheState = 'cache'; // old enough to show refresh banner
+          } else {
+            cacheState = null; // fresh cache, no banner needed
+          }
+        } catch { cacheState = null; }
+      }
     }
 
     if (!menuData) {
@@ -62,12 +73,12 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onOpenInsigh
       } catch {
         // Real fetch failed — fall back to mock data
         menuData = generateTodaysMenu();
-        fetchFailed = true;
+        cacheState = 'offline';
       }
     }
 
     setMenu(menuData);
-    setUsingCachedData(fetchFailed);
+    setUsingCachedData(cacheState);
     setItemAlternatives({});
     setRecommendations({ breakfast: null, lunch: null, dinner: null });
 
@@ -94,6 +105,12 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onOpenInsigh
     loadMenuAndOptimize();
     getStreak().then(s => setStreak(s));
   }, [loadMenuAndOptimize]);
+
+  // Re-render every minute so hasMealPassed() stays current while the page is open
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 60000);
+    return () => clearInterval(id);
+  }, []);
 
   // On first load: if kosher user, default all meals to kosher table;
   // otherwise auto-select the location that actually has items for each meal.
@@ -124,12 +141,14 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onOpenInsigh
   // Re-optimize (without refetching menu) when settings change
   useEffect(() => {
     if (settingsVersion === 0 || !menu) return;
+    let cancelled = false;
     async function reoptimize() {
       const [targets, fetchedRestrictions, recentItems] = await Promise.all([
         getNutritionTargets(),
         getDietaryRestrictions(),
         getRecentItemIds(),
       ]);
+      if (cancelled) return;
       setRestrictions(fetchedRestrictions);
       // Auto-switch to kosher table when kosher restriction is enabled/disabled
       if (fetchedRestrictions.kosher) {
@@ -144,6 +163,7 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onOpenInsigh
       }
       if (targets) {
         const favoriteIds = await getFavoriteIds();
+        if (cancelled) return;
         const optimized = optimizeDay(menu, targets, fetchedRestrictions, recentItems, undefined, favoriteIds);
         setMealPlan(optimized);
         setItemAlternatives({});
@@ -151,6 +171,7 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onOpenInsigh
       }
     }
     reoptimize();
+    return () => { cancelled = true; };
   }, [settingsVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLocationChange = (meal, location) => {
@@ -396,7 +417,6 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onOpenInsigh
     return (
       <div className="meal-plan-error">
         <p>Unable to generate meal plan. Please complete setup first.</p>
-        <button onClick={onOpenSettings}>Go to Settings</button>
       </div>
     );
   }
@@ -407,56 +427,31 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onOpenInsigh
   return (
     <div className="meal-plan">
       <header className="meal-plan-header">
-        <button className="home-btn" onClick={onGoHome} aria-label="Home">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-          </svg>
-        </button>
-        <div className="header-content">
+        <div className="header-brand">
           <img src="/logo-cropped.png" alt="Bento" className="header-logo-sm" />
-          <img src="/logo.png" alt="Bento" className="header-logo" />
-          <p className="tagline">Eat well. Every meal.</p>
           <p className="date">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
         </div>
-        <div className="header-right">
-          {(() => {
-            const today = localDateStr();
-            const yesterday = localDateStr(new Date(Date.now() - 86400000));
-            const active = streak.lastConfirmedDate === today || streak.lastConfirmedDate === yesterday;
-            const effectiveStreak = active ? streak.currentStreak : 0;
-            return effectiveStreak > 0 ? (
-              <StreakBadge streak={effectiveStreak} onClick={() => setShowBadgesPanel(true)} />
-            ) : null;
-          })()}
-<button className="insights-btn" onClick={onOpenInsights} aria-label="Insights">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="20" x2="18" y2="10" />
-              <line x1="12" y1="20" x2="12" y2="4" />
-              <line x1="6" y1="20" x2="6" y2="14" />
-            </svg>
-          </button>
-          <button className="favorites-btn" onClick={onOpenFavorites} aria-label="Favorites">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-            </svg>
-          </button>
-          <button className="settings-btn" onClick={onOpenSettings} aria-label="Settings">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-            </svg>
-          </button>
-        </div>
+        {(() => {
+          const today = localDateStr();
+          const yesterday = localDateStr(new Date(Date.now() - 86400000));
+          const active = streak.lastConfirmedDate === today || streak.lastConfirmedDate === yesterday;
+          const effectiveStreak = active ? streak.currentStreak : 0;
+          return effectiveStreak > 0 ? (
+            <StreakBadge streak={effectiveStreak} onClick={() => setShowBadgesPanel(true)} />
+          ) : null;
+        })()}
       </header>
 
-      {usingCachedData && (
+      {usingCachedData === 'cache' && (
         <div className="cache-warning">
-          Menu data may be outdated. <button onClick={() => loadMenuAndOptimize(true)}>Refresh</button>
+          Showing saved menu · <button onClick={() => loadMenuAndOptimize(true)}>Refresh</button>
         </div>
       )}
-
-      <DailySummary totals={dayTotals} targets={targets} />
+      {usingCachedData === 'offline' && (
+        <div className="cache-warning cache-warning-error">
+          Couldn't reach dining servers · Showing estimated menu · <button onClick={() => loadMenuAndOptimize(true)}>Retry</button>
+        </div>
+      )}
 
       <div className="meals-timeline">
         {['breakfast', 'lunch', 'dinner'].map((meal) => (
@@ -491,6 +486,8 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onOpenInsigh
         ))}
       </div>
 
+      <DailySummary totals={dayTotals} targets={targets} />
+
       {showStreakCelebration && (
         <StreakCelebration
           streak={streak.currentStreak}
@@ -510,10 +507,6 @@ export default function MealPlan({ onOpenSettings, onOpenFavorites, onOpenInsigh
           longestStreak={streak.longestStreak}
           onClose={() => setShowBadgesPanel(false)}
         />
-      )}
-
-      {showInsights && (
-        <InsightsPanel onClose={onCloseInsights} />
       )}
     </div>
   );

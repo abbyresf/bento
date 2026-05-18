@@ -182,3 +182,13 @@
     max-width: 100%;
   }
 }
+
+.insights-panel-page {
+  position: relative;
+  max-width: none;
+  width: 100%;
+  height: auto;
+  min-height: calc(100vh - 60px);
+  box-shadow: none;
+  animation: none;
+}

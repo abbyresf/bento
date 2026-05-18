@@ -528,16 +528,18 @@
   .total-item {
     flex-direction: column;
     align-items: center;
-    gap: 0.1rem;
+    gap: 0;
   }
 
   .total-value {
     font-size: 1rem;
     font-weight: 700;
+    line-height: 1.1;
   }
 
   .total-label {
     font-size: 0.7rem;
+    line-height: 1.2;
   }
 
   .confirm-btn {

@@ -14,7 +14,7 @@ import { calculateNutritionTargets, ACTIVITY_LEVELS, GOALS } from '../../utils/t
 import UniversityPicker from '../common/UniversityPicker';
 import './Settings.css';
 
-export default function Settings({ onClose, onReset, onSave, onGoContact }) {
+export default function Settings({ onClose, onReset, onSave, onGoContact, tabMode = false }) {
   const [profile, setProfile] = useState(null);
   const [targets, setTargets] = useState(null);
   const [restrictions, setRestrictions] = useState(null);
@@ -112,7 +112,7 @@ export default function Settings({ onClose, onReset, onSave, onGoContact }) {
 
   if (!profile || !targets || !restrictions) {
     return (
-      <div className="settings">
+      <div className={`settings${tabMode ? ' settings-page' : ''}`}>
         <div className="settings-header">
           <h2>Settings</h2>
           <button className="close-btn" onClick={onClose}>&times;</button>
@@ -123,7 +123,7 @@ export default function Settings({ onClose, onReset, onSave, onGoContact }) {
   }
 
   return (
-    <div className="settings">
+    <div className={`settings${tabMode ? ' settings-page' : ''}`}>
       <div className="settings-header">
         <h2>Settings</h2>
         <button className="close-btn" onClick={onClose}>&times;</button>

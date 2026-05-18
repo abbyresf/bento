@@ -54,7 +54,6 @@ function selectOnboardingItems(menu) {
     (byStation[item.station] ??= []).push(item);
   }
 
-  // Pick the highest-calorie items per station (more recognisable/substantial)
   const quota = { entree: 6, grill: 4, salad: 4, bakery: 4, deli: 3, soup: 2, sides: 2, pizza: 2, allgood: 2, breakfast: 3 };
   const picks = [];
   for (const [station, limit] of Object.entries(quota)) {
@@ -62,55 +61,62 @@ function selectOnboardingItems(menu) {
     picks.push(...pool.slice(0, limit));
   }
 
-  // Shuffle and cap at 22 cards
   return picks.sort(() => Math.random() - 0.5).slice(0, 22);
 }
 
-export default function SwipeOnboarding({ onDone }) {
-  const [items, setItems]         = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [fetchError, setFetchError] = useState(false);
-  const [index, setIndex]         = useState(0);
-  const [likedCount, setLikedCount] = useState(0);
-  const [done, setDone]           = useState(false);
-  const [dragX, setDragX]         = useState(0);
-  const [dragging, setDragging]   = useState(false);
-  const [flying, setFlying]       = useState(null); // 'left' | 'right' | null
+const THRESHOLD = 90;
+const FLY_DURATION = 400; // ms — slightly longer than the 0.38s CSS transition
 
-  const startX      = useRef(0);
-  const cardRef     = useRef(null);
-  const processing  = useRef(false);
+export default function SwipeOnboarding({ onDone, embedded }) {
+  const [items, setItems]           = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [fetchError, setFetchError] = useState(false);
+  const [index, setIndex]           = useState(0);
+  const [likedCount, setLikedCount] = useState(0);
+  const [done, setDone]             = useState(false);
+  const [dragX, setDragX]           = useState(0);
+  const [dragging, setDragging]     = useState(false);
+  const [flying, setFlying]         = useState(null); // 'left' | 'right' | null
+
+  const startX     = useRef(0);
+  const cardRef    = useRef(null);
+  const processing = useRef(false);
+  const flyTimer   = useRef(null);
 
   useEffect(() => {
     fetchBrandeisMenu()
       .then(menu => setItems(selectOnboardingItems(menu)))
       .catch(() => setFetchError(true))
       .finally(() => setLoading(false));
+    return () => { if (flyTimer.current) clearTimeout(flyTimer.current); };
   }, []);
-
-  const THRESHOLD = 90;
 
   const decide = async (liked) => {
     if (processing.current || flying) return;
     processing.current = true;
 
-    if (liked) {
-      await toggleFavorite(items[index]);
+    // Capture item reference now — before any async work changes index
+    const currentItem = items[index];
+    const currentIndex = index;
+
+    if (liked && currentItem) {
+      await toggleFavorite(currentItem);
       setLikedCount(c => c + 1);
     }
 
     setFlying(liked ? 'right' : 'left');
-    setDragX(0);
+    // Keep dragX — lets the stamp stay visible during the fly-off
 
-    setTimeout(() => {
+    flyTimer.current = setTimeout(() => {
       processing.current = false;
       setFlying(null);
-      if (index + 1 >= items.length) {
+      setDragX(0);
+      if (currentIndex + 1 >= items.length) {
         setDone(true);
       } else {
-        setIndex(i => i + 1);
+        setIndex(currentIndex + 1);
       }
-    }, 380);
+    }, FLY_DURATION);
   };
 
   const onPointerDown = (e) => {
@@ -125,7 +131,7 @@ export default function SwipeOnboarding({ onDone }) {
     setDragX(e.clientX - startX.current);
   };
 
-  const onPointerUp = () => {
+  const endDrag = () => {
     if (!dragging) return;
     setDragging(false);
     if (Math.abs(dragX) >= THRESHOLD) {
@@ -137,7 +143,7 @@ export default function SwipeOnboarding({ onDone }) {
 
   if (loading) {
     return (
-      <div className="swipe-onboarding swipe-centered">
+      <div className={`swipe-onboarding swipe-centered ${embedded ? 'swipe-embedded' : ''}`}>
         <div className="spinner" />
         <p className="swipe-loading-msg">Loading today's menu…</p>
       </div>
@@ -146,19 +152,19 @@ export default function SwipeOnboarding({ onDone }) {
 
   if (fetchError || items.length === 0) {
     return (
-      <div className="swipe-onboarding swipe-centered">
-        <img src="/logo-cropped.png" alt="Bento" className="swipe-logo" />
+      <div className={`swipe-onboarding swipe-centered ${embedded ? 'swipe-embedded' : ''}`}>
+        {!embedded && <img src="/logo-cropped.png" alt="Bento" className="swipe-logo" />}
         <h2 className="swipe-done-title">Couldn't load today's menu</h2>
         <p className="swipe-done-sub">You can favorite items directly from your meal plan.</p>
-        <button className="swipe-done-btn" onClick={onDone}>Continue to app</button>
+        <button className="swipe-done-btn" onClick={onDone}>{embedded ? 'Continue' : 'Continue to app'}</button>
       </div>
     );
   }
 
   if (done) {
     return (
-      <div className="swipe-onboarding swipe-centered">
-        <img src="/logo-cropped.png" alt="Bento" className="swipe-logo" />
+      <div className={`swipe-onboarding swipe-centered ${embedded ? 'swipe-embedded' : ''}`}>
+        {!embedded && <img src="/logo-cropped.png" alt="Bento" className="swipe-logo" />}
         <div className="swipe-done-emoji">🎉</div>
         <h2 className="swipe-done-title">You're all set!</h2>
         {likedCount > 0 ? (
@@ -168,7 +174,7 @@ export default function SwipeOnboarding({ onDone }) {
         ) : (
           <p className="swipe-done-sub">No favorites yet — you can always heart items from your meal plan.</p>
         )}
-        <button className="swipe-done-btn" onClick={onDone}>Go to my meal plan</button>
+        <button className="swipe-done-btn" onClick={onDone}>{embedded ? 'Continue' : 'Go to my meal plan'}</button>
       </div>
     );
   }
@@ -181,9 +187,19 @@ export default function SwipeOnboarding({ onDone }) {
 
   let cardStyle;
   if (flying === 'right') {
-    cardStyle = { transform: 'translateX(130vw) rotate(30deg)', opacity: 0, transition: 'all 0.38s cubic-bezier(0.25,0.46,0.45,0.94)', pointerEvents: 'none' };
+    cardStyle = {
+      transform: 'translateX(130vw) rotate(30deg)',
+      opacity: 0,
+      transition: `all ${FLY_DURATION * 0.95}ms cubic-bezier(0.25,0.46,0.45,0.94)`,
+      pointerEvents: 'none',
+    };
   } else if (flying === 'left') {
-    cardStyle = { transform: 'translateX(-130vw) rotate(-30deg)', opacity: 0, transition: 'all 0.38s cubic-bezier(0.25,0.46,0.45,0.94)', pointerEvents: 'none' };
+    cardStyle = {
+      transform: 'translateX(-130vw) rotate(-30deg)',
+      opacity: 0,
+      transition: `all ${FLY_DURATION * 0.95}ms cubic-bezier(0.25,0.46,0.45,0.94)`,
+      pointerEvents: 'none',
+    };
   } else {
     cardStyle = {
       transform: `translateX(${dragX}px) rotate(${dragX / 22}deg)`,
@@ -192,11 +208,13 @@ export default function SwipeOnboarding({ onDone }) {
   }
 
   return (
-    <div className="swipe-onboarding">
-      <div className="swipe-top-bar">
-        <img src="/logo-cropped.png" alt="Bento" className="swipe-logo-sm" />
-        <button className="swipe-skip-btn" onClick={onDone}>Skip</button>
-      </div>
+    <div className={`swipe-onboarding ${embedded ? 'swipe-embedded' : ''}`}>
+      {!embedded && (
+        <div className="swipe-top-bar">
+          <img src="/logo-cropped.png" alt="Bento" className="swipe-logo-sm" />
+          <button className="swipe-skip-btn" onClick={onDone}>Skip</button>
+        </div>
+      )}
 
       <div className="swipe-titles">
         <h2>Discover your favorites</h2>
@@ -211,8 +229,9 @@ export default function SwipeOnboarding({ onDone }) {
       </div>
 
       <div className="swipe-card-area">
+        {/* Back card — keyed by item name so React reuses this DOM element as front card */}
         {nextItem && (
-          <div className="swipe-card swipe-card-back">
+          <div key={nextItem.name} className="swipe-card swipe-card-back">
             <div className="swipe-card-stripe" style={{ background: stationColor(nextItem.station) }} />
             <div className="swipe-card-body">
               <p className="swipe-station" style={{ color: stationColor(nextItem.station) }}>
@@ -223,14 +242,16 @@ export default function SwipeOnboarding({ onDone }) {
           </div>
         )}
 
+        {/* Front card — same key pattern; when index advances, old back card DOM node becomes front */}
         <div
+          key={item.name}
           ref={cardRef}
           className="swipe-card swipe-card-front"
           style={cardStyle}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
         >
           <div className="swipe-stamp swipe-stamp-yes" style={{ opacity: heartOpacity }}>❤</div>
           <div className="swipe-stamp swipe-stamp-no"  style={{ opacity: noOpacity }}>✕</div>

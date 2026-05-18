@@ -456,8 +456,7 @@ export function getCachedMenu() {
   try {
     const cached = JSON.parse(localStorage.getItem('bento_cached_menu'));
     if (!cached) return null;
-    const today = new Date().toISOString().split('T')[0];
-    if (cached.date !== today) return null;
+    if (cached.date !== localDateStr()) return null;
     if (Date.now() - cached.fetchedAt > CACHE_TTL_MS) return null;
     return cached.menu;
   } catch { return null; }
@@ -465,7 +464,6 @@ export function getCachedMenu() {
 
 export function setCachedMenu(menu) {
   try {
-    const today = new Date().toISOString().split('T')[0];
-    localStorage.setItem('bento_cached_menu', JSON.stringify({ date: today, fetchedAt: Date.now(), menu }));
+    localStorage.setItem('bento_cached_menu', JSON.stringify({ date: localDateStr(), fetchedAt: Date.now(), menu }));
   } catch { /* localStorage unavailable */ }
 }

@@ -3,9 +3,16 @@ import { ACTIVITY_LEVELS, GOALS, calculateNutritionTargets } from '../../utils/t
 import { setUserProfile, setNutritionTargets, setDietaryRestrictions } from '../../lib/db';
 import { UNIVERSITIES } from '../../data/universities';
 import UniversityPicker from '../common/UniversityPicker';
+import SwipeOnboarding from './SwipeOnboarding';
 import './OnboardingWizard.css';
 
-const STEPS = ['university', 'basics', 'activity', 'goals', 'dietary', 'review'];
+const STEPS = ['university', 'basics', 'activity', 'goals', 'dietary', 'swipe', 'review'];
+
+const SECTIONS = [
+  { label: 'About You',   steps: ['university', 'basics'] },
+  { label: 'Your Goals',  steps: ['activity', 'goals'] },
+  { label: 'Preferences', steps: ['dietary', 'swipe'] },
+];
 
 export default function OnboardingWizard({ onComplete, onGoContact }) {
   const [currentStep, setCurrentStep] = useState(0);
@@ -402,22 +409,59 @@ export default function OnboardingWizard({ onComplete, onGoContact }) {
 
   const renderStep = () => {
     switch (STEPS[currentStep]) {
-      case 'university':
-        return renderUniversityStep();
-      case 'basics':
-        return renderBasicsStep();
-      case 'activity':
-        return renderActivityStep();
-      case 'goals':
-        return renderGoalsStep();
-      case 'dietary':
-        return renderDietaryStep();
-      case 'review':
-        return renderReviewStep();
-      default:
-        return null;
+      case 'university': return renderUniversityStep();
+      case 'basics':     return renderBasicsStep();
+      case 'activity':   return renderActivityStep();
+      case 'goals':      return renderGoalsStep();
+      case 'dietary':    return renderDietaryStep();
+      case 'review':     return renderReviewStep();
+      default:           return null;
     }
   };
+
+  const isSwipeStep = STEPS[currentStep] === 'swipe';
+
+  const sectionProgress = (
+    <div className="section-progress">
+      {SECTIONS.map((section, sIdx) => {
+        const sectionStepIndices = section.steps.map(s => STEPS.indexOf(s));
+        const firstIdx = sectionStepIndices[0];
+        const lastIdx  = sectionStepIndices[sectionStepIndices.length - 1];
+        const isComplete = currentStep > lastIdx;
+        const isActive   = currentStep >= firstIdx && currentStep <= lastIdx;
+        let fill = 0;
+        if (isComplete) fill = 100;
+        else if (isActive) fill = ((currentStep - firstIdx + 1) / section.steps.length) * 100;
+        return (
+          <div key={sIdx} className={`section-item ${isComplete ? 'complete' : ''} ${isActive ? 'active' : ''}`}>
+            <div className="section-bar-track">
+              <div className="section-bar-fill" style={{ width: `${fill}%` }} />
+            </div>
+            <span className="section-label">{section.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  if (isSwipeStep) {
+    return (
+      <div className="onboarding-wizard onboarding-wizard-swipe">
+        <div className="swipe-step-topbar">
+          <img src="/logo-cropped.png" alt="Bento" className="swipe-step-logo" />
+          <button className="swipe-step-skip" onClick={handleNext}>Skip</button>
+        </div>
+        {sectionProgress}
+        <SwipeOnboarding
+          embedded
+          onDone={() => {
+            localStorage.setItem('bento_swipe_done', '1');
+            handleNext();
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="onboarding-wizard">
@@ -426,12 +470,7 @@ export default function OnboardingWizard({ onComplete, onGoContact }) {
         <p className="subtitle">Eat well. Every meal.</p>
       </div>
 
-      <div className="progress-bar">
-        <div
-          className="progress-fill"
-          style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
-        />
-      </div>
+      {sectionProgress}
 
       <form onSubmit={(e) => e.preventDefault()}>
         {renderStep()}

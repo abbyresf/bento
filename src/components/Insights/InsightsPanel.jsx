@@ -123,7 +123,7 @@ function StreakHistory({ summaries }) {
   );
 }
 
-export default function InsightsPanel({ onClose }) {
+export default function InsightsPanel({ onClose, tabMode = false }) {
   const [summaries, setSummaries] = useState(null);
   const [targets, setTargets] = useState(null);
   const [goalHits, setGoalHits] = useState(null);
@@ -143,6 +143,38 @@ export default function InsightsPanel({ onClose }) {
   }, []);
 
   const latest = summaries?.[0] ?? null;
+
+  if (tabMode) {
+    return (
+      <div className="insights-panel-page">
+        <div className="insights-panel-header">
+          <h2>Insights</h2>
+          <button className="insights-close" onClick={onClose} aria-label="Close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div className="insights-body">
+          {loading ? (
+            <p className="insights-loading">Loading…</p>
+          ) : (
+            <>
+              {!latest && (
+                <p className="insights-pending-note">
+                  Confirm meals for a full week to fill in your stats — here's what you'll see:
+                </p>
+              )}
+              <WeeklySummaryCard summary={latest} targets={targets} />
+              <Callouts latest={latest} targets={targets} goalHits={goalHits} />
+              <StreakHistory summaries={summaries} />
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

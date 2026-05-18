@@ -383,3 +383,12 @@
     grid-template-columns: 1fr;
   }
 }
+
+.settings-page {
+  position: relative;
+  max-width: none;
+  height: auto;
+  min-height: calc(100vh - 60px);
+  box-shadow: none;
+  animation: none;
+}

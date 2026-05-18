@@ -1,6 +1,14 @@
 .app {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
   background: #faf7f4;
+}
+
+.tab-content {
+  flex: 1;
+  min-height: calc(100vh - 60px);
+  padding-bottom: 60px;
 }
 
 .app-loading {
