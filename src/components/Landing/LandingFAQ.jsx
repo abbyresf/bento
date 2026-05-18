@@ -24,7 +24,7 @@ const FAQS = [
   },
   {
     q: 'Which universities does Bento support?',
-    a: 'Bento is currently available at select universities, with more being added. During onboarding you can see which schools are supported and choose yours.',
+    a: 'Bento is currently available at Brandeis University, with more being added. During onboarding you can see which schools are supported and choose yours.',
   },
   {
     q: 'Can I use Bento if I have food allergies?',

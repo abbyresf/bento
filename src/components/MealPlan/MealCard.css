@@ -402,6 +402,126 @@
   white-space: nowrap;
 }
 
+/* ── Mode selector ────────────────────────────────────────── */
+.meal-mode-selector {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem 0;
+}
+
+.mode-tab {
+  flex: 1;
+  padding: 0.55rem 0.5rem;
+  border-radius: 10px;
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.83rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.mode-tab.active {
+  background: #243b55;
+  border-color: #243b55;
+  color: white;
+}
+
+/* ── Build My Plate content ───────────────────────────────── */
+.manual-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.75rem 1.25rem;
+  text-align: center;
+}
+
+.manual-empty-text {
+  font-size: 0.88rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.browse-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.65rem 1.25rem;
+  background: #f47421;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.browse-menu-btn:hover { background: #d9641a; }
+
+.manual-plate {
+  padding: 0.75rem 1.25rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.manual-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.manual-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.55rem 0.85rem;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.85rem;
+}
+
+.manual-item-row:last-child { border-bottom: none; }
+
+.manual-item-name {
+  color: #243b55;
+  font-weight: 500;
+}
+
+.manual-item-cal {
+  color: #94a3b8;
+  font-size: 0.78rem;
+  flex-shrink: 0;
+}
+
+.edit-plate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  align-self: flex-end;
+  padding: 0.45rem 0.85rem;
+  background: none;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.edit-plate-btn:hover {
+  background: #f1f5f9;
+  color: #243b55;
+}
+
 /* Footer */
 .meal-card-footer {
   display: flex;
@@ -410,12 +530,6 @@
   padding: 1rem 1.25rem;
   background: #faf7f4;
   border-top: 1px solid #f1f5f9;
-}
-
-.meal-footer-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .kosher-badge {
@@ -434,7 +548,8 @@
 
 .meal-totals {
   display: flex;
-  gap: 1.5rem;
+  justify-content: center;
+  gap: 1.25rem;
 }
 
 .total-item {
@@ -454,16 +569,19 @@
   color: #64748b;
 }
 
+
 .confirm-btn {
-  padding: 0.5rem 1rem;
+  width: 100%;
+  padding: 0.8rem 1rem;
   background: #f47421;
   color: white;
   border: none;
-  border-radius: 6px;
-  font-size: 0.85rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
   transition: background 0.2s;
+  white-space: nowrap;
 }
 
 .confirm-btn:hover {

@@ -218,6 +218,7 @@
     height: 38px;
     width: auto;
     object-fit: contain;
+    margin-left: -6px;
   }
 
   .header-logo {
@@ -253,5 +254,6 @@
     font-weight: 600;
     color: #64748b;
     margin: 0;
+    margin-left: 11px;
   }
 }

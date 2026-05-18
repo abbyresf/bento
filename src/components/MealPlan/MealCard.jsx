@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import FoodItem from './FoodItem';
+import MenuBrowser from './MenuBrowser';
 import { STATIONS } from '../../data/mockMenu';
 import './MealCard.css';
 
@@ -90,6 +91,11 @@ export default function MealCard({
   shermanRawCount,
   usdanRawCount,
   kosherRawCount,
+  shermanRawItems,
+  usdanRawItems,
+  kosherRawItems,
+  customPlan,
+  onBrowserDone,
   selectedLocation,
   onLocationChange,
   itemAlternatives,
@@ -107,65 +113,66 @@ export default function MealCard({
   const [collapsed, setCollapsed] = useState(isPast);
   const [expandedItem, setExpandedItem] = useState(null);
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const [showBrowser, setShowBrowser] = useState(false);
+  const [mode, setMode] = useState('bento'); // 'bento' | 'manual'
   const prevIsPastRef = useRef(isPast);
 
-  // Auto-collapse when meal time ends while the page is open
   useEffect(() => {
-    if (isPast && !prevIsPastRef.current) {
-      setCollapsed(true);
-    }
+    if (isPast && !prevIsPastRef.current) setCollapsed(true);
     prevIsPastRef.current = isPast;
   }, [isPast]);
 
-  // Auto-collapse when meal is confirmed
   useEffect(() => {
     if (isConfirmed) setCollapsed(true);
   }, [isConfirmed]);
 
-  const plansByLocation = { sherman: shermanPlan, usdan: usdanPlan, kosher: kosherPlan };
-  const openByLocation  = { sherman: shermanOpen,  usdan: usdanOpen,  kosher: kosherOpen };
-  const hasMenuByLocation = {
-    sherman: shermanRawCount > 0,
-    usdan:   usdanRawCount   > 0,
-    kosher:  kosherRawCount  > 0,
-  };
-  const currentRawCount = { sherman: shermanRawCount, usdan: usdanRawCount, kosher: kosherRawCount }[selectedLocation] ?? 0;
-  const currentPlan = plansByLocation[selectedLocation] ?? usdanPlan;
-  const isCurrentLocationOpen = openByLocation[selectedLocation] ?? true;
-
   useEffect(() => {
-    if (showRecommendations && recommendations === null) {
-      onLoadRecommendations?.();
-    }
-  }, [showRecommendations]); // eslint-disable-line
-
-  useEffect(() => {
-    // Reset recommendations panel when the user switches dining location
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setShowRecommendations(false);
   }, [selectedLocation]);
 
-  if (!currentPlan && !shermanPlan && !usdanPlan && !kosherPlan) return null;
+  const plansByLocation     = { sherman: shermanPlan, usdan: usdanPlan, kosher: kosherPlan };
+  const openByLocation      = { sherman: shermanOpen, usdan: usdanOpen, kosher: kosherOpen };
+  const rawItemsByLocation  = { sherman: shermanRawItems ?? [], usdan: usdanRawItems ?? [], kosher: kosherRawItems ?? [] };
+  const hasMenuByLocation   = { sherman: shermanRawCount > 0, usdan: usdanRawCount > 0, kosher: kosherRawCount > 0 };
+  const currentRawCount     = { sherman: shermanRawCount, usdan: usdanRawCount, kosher: kosherRawCount }[selectedLocation] ?? 0;
+  const bentoPlan           = plansByLocation[selectedLocation] ?? usdanPlan;
+  const isCurrentLocationOpen = openByLocation[selectedLocation] ?? true;
+  const locationLabel       = { sherman: 'Farm Table', usdan: 'Usdan', kosher: 'Kosher Table' }[selectedLocation] ?? selectedLocation;
 
-  const allItemsKosher = currentPlan?.items?.length > 0 &&
-    currentPlan.items.every(i => i.tags?.includes('kosher'));
-  // Show badge: always at Kosher Table (it's certified by definition), or for kosher users at any location when all items are kosher
+  // Totals shown in footer depend on mode
+  const footerTotals = (mode === 'manual' && customPlan)
+    ? customPlan.totals
+    : bentoPlan?.totals ?? { calories: 0, protein: 0, carbs: 0, fat: 0 };
+
+  useEffect(() => {
+    if (showRecommendations && recommendations === null) onLoadRecommendations?.();
+  }, [showRecommendations]); // eslint-disable-line
+
+  if (!bentoPlan && !shermanPlan && !usdanPlan && !kosherPlan) return null;
+
+  const allItemsKosher = bentoPlan?.items?.length > 0 && bentoPlan.items.every(i => i.tags?.includes('kosher'));
   const showKosherBadge = allItemsKosher && (selectedLocation === 'kosher' || isKosherUser);
 
   const mealLabel = meal.charAt(0).toUpperCase() + meal.slice(1);
-  const timeRange = `${mealTime.start > 12 ? mealTime.start - 12 : mealTime.start}${mealTime.start >= 12 ? 'pm' : 'am'} - ${mealTime.end > 12 ? mealTime.end - 12 : mealTime.end}${mealTime.end >= 12 ? 'pm' : 'am'}`;
+  const timeRange = `${mealTime.start > 12 ? mealTime.start - 12 : mealTime.start}${mealTime.start >= 12 ? 'pm' : 'am'} – ${mealTime.end > 12 ? mealTime.end - 12 : mealTime.end}${mealTime.end >= 12 ? 'pm' : 'am'}`;
 
-  const toggleExpanded = (itemId) => {
-    setExpandedItem((prev) => (prev === itemId ? null : itemId));
-  };
-
-  const handleAddRecommendation = (item) => {
-    onAddItem?.(item);
+  const switchToBento = () => {
+    setMode('bento');
+    onBrowserDone([]); // clear any custom selection
     setShowRecommendations(false);
   };
 
+  const switchToManual = () => {
+    setMode('manual');
+    setShowRecommendations(false);
+  };
+
+  const locationAvailable = isCurrentLocationOpen && currentRawCount > 0;
+
   return (
     <div className={`meal-card meal-${meal} ${isPast ? 'past' : ''} ${isConfirmed ? 'confirmed' : ''} ${collapsed ? 'collapsed' : ''}`}>
+
+      {/* ── Header ──────────────────────────────────────────── */}
       <div className="meal-card-header" onClick={() => setCollapsed(prev => !prev)} style={{ cursor: 'pointer' }}>
         <div className="meal-info">
           <h3>{mealLabel}</h3>
@@ -176,7 +183,6 @@ export default function MealCard({
             <polyline points="6 9 12 15 18 9" />
           </svg>
         </div>
-
         <LocationPicker
           selectedLocation={selectedLocation}
           onLocationChange={onLocationChange}
@@ -185,71 +191,90 @@ export default function MealCard({
         />
       </div>
 
-      {!collapsed && currentPlan.warnings.length > 0 && (
-        <div className="meal-warnings">
-          {currentPlan.warnings.map((warning, i) => (
-            <div key={i} className="warning">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                <line x1="12" y1="9" x2="12" y2="13"></line>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-              </svg>
-              {warning}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {!collapsed && (!isCurrentLocationOpen ? (
+      {/* ── Closed / no menu states ──────────────────────────── */}
+      {!collapsed && !isCurrentLocationOpen && (
         <div className="location-closed">
           <span className="closed-icon">🔒</span>
           <p>Closed today</p>
           <p className="closed-sub">Try another location</p>
         </div>
-      ) : currentRawCount === 0 ? (
+      )}
+      {!collapsed && isCurrentLocationOpen && currentRawCount === 0 && (
         <div className="location-closed">
           <p>No {meal} menu posted at this location today.</p>
           <p className="closed-sub">Try switching to another dining hall above.</p>
         </div>
-      ) : (
-        <div className="meal-items">
-          {(() => {
-            const groups = groupItemsByStation(currentPlan?.items ?? []);
-            const showHeaders = groups.length > 1;
-            return groups.map(([station, entries]) => (
-              <div key={station} className="meal-category-group">
-                {showHeaders && (
-                  <p className="meal-category-label">{STATIONS[station] || station}</p>
-                )}
-                {entries.map(({ item, index }) => (
-                  <FoodItem
-                    key={item.id}
-                    item={item}
-                    isExpanded={expandedItem === item.id}
-                    onToggleExpand={() => toggleExpanded(item.id)}
-                    alternatives={itemAlternatives?.[`${selectedLocation}-${meal}-${index}`] ?? null}
-                    onLoadAlternatives={() => onLoadAlternatives(meal, selectedLocation, index, item)}
-                    onSwapToItem={(newItem) => onSwapToItem(index, newItem)}
-                    onRemove={() => onRemoveItem?.(item.id)}
-                    disabled={false}
-                  />
-                ))}
-              </div>
-            ));
-          })()}
+      )}
 
-          <div className="add-item-section">
+      {/* ── Mode selector ────────────────────────────────────── */}
+      {!collapsed && locationAvailable && !isConfirmed && (
+        <div className="meal-mode-selector">
+          <button
+            className={`mode-tab ${mode === 'bento' ? 'active' : ''}`}
+            onClick={switchToBento}
+          >
+            Bento's Pick
+          </button>
+          <button
+            className={`mode-tab ${mode === 'manual' ? 'active' : ''}`}
+            onClick={switchToManual}
+          >
+            Build My Plate
+          </button>
+        </div>
+      )}
+
+      {/* ── Bento's Pick content ─────────────────────────────── */}
+      {!collapsed && locationAvailable && mode === 'bento' && (
+        <>
+          {bentoPlan.warnings?.length > 0 && (
+            <div className="meal-warnings">
+              {bentoPlan.warnings.map((warning, i) => (
+                <div key={i} className="warning">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                  {warning}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="meal-items">
+            {(() => {
+              const groups = groupItemsByStation(bentoPlan?.items ?? []);
+              const showHeaders = groups.length > 1;
+              return groups.map(([station, entries]) => (
+                <div key={station} className="meal-category-group">
+                  {showHeaders && <p className="meal-category-label">{STATIONS[station] || station}</p>}
+                  {entries.map(({ item, index }) => (
+                    <FoodItem
+                      key={item.id}
+                      item={item}
+                      isExpanded={expandedItem === item.id}
+                      onToggleExpand={() => setExpandedItem(prev => prev === item.id ? null : item.id)}
+                      alternatives={itemAlternatives?.[`${selectedLocation}-${meal}-${index}`] ?? null}
+                      onLoadAlternatives={() => onLoadAlternatives(meal, selectedLocation, index, item)}
+                      onSwapToItem={(newItem) => onSwapToItem(index, newItem)}
+                      onRemove={() => onRemoveItem?.(item.id)}
+                      disabled={false}
+                    />
+                  ))}
+                </div>
+              ));
+            })()}
+
+            <div className="add-item-section">
               <button
                 className={`add-item-btn ${showRecommendations ? 'active' : ''}`}
-                onClick={() => setShowRecommendations((prev) => !prev)}
+                onClick={() => setShowRecommendations(prev => !prev)}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
                 Add to plate
               </button>
-
               {showRecommendations && (
                 <div className="recommendations-panel">
                   <p className="recommendations-label">Recommended for you</p>
@@ -259,12 +284,8 @@ export default function MealCard({
                     <p className="recs-empty">No recommendations available</p>
                   ) : (
                     <div className="recommendations-list">
-                      {recommendations.map((rec) => (
-                        <button
-                          key={rec.id}
-                          className="rec-item"
-                          onClick={() => handleAddRecommendation(rec)}
-                        >
+                      {recommendations.map(rec => (
+                        <button key={rec.id} className="rec-item" onClick={() => { onAddItem?.(rec); setShowRecommendations(false); }}>
                           <div className="rec-item-info">
                             <span className="rec-name">{rec.name}</span>
                             <span className="rec-reason">{rec.reason}</span>
@@ -281,13 +302,48 @@ export default function MealCard({
                   )}
                 </div>
               )}
+            </div>
           </div>
-        </div>
-      ))}
+        </>
+      )}
 
-      {!collapsed && isCurrentLocationOpen && currentRawCount > 0 && (
+      {/* ── Build My Plate content ───────────────────────────── */}
+      {!collapsed && locationAvailable && mode === 'manual' && (
+        customPlan ? (
+          <div className="manual-plate">
+            <div className="manual-items-list">
+              {customPlan.items.map(item => (
+                <div key={item.id} className="manual-item-row">
+                  <span className="manual-item-name">{item.name}</span>
+                  <span className="manual-item-cal">{item.nutrition?.calories ?? 0} cal</span>
+                </div>
+              ))}
+            </div>
+            <button className="edit-plate-btn" onClick={() => setShowBrowser(true)}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+              Edit selection
+            </button>
+          </div>
+        ) : (
+          <div className="manual-empty-state">
+            <p className="manual-empty-text">Browse the full menu and add what you're eating</p>
+            <button className="browse-menu-btn" onClick={() => setShowBrowser(true)}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              Browse Menu
+            </button>
+          </div>
+        )
+      )}
+
+      {/* ── Footer ───────────────────────────────────────────── */}
+      {!collapsed && locationAvailable && (
         <div className="meal-card-footer">
-          {showKosherBadge && (
+          {showKosherBadge && mode === 'bento' && (
             <div className="kosher-badge">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="20 6 9 17 4 12" />
@@ -295,34 +351,49 @@ export default function MealCard({
               Kosher certified
             </div>
           )}
-          <div className="meal-footer-row">
-            <div className="meal-totals">
-              <div className="total-item">
-                <span className="total-value">{currentPlan.totals.calories || 0}</span>
-                <span className="total-label">cal</span>
-              </div>
-              <div className="total-item">
-                <span className="total-value">{currentPlan.totals.protein || 0}g</span>
-                <span className="total-label">protein</span>
-              </div>
-              <div className="total-item">
-                <span className="total-value">{currentPlan.totals.carbs || 0}g</span>
-                <span className="total-label">carbs</span>
-              </div>
-              <div className="total-item">
-                <span className="total-value">{currentPlan.totals.fat || 0}g</span>
-                <span className="total-label">fat</span>
-              </div>
+          <div className="meal-totals">
+            <div className="total-item">
+              <span className="total-value">{footerTotals.calories || 0}</span>
+              <span className="total-label">cal</span>
             </div>
-
-            {!isConfirmed && (
-              <button className="confirm-btn" onClick={onConfirm} disabled={isConfirming}>
-                {isConfirming ? 'Saving...' : 'Mark as Eaten'}
-              </button>
-            )}
+            <div className="total-item">
+              <span className="total-value">{footerTotals.protein || 0}g</span>
+              <span className="total-label">protein</span>
+            </div>
+            <div className="total-item">
+              <span className="total-value">{footerTotals.carbs || 0}g</span>
+              <span className="total-label">carbs</span>
+            </div>
+            <div className="total-item">
+              <span className="total-value">{footerTotals.fat || 0}g</span>
+              <span className="total-label">fat</span>
+            </div>
           </div>
+
+          {!isConfirmed && (
+            <button
+              className="confirm-btn"
+              onClick={onConfirm}
+              disabled={isConfirming || (mode === 'manual' && !customPlan)}
+              title={mode === 'manual' && !customPlan ? 'Browse the menu to build your plate first' : undefined}
+            >
+              {isConfirming ? 'Saving…' : 'Mark as Eaten!'}
+            </button>
+          )}
         </div>
       )}
+
+      {/* ── MenuBrowser panel ────────────────────────────────── */}
+      <MenuBrowser
+        key={`${meal}-${selectedLocation}`}
+        meal={meal}
+        locationLabel={locationLabel}
+        items={rawItemsByLocation[selectedLocation]}
+        initialSelected={customPlan?.items}
+        onDone={(items) => { onBrowserDone(items); setShowBrowser(false); }}
+        onClose={() => setShowBrowser(false)}
+        className={showBrowser ? 'open' : ''}
+      />
     </div>
   );
 }

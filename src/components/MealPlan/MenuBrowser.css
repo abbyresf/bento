@@ -1,0 +1,234 @@
+.menu-browser {
+  position: fixed;
+  inset: 0;
+  background: #faf7f4;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.menu-browser.open {
+  transform: translateX(0);
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+
+.browser-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.9rem 1rem 0.8rem;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.browser-back {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  padding: 0.3rem;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+}
+
+.browser-back:hover { color: #243b55; }
+
+.browser-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.browser-meal {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #243b55;
+  line-height: 1.2;
+}
+
+.browser-location {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+/* ── Search ─────────────────────────────────────────────── */
+
+.browser-search-wrap {
+  position: relative;
+  padding: 0.65rem 1rem;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.browser-search-icon {
+  position: absolute;
+  left: 1.75rem;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.browser-search {
+  width: 100%;
+  padding: 0.55rem 2rem 0.55rem 2.25rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  font-size: 0.9rem;
+  color: #243b55;
+  outline: none;
+}
+
+.browser-search:focus { border-color: #f47421; }
+
+.browser-search-clear {
+  position: absolute;
+  right: 1.75rem;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0.25rem;
+}
+
+/* ── Scrollable item list ───────────────────────────────── */
+
+.browser-list {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 0.5rem;
+}
+
+.browser-station { margin-bottom: 0.25rem; }
+
+.browser-station-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  padding: 0.8rem 1rem 0.3rem;
+  margin: 0;
+}
+
+.browser-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: white;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.12s;
+}
+
+.browser-item.selected { background: #fff8f3; }
+
+.browser-item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.browser-item-name {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #243b55;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.browser-item-macros {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.browser-add-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid #e2e8f0;
+  background: white;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.browser-add-btn.added {
+  background: #f47421;
+  border-color: #f47421;
+  color: white;
+}
+
+.browser-empty {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  padding: 2.5rem 1rem;
+}
+
+/* ── Footer ─────────────────────────────────────────────── */
+
+.browser-footer {
+  background: white;
+  border-top: 1px solid #e2e8f0;
+  padding: 0.85rem 1rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  flex-shrink: 0;
+}
+
+.browser-totals {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.browser-total-item {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.browser-total-sep {
+  font-size: 0.75rem;
+  color: #cbd5e1;
+}
+
+.browser-hint {
+  font-size: 0.83rem;
+  color: #94a3b8;
+  text-align: center;
+  margin: 0;
+}
+
+.browser-done {
+  width: 100%;
+  padding: 0.875rem;
+  background: #f47421;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.browser-done:hover { background: #d9641a; }

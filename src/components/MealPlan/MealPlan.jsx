@@ -43,6 +43,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const [pendingBadge, setPendingBadge] = useState(null);
   const [newBadge, setNewBadge] = useState(null);
   const [showBadgesPanel, setShowBadgesPanel] = useState(false);
+  const [customMeals, setCustomMeals] = useState({ breakfast: null, lunch: null, dinner: null });
   const [, setTick] = useState(0);
 
   const loadMenuAndOptimize = useCallback(async (forceRefresh = false) => {
@@ -376,11 +377,25 @@ export default function MealPlan({ settingsVersion = 0 }) {
     });
   };
 
+  const handleBrowserDone = (meal, selectedItems) => {
+    if (selectedItems.length === 0) {
+      setCustomMeals(prev => ({ ...prev, [meal]: null }));
+    } else {
+      const totals = selectedItems.reduce((acc, item) => ({
+        calories: acc.calories + (item.nutrition?.calories || 0),
+        protein:  acc.protein  + (item.nutrition?.protein  || 0),
+        carbs:    acc.carbs    + (item.nutrition?.carbs    || 0),
+        fat:      acc.fat      + (item.nutrition?.fat      || 0),
+      }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+      setCustomMeals(prev => ({ ...prev, [meal]: { items: selectedItems, totals } }));
+    }
+  };
+
   const handleConfirmMeal = async (meal) => {
     if (confirmingMeals[meal] || confirmedMeals[meal]) return;
     setConfirmingMeals(prev => ({ ...prev, [meal]: true }));
     const location = selectedLocation[meal];
-    const mealItems = mealPlan[location][meal].items;
+    const mealItems = customMeals[meal]?.items ?? mealPlan[location][meal].items;
     await addMealToHistory(mealItems);
     setConfirmingMeals(prev => ({ ...prev, [meal]: false }));
     const updatedConfirmed = { ...confirmedMeals, [meal]: true };
@@ -419,12 +434,20 @@ export default function MealPlan({ settingsVersion = 0 }) {
 
     let totals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
     ['breakfast', 'lunch', 'dinner'].forEach((meal) => {
-      const location = selectedLocation[meal];
-      if (mealPlan[location] && mealPlan[location][meal]) {
-        totals.calories += mealPlan[location][meal].totals.calories;
-        totals.protein += mealPlan[location][meal].totals.protein;
-        totals.carbs += mealPlan[location][meal].totals.carbs;
-        totals.fat += mealPlan[location][meal].totals.fat;
+      const custom = customMeals[meal];
+      if (custom) {
+        totals.calories += custom.totals.calories;
+        totals.protein  += custom.totals.protein;
+        totals.carbs    += custom.totals.carbs;
+        totals.fat      += custom.totals.fat;
+      } else {
+        const location = selectedLocation[meal];
+        if (mealPlan[location] && mealPlan[location][meal]) {
+          totals.calories += mealPlan[location][meal].totals.calories;
+          totals.protein  += mealPlan[location][meal].totals.protein;
+          totals.carbs    += mealPlan[location][meal].totals.carbs;
+          totals.fat      += mealPlan[location][meal].totals.fat;
+        }
       }
     });
     return totals;
@@ -496,6 +519,11 @@ export default function MealPlan({ settingsVersion = 0 }) {
             shermanRawCount={menu?.locations?.sherman?.meals[meal]?.length ?? 0}
             usdanRawCount={menu?.locations?.usdan?.meals[meal]?.length ?? 0}
             kosherRawCount={menu?.locations?.kosher?.meals[meal]?.length ?? 0}
+            shermanRawItems={menu?.locations?.sherman?.meals[meal] ?? []}
+            usdanRawItems={menu?.locations?.usdan?.meals[meal] ?? []}
+            kosherRawItems={menu?.locations?.kosher?.meals[meal] ?? []}
+            customPlan={customMeals[meal]}
+            onBrowserDone={(items) => handleBrowserDone(meal, items)}
             isKosherUser={restrictions?.kosher ?? false}
             selectedLocation={selectedLocation[meal]}
             onLocationChange={(loc) => handleLocationChange(meal, loc)}
