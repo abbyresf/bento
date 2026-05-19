@@ -225,12 +225,19 @@ export async function getMealHistory() {
 
 export async function addMealToHistory(mealItems) {
   const id = await uid();
-  if (!id) return;
-  await supabase.from('meal_history').insert({
+  if (!id) return null;
+  const { data } = await supabase.from('meal_history').insert({
     user_id:      id,
     items:        mealItems,
     confirmed_at: new Date().toISOString(),
-  });
+  }).select('id').single();
+  return data?.id ?? null;
+}
+
+export async function removeMealFromHistory(rowId) {
+  const id = await uid();
+  if (!id || !rowId) return;
+  await supabase.from('meal_history').delete().eq('id', rowId).eq('user_id', id);
 }
 
 export async function getRecentItemIds() {

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { STATIONS } from '../../data/mockMenu';
 import './MenuBrowser.css';
 
@@ -46,7 +47,7 @@ export default function MenuBrowser({ meal, locationLabel, items, initialSelecte
 
   const mealLabel = meal.charAt(0).toUpperCase() + meal.slice(1);
 
-  return (
+  return createPortal(
     <div className={`menu-browser ${className}`}>
       <div className="browser-header">
         <button className="browser-back" onClick={onClose} aria-label="Back">
@@ -135,6 +136,7 @@ export default function MenuBrowser({ meal, locationLabel, items, initialSelecte
             : 'Close'}
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

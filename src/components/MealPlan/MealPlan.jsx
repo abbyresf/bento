@@ -3,9 +3,9 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 // Local date (YYYY-MM-DD) — avoids UTC date rollover after 8pm Eastern
 const localDateStr = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-import { generateTodaysMenu, hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
+import { hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
 import { fetchBrandeisMenu } from '../../services/menuFetcher';
-import { getNutritionTargets, getDietaryRestrictions, getRecentItemIds, getFavoriteIds, addMealToHistory, setCachedMenu, getCachedMenu, incrementStreak, getStreak } from '../../lib/db';
+import { getNutritionTargets, getDietaryRestrictions, getRecentItemIds, getFavoriteIds, addMealToHistory, removeMealFromHistory, setCachedMenu, getCachedMenu, incrementStreak, getStreak } from '../../lib/db';
 import { getNewBadge } from '../../data/badges';
 import { optimizeDay, findAlternatives, findRecommendedAdditions } from '../../utils/mealOptimizer';
 import MealCard from './MealCard';
@@ -43,7 +43,14 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const [pendingBadge, setPendingBadge] = useState(null);
   const [newBadge, setNewBadge] = useState(null);
   const [showBadgesPanel, setShowBadgesPanel] = useState(false);
-  const [customMeals, setCustomMeals] = useState({ breakfast: null, lunch: null, dinner: null });
+  const [customMeals, setCustomMeals] = useState(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('bento_custom_meals_v1') || '{}');
+      if (stored.date === localDateStr()) return stored.meals || { breakfast: null, lunch: null, dinner: null };
+    } catch { /* localStorage unavailable */ }
+    return { breakfast: null, lunch: null, dinner: null };
+  });
+  const [confirmedMealIds, setConfirmedMealIds] = useState({ breakfast: null, lunch: null, dinner: null });
   const [, setTick] = useState(0);
 
   const loadMenuAndOptimize = useCallback(async (forceRefresh = false) => {
@@ -72,8 +79,14 @@ export default function MealPlan({ settingsVersion = 0 }) {
         menuData = await fetchBrandeisMenu();
         setCachedMenu(menuData);
       } catch {
-        // Real fetch failed — fall back to mock data
-        menuData = generateTodaysMenu();
+        menuData = {
+          date: localDateStr(),
+          locations: {
+            sherman: { id: 'sherman', name: 'Farm Table at Sherman', shortName: 'Farm Table', meals: { breakfast: [], lunch: [], dinner: [] }, isOpen: false },
+            usdan:   { id: 'usdan',   name: 'Usdan Kitchen',           shortName: 'Usdan',       meals: { breakfast: [], lunch: [], dinner: [] }, isOpen: false },
+            kosher:  { id: 'kosher',  name: 'Kosher Table at Sherman', shortName: 'Kosher',      meals: { breakfast: [], lunch: [], dinner: [] }, isOpen: false },
+          },
+        };
         cacheState = 'offline';
       }
     }
@@ -377,18 +390,34 @@ export default function MealPlan({ settingsVersion = 0 }) {
     });
   };
 
+  const handleUndo = async (meal) => {
+    const rowId = confirmedMealIds[meal];
+    if (rowId) await removeMealFromHistory(rowId);
+    const updatedConfirmed = { ...confirmedMeals, [meal]: false };
+    setConfirmedMeals(updatedConfirmed);
+    setConfirmedMealIds(prev => ({ ...prev, [meal]: null }));
+    try {
+      localStorage.setItem('bento_confirmed_meals_v2', JSON.stringify({ date: localDateStr(), meals: updatedConfirmed }));
+    } catch { /* localStorage unavailable */ }
+  };
+
   const handleBrowserDone = (meal, selectedItems) => {
-    if (selectedItems.length === 0) {
-      setCustomMeals(prev => ({ ...prev, [meal]: null }));
-    } else {
-      const totals = selectedItems.reduce((acc, item) => ({
+    const newPlan = selectedItems.length === 0 ? null : {
+      items: selectedItems,
+      totals: selectedItems.reduce((acc, item) => ({
         calories: acc.calories + (item.nutrition?.calories || 0),
         protein:  acc.protein  + (item.nutrition?.protein  || 0),
         carbs:    acc.carbs    + (item.nutrition?.carbs    || 0),
         fat:      acc.fat      + (item.nutrition?.fat      || 0),
-      }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
-      setCustomMeals(prev => ({ ...prev, [meal]: { items: selectedItems, totals } }));
-    }
+      }), { calories: 0, protein: 0, carbs: 0, fat: 0 }),
+    };
+    setCustomMeals(prev => {
+      const next = { ...prev, [meal]: newPlan };
+      try {
+        localStorage.setItem('bento_custom_meals_v1', JSON.stringify({ date: localDateStr(), meals: next }));
+      } catch { /* localStorage unavailable */ }
+      return next;
+    });
   };
 
   const handleConfirmMeal = async (meal) => {
@@ -396,10 +425,11 @@ export default function MealPlan({ settingsVersion = 0 }) {
     setConfirmingMeals(prev => ({ ...prev, [meal]: true }));
     const location = selectedLocation[meal];
     const mealItems = customMeals[meal]?.items ?? mealPlan[location][meal].items;
-    await addMealToHistory(mealItems);
+    const rowId = await addMealToHistory(mealItems);
     setConfirmingMeals(prev => ({ ...prev, [meal]: false }));
     const updatedConfirmed = { ...confirmedMeals, [meal]: true };
     setConfirmedMeals(updatedConfirmed);
+    setConfirmedMealIds(prev => ({ ...prev, [meal]: rowId }));
     try {
       localStorage.setItem('bento_confirmed_meals_v2', JSON.stringify({ date: localDateStr(), meals: updatedConfirmed }));
     } catch { /* localStorage unavailable */ }
@@ -499,7 +529,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
       )}
       {usingCachedData === 'offline' && (
         <div className="cache-warning cache-warning-error">
-          Couldn't reach dining servers · Showing estimated menu · <button onClick={() => loadMenuAndOptimize(true)}>Retry</button>
+          Couldn't reach dining servers · <button onClick={() => loadMenuAndOptimize(true)}>Retry</button>
         </div>
       )}
 
@@ -537,6 +567,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
             isConfirmed={confirmedMeals[meal]}
             isConfirming={confirmingMeals[meal]}
             onConfirm={() => handleConfirmMeal(meal)}
+            onUndo={() => handleUndo(meal)}
           />
         ))}
       </div>

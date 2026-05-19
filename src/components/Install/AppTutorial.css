@@ -1,14 +1,14 @@
 .tutorial-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(36, 59, 85, 0.45);
+  background: rgba(36, 59, 85, 0.5);
   z-index: 200;
   display: flex;
   align-items: flex-end;
-  animation: fadeIn 0.2s ease;
+  animation: tutorialFadeIn 0.25s ease;
 }
 
-@keyframes fadeIn {
+@keyframes tutorialFadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
@@ -17,16 +17,16 @@
   position: relative;
   width: 100%;
   background: white;
-  border-radius: 24px 24px 0 0;
-  padding: 1rem 1.5rem 2.5rem;
+  border-radius: 28px 28px 0 0;
+  padding: 1rem 1.75rem 2.75rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  animation: slideUp 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  animation: tutorialSlideUp 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-@keyframes slideUp {
+@keyframes tutorialSlideUp {
   from { transform: translateY(100%); }
   to   { transform: translateY(0); }
 }
@@ -42,41 +42,69 @@
 .tutorial-skip {
   position: absolute;
   top: 1.1rem;
-  right: 1.25rem;
+  right: 1.5rem;
   background: none;
   border: none;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: #94a3b8;
   cursor: pointer;
   padding: 0.25rem;
+  letter-spacing: 0.01em;
 }
 
-.tutorial-skip:hover {
-  color: #64748b;
+.tutorial-skip:hover { color: #64748b; }
+
+/* Animated content area — fades in fresh on each step */
+.tutorial-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: tutorialStepIn 0.22s ease;
 }
 
-.tutorial-emoji {
-  font-size: 2.75rem;
-  line-height: 1;
+@keyframes tutorialStepIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.tutorial-icon-wrap {
+  width: 84px;
+  height: 84px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin: 0.5rem 0 1rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
+}
+
+.tutorial-step-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  margin: 0 0 0.5rem;
 }
 
 .tutorial-title {
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   font-weight: 800;
   color: #243b55;
-  margin: 0 0 0.6rem;
+  margin: 0 0 0.65rem;
+  line-height: 1.25;
 }
 
 .tutorial-body {
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   color: #64748b;
-  line-height: 1.6;
-  margin: 0 0 1.5rem;
-  max-width: 300px;
+  line-height: 1.65;
+  margin: 0 0 1.75rem;
+  max-width: 290px;
 }
 
+/* Dots — clickable to jump to a step */
 .tutorial-dots {
   display: flex;
   gap: 0.4rem;
@@ -84,32 +112,33 @@
 }
 
 .tutorial-dot {
-  width: 7px;
   height: 7px;
-  border-radius: 50%;
+  width: 7px;
+  border-radius: 999px;
   background: #e2e8f0;
-  transition: background 0.2s;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: width 0.25s ease, background 0.25s ease;
 }
 
 .tutorial-dot.active {
   background: #f47421;
-  width: 20px;
-  border-radius: 4px;
+  width: 22px;
 }
 
 .tutorial-next {
   width: 100%;
-  padding: 0.875rem;
+  padding: 0.9rem;
   background: #f47421;
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
   transition: background 0.2s;
+  letter-spacing: 0.01em;
 }
 
-.tutorial-next:hover {
-  background: #d9641a;
-}
+.tutorial-next:hover { background: #d9641a; }

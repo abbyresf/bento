@@ -108,13 +108,14 @@ export default function MealCard({
   isConfirmed,
   isConfirming,
   onConfirm,
+  onUndo,
   isKosherUser,
 }) {
   const [collapsed, setCollapsed] = useState(isPast);
   const [expandedItem, setExpandedItem] = useState(null);
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [showBrowser, setShowBrowser] = useState(false);
-  const [mode, setMode] = useState('bento'); // 'bento' | 'manual'
+  const [mode, setMode] = useState(() => customPlan ? 'manual' : 'bento');
   const prevIsPastRef = useRef(isPast);
 
   useEffect(() => {
@@ -174,21 +175,32 @@ export default function MealCard({
 
       {/* ── Header ──────────────────────────────────────────── */}
       <div className="meal-card-header" onClick={() => setCollapsed(prev => !prev)} style={{ cursor: 'pointer' }}>
-        <div className="meal-info">
-          <h3>{mealLabel}</h3>
-          <span className="meal-time">{timeRange}</span>
-          {isPast && <span className="past-badge">Past</span>}
-          {isConfirmed && <span className="confirmed-badge">Confirmed</span>}
+        <div className="meal-header-left">
+          <div className="meal-title-row">
+            <h3>{mealLabel}</h3>
+            <span className="meal-time">{timeRange}</span>
+          </div>
+          {(isPast || isConfirmed) && (
+            <div className="meal-badges-row">
+              {isPast && <span className="past-badge">Past</span>}
+              {isConfirmed && <span className="confirmed-badge">Confirmed</span>}
+              {isConfirmed && (
+                <button className="undo-btn" onClick={e => { e.stopPropagation(); setCollapsed(false); onUndo(); }}>Undo</button>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="meal-header-right">
+          <LocationPicker
+            selectedLocation={selectedLocation}
+            onLocationChange={onLocationChange}
+            openByLocation={openByLocation}
+            hasMenuByLocation={hasMenuByLocation}
+          />
           <svg className={`collapse-chevron ${collapsed ? '' : 'open'}`} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <polyline points="6 9 12 15 18 9" />
           </svg>
         </div>
-        <LocationPicker
-          selectedLocation={selectedLocation}
-          onLocationChange={onLocationChange}
-          openByLocation={openByLocation}
-          hasMenuByLocation={hasMenuByLocation}
-        />
       </div>
 
       {/* ── Closed / no menu states ──────────────────────────── */}

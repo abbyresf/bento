@@ -187,7 +187,8 @@ export const BRANDEIS_CONFIG = {
 // Returns the same shape as generateTodaysMenu() in mockMenu.js.
 // Throws if all fetches return empty menus — callers handle the fallback.
 export async function fetchDiningMenu(config) {
-  const dateStr = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   const locationResults = await Promise.all(
     Object.entries(config.locations).map(async ([locationId, locationConfig]) => {
