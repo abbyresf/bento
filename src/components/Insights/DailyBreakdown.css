@@ -1,0 +1,88 @@
+.daily-breakdown-card {
+  background: #faf7f4;
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.db-header {
+  margin-bottom: 0.75rem;
+}
+
+.db-picker {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.db-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.22rem 0.65rem;
+  border-radius: 999px;
+  border: 1.5px solid #e2e8f0;
+  background: white;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.db-pill.active {
+  background: #f47421;
+  border-color: #f47421;
+  color: white;
+}
+
+.db-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.db-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.db-day-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+  width: 32px;
+  flex-shrink: 0;
+}
+
+.db-bar-track {
+  flex: 1;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.db-bar-fill {
+  height: 100%;
+  background: #4cae70;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.db-bar-fill.over {
+  background: #f97316;
+}
+
+.db-bar-fill.empty {
+  background: transparent;
+}
+
+.db-bar-value {
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+  width: 96px;
+  text-align: right;
+  flex-shrink: 0;
+}

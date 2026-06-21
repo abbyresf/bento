@@ -20,9 +20,16 @@ export default function WeeklySummaryCard({ summary, targets }) {
 
   return (
     <div className="weekly-summary-card">
-      <p className="summary-week-range">
-        {empty ? 'This Week' : `Week of ${formatWeekRange(summary.week_start)}`}
-      </p>
+      <div className="summary-week-header">
+        <p className="summary-week-range">
+          {empty
+            ? 'This Week'
+            : summary.isCurrentWeek
+              ? 'This week so far'
+              : `Week of ${formatWeekRange(summary.week_start)}`}
+        </p>
+        {!empty && <span className="summary-avg-label">avg / day</span>}
+      </div>
 
       <div className="macro-bars">
         {macros.map(({ label, value, target, unit }) => {

@@ -14,7 +14,7 @@ const SECTIONS = [
   { label: 'Preferences', steps: ['dietary', 'swipe'] },
 ];
 
-export default function OnboardingWizard({ onComplete, onGoContact }) {
+export default function OnboardingWizard({ onComplete, onGoContact, onRequestSchool }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [profile, setProfile] = useState({
     university: 'brandeis',
@@ -106,6 +106,7 @@ export default function OnboardingWizard({ onComplete, onGoContact }) {
       <UniversityPicker
         value={profile.university}
         onChange={(id) => handleProfileChange('university', id)}
+        onRequestSchool={onRequestSchool}
       />
     </div>
   );

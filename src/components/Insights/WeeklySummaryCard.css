@@ -5,13 +5,26 @@
   margin-bottom: 1rem;
 }
 
+.summary-week-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+}
+
 .summary-week-range {
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: #94a3b8;
-  margin: 0 0 0.85rem;
+  margin: 0;
+}
+
+.summary-avg-label {
+  font-size: 0.7rem;
+  color: #cbd5e1;
+  font-weight: 500;
 }
 
 /* Macro bars */
@@ -45,13 +58,13 @@
 
 .macro-bar-fill {
   height: 100%;
-  background: #f47421;
+  background: #4cae70;
   border-radius: 999px;
   transition: width 0.4s ease;
 }
 
 .macro-bar-fill.over {
-  background: #4cae70;
+  background: #f97316;
 }
 
 .macro-bar-values {

@@ -223,13 +223,17 @@ export async function getMealHistory() {
   return data ?? [];
 }
 
-export async function addMealToHistory(mealItems) {
+export async function addMealToHistory(mealItems, mealType) {
   const id = await uid();
   if (!id) return null;
-  const { data } = await supabase.from('meal_history').insert({
+  const { data } = await supabase.from('meal_history').upsert({
     user_id:      id,
     items:        mealItems,
     confirmed_at: new Date().toISOString(),
+    meal_type:    mealType ?? null,
+    meal_date:    localDateStr(),
+  }, {
+    onConflict: 'user_id,meal_date,meal_type',
   }).select('id').single();
   return data?.id ?? null;
 }
@@ -304,6 +308,36 @@ export async function toggleFavorite(item) {
 
 // ── Weekly summaries ───────────────────────────────────────────────────────
 
+export async function getWeeklyHistoryFromMealHistory(weeks = 8) {
+  const id = await uid();
+  if (!id) return [];
+  const since = new Date(Date.now() - weeks * 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: history } = await supabase
+    .from('meal_history')
+    .select('confirmed_at, meal_type')
+    .eq('user_id', id)
+    .gte('confirmed_at', since);
+  if (!history?.length) return [];
+
+  const weekMap = {};
+  for (const entry of history) {
+    if (!entry.meal_type) continue; // skip legacy rows without meal_type
+    const date = new Date(entry.confirmed_at);
+    const day = date.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    const monday = new Date(date);
+    monday.setDate(date.getDate() + diff);
+    const weekStart = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+    const dateStr = localDateStr(new Date(entry.confirmed_at));
+    if (!weekMap[weekStart]) weekMap[weekStart] = new Set();
+    weekMap[weekStart].add(dateStr);
+  }
+
+  return Object.entries(weekMap)
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([week_start, days]) => ({ week_start, streak_at_end: days.size }));
+}
+
 export async function getWeeklySummaries(limit = 8) {
   const id = await uid();
   if (!id) return [];
@@ -316,22 +350,45 @@ export async function getWeeklySummaries(limit = 8) {
   return data ?? [];
 }
 
+// For rows with meal_type: keep only the latest per (date, meal_type).
+// Rows without meal_type are legacy test data — skip them to avoid double-counting.
+function deduplicateMealHistory(history) {
+  const seen = new Map();
+  for (const entry of history ?? []) {
+    if (!entry.meal_type) continue;
+    const date = entry.meal_date ?? localDateStr(new Date(entry.confirmed_at));
+    const key = `${date}:${entry.meal_type}`;
+    const existing = seen.get(key);
+    if (!existing || entry.confirmed_at > existing.confirmed_at) {
+      seen.set(key, { ...entry, _date: date });
+    }
+  }
+  return Array.from(seen.values());
+}
+
 // Count how many days in the past 7 days each macro goal was hit (≥80% of target).
 export async function getDailyGoalHits() {
   const id = await uid();
   if (!id) return null;
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const today = new Date();
+  const sevenDaysStart = new Date(today);
+  sevenDaysStart.setDate(today.getDate() - 6);
+  sevenDaysStart.setHours(0, 0, 0, 0);
 
   const [{ data: history }, { data: targetsRaw }] = await Promise.all([
-    supabase.from('meal_history').select('items, confirmed_at').eq('user_id', id).gte('confirmed_at', sevenDaysAgo),
+    supabase.from('meal_history').select('items, confirmed_at, meal_type, meal_date').eq('user_id', id).gte('confirmed_at', sevenDaysStart.toISOString()),
     supabase.from('nutrition_targets').select('calories, protein, carbs, fat').eq('user_id', id).maybeSingle(),
   ]);
 
-  if (!targetsRaw || !history?.length) return null;
+  if (!targetsRaw) return null;
+
+  const deduped = deduplicateMealHistory(history);
+  if (!deduped.length) return null;
 
   const byDay = {};
-  for (const entry of history) {
-    const date = entry.confirmed_at.split('T')[0];
+  for (const entry of deduped) {
+    const date = entry._date;
     if (!byDay[date]) byDay[date] = { calories: 0, protein: 0, carbs: 0, fat: 0 };
     for (const item of entry.items ?? []) {
       const n = item.nutrition ?? {};
@@ -345,14 +402,66 @@ export async function getDailyGoalHits() {
   const days = Object.values(byDay);
   if (!days.length) return null;
 
+  const n = days.length;
   return {
-    numDays:  days.length,
-    calories: days.filter(d => d.calories >= targetsRaw.calories * 0.8).length,
-    protein:  days.filter(d => d.protein  >= targetsRaw.protein  * 0.8).length,
-    carbs:    days.filter(d => d.carbs    >= targetsRaw.carbs    * 0.8).length,
-    fat:      days.filter(d => d.fat      >= targetsRaw.fat      * 0.8).length,
-    targets:  targetsRaw,
+    numDays:      7,
+    calories:     days.filter(d => d.calories >= targetsRaw.calories * 0.8).length,
+    protein:      days.filter(d => d.protein  >= targetsRaw.protein  * 0.8).length,
+    carbs:        days.filter(d => d.carbs    >= targetsRaw.carbs    * 0.8).length,
+    fat:          days.filter(d => d.fat      >= targetsRaw.fat      * 0.8).length,
+    avgCalories:  Math.round(days.reduce((s, d) => s + d.calories, 0) / n),
+    avgProtein:   Math.round(days.reduce((s, d) => s + d.protein,  0) / n),
+    avgCarbs:     Math.round(days.reduce((s, d) => s + d.carbs,    0) / n),
+    avgFat:       Math.round(days.reduce((s, d) => s + d.fat,      0) / n),
+    targets:      targetsRaw,
   };
+}
+
+// Per-day breakdown for the past 7 days, using local dates (no UTC rollover bug).
+export async function getDailyBreakdown() {
+  const id = await uid();
+  if (!id) return [];
+
+  const today = new Date();
+  const sevenDaysStart = new Date(today);
+  sevenDaysStart.setDate(today.getDate() - 6);
+  sevenDaysStart.setHours(0, 0, 0, 0);
+
+  const { data: history } = await supabase
+    .from('meal_history')
+    .select('items, confirmed_at, meal_type, meal_date')
+    .eq('user_id', id)
+    .gte('confirmed_at', sevenDaysStart.toISOString());
+
+  const deduped = deduplicateMealHistory(history);
+
+  const dayMap = {};
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const key = localDateStr(d);
+    dayMap[key] = {
+      date: key,
+      dayLabel: d.toLocaleDateString('en-US', { weekday: 'short' }),
+      calories: 0, protein: 0, carbs: 0, fat: 0,
+      hasData: false,
+    };
+  }
+
+  for (const entry of deduped) {
+    const localDate = entry._date;
+    if (!dayMap[localDate]) continue;
+    dayMap[localDate].hasData = true;
+    for (const item of entry.items ?? []) {
+      const n = item.nutrition ?? {};
+      dayMap[localDate].calories += n.calories ?? 0;
+      dayMap[localDate].protein  += n.protein  ?? 0;
+      dayMap[localDate].carbs    += n.carbs    ?? 0;
+      dayMap[localDate].fat      += n.fat      ?? 0;
+    }
+  }
+
+  return Object.values(dayMap);
 }
 
 // ── Streaks ────────────────────────────────────────────────────────────────
@@ -434,6 +543,14 @@ export async function clearMealHistory() {
 
 export async function deleteAccount() {
   await supabase.rpc('delete_user');
+}
+
+export async function submitUniversityRequest({ university, email, name, referral, notify }) {
+  const id = await uid().catch(() => null);
+  const { error } = await supabase
+    .from('university_requests')
+    .insert({ user_id: id ?? null, university, email, name: name || null, referral: referral || null, notify: !!notify });
+  if (error) throw error;
 }
 
 export async function clearAllData() {

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { UNIVERSITIES } from '../../data/universities';
 import './UniversityPicker.css';
 
-export default function UniversityPicker({ value, onChange }) {
+export default function UniversityPicker({ value, onChange, onRequestSchool }) {
   const [query, setQuery] = useState('');
 
   const q = query.toLowerCase();
@@ -65,6 +65,19 @@ export default function UniversityPicker({ value, onChange }) {
           ))
         )}
       </div>
+
+      {onRequestSchool && (
+        <p className="university-request-prompt">
+          Is your school not listed?{' '}
+          <button
+            type="button"
+            className="university-request-link"
+            onClick={onRequestSchool}
+          >
+            Fill out a request!
+          </button>
+        </p>
+      )}
     </div>
   );
 }

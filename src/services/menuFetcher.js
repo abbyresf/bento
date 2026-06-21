@@ -218,11 +218,17 @@ export async function fetchDiningMenu(config) {
     locations: Object.fromEntries(locationResults),
   };
 
-  const totalItems = Object.values(result.locations)
-    .flatMap((loc) => Object.values(loc.meals))
-    .flat().length;
+  // Only treat as a hard failure if every location came back from the catch block
+  // (isOpen: true with empty meals = fetch error). If at least one location returned
+  // isOpen: false, the server responded normally — halls are just closed.
+  const allFailed = Object.values(result.locations).every(
+    loc => loc.isOpen === true &&
+      loc.meals.breakfast.length === 0 &&
+      loc.meals.lunch.length === 0 &&
+      loc.meals.dinner.length === 0
+  );
 
-  if (totalItems === 0) {
+  if (allFailed) {
     throw new Error('All location fetches returned empty menus');
   }
 

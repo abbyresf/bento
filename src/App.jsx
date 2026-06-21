@@ -74,6 +74,16 @@ function App() {
     return () => clearTimeout(t);
   }, [hasCompletedOnboarding, hasAcceptedTerms, deferredInstallPrompt]);
 
+  // Show tutorial when running as installed PWA and tutorial hasn't been completed.
+  // isStandalone() is the reliable signal on iOS — the browser closes when the user
+  // adds to home screen, so bento_install_prompted is never written in that flow.
+  useEffect(() => {
+    if (!hasCompletedOnboarding || !hasAcceptedTerms) return;
+    if (localStorage.getItem('bento_tutorial_done') === '1') return;
+    if (!isStandalone() && localStorage.getItem('bento_install_prompted') !== '1') return;
+    setShowTutorial(true);
+  }, [hasCompletedOnboarding, hasAcceptedTerms]);
+
   useEffect(() => {
     if (!session) return;
     isOnboardingComplete().then(setHasCompletedOnboarding);
@@ -170,9 +180,10 @@ function App() {
   }
 
   const handleGoContact = () => { setLandingInitialTab('contact'); setShowLanding(true); };
+  const handleGoRequestSchool = () => { setLandingInitialTab('request'); setShowLanding(true); };
 
   if (!hasCompletedOnboarding) {
-    return <OnboardingWizard onComplete={handleOnboardingComplete} onGoContact={handleGoContact} />;
+    return <OnboardingWizard onComplete={handleOnboardingComplete} onGoContact={handleGoContact} onRequestSchool={handleGoRequestSchool} />;
   }
 
   if (!hasAcceptedTerms) {

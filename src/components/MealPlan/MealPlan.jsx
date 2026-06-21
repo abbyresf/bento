@@ -131,7 +131,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
       const k = menu?.locations?.kosher?.meals?.[m]?.length ?? 0;
       return s > 0 || u > 0 || k > 0;
     });
-    if (availableMeals.length === 0 || !availableMeals.every(m => confirmedMeals[m])) return;
+    if (availableMeals.length > 0 && !availableMeals.every(m => confirmedMeals[m])) return;
     incrementStreak().then(result => {
       if (!result) return;
       setStreak({ currentStreak: result.currentStreak, longestStreak: result.longestStreak, lastConfirmedDate: localDateStr() });
@@ -425,7 +425,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
     setConfirmingMeals(prev => ({ ...prev, [meal]: true }));
     const location = selectedLocation[meal];
     const mealItems = customMeals[meal]?.items ?? mealPlan[location][meal].items;
-    const rowId = await addMealToHistory(mealItems);
+    const rowId = await addMealToHistory(mealItems, meal);
     setConfirmingMeals(prev => ({ ...prev, [meal]: false }));
     const updatedConfirmed = { ...confirmedMeals, [meal]: true };
     setConfirmedMeals(updatedConfirmed);
@@ -439,7 +439,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
       const k = menu?.locations?.kosher?.meals?.[m]?.length ?? 0;
       return s > 0 || u > 0 || k > 0;
     });
-    const allConfirmed = availableMeals.length > 0 && availableMeals.every(m => updatedConfirmed[m]);
+    const allConfirmed = availableMeals.length === 0 || availableMeals.every(m => updatedConfirmed[m]);
     if (allConfirmed) {
       const result = await incrementStreak();
       if (result) {
