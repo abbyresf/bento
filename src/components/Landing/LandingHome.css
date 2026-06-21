@@ -4,52 +4,36 @@
 
 /* ── Hero ── */
 .lh-hero {
-  /*background: linear-gradient(135deg, #243b55 0%, #1a2e45 100%);*/
-  background: #faf7f4; 
-  /*color: white; */
-  padding: 5rem 1.5rem 4rem;
+  background: #faf7f4;
+  padding: 4rem 1.5rem 3.5rem;
   text-align: center;
 }
 
 .lh-hero-inner {
-  max-width: 680px;
+  max-width: 640px;
   margin: 0 auto;
 }
 
 .lh-hero-logo {
-  
-  height: 120px;
+  height: 64px;
   width: auto;
-  
   display: block;
-  margin: 0 auto 3rem;
-  
-}
-
-.lh-hero-eyebrow {
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #f47421;
-  margin: 0 0 1rem;
+  margin: 0 auto 1.75rem;
 }
 
 .lh-hero-headline {
-  font-size: clamp(2.4rem, 7vw, 4rem);
+  font-size: clamp(2rem, 6vw, 3.25rem);
   font-weight: 800;
-  line-height: 1.1;
-  margin: 0 0 1.25rem;
-  /*color: white;*/
+  line-height: 1.15;
   color: #243b55;
+  margin: 0 0 1.25rem;
 }
 
 .lh-hero-sub {
   font-size: 1.05rem;
-  line-height: 1.65;
-  /*color: #cbd5e1;*/
-  color: #243b55;
-  margin: 0 0 2.25rem;
+  line-height: 1.75;
+  color: #475569;
+  margin: 0 0 2rem;
 }
 
 .lh-cta-btn {
@@ -57,9 +41,9 @@
   background: #f47421;
   color: white;
   border: none;
-  border-radius: 10px;
-  padding: 0.85rem 2rem;
-  font-size: 1rem;
+  border-radius: 12px;
+  padding: 1rem 2.25rem;
+  font-size: 1.05rem;
   font-weight: 700;
   cursor: pointer;
   transition: background 0.18s, transform 0.12s;
@@ -74,30 +58,46 @@
   transform: translateY(0);
 }
 
-/* ── Stats ── */
-.lh-stats {
+.lh-hero-platform {
+  margin: 1rem 0 0;
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+
+/* ── Problem + Stats ── */
+.lh-problem {
   background: white;
   border-top: 1px solid #e2e8f0;
   border-bottom: 1px solid #e2e8f0;
-  padding: 2.5rem 1.5rem;
+  padding: 3.5rem 1.5rem;
 }
 
-.lh-stats-inner {
-  max-width: 680px;
+.lh-problem-inner {
+  max-width: 640px;
   margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.5rem;
 }
 
-.lh-stats-heading {
-  font-size: 1.6rem;
+.lh-section-heading {
+  font-size: clamp(1.4rem, 4vw, 1.75rem);
   font-weight: 800;
   color: #243b55;
-  margin: 0;
+  margin: 0 0 1rem;
+  line-height: 1.25;
+}
+
+.lh-section-heading--centered {
   text-align: center;
-  letter-spacing: 0.01em;
+}
+
+.lh-section-heading--light {
+  color: #faf7f4;
+}
+
+.lh-problem-copy {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: #475569;
+  margin: 0 0 2rem;
 }
 
 .lh-stats-row {
@@ -105,7 +105,11 @@
   align-items: center;
   justify-content: center;
   gap: 2rem;
-  width: 100%;
+  margin-bottom: 2rem;
+  padding: 2rem;
+  background: #faf7f4;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
 }
 
 .lh-stat {
@@ -113,11 +117,11 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  max-width: 240px;
+  max-width: 200px;
 }
 
 .lh-stat-number {
-  font-size: 2.8rem;
+  font-size: 3.25rem;
   font-weight: 800;
   color: #f47421;
   line-height: 1;
@@ -137,138 +141,221 @@
   flex-shrink: 0;
 }
 
-/* ── Story ── */
-.lh-story {
-  padding: 4rem 1.5rem;
-}
-
-.lh-story-inner {
-  max-width: 680px;
-  margin: 0 auto;
-}
-
-.lh-section-heading {
-  font-size: 1.75rem;
-  font-weight: 800;
+.lh-problem-bridge {
+  font-size: 1.1rem;
+  font-weight: 700;
   color: #243b55;
-  margin: 0 0 1.25rem;
-}
-
-.lh-section-heading--centered {
+  line-height: 1.5;
+  margin: 0;
   text-align: center;
-}
-
-.lh-story-text {
-  font-size: 1rem;
-  line-height: 1.75;
-  color: #475569;
-  margin: 0 0 1rem;
-}
-
-.lh-cta-secondary {
-  margin-top: 1.5rem;
-  background: #243b55;
-}
-
-.lh-cta-secondary:hover {
-  background: #1a2e45;
 }
 
 /* ── Features ── */
 .lh-features {
-  /*background: white;*/
   background: #243b55;
-  padding: 4rem 1.5rem;
-  border-top: 1px solid #e2e8f0;
+  padding: 4.5rem 1.5rem;
 }
 
 .lh-features-inner {
-  max-width: 860px;
+  max-width: 920px;
   margin: 0 auto;
-}
-
-.lh-features .lh-section-heading {
-  color: #faf7f4;
 }
 
 .lh-features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-top: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+  margin-top: 2.5rem;
 }
 
 .lh-feature-card {
-  background: #faf7f4;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 1.75rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
-.lh-feature-icon {
-  font-size: 1.8rem;
-  line-height: 1;
+.lh-feature-num {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #f47421;
 }
 
 .lh-feature-title {
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  color: #243b55;
+  color: white;
   margin: 0;
+  line-height: 1.3;
 }
 
 .lh-feature-desc {
-  font-size: 0.88rem;
-  color: #64748b;
-  line-height: 1.55;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ── How it works ── */
+.lh-how {
+  background: #faf7f4;
+  padding: 4.5rem 1.5rem;
+}
+
+.lh-how-inner {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.lh-steps {
+  margin-top: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
+}
+
+.lh-step {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+
+.lh-step-num {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #f47421;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.lh-step-content {
+  padding-top: 0.3rem;
+}
+
+.lh-step-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #243b55;
+  margin: 0 0 0.4rem;
+}
+
+.lh-step-desc {
+  font-size: 0.95rem;
+  color: #475569;
+  line-height: 1.7;
   margin: 0;
 }
 
 /* ── Bottom CTA ── */
 .lh-bottom-cta {
   text-align: center;
-  padding: 4rem 1.5rem 5rem;
-  background: #faf7f4;
-  color: #243b55;
+  padding: 3rem 1.5rem;
+  background: white;
+  border-top: 1px solid #e2e8f0;
 }
 
 .lh-bottom-cta h2 {
-  font-size: 1.9rem;
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
   font-weight: 800;
-  margin: 0 0 0.6rem;
+  color: #243b55;
+  margin: 0 0 0.75rem;
+  line-height: 1.2;
 }
 
-.lh-bottom-cta p {
+.lh-bottom-cta p:not(.lh-hero-platform) {
   font-size: 1rem;
-  color: #243b55;
-  margin: 0 0 1.75rem;
+  color: #64748b;
+  margin: 0 0 2rem;
+  line-height: 1.6;
+}
+
+/* ── Universities Banner ── */
+.lh-uni-banner {
+  background: #eeeae4;
+  border-top: 1px solid #ddd9d2;
+  padding: 2rem 1.5rem;
+}
+
+.lh-uni-banner-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.lh-uni-banner-text {
+  font-size: 0.92rem;
+  color: #475569;
+  line-height: 1.65;
+  margin: 0;
+  flex: 1;
+  min-width: 220px;
+}
+
+.lh-uni-banner-btn {
+  background: #243b55;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.7rem 1.25rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.18s;
+}
+
+.lh-uni-banner-btn:hover {
+  background: #1a2e45;
 }
 
 /* ── Mobile ── */
 @media (max-width: 600px) {
   .lh-hero {
-    padding: 3.5rem 1.25rem 3rem;
+    padding: 3rem 1.25rem 2.5rem;
   }
 
   .lh-hero-logo {
     height: 72px;
-    margin-bottom: 2rem;
+    margin-bottom: 1.75rem;
   }
 
   .lh-stats-row {
     flex-direction: column;
     gap: 1.5rem;
+    padding: 1.5rem;
   }
 
   .lh-stat-divider {
-    width: 60px;
+    width: 48px;
     height: 1px;
   }
 
-  .lh-section-heading {
-    font-size: 1.45rem;
+  .lh-features-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lh-uni-banner-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .lh-uni-banner-btn {
+    width: 100%;
+    text-align: center;
   }
 }
