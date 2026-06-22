@@ -1,0 +1,483 @@
+.pulse-dashboard {
+  min-height: 100vh;
+  background: #faf7f4;
+  color: #243b55;
+}
+
+/* ── Header ── */
+.pulse-header {
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.pulse-header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.pulse-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.pulse-header-logo {
+  height: 40px;
+  width: auto;
+}
+
+.pulse-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* ── Range tabs ── */
+.pulse-range-tabs {
+  display: flex;
+  background: #faf7f4;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.pulse-range-tab {
+  background: none;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+  padding: 0.28rem 0.7rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.pulse-range-tab:hover {
+  color: #475569;
+}
+
+.pulse-range-tab.active {
+  background: white;
+  color: #243b55;
+  box-shadow: 0 1px 3px rgba(36, 59, 85, 0.1);
+}
+
+.pulse-asof {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.pulse-export-all-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.28rem 0.65rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.pulse-export-all-btn:hover {
+  color: #243b55;
+  border-color: #cbd5e1;
+  background: #faf7f4;
+}
+
+.pulse-university-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background: #faf7f4;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.25rem 0.6rem;
+}
+
+.pulse-signout-btn {
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.28rem 0.7rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pulse-signout-btn:hover {
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+/* ── Main ── */
+.pulse-main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.75rem 2rem 5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ── Loading ── */
+.pulse-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6rem 0;
+  gap: 1rem;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.pulse-spinner {
+  width: 28px;
+  height: 28px;
+  border: 2px solid #e2e8f0;
+  border-top-color: #f47421;
+  border-radius: 50%;
+  animation: pulse-spin 0.75s linear infinite;
+}
+
+@keyframes pulse-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Insight callout ── */
+.pulse-insights {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-left: 3px solid #f47421;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+}
+
+.pulse-insights-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #f47421;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0 0 0.75rem;
+}
+
+.pulse-insights-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pulse-insight-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.pulse-insight-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #f47421;
+  flex-shrink: 0;
+  margin-top: 0.42rem;
+}
+
+.pulse-insight-text {
+  font-size: 0.85rem;
+  color: #475569;
+  margin: 0;
+  line-height: 1.55;
+}
+
+/* ── Section ── */
+.pulse-section {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem 1.75rem;
+}
+
+.pulse-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.pulse-section-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #243b55;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.pulse-export-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  color: #94a3b8;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.pulse-export-btn:hover {
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+/* ── KPIs ── */
+.pulse-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1px;
+  background: #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.pulse-kpi {
+  background: white;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.pulse-kpi-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.pulse-kpi-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #243b55;
+  margin: 0;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.pulse-kpi-change {
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.pulse-kpi-change.up {
+  color: #22c55e;
+}
+
+.pulse-kpi-change.down {
+  color: #ef4444;
+}
+
+.pulse-kpi-sub {
+  font-size: 0.7rem;
+  color: #cbd5e1;
+  margin: 0;
+  margin-top: 0.1rem;
+}
+
+/* ── Two-col layout ── */
+.pulse-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+/* ── Chart legend ── */
+.pulse-chart-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.pulse-legend-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 0.25rem;
+}
+
+/* ── Donut ── */
+.pulse-donut-wrap {
+  position: relative;
+}
+
+.pulse-donut-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -62%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.pulse-donut-total {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #243b55;
+  margin: 0;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.pulse-donut-sub {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  margin: 0.15rem 0 0;
+}
+
+/* ── Dietary ── */
+.pulse-dietary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.pulse-dietary-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pulse-dietary-name {
+  font-size: 0.82rem;
+  color: #475569;
+  width: 100px;
+  flex-shrink: 0;
+}
+
+.pulse-dietary-bar-wrap {
+  flex: 1;
+  background: #f1f5f9;
+  border-radius: 2px;
+  height: 4px;
+  overflow: hidden;
+}
+
+.pulse-dietary-bar {
+  height: 100%;
+  background: #f47421;
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+.pulse-dietary-pct {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+  width: 32px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ── Nutrition ── */
+.pulse-nutrition-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1px;
+  background: #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.pulse-nutrition-card {
+  background: white;
+  padding: 1.25rem 1.5rem;
+  text-align: center;
+}
+
+.pulse-nutrition-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.4rem;
+}
+
+.pulse-nutrition-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #f47421;
+  margin: 0 0 0.2rem;
+  letter-spacing: -0.02em;
+}
+
+.pulse-nutrition-sub {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* ── Empty state ── */
+.pulse-empty {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  margin: 0.5rem 0 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 800px) {
+  .pulse-two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .pulse-kpi-value {
+    font-size: 1.65rem;
+  }
+
+  .pulse-main {
+    padding: 1.25rem 1rem 4rem;
+  }
+
+  .pulse-header-inner {
+    padding: 0 1rem;
+    gap: 0.5rem;
+  }
+
+  .pulse-range-tabs {
+    display: none;
+  }
+}

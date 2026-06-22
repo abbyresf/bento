@@ -1,0 +1,110 @@
+.pulse-login {
+  min-height: 100vh;
+  background: #faf7f4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.pulse-login-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 2.75rem 2.25rem;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 1px 4px rgba(36, 59, 85, 0.06), 0 4px 24px rgba(36, 59, 85, 0.05);
+}
+
+.pulse-login-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.4rem;
+  margin-left: -5px;
+}
+
+.pulse-login-logo {
+  height: 60px;
+  width: auto;
+  max-width: 100%;
+}
+
+.pulse-login-sub {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin: 0 0 2.25rem;
+  letter-spacing: 0.01em;
+}
+
+.pulse-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.pulse-login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.pulse-login-field label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.pulse-login-field input {
+  background: #faf7f4;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.9rem;
+  color: #243b55;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.pulse-login-field input::placeholder {
+  color: #cbd5e1;
+}
+
+.pulse-login-field input:focus {
+  border-color: #f47421;
+  box-shadow: 0 0 0 3px rgba(244, 116, 33, 0.08);
+  background: white;
+}
+
+.pulse-login-error {
+  font-size: 0.82rem;
+  color: #ef4444;
+  margin: 0;
+}
+
+.pulse-login-btn {
+  background: #f47421;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.8rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+  margin-top: 0.4rem;
+  letter-spacing: 0.01em;
+}
+
+.pulse-login-btn:hover:not(:disabled) {
+  background: #e06318;
+  box-shadow: 0 2px 8px rgba(244, 116, 33, 0.25);
+}
+
+.pulse-login-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

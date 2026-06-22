@@ -13,6 +13,7 @@ import BottomNav from './components/Nav/BottomNav';
 import TermsGate from './components/Terms/TermsGate';
 import InstallPrompt from './components/Install/InstallPrompt';
 import AppTutorial from './components/Install/AppTutorial';
+import PulseApp from './components/Pulse/PulseApp';
 import { FavoritesProvider } from './context/FavoritesContext';
 import './App.css';
 
@@ -26,6 +27,10 @@ function isIOS() {
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
+
+  if (location.pathname.startsWith('/admin')) {
+    return <PulseApp />;
+  }
 
   const [session, setSession] = useState(undefined);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(null);
