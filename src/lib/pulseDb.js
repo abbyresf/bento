@@ -138,10 +138,30 @@ export async function getAdminRecord() {
   if (!user) return null;
   const { data } = await supabase
     .from('admin_users')
-    .select('university, is_active')
+    .select('university, is_active, is_super_admin')
     .eq('user_id', user.id)
     .single();
   return data ?? null;
+}
+
+export async function createInvite(email, university) {
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data, error } = await supabase
+    .from('pulse_invites')
+    .insert({ email: email.toLowerCase().trim(), university, created_by: user.id })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function getInvites() {
+  const { data, error } = await supabase
+    .from('pulse_invites')
+    .select('id, email, university, used_at, expires_at, created_at')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
 }
 
 // ── Data queries ──────────────────────────────────────────────────────────────

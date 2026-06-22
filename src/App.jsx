@@ -14,6 +14,7 @@ import TermsGate from './components/Terms/TermsGate';
 import InstallPrompt from './components/Install/InstallPrompt';
 import AppTutorial from './components/Install/AppTutorial';
 import PulseApp from './components/Pulse/PulseApp';
+import PulseJoin from './components/Pulse/PulseJoin';
 import { FavoritesProvider } from './context/FavoritesContext';
 import './App.css';
 
@@ -27,6 +28,9 @@ function isIOS() {
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
+
+  const joinMatch = location.pathname.match(/^\/admin\/join\/([0-9a-f-]+)$/i);
+  if (joinMatch) return <PulseJoin token={joinMatch[1]} />;
 
   if (location.pathname.startsWith('/admin')) {
     return <PulseApp />;

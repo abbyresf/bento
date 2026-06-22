@@ -451,6 +451,273 @@
   margin: 0;
 }
 
+/* ── Invite button ── */
+.pulse-invite-btn {
+  background: #f47421;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.28rem 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.pulse-invite-btn:hover {
+  background: #e06318;
+}
+
+/* ── Modal ── */
+.pulse-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 30, 46, 0.45);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.pulse-modal {
+  background: white;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 40px rgba(15, 30, 46, 0.18);
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.pulse-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pulse-modal-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #243b55;
+  margin: 0;
+}
+
+.pulse-modal-close {
+  background: none;
+  border: none;
+  font-size: 0.9rem;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+
+.pulse-modal-close:hover {
+  color: #243b55;
+}
+
+/* ── Invite form ── */
+.pulse-invite-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.pulse-invite-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-end;
+}
+
+.pulse-invite-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1;
+}
+
+.pulse-invite-field-sm {
+  flex: 0 0 130px;
+}
+
+.pulse-invite-field label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.pulse-invite-field input {
+  background: #faf7f4;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.85rem;
+  color: #243b55;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pulse-invite-field input:focus {
+  border-color: #f47421;
+}
+
+.pulse-invite-submit {
+  background: #f47421;
+  color: white;
+  border: none;
+  border-radius: 7px;
+  padding: 0.55rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+
+.pulse-invite-submit:hover:not(:disabled) {
+  background: #e06318;
+}
+
+.pulse-invite-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.pulse-invite-err {
+  font-size: 0.8rem;
+  color: #ef4444;
+  margin: 0;
+}
+
+.pulse-invite-newlink {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+}
+
+.pulse-invite-newlink-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #16a34a;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 0.5rem;
+}
+
+.pulse-invite-link-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.pulse-invite-link-text {
+  font-size: 0.78rem;
+  color: #243b55;
+  font-family: monospace;
+  word-break: break-all;
+  flex: 1;
+}
+
+.pulse-invite-copy-btn {
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pulse-invite-copy-btn:hover {
+  color: #243b55;
+  border-color: #cbd5e1;
+}
+
+/* ── Invite list ── */
+.pulse-invite-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pulse-invite-list-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.25rem;
+}
+
+.pulse-invite-row-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #f1f5f9;
+  gap: 0.75rem;
+}
+
+.pulse-invite-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.pulse-invite-email {
+  font-size: 0.85rem;
+  color: #243b55;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pulse-invite-uni {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  text-transform: capitalize;
+}
+
+.pulse-invite-row-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.pulse-invite-status {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: 4px;
+  padding: 0.18rem 0.45rem;
+}
+
+.pulse-invite-status.pending  { background: #fef3c7; color: #d97706; }
+.pulse-invite-status.used     { background: #f0fdf4; color: #16a34a; }
+.pulse-invite-status.expired  { background: #f1f5f9; color: #94a3b8; }
+
 /* ── Empty state ── */
 .pulse-empty {
   font-size: 0.85rem;

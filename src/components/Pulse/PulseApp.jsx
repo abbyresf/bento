@@ -60,6 +60,7 @@ export default function PulseApp() {
   return (
     <PulseDashboard
       university={admin.university}
+      isSuperAdmin={admin.is_super_admin === true}
       onSignOut={handleSignOut}
     />
   );

@@ -6,6 +6,7 @@ import {
 import {
   getPulseOverview, getDailyEngagement, getMealTypeSplit,
   getTopItems, getDietaryBreakdown, getNutritionAverages,
+  createInvite, getInvites,
 } from '../../lib/pulseDb';
 import './PulseDashboard.css';
 
@@ -239,9 +240,132 @@ const BAR_TOOLTIP = {
   labelStyle: { color: '#243b55' },
 };
 
+// ── Invite modal ─────────────────────────────────────────────────────────────
+
+function InviteModal({ defaultUniversity, onClose }) {
+  const [email, setEmail]         = useState('');
+  const [university, setUniv]     = useState(defaultUniversity);
+  const [invites, setInvites]     = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError]         = useState(null);
+  const [newLink, setNewLink]     = useState(null);
+  const [copied, setCopied]       = useState(false);
+
+  useEffect(() => {
+    getInvites().then(setInvites).catch(() => setInvites([]));
+  }, []);
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setNewLink(null);
+    setSubmitting(true);
+    try {
+      const invite = await createInvite(email, university);
+      const link = `${window.location.origin}/admin/join/${invite.id}`;
+      setNewLink(link);
+      setEmail('');
+      setInvites(prev => [invite, ...(prev ?? [])]);
+    } catch (err) {
+      setError(err.message ?? 'Failed to create invite.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const copyLink = (id) => {
+    const link = `${window.location.origin}/admin/join/${id}`;
+    navigator.clipboard.writeText(link).then(() => {
+      setCopied(id);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <div className="pulse-modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="pulse-modal">
+        <div className="pulse-modal-header">
+          <h2 className="pulse-modal-title">Invite an admin</h2>
+          <button className="pulse-modal-close" onClick={onClose} aria-label="Close">✕</button>
+        </div>
+
+        <form onSubmit={handleCreate} className="pulse-invite-form">
+          <div className="pulse-invite-row">
+            <div className="pulse-invite-field">
+              <label>Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="admin@university.edu"
+                required
+              />
+            </div>
+            <div className="pulse-invite-field pulse-invite-field-sm">
+              <label>University</label>
+              <input
+                type="text"
+                value={university}
+                onChange={e => setUniv(e.target.value)}
+                placeholder="brandeis"
+                required
+              />
+            </div>
+            <button type="submit" className="pulse-invite-submit" disabled={submitting}>
+              {submitting ? '…' : 'Generate'}
+            </button>
+          </div>
+          {error && <p className="pulse-invite-err">{error}</p>}
+        </form>
+
+        {newLink && (
+          <div className="pulse-invite-newlink">
+            <p className="pulse-invite-newlink-label">Invite link — share this once:</p>
+            <div className="pulse-invite-link-row">
+              <span className="pulse-invite-link-text">{newLink}</span>
+              <button className="pulse-invite-copy-btn" onClick={() => copyLink(newLink.split('/').pop())}>
+                {copied === newLink.split('/').pop() ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="pulse-invite-list">
+          <p className="pulse-invite-list-label">All invites</p>
+          {invites === null && <p className="pulse-empty">Loading…</p>}
+          {invites?.length === 0 && <p className="pulse-empty">No invites yet.</p>}
+          {invites?.map(inv => {
+            const used = !!inv.used_at;
+            const expired = !used && new Date(inv.expires_at) < new Date();
+            const pending = !used && !expired;
+            return (
+              <div key={inv.id} className="pulse-invite-row-item">
+                <div className="pulse-invite-row-info">
+                  <span className="pulse-invite-email">{inv.email}</span>
+                  <span className="pulse-invite-uni">{inv.university}</span>
+                </div>
+                <div className="pulse-invite-row-right">
+                  <span className={`pulse-invite-status ${used ? 'used' : expired ? 'expired' : 'pending'}`}>
+                    {used ? 'Used' : expired ? 'Expired' : 'Pending'}
+                  </span>
+                  {pending && (
+                    <button className="pulse-invite-copy-btn" onClick={() => copyLink(inv.id)}>
+                      {copied === inv.id ? 'Copied!' : 'Copy link'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main dashboard ──────────────────────────────────────────────────────────
 
-export default function PulseDashboard({ university, onSignOut }) {
+export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) {
   const [days, setDays]               = useState(30);
   const [overview, setOverview]       = useState(null);
   const [engagement, setEngagement]   = useState(null);
@@ -250,6 +374,7 @@ export default function PulseDashboard({ university, onSignOut }) {
   const [dietary, setDietary]         = useState(null);
   const [nutrition, setNutrition]     = useState(null);
   const [loading, setLoading]         = useState(true);
+  const [showInvite, setShowInvite]   = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -310,10 +435,20 @@ export default function PulseDashboard({ university, onSignOut }) {
                 Export All
               </button>
             )}
+            {isSuperAdmin && (
+              <button className="pulse-invite-btn" onClick={() => setShowInvite(true)}>Invite</button>
+            )}
             <button className="pulse-signout-btn" onClick={onSignOut}>Sign out</button>
           </div>
         </div>
       </header>
+
+      {showInvite && (
+        <InviteModal
+          defaultUniversity={university}
+          onClose={() => setShowInvite(false)}
+        />
+      )}
 
       <main className="pulse-main">
         {loading ? (
