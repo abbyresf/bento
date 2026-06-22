@@ -22,7 +22,9 @@ $$;
 
 -- 2. Basic email format check on university_requests.
 alter table public.university_requests
-  add constraint if not exists university_requests_email_format
+  drop constraint if exists university_requests_email_format;
+alter table public.university_requests
+  add constraint university_requests_email_format
   check (email ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
 -- 3. Spam guard: one submission per email per calendar day.
