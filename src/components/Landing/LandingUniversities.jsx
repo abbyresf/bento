@@ -52,7 +52,7 @@ function DashboardMockup() {
           <div className="lu-mockup-pill lu-mockup-pill--tab active">30 days</div>
           <div className="lu-mockup-pill lu-mockup-pill--tab">7 days</div>
           <div className="lu-mockup-pill lu-mockup-pill--tab">90 days</div>
-          <div className="lu-mockup-pill">Brandeis</div>
+          <div className="lu-mockup-pill">Your University</div>
           <div className="lu-mockup-pill">Export All</div>
         </div>
       </div>
@@ -60,10 +60,10 @@ function DashboardMockup() {
       <div className="lu-mockup-body">
         <div className="lu-mockup-kpi-row">
           {[
-            { label: 'Registered Students', value: '287', sub: 'total accounts' },
-            { label: 'Active Students', value: '156', change: '+12%', up: true },
-            { label: 'Meals Confirmed', value: '342', change: '+15%', up: true },
-            { label: 'Avg Calories', value: '412 kcal', change: '+4%', up: true },
+            { label: 'Registered Students', value: '14,287', sub: 'total accounts' },
+            { label: 'Active Students', value: '9,841', change: '+8%', up: true },
+            { label: 'Meals Confirmed', value: '22,156', change: '+11%', up: true },
+            { label: 'Avg Calories', value: '418 kcal', change: '+3%', up: true },
           ].map((k) => (
             <div key={k.label} className="lu-mockup-kpi">
               <span className="lu-mockup-kpi-label">{k.label}</span>
@@ -80,11 +80,11 @@ function DashboardMockup() {
           <div className="lu-mockup-card">
             <div className="lu-mockup-card-title">Daily Engagement — Last 30 Days</div>
             <div className="lu-mockup-chart">
-              {[9,12,8,14,16,11,6,13,15,9,14,17,12,7,15,18,13,10,16,14,8,12,15,11,13,17,14,9,16,13].map((h, i) => (
+              {[520,710,490,840,920,660,310,780,880,540,810,970,720,390,860,1010,750,580,930,820,440,700,870,640,760,990,810,510,940,750].map((h, i) => (
                 <div key={i} className="lu-mockup-bar-wrap">
                   <div
                     className="lu-mockup-bar"
-                    style={{ height: `${Math.round((h / 18) * 100)}%`, background: i % 7 === 0 || i % 7 === 6 ? '#cbd5e1' : '#f47421' }}
+                    style={{ height: `${Math.round((h / 1010) * 100)}%`, background: i % 7 === 0 || i % 7 === 6 ? '#cbd5e1' : '#f47421' }}
                   />
                 </div>
               ))}
@@ -108,15 +108,15 @@ function DashboardMockup() {
                   strokeDasharray="70 212" strokeDashoffset="-212" strokeLinecap="butt" />
               </svg>
               <div className="lu-mockup-donut-center">
-                <span className="lu-mockup-donut-total">342</span>
+                <span className="lu-mockup-donut-total">22.2k</span>
                 <span className="lu-mockup-donut-sub">meals</span>
               </div>
             </div>
             <div className="lu-mockup-donut-legend">
               {[
-                { color: '#f47421', label: 'Lunch', val: '158' },
-                { color: '#243b55', label: 'Breakfast', val: '92' },
-                { color: '#64a8d1', label: 'Dinner', val: '92' },
+                { color: '#f47421', label: 'Lunch', val: '9,284' },
+                { color: '#243b55', label: 'Breakfast', val: '6,541' },
+                { color: '#64a8d1', label: 'Dinner', val: '6,331' },
               ].map(d => (
                 <div key={d.label} className="lu-mockup-donut-legend-row">
                   <span className="lu-mockup-legend-dot" style={{ background: d.color }} />
@@ -132,11 +132,11 @@ function DashboardMockup() {
           <div className="lu-mockup-card-title">Top Items — Last 30 Days</div>
           <div className="lu-mockup-items">
             {[
-              { name: 'Grilled Chicken Breast', count: 54, pct: 100 },
-              { name: 'Greek Yogurt Parfait', count: 51, pct: 94 },
-              { name: 'Pasta Primavera', count: 49, pct: 91 },
-              { name: 'Roasted Vegetables', count: 47, pct: 87 },
-              { name: 'Caesar Salad', count: 38, pct: 70 },
+              { name: 'Grilled Chicken Breast', count: '1,842', pct: 100 },
+              { name: 'Greek Yogurt Parfait', count: '1,724', pct: 94 },
+              { name: 'Pasta Primavera', count: '1,651', pct: 90 },
+              { name: 'Roasted Vegetables', count: '1,587', pct: 86 },
+              { name: 'Caesar Salad', count: '1,243', pct: 67 },
             ].map((item) => (
               <div key={item.name} className="lu-mockup-item-row">
                 <span className="lu-mockup-item-name">{item.name}</span>
