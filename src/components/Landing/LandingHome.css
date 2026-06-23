@@ -51,7 +51,8 @@
 
 .lh-cta-btn:hover {
   background: #e06318;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(244, 116, 33, 0.35);
 }
 
 .lh-cta-btn:active {
@@ -110,6 +111,7 @@
   background: #faf7f4;
   border-radius: 16px;
   border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(36, 59, 85, 0.06);
 }
 
 .lh-stat {
@@ -163,8 +165,8 @@
 
 .lh-features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
   margin-top: 2.5rem;
 }
 
@@ -176,6 +178,13 @@
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.lh-feature-card:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 .lh-feature-num {

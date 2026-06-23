@@ -46,7 +46,7 @@ function DashboardMockup() {
     <div className="lu-mockup">
       <div className="lu-mockup-header">
         <div className="lu-mockup-header-left">
-          <div className="lu-mockup-logo-pill" />
+          <img src="/bentopulse.png" alt="Bento Pulse" style={{ height: '20px', width: 'auto' }} />
         </div>
         <div className="lu-mockup-header-right">
           <div className="lu-mockup-pill lu-mockup-pill--tab active">30 days</div>
@@ -160,7 +160,7 @@ export default function LandingUniversities({ onContact }) {
       {/* ── Hero ── */}
       <section className="lu-hero">
         <div className="lu-hero-inner">
-          <div className="lu-hero-eyebrow">Bento Pulse</div>
+          <img src="/bentopulse.png" alt="Bento Pulse" className="lu-hero-logo" />
           <h1 className="lu-hero-headline">Real-time dining intelligence for your campus.</h1>
           <p className="lu-hero-sub">
             Bento Pulse gives dining administrators a live view of student engagement, nutrition trends, and meal preferences. Updated automatically as students use the app. No surveys. No manual reporting. No integration work.
@@ -172,7 +172,11 @@ export default function LandingUniversities({ onContact }) {
       {/* ── Dashboard mockup ── */}
       <section className="lu-mockup-section">
         <div className="lu-mockup-section-inner">
-          <p className="lu-mockup-caption">Bento Pulse dashboard — live data, scoped to your institution</p>
+          <h2 className="lu-mockup-title">Your command center for campus dining.</h2>
+          <p className="lu-mockup-desc">
+            Bento Pulse gives your dining team a single dashboard with everything that matters — student engagement, meal confirmation trends, nutrition breakdowns, and top menu items. All of it updated live as students use the app. No guesswork needed.
+          </p>
+          <p className="lu-mockup-caption">Example preview of Bento Pulse dashboard, scoped to your institution</p>
           <DashboardMockup />
         </div>
       </section>
@@ -180,7 +184,7 @@ export default function LandingUniversities({ onContact }) {
       {/* ── Value props ── */}
       <section className="lu-value">
         <div className="lu-value-inner">
-          <h2 className="lu-section-heading lu-section-heading--light lu-section-heading--centered">
+          <h2 className="lu-section-heading lu-section-heading--centered">
             What your team gets.
           </h2>
           <div className="lu-value-grid">
