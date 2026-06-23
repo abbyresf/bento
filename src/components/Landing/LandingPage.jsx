@@ -3,6 +3,7 @@ import LandingHome from './LandingHome';
 import LandingFAQ from './LandingFAQ';
 import LandingContact from './LandingContact';
 import LandingRequestSchool from './LandingRequestSchool';
+import LandingUniversities from './LandingUniversities';
 import TermsPage from '../Terms/TermsPage';
 import './LandingPage.css';
 
@@ -82,10 +83,7 @@ export default function LandingPage({ onGetStarted, initialTab = 'home' }) {
           />
         )}
         {activeTab === 'universities' && (
-          <div className="landing-coming-soon">
-            <h2>University Partnerships</h2>
-            <p>This page is coming soon. Reach out via the contact page in the meantime.</p>
-          </div>
+          <LandingUniversities onContact={() => handleTabChange('contact')} />
         )}
         {activeTab === 'faq' && <LandingFAQ />}
         {activeTab === 'terms' && (
