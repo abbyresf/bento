@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://bento-sooty.vercel.app/sitemap.xml
