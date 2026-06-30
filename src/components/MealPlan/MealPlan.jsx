@@ -82,65 +82,58 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const loadMenuAndOptimize = useCallback(async (forceRefresh = false) => {
     setLoading(true);
 
-    let menuData = null;
-    let cacheState = null; // null | 'cache' | 'offline'
-
+    // Check menu cache synchronously before launching async work
+    let cachedMenuData = null;
+    let cacheState = null;
     if (!forceRefresh) {
-      menuData = getCachedMenu();
-      if (menuData) {
-        // Check age of cache
+      cachedMenuData = getCachedMenu();
+      if (cachedMenuData) {
         try {
           const raw = JSON.parse(localStorage.getItem('bento_cached_menu'));
-          if (raw && Date.now() - raw.fetchedAt > 60 * 60 * 1000) {
-            cacheState = 'cache'; // old enough to show refresh banner
-          } else {
-            cacheState = null; // fresh cache, no banner needed
-          }
+          cacheState = (raw && Date.now() - raw.fetchedAt > 60 * 60 * 1000) ? 'cache' : null;
         } catch { cacheState = null; }
       }
     }
 
-    let menuFetchSucceeded = !!menuData; // true if served from cache
-    if (!menuData) {
-      try {
-        menuData = await fetchBrandeisMenu();
-        setCachedMenu(menuData);
-        menuFetchSucceeded = true;
-      } catch {
-        menuData = {
-          date: localDateStr(),
-          locations: {
-            sherman: { id: 'sherman', name: 'Farm Table at Sherman', shortName: 'Farm Table', meals: { breakfast: [], lunch: [], dinner: [] }, isOpen: false },
-            usdan:   { id: 'usdan',   name: 'Usdan Kitchen',           shortName: 'Usdan',       meals: { breakfast: [], lunch: [], dinner: [] }, isOpen: false },
-            kosher:  { id: 'kosher',  name: 'Kosher Table at Sherman', shortName: 'Kosher',      meals: { breakfast: [], lunch: [], dinner: [] }, isOpen: false },
-          },
-        };
-        cacheState = 'offline';
-      }
-    }
-
-    // Record today's dining availability for streak logic (skip on network failure)
-    if (menuFetchSucceeded) {
-      const anyOpen = Object.values(menuData.locations ?? {}).some(loc => loc.isOpen);
-      recordDiningAvailability(anyOpen).catch(() => {});
-    }
-
-    setMenu(menuData);
-    setUsingCachedData(cacheState);
-    setItemAlternatives({});
-    setRecommendations({ breakfast: null, lunch: null, dinner: null });
+    // Build the menu promise — resolves to { data, offline }
+    const menuPromise = cachedMenuData
+      ? Promise.resolve({ data: cachedMenuData, offline: false })
+      : fetchBrandeisMenu()
+          .then(data => { setCachedMenu(data); return { data, offline: false }; })
+          .catch(() => ({
+            data: {
+              date: localDateStr(),
+              locations: {
+                sherman: { id: 'sherman', name: 'Farm Table at Sherman', shortName: 'Farm Table', meals: { breakfast: [], lunch: [], dinner: [] }, isOpen: false },
+                usdan:   { id: 'usdan',   name: 'Usdan Kitchen',           shortName: 'Usdan',       meals: { breakfast: [], lunch: [], dinner: [] }, isOpen: false },
+                kosher:  { id: 'kosher',  name: 'Kosher Table at Sherman', shortName: 'Kosher',      meals: { breakfast: [], lunch: [], dinner: [] }, isOpen: false },
+              },
+            },
+            offline: true,
+          }));
 
     try {
-      const [targets, fetchedRestrictions, recentItems] = await Promise.all([
+      // Menu fetch and all user-data queries run simultaneously
+      const [{ data: menuData, offline }, targets, fetchedRestrictions, recentItems, favoriteIds] = await Promise.all([
+        menuPromise,
         getNutritionTargets(),
         getDietaryRestrictions(),
         getRecentItemIds(),
+        getFavoriteIds(),
       ]);
 
+      if (!offline) {
+        const anyOpen = Object.values(menuData.locations ?? {}).some(loc => loc.isOpen);
+        recordDiningAvailability(anyOpen).catch(() => {});
+      }
+
+      setMenu(menuData);
+      setUsingCachedData(offline ? 'offline' : cacheState);
+      setItemAlternatives({});
+      setRecommendations({ breakfast: null, lunch: null, dinner: null });
       setRestrictions(fetchedRestrictions);
 
       if (targets) {
-        const favoriteIds = await getFavoriteIds();
         const optimized = optimizeDay(menuData, targets, fetchedRestrictions, recentItems, undefined, favoriteIds);
         setMealPlan(optimized);
       }
@@ -178,13 +171,17 @@ export default function MealPlan({ settingsVersion = 0 }) {
       return;
     }
 
-    // Past or future date — fetch menu and confirmed meals in parallel
+    // Past or future date — fetch everything in parallel
     setDateLoading(true);
     (async () => {
       try {
-        const [menuData, confirmedForDate] = await Promise.all([
+        const [menuData, confirmedForDate, targets, fetchedRestrictions, recentItems, favoriteIds] = await Promise.all([
           fetchBrandeisMenu(viewDate),
           getConfirmedMealsForDate(viewDate),
+          getNutritionTargets(),
+          getDietaryRestrictions(),
+          getRecentItemIds(),
+          getFavoriteIds(),
         ]);
         setMenu(menuData);
 
@@ -196,20 +193,14 @@ export default function MealPlan({ settingsVersion = 0 }) {
         }
         setConfirmedMeals(confirmedBool);
         setConfirmedMealIds(confirmedIds);
-
-        const [targets, fetchedRestrictions, recentItems] = await Promise.all([
-          getNutritionTargets(),
-          getDietaryRestrictions(),
-          getRecentItemIds(),
-        ]);
         setRestrictions(fetchedRestrictions);
+
         if (targets) {
-          const favoriteIds = await getFavoriteIds();
           const optimized = optimizeDay(menuData, targets, fetchedRestrictions, recentItems, undefined, favoriteIds);
           setMealPlan(optimized);
         }
       } catch {
-        // Past date fetch failed — mealPlan stays null, show error state
+        // Date fetch failed — mealPlan stays null
       } finally {
         setDateLoading(false);
       }
