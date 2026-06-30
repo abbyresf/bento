@@ -186,8 +186,62 @@
 
 /* Mobile-only inline logo (hidden on desktop) */
 .header-logo-sm {
-  display: none;
+  display: block;
+  height: 38px;
+  width: auto;
+  object-fit: contain;
 }
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Date navigation */
+.date-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+}
+
+.date-nav-btn {
+  background: none;
+  border: none;
+  padding: 0.2rem 0.25rem;
+  cursor: pointer;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+  line-height: 0;
+}
+
+.date-nav-btn:hover:not(:disabled) {
+  color: #475569;
+  background: #f1f5f9;
+}
+
+.date-nav-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+/* Date-loading spinner */
+.date-loading {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 0;
+}
+
+.spinner-sm {
+  width: 24px;
+  height: 24px;
+}
+
 
 /* Mobile header — single clean row */
 @media (max-width: 640px) {
@@ -201,16 +255,16 @@
 
   .meal-plan-header {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 0.5rem;
     margin-bottom: 1rem;
     position: static;
   }
 
-  .header-brand {
+  .header-top {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    align-items: center;
+    justify-content: space-between;
   }
 
   .header-logo-sm {

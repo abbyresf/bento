@@ -183,12 +183,14 @@ export const BRANDEIS_CONFIG = {
 
 // ── Generic fetcher ───────────────────────────────────────────────────────────
 
-// Fetch today's full menu for all locations defined in config.
-// Returns the same shape as generateTodaysMenu() in mockMenu.js.
+// Fetch the full menu for all locations defined in config.
+// dateStr — optional YYYY-MM-DD; defaults to today.
 // Throws if all fetches return empty menus — callers handle the fallback.
-export async function fetchDiningMenu(config) {
-  const now = new Date();
-  const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+export async function fetchDiningMenu(config, dateStr = null) {
+  if (!dateStr) {
+    const now = new Date();
+    dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  }
 
   const locationResults = await Promise.all(
     Object.entries(config.locations).map(async ([locationId, locationConfig]) => {
@@ -235,5 +237,4 @@ export async function fetchDiningMenu(config) {
   return result;
 }
 
-// Convenience wrapper — existing callers don't need to change
-export const fetchBrandeisMenu = () => fetchDiningMenu(BRANDEIS_CONFIG);
+export const fetchBrandeisMenu = (dateStr = null) => fetchDiningMenu(BRANDEIS_CONFIG, dateStr);

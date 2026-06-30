@@ -223,7 +223,7 @@ export async function getMealHistory() {
   return data ?? [];
 }
 
-export async function addMealToHistory(mealItems, mealType) {
+export async function addMealToHistory(mealItems, mealType, date = null) {
   const id = await uid();
   if (!id) return null;
   const { data } = await supabase.from('meal_history').upsert({
@@ -231,11 +231,26 @@ export async function addMealToHistory(mealItems, mealType) {
     items:        mealItems,
     confirmed_at: new Date().toISOString(),
     meal_type:    mealType ?? null,
-    meal_date:    localDateStr(),
+    meal_date:    date ?? localDateStr(),
   }, {
     onConflict: 'user_id,meal_date,meal_type',
   }).select('id').single();
   return data?.id ?? null;
+}
+
+export async function getConfirmedMealsForDate(date) {
+  const id = await uid();
+  if (!id) return { breakfast: null, lunch: null, dinner: null };
+  const { data } = await supabase
+    .from('meal_history')
+    .select('id, meal_type, items')
+    .eq('user_id', id)
+    .eq('meal_date', date);
+  const result = { breakfast: null, lunch: null, dinner: null };
+  for (const row of (data ?? [])) {
+    if (row.meal_type in result) result[row.meal_type] = { rowId: row.id, items: row.items };
+  }
+  return result;
 }
 
 export async function removeMealFromHistory(rowId) {
@@ -487,6 +502,26 @@ function localDateStr(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+// Called when a fresh menu loads — records whether any dining location was open today.
+// Non-critical: errors are intentionally swallowed by the caller.
+export async function recordDiningAvailability(anyOpen) {
+  const today = localDateStr();
+  await supabase
+    .from('dining_availability')
+    .upsert({ date: today, any_open: anyOpen }, { onConflict: 'date' });
+}
+
+// Returns a map of { [date]: boolean } for the given date strings.
+// Dates with no record are absent from the map; callers treat them as "available" by default.
+async function getDiningAvailabilityMap(dates) {
+  if (!dates.length) return {};
+  const { data } = await supabase
+    .from('dining_availability')
+    .select('date, any_open')
+    .in('date', dates);
+  return Object.fromEntries((data ?? []).map(r => [r.date, r.any_open]));
+}
+
 export async function incrementStreak() {
   const id = await uid();
   if (!id) return null;
@@ -494,16 +529,93 @@ export async function incrementStreak() {
   const streak = await getStreak();
   if (streak.lastConfirmedDate === today) return null; // already confirmed today
 
-  const yesterday = localDateStr(new Date(Date.now() - 86400000));
   const prevLongest = streak.longestStreak;
-  const newCurrent = streak.lastConfirmedDate === yesterday ? streak.currentStreak + 1 : 1;
-  const newLongest = Math.max(newCurrent, prevLongest);
+  let newCurrent = 1;
 
+  if (streak.lastConfirmedDate) {
+    // Parse as noon local time to avoid DST edge cases
+    const lastDate  = new Date(streak.lastConfirmedDate + 'T12:00:00');
+    const todayDate = new Date(today + 'T12:00:00');
+    const daysSinceLast = Math.round((todayDate - lastDate) / 86400000);
+
+    if (daysSinceLast === 1) {
+      // Consecutive day — normal increment
+      newCurrent = streak.currentStreak + 1;
+    } else if (daysSinceLast >= 2) {
+      // Build list of gap dates (days between last confirmed and today, exclusive)
+      const gapDates = [];
+      for (let i = 1; i < daysSinceLast; i++) {
+        gapDates.push(localDateStr(new Date(lastDate.getTime() + i * 86400000)));
+      }
+
+      // Check which gap days had dining open.
+      // If no record exists for a date, assume dining was available (conservative default).
+      const availability = await getDiningAvailabilityMap(gapDates);
+      const missedDiningDays = gapDates.filter(d => availability[d] !== false);
+
+      if (missedDiningDays.length === 0) {
+        // Every gap day had no dining open — streak is unbroken
+        newCurrent = streak.currentStreak + 1;
+      } else if (missedDiningDays.length === 1) {
+        // Exactly one missed dining day — one-day freeze applies, streak continues
+        newCurrent = streak.currentStreak + 1;
+      } else {
+        // Two or more missed dining days — streak resets
+        newCurrent = 1;
+      }
+    }
+  }
+
+  const newLongest = Math.max(newCurrent, prevLongest);
   await supabase.from('streaks').upsert({
     user_id:             id,
     current_streak:      newCurrent,
     longest_streak:      newLongest,
     last_confirmed_date: today,
+  }, { onConflict: 'user_id' });
+
+  return { currentStreak: newCurrent, longestStreak: newLongest, prevLongest };
+}
+
+// Retroactive streak update for a past date (e.g. the user went back and confirmed yesterday).
+// Only advances the streak — never rewrites if date is before last_confirmed_date.
+export async function incrementStreakForDate(date) {
+  const id = await uid();
+  if (!id) return null;
+  const today = localDateStr();
+  if (date > today) return null;
+
+  const streak = await getStreak();
+  if (streak.lastConfirmedDate === date) return null;
+  if (streak.lastConfirmedDate && date < streak.lastConfirmedDate) return null;
+
+  const prevLongest = streak.longestStreak;
+  let newCurrent = 1;
+
+  if (streak.lastConfirmedDate) {
+    const lastDate   = new Date(streak.lastConfirmedDate + 'T12:00:00');
+    const targetDate = new Date(date + 'T12:00:00');
+    const daysSinceLast = Math.round((targetDate - lastDate) / 86400000);
+
+    if (daysSinceLast === 1) {
+      newCurrent = streak.currentStreak + 1;
+    } else if (daysSinceLast >= 2) {
+      const gapDates = [];
+      for (let i = 1; i < daysSinceLast; i++) {
+        gapDates.push(localDateStr(new Date(lastDate.getTime() + i * 86400000)));
+      }
+      const availability = await getDiningAvailabilityMap(gapDates);
+      const missedDiningDays = gapDates.filter(d => availability[d] !== false);
+      newCurrent = missedDiningDays.length <= 1 ? streak.currentStreak + 1 : 1;
+    }
+  }
+
+  const newLongest = Math.max(newCurrent, prevLongest);
+  await supabase.from('streaks').upsert({
+    user_id:             id,
+    current_streak:      newCurrent,
+    longest_streak:      newLongest,
+    last_confirmed_date: date,
   }, { onConflict: 'user_id' });
 
   return { currentStreak: newCurrent, longestStreak: newLongest, prevLongest };

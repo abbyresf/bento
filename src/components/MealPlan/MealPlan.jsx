@@ -3,9 +3,27 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 // Local date (YYYY-MM-DD) — avoids UTC date rollover after 8pm Eastern
 const localDateStr = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+// Per-date meal plan cache: { [YYYY-MM-DD]: { breakfast, lunch, dinner } }
+// Stores user's planned items per meal per day so navigation doesn't wipe selections.
+const PLAN_CACHE_KEY = 'bento_meal_plans_v2';
+function readPlanCache() {
+  try { return JSON.parse(localStorage.getItem(PLAN_CACHE_KEY) || '{}'); } catch { return {}; }
+}
+function writePlanCache(date, meals) {
+  try {
+    const cache = readPlanCache();
+    const updated = { ...cache, [date]: meals };
+    // Trim entries older than 30 days
+    const cutoff = localDateStr(new Date(Date.now() - 30 * 86400000));
+    Object.keys(updated).forEach(k => { if (k < cutoff) delete updated[k]; });
+    localStorage.setItem(PLAN_CACHE_KEY, JSON.stringify(updated));
+  } catch {}
+}
+
 import { hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
 import { fetchBrandeisMenu } from '../../services/menuFetcher';
-import { getNutritionTargets, getDietaryRestrictions, getRecentItemIds, getFavoriteIds, addMealToHistory, removeMealFromHistory, setCachedMenu, getCachedMenu, incrementStreak, getStreak } from '../../lib/db';
+import { getNutritionTargets, getDietaryRestrictions, getRecentItemIds, getFavoriteIds, addMealToHistory, removeMealFromHistory, setCachedMenu, getCachedMenu, incrementStreak, incrementStreakForDate, getStreak, getConfirmedMealsForDate, recordDiningAvailability } from '../../lib/db';
 import { getNewBadge } from '../../data/badges';
 import { optimizeDay, findAlternatives, findRecommendedAdditions } from '../../utils/mealOptimizer';
 import MealCard from './MealCard';
@@ -44,14 +62,22 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const [newBadge, setNewBadge] = useState(null);
   const [showBadgesPanel, setShowBadgesPanel] = useState(false);
   const [customMeals, setCustomMeals] = useState(() => {
+    const today = localDateStr();
+    // New per-date cache takes priority
+    const cache = readPlanCache();
+    if (cache[today]) return cache[today];
+    // Fall back to old single-date key for today
     try {
       const stored = JSON.parse(localStorage.getItem('bento_custom_meals_v1') || '{}');
-      if (stored.date === localDateStr()) return stored.meals || { breakfast: null, lunch: null, dinner: null };
-    } catch { /* localStorage unavailable */ }
+      if (stored.date === today) return stored.meals || { breakfast: null, lunch: null, dinner: null };
+    } catch {}
     return { breakfast: null, lunch: null, dinner: null };
   });
   const [confirmedMealIds, setConfirmedMealIds] = useState({ breakfast: null, lunch: null, dinner: null });
+  const [viewDate, setViewDate] = useState(() => localDateStr());
+  const [dateLoading, setDateLoading] = useState(false);
   const [, setTick] = useState(0);
+  const initialMountRef = useRef(true);
 
   const loadMenuAndOptimize = useCallback(async (forceRefresh = false) => {
     setLoading(true);
@@ -74,10 +100,12 @@ export default function MealPlan({ settingsVersion = 0 }) {
       }
     }
 
+    let menuFetchSucceeded = !!menuData; // true if served from cache
     if (!menuData) {
       try {
         menuData = await fetchBrandeisMenu();
         setCachedMenu(menuData);
+        menuFetchSucceeded = true;
       } catch {
         menuData = {
           date: localDateStr(),
@@ -89,6 +117,12 @@ export default function MealPlan({ settingsVersion = 0 }) {
         };
         cacheState = 'offline';
       }
+    }
+
+    // Record today's dining availability for streak logic (skip on network failure)
+    if (menuFetchSucceeded) {
+      const anyOpen = Object.values(menuData.locations ?? {}).some(loc => loc.isOpen);
+      recordDiningAvailability(anyOpen).catch(() => {});
     }
 
     setMenu(menuData);
@@ -120,11 +154,73 @@ export default function MealPlan({ settingsVersion = 0 }) {
     getStreak().then(s => setStreak(s));
   }, [loadMenuAndOptimize]);
 
-  // Retroactive streak check: if menu loads and all available meals are already confirmed
-  // (e.g. confirmed before deploy or in a prior session), fire the streak now.
-  // incrementStreak() deduplicates by date so this is safe to call unconditionally.
+  // Date navigation: when viewDate changes (not on initial mount — that's handled above).
   useEffect(() => {
-    if (!menu) return;
+    if (initialMountRef.current) {
+      initialMountRef.current = false;
+      return;
+    }
+    const today    = localDateStr();
+    const tomorrow = localDateStr(new Date(Date.now() + 86400000));
+
+    const savedPlan = readPlanCache()[viewDate] || { breakfast: null, lunch: null, dinner: null };
+
+    setMealPlan(null);
+    setConfirmedMeals({ breakfast: false, lunch: false, dinner: false });
+    setConfirmedMealIds({ breakfast: null, lunch: null, dinner: null });
+    setCustomMeals(savedPlan);
+    setItemAlternatives({});
+    setRecommendations({ breakfast: null, lunch: null, dinner: null });
+    locationDefaultApplied.current = false;
+
+    if (viewDate === today) {
+      loadMenuAndOptimize();
+      return;
+    }
+
+    // Past or future date — fetch menu and confirmed meals in parallel
+    setDateLoading(true);
+    (async () => {
+      try {
+        const [menuData, confirmedForDate] = await Promise.all([
+          fetchBrandeisMenu(viewDate),
+          getConfirmedMealsForDate(viewDate),
+        ]);
+        setMenu(menuData);
+
+        const confirmedBool = { breakfast: false, lunch: false, dinner: false };
+        const confirmedIds  = { breakfast: null,  lunch: null,  dinner: null  };
+        for (const meal of ['breakfast', 'lunch', 'dinner']) {
+          const record = confirmedForDate[meal];
+          if (record) { confirmedBool[meal] = true; confirmedIds[meal] = record.rowId; }
+        }
+        setConfirmedMeals(confirmedBool);
+        setConfirmedMealIds(confirmedIds);
+
+        const [targets, fetchedRestrictions, recentItems] = await Promise.all([
+          getNutritionTargets(),
+          getDietaryRestrictions(),
+          getRecentItemIds(),
+        ]);
+        setRestrictions(fetchedRestrictions);
+        if (targets) {
+          const favoriteIds = await getFavoriteIds();
+          const optimized = optimizeDay(menuData, targets, fetchedRestrictions, recentItems, undefined, favoriteIds);
+          setMealPlan(optimized);
+        }
+      } catch {
+        // Past date fetch failed — mealPlan stays null, show error state
+      } finally {
+        setDateLoading(false);
+      }
+    })();
+  }, [viewDate, loadMenuAndOptimize]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Retroactive streak check: if today's menu loads and all meals are already confirmed
+  // (e.g. confirmed before deploy or in a prior session), fire the streak now.
+  // Only runs for today — past-date streak is handled in handleConfirmMeal.
+  useEffect(() => {
+    if (!menu || viewDate !== localDateStr()) return;
     const availableMeals = ['breakfast', 'lunch', 'dinner'].filter(m => {
       const s = menu?.locations?.sherman?.meals?.[m]?.length ?? 0;
       const u = menu?.locations?.usdan?.meals?.[m]?.length ?? 0;
@@ -209,6 +305,16 @@ export default function MealPlan({ settingsVersion = 0 }) {
     return () => { cancelled = true; };
   }, [settingsVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const navigateDate = (delta) => {
+    setViewDate(prev => {
+      const tomorrow = localDateStr(new Date(Date.now() + 86400000));
+      const d = new Date(prev + 'T12:00:00');
+      d.setDate(d.getDate() + delta);
+      const next = localDateStr(d);
+      return next > tomorrow ? prev : next;
+    });
+  };
+
   const handleLocationChange = (meal, location) => {
     setSelectedLocation((prev) => ({ ...prev, [meal]: location }));
     setRecommendations((prev) => ({ ...prev, [meal]: null }));
@@ -241,21 +347,19 @@ export default function MealPlan({ settingsVersion = 0 }) {
 
   const handleAddItem = (meal, item) => {
     const location = selectedLocation[meal];
+    const currentItems = mealPlan?.[location]?.[meal]?.items ?? [];
+    if (currentItems.some((i) => i.id === item.id)) return;
+    const newItems = [...currentItems, { ...item, userAdded: true }];
+    const newTotals = newItems.reduce(
+      (acc, i) => ({
+        calories: acc.calories + (i.nutrition?.calories ?? 0),
+        protein:  acc.protein  + (i.nutrition?.protein  ?? 0),
+        carbs:    acc.carbs    + (i.nutrition?.carbs    ?? 0),
+        fat:      acc.fat      + (i.nutrition?.fat      ?? 0),
+      }),
+      { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    );
     setMealPlan((prev) => {
-      const currentItems = prev[location][meal].items;
-      // Guard: prevent double-add (React Strict Mode calls updaters twice)
-      if (currentItems.some((i) => i.id === item.id)) return prev;
-      const newItems = [...currentItems, { ...item, userAdded: true }];
-      const newTotals = newItems.reduce(
-        (acc, i) => ({
-          calories: acc.calories + (i.nutrition?.calories ?? 0),
-          protein: acc.protein + (i.nutrition?.protein ?? 0),
-          carbs: acc.carbs + (i.nutrition?.carbs ?? 0),
-          fat: acc.fat + (i.nutrition?.fat ?? 0),
-        }),
-        { calories: 0, protein: 0, carbs: 0, fat: 0 }
-      );
-      // Deep-copy the location level to avoid mutating prev[location]
       const newPlan = {
         ...prev,
         [location]: {
@@ -263,40 +367,42 @@ export default function MealPlan({ settingsVersion = 0 }) {
           [meal]: { ...prev[location][meal], items: newItems, totals: newTotals },
         },
       };
-
       const dailyTotals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
       ['breakfast', 'lunch', 'dinner'].forEach((m) => {
         const loc = m === meal ? location : selectedLocation[m];
         if (newPlan[loc]?.[m]) {
           dailyTotals.calories += newPlan[loc][m].totals.calories;
-          dailyTotals.protein += newPlan[loc][m].totals.protein;
-          dailyTotals.carbs += newPlan[loc][m].totals.carbs;
-          dailyTotals.fat += newPlan[loc][m].totals.fat;
+          dailyTotals.protein  += newPlan[loc][m].totals.protein;
+          dailyTotals.carbs    += newPlan[loc][m].totals.carbs;
+          dailyTotals.fat      += newPlan[loc][m].totals.fat;
         }
       });
       newPlan.dailyTotals = { ...prev.dailyTotals, [location]: dailyTotals };
       return newPlan;
+    });
+    setCustomMeals(prev => {
+      const next = { ...prev, [meal]: { items: newItems, totals: newTotals } };
+      writePlanCache(viewDate, next);
+      return next;
     });
     setRecommendations((prev) => ({ ...prev, [meal]: null }));
   };
 
   const handleRemoveItem = (meal, itemId) => {
     const location = selectedLocation[meal];
+    const currentItems = mealPlan?.[location]?.[meal]?.items ?? [];
+    if (!currentItems.some((i) => i.id === itemId)) return;
+    const newItems = currentItems.filter((i) => i.id !== itemId);
+    const newTotals = newItems.reduce(
+      (acc, i) => ({
+        calories: acc.calories + (i.nutrition?.calories ?? 0),
+        protein:  acc.protein  + (i.nutrition?.protein  ?? 0),
+        carbs:    acc.carbs    + (i.nutrition?.carbs    ?? 0),
+        fat:      acc.fat      + (i.nutrition?.fat      ?? 0),
+      }),
+      { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    );
     setMealPlan((prev) => {
-      const currentItems = prev[location][meal].items;
-      // Guard: bail if item not found (also protects against Strict Mode double-invocation)
-      if (!currentItems.some((i) => i.id === itemId)) return prev;
-      const newItems = currentItems.filter((i) => i.id !== itemId);
-      const newTotals = newItems.reduce(
-        (acc, i) => ({
-          calories: acc.calories + (i.nutrition?.calories ?? 0),
-          protein: acc.protein + (i.nutrition?.protein ?? 0),
-          carbs: acc.carbs + (i.nutrition?.carbs ?? 0),
-          fat: acc.fat + (i.nutrition?.fat ?? 0),
-        }),
-        { calories: 0, protein: 0, carbs: 0, fat: 0 }
-      );
-      // Deep-copy the location level to avoid mutating prev[location]
       const newPlan = {
         ...prev,
         [location]: {
@@ -304,19 +410,23 @@ export default function MealPlan({ settingsVersion = 0 }) {
           [meal]: { ...prev[location][meal], items: newItems, totals: newTotals },
         },
       };
-
       const dailyTotals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
       ['breakfast', 'lunch', 'dinner'].forEach((m) => {
         const loc = m === meal ? location : selectedLocation[m];
         if (newPlan[loc]?.[m]) {
           dailyTotals.calories += newPlan[loc][m].totals.calories;
-          dailyTotals.protein += newPlan[loc][m].totals.protein;
-          dailyTotals.carbs += newPlan[loc][m].totals.carbs;
-          dailyTotals.fat += newPlan[loc][m].totals.fat;
+          dailyTotals.protein  += newPlan[loc][m].totals.protein;
+          dailyTotals.carbs    += newPlan[loc][m].totals.carbs;
+          dailyTotals.fat      += newPlan[loc][m].totals.fat;
         }
       });
       newPlan.dailyTotals = { ...prev.dailyTotals, [location]: dailyTotals };
       return newPlan;
+    });
+    setCustomMeals(prev => {
+      const next = { ...prev, [meal]: { items: newItems, totals: newTotals } };
+      writePlanCache(viewDate, next);
+      return next;
     });
   };
 
@@ -346,40 +456,44 @@ export default function MealPlan({ settingsVersion = 0 }) {
     if (!mealPlan) return;
     const location = selectedLocation[meal];
     const key = `${location}-${meal}-${itemIndex}`;
+    const newItems = [...(mealPlan[location][meal].items)];
+    newItems[itemIndex] = newItem;
+    const newTotals = newItems.reduce(
+      (acc, item) => ({
+        calories: acc.calories + item.nutrition.calories,
+        protein:  acc.protein  + item.nutrition.protein,
+        carbs:    acc.carbs    + item.nutrition.carbs,
+        fat:      acc.fat      + item.nutrition.fat,
+      }),
+      { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    );
 
     setMealPlan((prev) => {
-      const newPlan = { ...prev };
-      const newItems = [...newPlan[location][meal].items];
-      newItems[itemIndex] = newItem;
-
-      const newTotals = newItems.reduce(
-        (acc, item) => ({
-          calories: acc.calories + item.nutrition.calories,
-          protein: acc.protein + item.nutrition.protein,
-          carbs: acc.carbs + item.nutrition.carbs,
-          fat: acc.fat + item.nutrition.fat,
-        }),
-        { calories: 0, protein: 0, carbs: 0, fat: 0 }
-      );
-
-      newPlan[location] = {
-        ...newPlan[location],
-        [meal]: { ...newPlan[location][meal], items: newItems, totals: newTotals },
+      const newPlan = {
+        ...prev,
+        [location]: {
+          ...prev[location],
+          [meal]: { ...prev[location][meal], items: newItems, totals: newTotals },
+        },
       };
-
       const dailyTotals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
       ['breakfast', 'lunch', 'dinner'].forEach((m) => {
         const loc = m === meal ? location : selectedLocation[m];
         if (newPlan[loc]?.[m]) {
           dailyTotals.calories += newPlan[loc][m].totals.calories;
-          dailyTotals.protein += newPlan[loc][m].totals.protein;
-          dailyTotals.carbs += newPlan[loc][m].totals.carbs;
-          dailyTotals.fat += newPlan[loc][m].totals.fat;
+          dailyTotals.protein  += newPlan[loc][m].totals.protein;
+          dailyTotals.carbs    += newPlan[loc][m].totals.carbs;
+          dailyTotals.fat      += newPlan[loc][m].totals.fat;
         }
       });
       newPlan.dailyTotals = { ...prev.dailyTotals, [location]: dailyTotals };
-
       return newPlan;
+    });
+
+    setCustomMeals(prev => {
+      const next = { ...prev, [meal]: { items: newItems, totals: newTotals } };
+      writePlanCache(viewDate, next);
+      return next;
     });
 
     // Clear cached alternatives for this slot since the item changed
@@ -396,9 +510,11 @@ export default function MealPlan({ settingsVersion = 0 }) {
     const updatedConfirmed = { ...confirmedMeals, [meal]: false };
     setConfirmedMeals(updatedConfirmed);
     setConfirmedMealIds(prev => ({ ...prev, [meal]: null }));
-    try {
-      localStorage.setItem('bento_confirmed_meals_v2', JSON.stringify({ date: localDateStr(), meals: updatedConfirmed }));
-    } catch { /* localStorage unavailable */ }
+    if (viewDate === localDateStr()) {
+      try {
+        localStorage.setItem('bento_confirmed_meals_v2', JSON.stringify({ date: localDateStr(), meals: updatedConfirmed }));
+      } catch { /* localStorage unavailable */ }
+    }
   };
 
   const handleBrowserDone = (meal, selectedItems) => {
@@ -413,9 +529,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
     };
     setCustomMeals(prev => {
       const next = { ...prev, [meal]: newPlan };
-      try {
-        localStorage.setItem('bento_custom_meals_v1', JSON.stringify({ date: localDateStr(), meals: next }));
-      } catch { /* localStorage unavailable */ }
+      writePlanCache(viewDate, next);
       return next;
     });
   };
@@ -425,14 +539,18 @@ export default function MealPlan({ settingsVersion = 0 }) {
     setConfirmingMeals(prev => ({ ...prev, [meal]: true }));
     const location = selectedLocation[meal];
     const mealItems = customMeals[meal]?.items ?? mealPlan[location][meal].items;
-    const rowId = await addMealToHistory(mealItems, meal);
+    const today = localDateStr();
+    const isViewingToday = viewDate === today;
+    const rowId = await addMealToHistory(mealItems, meal, isViewingToday ? null : viewDate);
     setConfirmingMeals(prev => ({ ...prev, [meal]: false }));
     const updatedConfirmed = { ...confirmedMeals, [meal]: true };
     setConfirmedMeals(updatedConfirmed);
     setConfirmedMealIds(prev => ({ ...prev, [meal]: rowId }));
-    try {
-      localStorage.setItem('bento_confirmed_meals_v2', JSON.stringify({ date: localDateStr(), meals: updatedConfirmed }));
-    } catch { /* localStorage unavailable */ }
+    if (isViewingToday) {
+      try {
+        localStorage.setItem('bento_confirmed_meals_v2', JSON.stringify({ date: today, meals: updatedConfirmed }));
+      } catch { /* localStorage unavailable */ }
+    }
     const availableMeals = ['breakfast', 'lunch', 'dinner'].filter(m => {
       const s = menu?.locations?.sherman?.meals?.[m]?.length ?? 0;
       const u = menu?.locations?.usdan?.meals?.[m]?.length ?? 0;
@@ -441,9 +559,10 @@ export default function MealPlan({ settingsVersion = 0 }) {
     });
     const allConfirmed = availableMeals.length === 0 || availableMeals.every(m => updatedConfirmed[m]);
     if (allConfirmed) {
-      const result = await incrementStreak();
+      const streakFn = isViewingToday ? incrementStreak : () => incrementStreakForDate(viewDate);
+      const result = await streakFn();
       if (result) {
-        setStreak({ currentStreak: result.currentStreak, longestStreak: result.longestStreak, lastConfirmedDate: localDateStr() });
+        setStreak({ currentStreak: result.currentStreak, longestStreak: result.longestStreak, lastConfirmedDate: viewDate });
         const badge = getNewBadge(result.prevLongest, result.longestStreak);
         setPendingBadge(badge);
         setShowStreakCelebration(true);
@@ -493,7 +612,13 @@ export default function MealPlan({ settingsVersion = 0 }) {
     );
   }
 
-  if (!mealPlan) {
+  const todayStr    = localDateStr();
+  const tomorrowStr = localDateStr(new Date(Date.now() + 86400000));
+  const isViewingToday     = viewDate === todayStr;
+  const isViewingTomorrow  = viewDate === tomorrowStr;
+  const isViewingPast      = viewDate < todayStr;
+
+  if (!mealPlan && !dateLoading && isViewingToday) {
     return (
       <div className="meal-plan-error">
         <p>Unable to generate meal plan. Please complete setup first.</p>
@@ -501,45 +626,71 @@ export default function MealPlan({ settingsVersion = 0 }) {
     );
   }
 
-  const dayTotals = calculateSelectedDayTotals();
-  const targets = mealPlan.targets;
+  const dayTotals = mealPlan ? calculateSelectedDayTotals() : { calories: 0, protein: 0, carbs: 0, fat: 0 };
+  const targets   = mealPlan?.targets;
+
+  const viewDateFormatted = new Date(viewDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+  const getMealPast = (meal) => {
+    if (isViewingPast)    return true;
+    if (isViewingTomorrow) return false;
+    return hasMealPassed(meal);
+  };
 
   return (
     <div className="meal-plan">
       <header className="meal-plan-header">
-        <div className="header-brand">
+        <div className="header-top">
           <img src="/logo-cropped.png" alt="Bento" className="header-logo-sm" />
-          <p className="date">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+          {(() => {
+            const yesterday = localDateStr(new Date(Date.now() - 86400000));
+            const active = streak.lastConfirmedDate === todayStr || streak.lastConfirmedDate === yesterday;
+            const effectiveStreak = active ? streak.currentStreak : 0;
+            return effectiveStreak > 0 ? (
+              <StreakBadge streak={effectiveStreak} onClick={() => setShowBadgesPanel(true)} />
+            ) : null;
+          })()}
         </div>
-        {(() => {
-          const today = localDateStr();
-          const yesterday = localDateStr(new Date(Date.now() - 86400000));
-          const active = streak.lastConfirmedDate === today || streak.lastConfirmedDate === yesterday;
-          const effectiveStreak = active ? streak.currentStreak : 0;
-          return effectiveStreak > 0 ? (
-            <StreakBadge streak={effectiveStreak} onClick={() => setShowBadgesPanel(true)} />
-          ) : null;
-        })()}
+        <div className="date-nav">
+          <button className="date-nav-btn" onClick={() => navigateDate(-1)} aria-label="Previous day">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <p className="date">{viewDateFormatted}</p>
+          <button className="date-nav-btn" onClick={() => navigateDate(1)} disabled={isViewingTomorrow} aria-label="Next day">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        </div>
       </header>
 
-      {usingCachedData === 'cache' && (
+      {isViewingToday && usingCachedData === 'cache' && (
         <div className="cache-warning">
           Showing saved menu · <button onClick={() => loadMenuAndOptimize(true)}>Refresh</button>
         </div>
       )}
-      {usingCachedData === 'offline' && (
+      {isViewingToday && usingCachedData === 'offline' && (
         <div className="cache-warning cache-warning-error">
           Couldn't reach dining servers · <button onClick={() => loadMenuAndOptimize(true)}>Retry</button>
         </div>
       )}
 
+      {dateLoading && (
+        <div className="date-loading">
+          <div className="spinner spinner-sm"></div>
+        </div>
+      )}
+
+      {!dateLoading && mealPlan && (
       <div className="meals-timeline">
         {['breakfast', 'lunch', 'dinner'].map((meal) => (
           <MealCard
             key={meal}
             meal={meal}
             mealTime={MEAL_TIMES[meal]}
-            isPast={hasMealPassed(meal)}
+            isPast={getMealPast(meal)}
             shermanPlan={mealPlan.sherman[meal]}
             usdanPlan={mealPlan.usdan[meal]}
             kosherPlan={mealPlan.kosher?.[meal]}
@@ -571,8 +722,11 @@ export default function MealPlan({ settingsVersion = 0 }) {
           />
         ))}
       </div>
+      )}
 
-      <DailySummary totals={dayTotals} targets={targets} />
+      {!dateLoading && mealPlan && targets && (
+        <DailySummary totals={dayTotals} targets={targets} />
+      )}
 
       {showStreakCelebration && (
         <StreakCelebration
