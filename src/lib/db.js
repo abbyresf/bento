@@ -45,7 +45,7 @@ export async function getSession() {
 }
 
 function uid() {
-  return supabase.auth.getSession().then(({ data }) => data.session?.user?.id);
+  return supabase.auth.getUser().then(({ data }) => data.user?.id);
 }
 
 // ── User Profile ───────────────────────────────────────────────────────────
