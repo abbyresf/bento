@@ -23,7 +23,8 @@ function writePlanCache(date, meals) {
 
 import { hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
 import { fetchBrandeisMenu } from '../../services/menuFetcher';
-import { getNutritionTargets, getDietaryRestrictions, getRecentItemIds, getFavoriteIds, addMealToHistory, removeMealFromHistory, setCachedMenu, getCachedMenu, incrementStreak, incrementStreakForDate, getStreak, getConfirmedMealsForDate, recordDiningAvailability } from '../../lib/db';
+import { getNutritionTargets, getDietaryRestrictions, getRecentItemIds, addMealToHistory, removeMealFromHistory, setCachedMenu, getCachedMenu, incrementStreak, incrementStreakForDate, getStreak, getConfirmedMealsForDate, recordDiningAvailability } from '../../lib/db';
+import { useFavorites } from '../../context/FavoritesContext';
 import { getNewBadge } from '../../data/badges';
 import { optimizeDay, findAlternatives, findRecommendedAdditions } from '../../utils/mealOptimizer';
 import MealCard from './MealCard';
@@ -79,6 +80,11 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const [, setTick] = useState(0);
   const initialMountRef = useRef(true);
 
+  // Favorites from context — ref keeps loadMenuAndOptimize stable (no dep on favoriteIds)
+  const { favoriteIds: contextFavoriteIds } = useFavorites();
+  const favoriteIdsRef = useRef(contextFavoriteIds);
+  useEffect(() => { favoriteIdsRef.current = contextFavoriteIds; }, [contextFavoriteIds]);
+
   const loadMenuAndOptimize = useCallback(async (forceRefresh = false) => {
     setLoading(true);
 
@@ -114,12 +120,11 @@ export default function MealPlan({ settingsVersion = 0 }) {
 
     try {
       // Menu fetch and all user-data queries run simultaneously
-      const [{ data: menuData, offline }, targets, fetchedRestrictions, recentItems, favoriteIds] = await Promise.all([
+      const [{ data: menuData, offline }, targets, fetchedRestrictions, recentItems] = await Promise.all([
         menuPromise,
         getNutritionTargets(),
         getDietaryRestrictions(),
         getRecentItemIds(),
-        getFavoriteIds(),
       ]);
 
       if (!offline) {
@@ -134,7 +139,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
       setRestrictions(fetchedRestrictions);
 
       if (targets) {
-        const optimized = optimizeDay(menuData, targets, fetchedRestrictions, recentItems, undefined, favoriteIds);
+        const optimized = optimizeDay(menuData, targets, fetchedRestrictions, recentItems, undefined, favoriteIdsRef.current);
         setMealPlan(optimized);
       }
     } finally {
@@ -171,17 +176,17 @@ export default function MealPlan({ settingsVersion = 0 }) {
       return;
     }
 
-    // Past or future date — fetch everything in parallel
+    // Past or future date — debounce so rapid ← → clicks don't each fire a fetch
     setDateLoading(true);
-    (async () => {
+    const capturedDate = viewDate;
+    const timer = setTimeout(async () => {
       try {
-        const [menuData, confirmedForDate, targets, fetchedRestrictions, recentItems, favoriteIds] = await Promise.all([
-          fetchBrandeisMenu(viewDate),
-          getConfirmedMealsForDate(viewDate),
+        const [menuData, confirmedForDate, targets, fetchedRestrictions, recentItems] = await Promise.all([
+          fetchBrandeisMenu(capturedDate),
+          getConfirmedMealsForDate(capturedDate),
           getNutritionTargets(),
           getDietaryRestrictions(),
           getRecentItemIds(),
-          getFavoriteIds(),
         ]);
         setMenu(menuData);
 
@@ -196,7 +201,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
         setRestrictions(fetchedRestrictions);
 
         if (targets) {
-          const optimized = optimizeDay(menuData, targets, fetchedRestrictions, recentItems, undefined, favoriteIds);
+          const optimized = optimizeDay(menuData, targets, fetchedRestrictions, recentItems, undefined, favoriteIdsRef.current);
           setMealPlan(optimized);
         }
       } catch {
@@ -204,7 +209,8 @@ export default function MealPlan({ settingsVersion = 0 }) {
       } finally {
         setDateLoading(false);
       }
-    })();
+    }, 300);
+    return () => { clearTimeout(timer); setDateLoading(false); };
   }, [viewDate, loadMenuAndOptimize]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Retroactive streak check: if today's menu loads and all meals are already confirmed
@@ -284,9 +290,8 @@ export default function MealPlan({ settingsVersion = 0 }) {
         });
       }
       if (targets) {
-        const favoriteIds = await getFavoriteIds();
         if (cancelled) return;
-        const optimized = optimizeDay(menu, targets, fetchedRestrictions, recentItems, undefined, favoriteIds);
+        const optimized = optimizeDay(menu, targets, fetchedRestrictions, recentItems, undefined, favoriteIdsRef.current);
         setMealPlan(optimized);
         setItemAlternatives({});
         setRecommendations({ breakfast: null, lunch: null, dinner: null });
@@ -315,10 +320,9 @@ export default function MealPlan({ settingsVersion = 0 }) {
     if (recommendations[meal] !== null) return;
     const location = selectedLocation[meal];
     const currentMealPlan = mealPlan[location][meal];
-    const [restrictions, recentItems, favoriteIds] = await Promise.all([
+    const [restrictions, recentItems] = await Promise.all([
       getDietaryRestrictions(),
       getRecentItemIds(),
-      getFavoriteIds(),
     ]);
     const excludeIds = new Set(currentMealPlan.items.map((i) => i.id));
     const recs = findRecommendedAdditions(
@@ -331,7 +335,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
       meal,
       currentMealPlan.items,
       3,
-      favoriteIds
+      favoriteIdsRef.current
     );
     setRecommendations((prev) => ({ ...prev, [meal]: recs }));
   };

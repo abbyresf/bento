@@ -45,7 +45,7 @@ export async function getSession() {
 }
 
 function uid() {
-  return supabase.auth.getUser().then(({ data }) => data.user?.id);
+  return supabase.auth.getSession().then(({ data }) => data.session?.user?.id);
 }
 
 // ── User Profile ───────────────────────────────────────────────────────────
@@ -260,11 +260,20 @@ export async function removeMealFromHistory(rowId) {
 }
 
 export async function getRecentItemIds() {
-  const history = await getMealHistory();
+  const id = await uid();
+  if (!id) return new Set();
+  const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+  const { data } = await supabase
+    .from('meal_history')
+    .select('items')
+    .eq('user_id', id)
+    .gte('confirmed_at', twoWeeksAgo);
   const ids = new Set();
-  history.forEach((entry) => {
-    (entry.items ?? []).forEach((item) => ids.add(item.id));
-  });
+  for (const row of (data ?? [])) {
+    for (const item of (row.items ?? [])) {
+      if (item.id) ids.add(item.id);
+    }
+  }
   return ids;
 }
 
@@ -287,8 +296,10 @@ export async function getFavorites() {
 }
 
 export async function getFavoriteIds() {
-  const favs = await getFavorites();
-  return new Set(favs.map((f) => f.id));
+  const id = await uid();
+  if (!id) return new Set();
+  const { data } = await supabase.from('favorites').select('item_id').eq('user_id', id);
+  return new Set((data ?? []).map(r => r.item_id));
 }
 
 export async function isFavorite(itemId) {
