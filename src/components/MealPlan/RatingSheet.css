@@ -1,0 +1,123 @@
+.rating-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 300;
+  display: flex;
+  align-items: flex-end;
+  animation: rsOverlayIn 0.2s ease;
+}
+
+.rating-sheet {
+  background: white;
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  padding: 0.5rem 1.25rem 2.5rem;
+  animation: rsSlideUp 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.rating-sheet-handle {
+  width: 36px;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  margin: 0.5rem auto 1.25rem;
+}
+
+.rating-sheet-header {
+  margin-bottom: 1.25rem;
+}
+
+.rating-sheet-header h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 0.25rem;
+}
+
+.rating-sheet-sub {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.rating-sheet-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+.rating-sheet-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.rating-sheet-item-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #334155;
+  flex: 1;
+  min-width: 0;
+  /* Clamp to 2 lines */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.rating-sheet-footer {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.rating-sheet-skip {
+  flex: 1;
+  padding: 0.75rem;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.rating-sheet-skip:hover:not(:disabled) { background: #e2e8f0; }
+.rating-sheet-skip:disabled { opacity: 0.5; }
+
+.rating-sheet-submit {
+  flex: 2;
+  padding: 0.75rem;
+  background: #f47421;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.rating-sheet-submit:hover:not(:disabled) { opacity: 0.9; }
+.rating-sheet-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+@keyframes rsOverlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes rsSlideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+@media (prefers-color-scheme: dark) {
+  .rating-sheet { background: #1e2a3a; }
+  .rating-sheet-handle { background: #2d3a4d; }
+  .rating-sheet-header h3 { color: #e2e8f0; }
+  .rating-sheet-item-name { color: #cbd5e1; }
+  .rating-sheet-skip { background: #162030; color: #94a3b8; }
+  .rating-sheet-skip:hover:not(:disabled) { background: #1e2a3a; }
+}

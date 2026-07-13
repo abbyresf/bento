@@ -1,12 +1,16 @@
 import { useEffect } from 'react';
 import { DIETARY_TAGS } from '../../data/mockMenu';
-import { useFavorites } from '../../context/FavoritesContext';
+import { useRatings } from '../../context/RatingsContext';
 import './FoodItem.css';
+
+const BADGE_MIN_AVG   = 4.0;
+const BADGE_MIN_COUNT = 5;
 
 export default function FoodItem({ item, isExpanded, onToggleExpand, alternatives, onLoadAlternatives, onSwapToItem, onRemove, disabled }) {
   const { name, nutrition, reason, tags, station } = item;
-  const { favoriteIds, toggleFavorite } = useFavorites();
-  const favorited = favoriteIds.has(item.id);
+  const { aggregates } = useRatings();
+  const agg = aggregates[item.id];
+  const showBadge = agg && agg.avg >= BADGE_MIN_AVG && agg.count >= BADGE_MIN_COUNT;
 
   // Auto-load alternatives the first time this item is expanded
   useEffect(() => {
@@ -14,11 +18,6 @@ export default function FoodItem({ item, isExpanded, onToggleExpand, alternative
       onLoadAlternatives?.();
     }
   }, [isExpanded]); // eslint-disable-line
-
-  const handleToggleFavorite = (e) => {
-    e.stopPropagation();
-    toggleFavorite(item);
-  };
 
   const handleRemove = (e) => {
     e.stopPropagation();
@@ -29,7 +28,10 @@ export default function FoodItem({ item, isExpanded, onToggleExpand, alternative
     <div className={`food-item ${isExpanded ? 'expanded' : ''}`}>
       <div className="food-item-main" onClick={onToggleExpand}>
         <div className="food-item-info">
-          <h4 className="food-name">{name}</h4>
+          <h4 className="food-name">
+            {name}
+            {showBadge && <span className="students-like-badge">Students like this!</span>}
+          </h4>
           {reason && <p className="food-reason">{reason}</p>}
           <div className="food-tags">
             {(tags ?? []).slice(0, 3).map((tag) => (
@@ -60,15 +62,6 @@ export default function FoodItem({ item, isExpanded, onToggleExpand, alternative
         </div>
 
         <div className="food-item-actions">
-          <button
-            className={`favorite-btn ${favorited ? 'favorited' : ''}`}
-            onClick={handleToggleFavorite}
-            aria-label={favorited ? 'Remove from favorites' : 'Add to favorites'}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill={favorited ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-            </svg>
-          </button>
 
           <button
             className="expand-btn"

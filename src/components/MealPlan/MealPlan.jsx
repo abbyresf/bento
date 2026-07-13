@@ -24,7 +24,7 @@ function writePlanCache(date, meals) {
 import { hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
 import { fetchBrandeisMenu } from '../../services/menuFetcher';
 import { getNutritionTargets, getDietaryRestrictions, getRecentItemIds, addMealToHistory, removeMealFromHistory, setCachedMenu, getCachedMenu, incrementStreak, incrementStreakForDate, getStreak, getConfirmedMealsForDate, recordDiningAvailability } from '../../lib/db';
-import { useFavorites } from '../../context/FavoritesContext';
+import { useRatings } from '../../context/RatingsContext';
 import { getNewBadge } from '../../data/badges';
 import { optimizeDay, findAlternatives, findRecommendedAdditions } from '../../utils/mealOptimizer';
 import MealCard from './MealCard';
@@ -33,6 +33,7 @@ import StreakBadge from '../Streak/StreakBadge';
 import StreakCelebration from '../Streak/StreakCelebration';
 import BadgeCelebration from '../Badges/BadgeCelebration';
 import BadgesPanel from '../Badges/BadgesPanel';
+import RatingSheet from './RatingSheet';
 import './MealPlan.css';
 
 export default function MealPlan({ settingsVersion = 0 }) {
@@ -80,10 +81,14 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const [, setTick] = useState(0);
   const initialMountRef = useRef(true);
 
-  // Favorites from context — ref keeps loadMenuAndOptimize stable (no dep on favoriteIds)
-  const { favoriteIds: contextFavoriteIds } = useFavorites();
-  const favoriteIdsRef = useRef(contextFavoriteIds);
-  useEffect(() => { favoriteIdsRef.current = contextFavoriteIds; }, [contextFavoriteIds]);
+  // High-rated items from context — ref keeps loadMenuAndOptimize stable (no dep on highRatedIds)
+  const { highRatedIds: contextHighRatedIds } = useRatings();
+  const highRatedIdsRef = useRef(contextHighRatedIds);
+  useEffect(() => { highRatedIdsRef.current = contextHighRatedIds; }, [contextHighRatedIds]);
+
+  // Post-confirmation rating sheet
+  const [pendingRating, setPendingRating] = useState(null); // { meal, items }
+  const pendingStreakRef = useRef(null); // { isViewingToday, updatedConfirmed } — deferred until sheet closes
 
   const loadMenuAndOptimize = useCallback(async (forceRefresh = false) => {
     setLoading(true);
@@ -139,7 +144,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
       setRestrictions(fetchedRestrictions);
 
       if (targets) {
-        const optimized = optimizeDay(menuData, targets, fetchedRestrictions, recentItems, undefined, favoriteIdsRef.current);
+        const optimized = optimizeDay(menuData, targets, fetchedRestrictions, recentItems, undefined, highRatedIdsRef.current);
         setMealPlan(optimized);
       }
     } finally {
@@ -201,7 +206,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
         setRestrictions(fetchedRestrictions);
 
         if (targets) {
-          const optimized = optimizeDay(menuData, targets, fetchedRestrictions, recentItems, undefined, favoriteIdsRef.current);
+          const optimized = optimizeDay(menuData, targets, fetchedRestrictions, recentItems, undefined, highRatedIdsRef.current);
           setMealPlan(optimized);
         }
       } catch {
@@ -291,7 +296,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
       }
       if (targets) {
         if (cancelled) return;
-        const optimized = optimizeDay(menu, targets, fetchedRestrictions, recentItems, undefined, favoriteIdsRef.current);
+        const optimized = optimizeDay(menu, targets, fetchedRestrictions, recentItems, undefined, highRatedIdsRef.current);
         setMealPlan(optimized);
         setItemAlternatives({});
         setRecommendations({ breakfast: null, lunch: null, dinner: null });
@@ -335,7 +340,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
       meal,
       currentMealPlan.items,
       3,
-      favoriteIdsRef.current
+      highRatedIdsRef.current
     );
     setRecommendations((prev) => ({ ...prev, [meal]: recs }));
   };
@@ -529,23 +534,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
     });
   };
 
-  const handleConfirmMeal = async (meal) => {
-    if (confirmingMeals[meal] || confirmedMeals[meal]) return;
-    setConfirmingMeals(prev => ({ ...prev, [meal]: true }));
-    const location = selectedLocation[meal];
-    const mealItems = customMeals[meal]?.items ?? mealPlan[location][meal].items;
-    const today = localDateStr();
-    const isViewingToday = viewDate === today;
-    const rowId = await addMealToHistory(mealItems, meal, isViewingToday ? null : viewDate);
-    setConfirmingMeals(prev => ({ ...prev, [meal]: false }));
-    const updatedConfirmed = { ...confirmedMeals, [meal]: true };
-    setConfirmedMeals(updatedConfirmed);
-    setConfirmedMealIds(prev => ({ ...prev, [meal]: rowId }));
-    if (isViewingToday) {
-      try {
-        localStorage.setItem('bento_confirmed_meals_v2', JSON.stringify({ date: today, meals: updatedConfirmed }));
-      } catch { /* localStorage unavailable */ }
-    }
+  const runStreakCheck = async (isViewingToday, updatedConfirmed) => {
     const availableMeals = ['breakfast', 'lunch', 'dinner'].filter(m => {
       const s = menu?.locations?.sherman?.meals?.[m]?.length ?? 0;
       const u = menu?.locations?.usdan?.meals?.[m]?.length ?? 0;
@@ -563,6 +552,35 @@ export default function MealPlan({ settingsVersion = 0 }) {
         setShowStreakCelebration(true);
       }
     }
+  };
+
+  const handleConfirmMeal = async (meal) => {
+    if (confirmingMeals[meal] || confirmedMeals[meal]) return;
+    setConfirmingMeals(prev => ({ ...prev, [meal]: true }));
+    const location = selectedLocation[meal];
+    const mealItems = customMeals[meal]?.items ?? mealPlan[location][meal].items;
+    const today = localDateStr();
+    const isViewingToday = viewDate === today;
+    const rowId = await addMealToHistory(mealItems, meal, isViewingToday ? null : viewDate);
+    setConfirmingMeals(prev => ({ ...prev, [meal]: false }));
+    const updatedConfirmed = { ...confirmedMeals, [meal]: true };
+    setConfirmedMeals(updatedConfirmed);
+    setConfirmedMealIds(prev => ({ ...prev, [meal]: rowId }));
+    if (isViewingToday) {
+      try {
+        localStorage.setItem('bento_confirmed_meals_v2', JSON.stringify({ date: today, meals: updatedConfirmed }));
+      } catch { /* localStorage unavailable */ }
+    }
+    // Show rating sheet; defer streak check until it closes
+    pendingStreakRef.current = { isViewingToday, updatedConfirmed };
+    setPendingRating({ meal, items: mealItems });
+  };
+
+  const handleRatingClose = () => {
+    const info = pendingStreakRef.current;
+    pendingStreakRef.current = null;
+    setPendingRating(null);
+    if (info) runStreakCheck(info.isViewingToday, info.updatedConfirmed);
   };
 
   const handleStreakCelebrationDismiss = () => {
@@ -721,6 +739,14 @@ export default function MealPlan({ settingsVersion = 0 }) {
 
       {!dateLoading && mealPlan && targets && (
         <DailySummary totals={dayTotals} targets={targets} />
+      )}
+
+      {pendingRating && (
+        <RatingSheet
+          meal={pendingRating.meal}
+          items={pendingRating.items}
+          onClose={handleRatingClose}
+        />
       )}
 
       {showStreakCelebration && (

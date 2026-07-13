@@ -127,7 +127,6 @@
 }
 
 .expand-btn,
-.favorite-btn,
 .remove-btn {
   padding: 0.4rem;
   background: none;
@@ -151,16 +150,18 @@
   transition: transform 0.2s;
 }
 
-.favorite-btn {
-  color: #cbd5e1;
-}
-
-.favorite-btn:hover {
+.students-like-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  background: #fff4ed;
   color: #f47421;
-}
-
-.favorite-btn.favorited {
-  color: #f47421;
+  border: 1px solid #fed7aa;
+  border-radius: 4px;
+  padding: 1px 5px;
+  vertical-align: middle;
+  white-space: nowrap;
 }
 
 .remove-btn {

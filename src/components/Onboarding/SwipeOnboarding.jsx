@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { fetchBrandeisMenu } from '../../services/menuFetcher';
-import { toggleFavorite } from '../../lib/db';
+import { rateItem } from '../../lib/db';
 import './SwipeOnboarding.css';
 
 const STATION_LABELS = {
@@ -100,7 +100,7 @@ export default function SwipeOnboarding({ onDone, embedded }) {
     const currentIndex = index;
 
     if (liked && currentItem) {
-      await toggleFavorite(currentItem);
+      await rateItem(currentItem, 5);
       setLikedCount(c => c + 1);
     }
 
@@ -155,7 +155,7 @@ export default function SwipeOnboarding({ onDone, embedded }) {
       <div className={`swipe-onboarding swipe-centered ${embedded ? 'swipe-embedded' : ''}`}>
         {!embedded && <img src="/logo-cropped.png" alt="Bento" className="swipe-logo" />}
         <h2 className="swipe-done-title">Couldn't load today's menu</h2>
-        <p className="swipe-done-sub">You can favorite items directly from your meal plan.</p>
+        <p className="swipe-done-sub">You can rate items directly from your meal plan.</p>
         <button className="swipe-done-btn" onClick={onDone}>{embedded ? 'Continue' : 'Continue to app'}</button>
       </div>
     );
@@ -169,10 +169,10 @@ export default function SwipeOnboarding({ onDone, embedded }) {
         <h2 className="swipe-done-title">You're all set!</h2>
         {likedCount > 0 ? (
           <p className="swipe-done-sub">
-            You saved <strong>{likedCount} {likedCount === 1 ? 'item' : 'items'}</strong>. We'll boost those in your daily plan.
+            You rated <strong>{likedCount} {likedCount === 1 ? 'item' : 'items'}</strong> 5 stars. We'll boost those in your daily plan.
           </p>
         ) : (
-          <p className="swipe-done-sub">No favorites yet — you can always heart items from your meal plan.</p>
+          <p className="swipe-done-sub">No ratings yet — you can always rate items from your meal plan.</p>
         )}
         <button className="swipe-done-btn" onClick={onDone}>{embedded ? 'Continue' : 'Go to my meal plan'}</button>
       </div>
@@ -217,8 +217,8 @@ export default function SwipeOnboarding({ onDone, embedded }) {
       )}
 
       <div className="swipe-titles">
-        <h2>Discover your favorites</h2>
-        <p>Swipe right to save, left to pass</p>
+        <h2>Rate today's menu</h2>
+        <p>Swipe right to love it (5 stars), left to pass</p>
       </div>
 
       <div className="swipe-progress-wrap">

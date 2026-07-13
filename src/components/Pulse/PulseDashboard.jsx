@@ -8,6 +8,7 @@ import {
   getTopItems, getDietaryBreakdown, getNutritionAverages,
   createInvite, getInvites,
 } from '../../lib/pulseDb';
+import { getSuggestions, getRatingAggregates } from '../../lib/db';
 import './PulseDashboard.css';
 
 const MEAL_COLORS = ['#f47421', '#243b55', '#64a8d1'];
@@ -375,6 +376,13 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
   const [nutrition, setNutrition]     = useState(null);
   const [loading, setLoading]         = useState(true);
   const [showInvite, setShowInvite]   = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [ratingAggs, setRatingAggs]   = useState({});
+
+  useEffect(() => {
+    getSuggestions({ orderBy: 'emphasize_count' }).then(setSuggestions);
+    getRatingAggregates().then(setRatingAggs);
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -632,6 +640,65 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
             )}
           </>
         )}
+
+        {/* Community: Suggestions */}
+        <Section title="Student Suggestions" onExport={null}>
+          {suggestions.length === 0 ? (
+            <p className="pulse-empty">No suggestions yet.</p>
+          ) : (
+            <div className="pulse-suggestions-list">
+              {suggestions.map(s => (
+                <div key={s.id} className="pulse-suggestion-row">
+                  <p className="pulse-suggestion-text">{s.content}</p>
+                  <div className="pulse-suggestion-meta">
+                    <span className="pulse-suggestion-emph">+{s.emphasize_count} agree</span>
+                    {s.flag_count > 0 && (
+                      <span className="pulse-suggestion-flag">{s.flag_count} flags</span>
+                    )}
+                    <span className="pulse-suggestion-time">
+                      {new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Section>
+
+        {/* Community: Food Ratings */}
+        <Section title="Food Ratings" onExport={null}>
+          {Object.keys(ratingAggs).length === 0 ? (
+            <p className="pulse-empty">No ratings yet.</p>
+          ) : (() => {
+            const sorted = Object.values(ratingAggs)
+              .filter(a => a.count >= 1)
+              .sort((a, b) => b.avg - a.avg);
+            const top    = sorted.slice(0, 5);
+            const bottom = sorted.slice(-5).reverse();
+            return (
+              <div className="pulse-ratings-panels">
+                <div>
+                  <p className="pulse-ratings-label">Highest Rated</p>
+                  {top.map(a => (
+                    <div key={a.name} className="pulse-rating-row">
+                      <span className="pulse-rating-name">{a.name}</span>
+                      <span className="pulse-rating-score">{a.avg.toFixed(1)} ★ ({a.count})</span>
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <p className="pulse-ratings-label">Lowest Rated</p>
+                  {bottom.map(a => (
+                    <div key={a.name} className="pulse-rating-row">
+                      <span className="pulse-rating-name">{a.name}</span>
+                      <span className="pulse-rating-score">{a.avg.toFixed(1)} ★ ({a.count})</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+        </Section>
       </main>
     </div>
   );

@@ -277,59 +277,83 @@ export async function getRecentItemIds() {
   return ids;
 }
 
-// ── Favorites ──────────────────────────────────────────────────────────────
+// ── Ratings ────────────────────────────────────────────────────────────────
 
-export async function getFavorites() {
+// Returns a plain object { [item_id]: rating } for all items this user has rated.
+export async function getMyRatings() {
   const id = await uid();
-  if (!id) return [];
+  if (!id) return {};
   const { data } = await supabase
-    .from('favorites')
-    .select('item_id, name, station, nutrition, tags')
+    .from('item_ratings')
+    .select('item_id, item_name, rating, updated_at')
     .eq('user_id', id);
-  return (data ?? []).map((r) => ({
-    id:        r.item_id,
-    name:      r.name,
-    station:   r.station,
-    nutrition: r.nutrition,
-    tags:      r.tags,
-  }));
+  return Object.fromEntries((data ?? []).map(r => [r.item_id, { rating: r.rating, name: r.item_name, updatedAt: r.updated_at }]));
 }
 
-export async function getFavoriteIds() {
-  const id = await uid();
-  if (!id) return new Set();
-  const { data } = await supabase.from('favorites').select('item_id').eq('user_id', id);
-  return new Set((data ?? []).map(r => r.item_id));
-}
-
-export async function isFavorite(itemId) {
-  const id = await uid();
-  if (!id) return false;
-  const { data } = await supabase
-    .from('favorites')
-    .select('id')
-    .eq('user_id', id)
-    .eq('item_id', itemId)
-    .maybeSingle();
-  return !!data;
-}
-
-export async function toggleFavorite(item) {
+// Upserts a rating. Passing null removes it.
+export async function rateItem(item, rating) {
   const id = await uid();
   if (!id) return;
-  const existing = await isFavorite(item.id);
-  if (existing) {
-    await supabase.from('favorites').delete().eq('user_id', id).eq('item_id', item.id);
-  } else {
-    await supabase.from('favorites').insert({
-      user_id:   id,
-      item_id:   item.id,
-      name:      item.name,
-      station:   item.station,
-      nutrition: item.nutrition,
-      tags:      item.tags,
-    });
+  if (rating === null) {
+    await supabase.from('item_ratings').delete().eq('user_id', id).eq('item_id', item.id);
+    return;
   }
+  await supabase.from('item_ratings').upsert({
+    user_id:    id,
+    item_id:    item.id,
+    item_name:  item.name,
+    rating,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'user_id,item_id' });
+}
+
+// Returns aggregate ratings for all items — used for the leaderboard and badge.
+export async function getRatingAggregates() {
+  const { data } = await supabase
+    .from('item_rating_aggregates')
+    .select('item_id, item_name, avg_rating, rating_count');
+  return Object.fromEntries(
+    (data ?? []).map(r => [r.item_id, { name: r.item_name, avg: parseFloat(r.avg_rating), count: r.rating_count }])
+  );
+}
+
+// ── Suggestions ────────────────────────────────────────────────────────────
+
+export async function getSuggestions({ orderBy = 'emphasize_count' } = {}) {
+  const col = orderBy === 'emphasize_count' ? 'emphasize_count' : 'created_at';
+  const { data } = await supabase
+    .from('suggestions')
+    .select('id, content, emphasize_count, created_at')
+    .eq('is_hidden', false)
+    .order(col, { ascending: false })
+    .limit(100);
+  return data ?? [];
+}
+
+export async function getMyEmphasizes() {
+  const id = await uid();
+  if (!id) return new Set();
+  const { data } = await supabase
+    .from('suggestion_emphasizes')
+    .select('suggestion_id')
+    .eq('user_id', id);
+  return new Set((data ?? []).map(r => r.suggestion_id));
+}
+
+export async function submitSuggestion(content) {
+  const { data, error } = await supabase.rpc('submit_suggestion', { p_content: content });
+  if (error) throw error;
+  return data;
+}
+
+export async function toggleEmphasize(suggestionId) {
+  const { data, error } = await supabase.rpc('toggle_emphasize', { p_suggestion_id: suggestionId });
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
+
+export async function flagSuggestion(suggestionId) {
+  await supabase.rpc('flag_suggestion', { p_suggestion_id: suggestionId });
 }
 
 // ── Weekly summaries ───────────────────────────────────────────────────────
@@ -598,7 +622,7 @@ export async function clearAllData() {
   if (!id) return;
   await Promise.all([
     supabase.from('meal_history').delete().eq('user_id', id),
-    supabase.from('favorites').delete().eq('user_id', id),
+    supabase.from('item_ratings').delete().eq('user_id', id),
     supabase.from('nutrition_targets').delete().eq('user_id', id),
     supabase.from('dietary_restrictions').delete().eq('user_id', id),
     supabase.from('streaks').delete().eq('user_id', id),
