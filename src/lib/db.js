@@ -522,114 +522,31 @@ export async function recordDiningAvailability(anyOpen) {
     .upsert({ date: today, any_open: anyOpen }, { onConflict: 'date' });
 }
 
-// Returns a map of { [date]: boolean } for the given date strings.
-// Dates with no record are absent from the map; callers treat them as "available" by default.
-async function getDiningAvailabilityMap(dates) {
-  if (!dates.length) return {};
-  const { data } = await supabase
-    .from('dining_availability')
-    .select('date, any_open')
-    .in('date', dates);
-  return Object.fromEntries((data ?? []).map(r => [r.date, r.any_open]));
-}
-
 export async function incrementStreak() {
   const id = await uid();
   if (!id) return null;
-  const today = localDateStr();
-  const streak = await getStreak();
-  if (streak.lastConfirmedDate === today) return null; // already confirmed today
-
-  const prevLongest = streak.longestStreak;
-  let newCurrent = 1;
-
-  if (streak.lastConfirmedDate) {
-    // Parse as noon local time to avoid DST edge cases
-    const lastDate  = new Date(streak.lastConfirmedDate + 'T12:00:00');
-    const todayDate = new Date(today + 'T12:00:00');
-    const daysSinceLast = Math.round((todayDate - lastDate) / 86400000);
-
-    if (daysSinceLast === 1) {
-      // Consecutive day — normal increment
-      newCurrent = streak.currentStreak + 1;
-    } else if (daysSinceLast >= 2) {
-      // Build list of gap dates (days between last confirmed and today, exclusive)
-      const gapDates = [];
-      for (let i = 1; i < daysSinceLast; i++) {
-        gapDates.push(localDateStr(new Date(lastDate.getTime() + i * 86400000)));
-      }
-
-      // Check which gap days had dining open.
-      // If no record exists for a date, assume dining was available (conservative default).
-      const availability = await getDiningAvailabilityMap(gapDates);
-      const missedDiningDays = gapDates.filter(d => availability[d] !== false);
-
-      if (missedDiningDays.length === 0) {
-        // Every gap day had no dining open — streak is unbroken
-        newCurrent = streak.currentStreak + 1;
-      } else if (missedDiningDays.length === 1) {
-        // Exactly one missed dining day — one-day freeze applies, streak continues
-        newCurrent = streak.currentStreak + 1;
-      } else {
-        // Two or more missed dining days — streak resets
-        newCurrent = 1;
-      }
-    }
-  }
-
-  const newLongest = Math.max(newCurrent, prevLongest);
-  await supabase.from('streaks').upsert({
-    user_id:             id,
-    current_streak:      newCurrent,
-    longest_streak:      newLongest,
-    last_confirmed_date: today,
-  }, { onConflict: 'user_id' });
-
-  return { currentStreak: newCurrent, longestStreak: newLongest, prevLongest };
+  const { data, error } = await supabase.rpc('increment_streak', {
+    p_user_id: id,
+    p_date: localDateStr(),
+  });
+  if (error || !data?.length) return null;
+  const { current_streak, longest_streak, prev_longest } = data[0];
+  return { currentStreak: current_streak, longestStreak: longest_streak, prevLongest: prev_longest };
 }
 
 // Retroactive streak update for a past date (e.g. the user went back and confirmed yesterday).
-// Only advances the streak — never rewrites if date is before last_confirmed_date.
+// The RPC handles the no-op cases: already confirmed, or date before last confirmed.
 export async function incrementStreakForDate(date) {
   const id = await uid();
   if (!id) return null;
-  const today = localDateStr();
-  if (date > today) return null;
-
-  const streak = await getStreak();
-  if (streak.lastConfirmedDate === date) return null;
-  if (streak.lastConfirmedDate && date < streak.lastConfirmedDate) return null;
-
-  const prevLongest = streak.longestStreak;
-  let newCurrent = 1;
-
-  if (streak.lastConfirmedDate) {
-    const lastDate   = new Date(streak.lastConfirmedDate + 'T12:00:00');
-    const targetDate = new Date(date + 'T12:00:00');
-    const daysSinceLast = Math.round((targetDate - lastDate) / 86400000);
-
-    if (daysSinceLast === 1) {
-      newCurrent = streak.currentStreak + 1;
-    } else if (daysSinceLast >= 2) {
-      const gapDates = [];
-      for (let i = 1; i < daysSinceLast; i++) {
-        gapDates.push(localDateStr(new Date(lastDate.getTime() + i * 86400000)));
-      }
-      const availability = await getDiningAvailabilityMap(gapDates);
-      const missedDiningDays = gapDates.filter(d => availability[d] !== false);
-      newCurrent = missedDiningDays.length <= 1 ? streak.currentStreak + 1 : 1;
-    }
-  }
-
-  const newLongest = Math.max(newCurrent, prevLongest);
-  await supabase.from('streaks').upsert({
-    user_id:             id,
-    current_streak:      newCurrent,
-    longest_streak:      newLongest,
-    last_confirmed_date: date,
-  }, { onConflict: 'user_id' });
-
-  return { currentStreak: newCurrent, longestStreak: newLongest, prevLongest };
+  if (date > localDateStr()) return null;
+  const { data, error } = await supabase.rpc('increment_streak', {
+    p_user_id: id,
+    p_date: date,
+  });
+  if (error || !data?.length) return null;
+  const { current_streak, longest_streak, prev_longest } = data[0];
+  return { currentStreak: current_streak, longestStreak: longest_streak, prevLongest: prev_longest };
 }
 
 // ── Onboarding / Terms ─────────────────────────────────────────────────────

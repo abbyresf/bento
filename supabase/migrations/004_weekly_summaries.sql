@@ -37,6 +37,9 @@ end $$;
 
 -- ── Schedule via pg_cron (every Monday at 00:05 UTC) ─────────────────────────
 -- Requires pg_cron and pg_net extensions to be enabled in Supabase dashboard.
+-- Authorization: the function now requires Bearer <INSIGHTS_SECRET>.
+-- Set the secret in Supabase → Edge Functions → Manage secrets, then update
+-- the job via SQL Editor (see Task 2 in the security audit).
 select cron.schedule(
   'generate-weekly-insights',
   '5 0 * * 1',
@@ -45,7 +48,7 @@ select cron.schedule(
     url     := 'https://jeexzjphglnpugsuznad.supabase.co/functions/v1/generate-weekly-insights',
     headers := jsonb_build_object(
       'Content-Type',  'application/json',
-      'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplZXh6anBoZ2xucHVnc3V6bmFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyMjk2MzYsImV4cCI6MjA5MjgwNTYzNn0.sby08YMsgEHwsDcas2scw734pIrKr8PDf5kV-rMY260'
+      'Authorization', 'Bearer <INSIGHTS_SECRET>'
     ),
     body    := '{}'::jsonb
   )

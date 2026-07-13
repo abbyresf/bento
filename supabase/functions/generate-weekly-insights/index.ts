@@ -153,7 +153,16 @@ async function generateInsights(): Promise<{ processed: number; week_start: stri
 }
 
 // ── HTTP handler: manual invocation + called by pg_cron every Monday 00:05 UTC ──
-Deno.serve(async (_req) => {
+// Requires:  Authorization: Bearer <INSIGHTS_SECRET>
+// Set INSIGHTS_SECRET via: supabase secrets set INSIGHTS_SECRET=<random-string>
+// Use the same value in your pg_cron net.http_post headers.
+Deno.serve(async (req) => {
+  const secret = Deno.env.get('INSIGHTS_SECRET')
+  const auth   = req.headers.get('Authorization') ?? ''
+  if (!secret || auth !== `Bearer ${secret}`) {
+    return new Response('Unauthorized', { status: 401 })
+  }
+
   try {
     const result = await generateInsights()
     return new Response(JSON.stringify(result), {

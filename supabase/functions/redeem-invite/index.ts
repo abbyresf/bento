@@ -1,8 +1,13 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+// Lock CORS to the production app origin. SITE_URL is set automatically by
+// Supabase from Auth → URL Configuration; override with ALLOWED_ORIGIN secret
+// if you need a different value (e.g. staging).
+const ALLOWED_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? Deno.env.get('SITE_URL') ?? ''
+
 const cors = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
