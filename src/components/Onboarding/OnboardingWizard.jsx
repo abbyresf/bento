@@ -3,7 +3,7 @@ import { ACTIVITY_LEVELS, GOALS, calculateNutritionTargets } from '../../utils/t
 import { setUserProfile, setNutritionTargets, setDietaryRestrictions } from '../../lib/db';
 import { UNIVERSITIES } from '../../data/universities';
 import UniversityPicker from '../common/UniversityPicker';
-import SwipeOnboarding from './SwipeOnboarding';
+import MenuRatingOnboarding from './MenuRatingOnboarding';
 import './OnboardingWizard.css';
 
 const STEPS = ['university', 'basics', 'activity', 'goals', 'dietary', 'swipe', 'review'];
@@ -450,11 +450,9 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
       <div className="onboarding-wizard onboarding-wizard-swipe">
         <div className="swipe-step-topbar">
           <img src="/logo-cropped.png" alt="Bento" className="swipe-step-logo" />
-          <button className="swipe-step-skip" onClick={handleNext}>Skip</button>
         </div>
         {sectionProgress}
-        <SwipeOnboarding
-          embedded
+        <MenuRatingOnboarding
           onDone={() => {
             localStorage.setItem('bento_swipe_done', '1');
             handleNext();

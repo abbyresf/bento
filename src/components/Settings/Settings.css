@@ -106,7 +106,7 @@
   padding: 0.5rem 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 6px;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .setting-item input:focus,
@@ -242,7 +242,7 @@
   padding: 0.4rem 0.6rem;
   border: 1px solid #d1d5db;
   border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: 1rem;
 }
 
 .tag-input button {

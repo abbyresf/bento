@@ -1,8 +1,9 @@
 .onboarding-wizard {
   max-width: 560px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1.25rem 1.25rem 0;
   min-height: 100vh;
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
 }
@@ -81,6 +82,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100svh;
 }
 
 .onboarding-wizard-swipe .section-progress {
@@ -99,25 +101,6 @@
   width: auto;
 }
 
-.swipe-step-skip {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 0.4rem 0.9rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
-  flex-shrink: 0;
-  align-self: flex-start;
-}
-
-.swipe-step-skip:hover {
-  background: #f1f5f9;
-  color: #243b55;
-}
 
 /* Step Content */
 .step-content {
@@ -415,7 +398,7 @@
   padding: 0.5rem 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 6px;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .tag-input button {
@@ -561,9 +544,13 @@
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
+  margin-top: auto;
+  padding: 1.25rem 0 max(1.5rem, env(safe-area-inset-bottom));
   border-top: 1px solid #e2e8f0;
+  position: sticky;
+  bottom: 0;
+  background: white;
+  z-index: 10;
 }
 
 .btn-primary,
@@ -600,7 +587,7 @@
 /* Responsive */
 @media (max-width: 640px) {
   .onboarding-wizard {
-    padding: 1rem;
+    padding: 1rem 1rem 0;
   }
 
   .form-row.two-col {
