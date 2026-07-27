@@ -109,6 +109,16 @@
   font-size: 1rem;
 }
 
+.setting-height-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.setting-height-row input {
+  flex: 1;
+  min-width: 0;
+}
+
 .setting-item input:focus,
 .setting-item select:focus {
   outline: none;

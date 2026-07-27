@@ -150,23 +150,24 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
                 onChange={(e) => handleProfileChange('weight', parseFloat(e.target.value))}
               />
             </div>
-            <div className="setting-item">
-              <label>Height (ft)</label>
-              <input
-                type="number"
-                value={profile.heightFeet ?? ''}
-                onChange={(e) => handleProfileChange('heightFeet', parseInt(e.target.value))}
-                min="3" max="8"
-              />
-            </div>
-            <div className="setting-item">
-              <label>Height (in)</label>
-              <input
-                type="number"
-                value={profile.heightInches ?? ''}
-                onChange={(e) => handleProfileChange('heightInches', parseInt(e.target.value) || 0)}
-                min="0" max="11"
-              />
+            <div className="setting-item setting-item-full">
+              <label>Height</label>
+              <div className="setting-height-row">
+                <input
+                  type="number"
+                  value={profile.heightFeet ?? ''}
+                  onChange={(e) => handleProfileChange('heightFeet', parseInt(e.target.value))}
+                  min="3" max="8"
+                  placeholder="ft"
+                />
+                <input
+                  type="number"
+                  value={profile.heightInches ?? ''}
+                  onChange={(e) => handleProfileChange('heightInches', parseInt(e.target.value) || 0)}
+                  min="0" max="11"
+                  placeholder="in"
+                />
+              </div>
             </div>
             <div className="setting-item">
               <label>Age</label>
