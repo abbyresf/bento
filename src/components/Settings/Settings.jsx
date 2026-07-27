@@ -139,6 +139,7 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
               <UniversityPicker
                 value={profile.university ?? 'brandeis'}
                 onChange={(id) => handleProfileChange('university', id)}
+                searchOnly
               />
             </div>
             <div className="setting-item">
@@ -147,6 +148,24 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
                 type="number"
                 value={profile.weight}
                 onChange={(e) => handleProfileChange('weight', parseFloat(e.target.value))}
+              />
+            </div>
+            <div className="setting-item">
+              <label>Height (ft)</label>
+              <input
+                type="number"
+                value={profile.heightFeet ?? ''}
+                onChange={(e) => handleProfileChange('heightFeet', parseInt(e.target.value))}
+                min="3" max="8"
+              />
+            </div>
+            <div className="setting-item">
+              <label>Height (in)</label>
+              <input
+                type="number"
+                value={profile.heightInches ?? ''}
+                onChange={(e) => handleProfileChange('heightInches', parseInt(e.target.value) || 0)}
+                min="0" max="11"
               />
             </div>
             <div className="setting-item">

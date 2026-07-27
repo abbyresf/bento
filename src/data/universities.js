@@ -23,4 +23,20 @@ export const UNIVERSITIES = [
     available: false,
     aliases: ['wit', 'wentworth'],
   },
+  {
+    id: 'sjsu',
+    name: 'San Jose State University',
+    abbreviation: 'SJSU',
+    location: 'San Jose, CA',
+    available: false,
+    aliases: ['sjsu', 'san jose', 'san jose state'],
+  },
+  {
+    id: 'uc-berkeley',
+    name: 'UC Berkeley',
+    abbreviation: 'UCB',
+    location: 'Berkeley, CA',
+    available: false,
+    aliases: ['ucb', 'berkeley', 'cal', 'uc berkeley'],
+  },
 ];

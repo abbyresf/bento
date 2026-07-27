@@ -2,15 +2,22 @@ import { useState } from 'react';
 import { UNIVERSITIES } from '../../data/universities';
 import './UniversityPicker.css';
 
-export default function UniversityPicker({ value, onChange, onRequestSchool }) {
+export default function UniversityPicker({ value, onChange, onRequestSchool, searchOnly = false }) {
   const [query, setQuery] = useState('');
 
   const q = query.toLowerCase();
-  const filtered = UNIVERSITIES.filter((u) =>
-    !q ||
-    u.name.toLowerCase().includes(q) ||
-    u.aliases.some((a) => a.includes(q))
-  );
+  const filtered = (!searchOnly || q)
+    ? UNIVERSITIES.filter((u) =>
+        !q ||
+        u.name.toLowerCase().includes(q) ||
+        u.aliases.some((a) => a.includes(q))
+      )
+    : [];
+
+  const handleSelect = (id) => {
+    onChange(id);
+    if (searchOnly) setQuery('');
+  };
 
   return (
     <div className="university-picker">
@@ -35,14 +42,16 @@ export default function UniversityPicker({ value, onChange, onRequestSchool }) {
 
       <div className="university-list">
         {filtered.length === 0 ? (
-          <p className="university-empty">No universities found for "{query}"</p>
+          searchOnly && !q ? null : (
+            <p className="university-empty">No universities found for "{query}"</p>
+          )
         ) : (
           filtered.map((uni) => (
             <button
               key={uni.id}
               type="button"
               className={`university-option ${value === uni.id ? 'selected' : ''} ${!uni.available ? 'coming-soon' : ''}`}
-              onClick={() => uni.available && onChange(uni.id)}
+              onClick={() => uni.available && handleSelect(uni.id)}
               disabled={!uni.available}
             >
               <div className="university-info">
