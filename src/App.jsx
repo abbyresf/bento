@@ -17,6 +17,7 @@ import PulseJoin from './components/Pulse/PulseJoin';
 import MyRatings from './components/MyRatings/MyRatings';
 import CommunityTab from './components/Community/CommunityTab';
 import { RatingsProvider } from './context/RatingsContext';
+import SplashScreen from './components/Splash/SplashScreen';
 import './App.css';
 
 function isStandalone() {
@@ -55,6 +56,9 @@ function App() {
     () => localStorage.getItem('bento_tutorial_done') === '1'
   );
   const [showSettings, setShowSettings] = useState(false);
+  const [showSplash, setShowSplash] = useState(
+    () => !sessionStorage.getItem('bento_splash_seen')
+  );
 
   const isAuthRoute = location.pathname === '/login' || location.pathname === '/signup';
 
@@ -283,6 +287,12 @@ function App() {
         )}
 
       </div>
+      {showSplash && (
+        <SplashScreen onDone={() => {
+          sessionStorage.setItem('bento_splash_seen', '1');
+          setShowSplash(false);
+        }} />
+      )}
     </RatingsProvider>
   );
 }
