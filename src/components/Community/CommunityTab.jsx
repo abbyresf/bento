@@ -115,7 +115,23 @@ function ComposeSheet({ onClose, onSubmitted }) {
   const [text, setText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [kbOffset, setKbOffset] = useState(0);
   const max = 300;
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+      setKbOffset(Math.max(0, window.innerHeight - vv.height - vv.offsetTop));
+    };
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    update();
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
+  }, []);
 
   const handleSubmit = async () => {
     const trimmed = text.trim();
@@ -133,7 +149,7 @@ function ComposeSheet({ onClose, onSubmitted }) {
   };
 
   return (
-    <div className="compose-overlay" onClick={onClose}>
+    <div className="compose-overlay" onClick={onClose} style={{ paddingBottom: kbOffset }}>
       <div className="compose-sheet" onClick={e => e.stopPropagation()}>
         <div className="compose-header">
           <h3>New Suggestion</h3>
