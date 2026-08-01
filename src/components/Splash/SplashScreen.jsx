@@ -100,7 +100,7 @@ export default function SplashScreen({ onDone }) {
           b:     pixels[i + 2],
           alpha: pixels[i + 3] / 255,
           life:  1.0,
-          decay: 0.012 + Math.random() * 0.016,
+          decay: 0.022 + Math.random() * 0.025,
           size:  1 + Math.random() * 1.2,
         });
       }

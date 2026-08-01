@@ -56,9 +56,10 @@ function App() {
     () => localStorage.getItem('bento_tutorial_done') === '1'
   );
   const [showSettings, setShowSettings] = useState(false);
-  const [showSplash, setShowSplash] = useState(
-    () => !sessionStorage.getItem('bento_splash_seen')
-  );
+  const [showSplash, setShowSplash] = useState(() => {
+    const last = parseInt(localStorage.getItem('bento_splash_ts') || '0', 10);
+    return Date.now() - last > 3 * 60 * 60 * 1000; // every 3 hours
+  });
 
   const isAuthRoute = location.pathname === '/login' || location.pathname === '/signup';
 
@@ -289,7 +290,7 @@ function App() {
       </div>
       {showSplash && (
         <SplashScreen onDone={() => {
-          sessionStorage.setItem('bento_splash_seen', '1');
+          localStorage.setItem('bento_splash_ts', Date.now().toString());
           setShowSplash(false);
         }} />
       )}
