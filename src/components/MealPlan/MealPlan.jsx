@@ -696,6 +696,10 @@ export default function MealPlan({ settingsVersion = 0 }) {
         </div>
       )}
 
+      {!dateLoading && mealPlan && targets && (
+        <DailySummary totals={dayTotals} targets={targets} />
+      )}
+
       {!dateLoading && mealPlan && (
       <div className="meals-timeline">
         {['breakfast', 'lunch', 'dinner'].map((meal) => (
@@ -735,10 +739,6 @@ export default function MealPlan({ settingsVersion = 0 }) {
           />
         ))}
       </div>
-      )}
-
-      {!dateLoading && mealPlan && targets && (
-        <DailySummary totals={dayTotals} targets={targets} />
       )}
 
       {pendingRating && (
