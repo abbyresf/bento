@@ -144,15 +144,14 @@ export async function getAdminRecord() {
   return data ?? null;
 }
 
-export async function createInvite(email, university) {
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data, error } = await supabase
-    .from('pulse_invites')
-    .insert({ email: email.toLowerCase().trim(), university, created_by: user.id })
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+export async function sendInvite(email, university) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const { data, error } = await supabase.functions.invoke('send-invite', {
+    body: { email, university },
+    headers: { Authorization: `Bearer ${session?.access_token}` },
+  });
+  if (error || data?.error) throw new Error(data?.error ?? error?.message ?? 'Failed to send invite.');
+  return data; // { id, emailSent, link }
 }
 
 export async function getInvites() {

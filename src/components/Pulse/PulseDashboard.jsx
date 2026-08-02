@@ -6,7 +6,7 @@ import {
 import {
   getPulseOverview, getDailyEngagement, getMealTypeSplit,
   getTopItems, getDietaryBreakdown, getNutritionAverages,
-  createInvite, getInvites, getAdminSuggestions,
+  sendInvite, getInvites, getAdminSuggestions,
 } from '../../lib/pulseDb';
 import { getRatingAggregates } from '../../lib/db';
 import './PulseDashboard.css';
@@ -244,13 +244,13 @@ const BAR_TOOLTIP = {
 // ── Invite modal ─────────────────────────────────────────────────────────────
 
 function InviteModal({ defaultUniversity, onClose }) {
-  const [email, setEmail]         = useState('');
-  const [university, setUniv]     = useState(defaultUniversity);
-  const [invites, setInvites]     = useState(null);
+  const [email, setEmail]           = useState('');
+  const [university, setUniv]       = useState(defaultUniversity);
+  const [invites, setInvites]       = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError]         = useState(null);
-  const [newLink, setNewLink]     = useState(null);
-  const [copied, setCopied]       = useState(false);
+  const [error, setError]           = useState(null);
+  const [sentTo, setSentTo]         = useState(null);
+  const [copied, setCopied]         = useState(false);
 
   useEffect(() => {
     getInvites().then(setInvites).catch(() => setInvites([]));
@@ -259,25 +259,23 @@ function InviteModal({ defaultUniversity, onClose }) {
   const handleCreate = async (e) => {
     e.preventDefault();
     setError(null);
-    setNewLink(null);
+    setSentTo(null);
     setSubmitting(true);
     try {
-      const invite = await createInvite(email, university);
-      const link = `${window.location.origin}/admin/join/${invite.id}`;
-      setNewLink(link);
+      const result = await sendInvite(email, university);
+      setSentTo({ email, emailSent: result.emailSent, link: result.link });
       setEmail('');
-      setInvites(prev => [invite, ...(prev ?? [])]);
+      getInvites().then(setInvites).catch(() => {});
     } catch (err) {
-      setError(err.message ?? 'Failed to create invite.');
+      setError(err.message ?? 'Failed to send invite.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const copyLink = (id) => {
-    const link = `${window.location.origin}/admin/join/${id}`;
+  const copyLink = (link) => {
     navigator.clipboard.writeText(link).then(() => {
-      setCopied(id);
+      setCopied(link);
       setTimeout(() => setCopied(false), 2000);
     });
   };
@@ -313,21 +311,31 @@ function InviteModal({ defaultUniversity, onClose }) {
               />
             </div>
             <button type="submit" className="pulse-invite-submit" disabled={submitting}>
-              {submitting ? '…' : 'Generate'}
+              {submitting ? '…' : 'Send'}
             </button>
           </div>
           {error && <p className="pulse-invite-err">{error}</p>}
         </form>
 
-        {newLink && (
+        {sentTo && (
           <div className="pulse-invite-newlink">
-            <p className="pulse-invite-newlink-label">Invite link — share this once:</p>
-            <div className="pulse-invite-link-row">
-              <span className="pulse-invite-link-text">{newLink}</span>
-              <button className="pulse-invite-copy-btn" onClick={() => copyLink(newLink.split('/').pop())}>
-                {copied === newLink.split('/').pop() ? 'Copied!' : 'Copy'}
-              </button>
-            </div>
+            {sentTo.emailSent ? (
+              <p className="pulse-invite-newlink-label">
+                ✓ Invite email sent to <strong>{sentTo.email}</strong>
+              </p>
+            ) : (
+              <>
+                <p className="pulse-invite-newlink-label">
+                  Invite created — email delivery unavailable, share this link manually:
+                </p>
+                <div className="pulse-invite-link-row">
+                  <span className="pulse-invite-link-text">{sentTo.link}</span>
+                  <button className="pulse-invite-copy-btn" onClick={() => copyLink(sentTo.link)}>
+                    {copied === sentTo.link ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -336,9 +344,10 @@ function InviteModal({ defaultUniversity, onClose }) {
           {invites === null && <p className="pulse-empty">Loading…</p>}
           {invites?.length === 0 && <p className="pulse-empty">No invites yet.</p>}
           {invites?.map(inv => {
-            const used = !!inv.used_at;
+            const used    = !!inv.used_at;
             const expired = !used && new Date(inv.expires_at) < new Date();
             const pending = !used && !expired;
+            const link    = `${window.location.origin}/admin/join/${inv.id}`;
             return (
               <div key={inv.id} className="pulse-invite-row-item">
                 <div className="pulse-invite-row-info">
@@ -350,8 +359,8 @@ function InviteModal({ defaultUniversity, onClose }) {
                     {used ? 'Used' : expired ? 'Expired' : 'Pending'}
                   </span>
                   {pending && (
-                    <button className="pulse-invite-copy-btn" onClick={() => copyLink(inv.id)}>
-                      {copied === inv.id ? 'Copied!' : 'Copy link'}
+                    <button className="pulse-invite-copy-btn" onClick={() => copyLink(link)}>
+                      {copied === link ? 'Copied!' : 'Copy link'}
                     </button>
                   )}
                 </div>
