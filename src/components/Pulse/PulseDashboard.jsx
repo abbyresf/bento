@@ -6,9 +6,9 @@ import {
 import {
   getPulseOverview, getDailyEngagement, getMealTypeSplit,
   getTopItems, getDietaryBreakdown, getNutritionAverages,
-  createInvite, getInvites,
+  createInvite, getInvites, getAdminSuggestions,
 } from '../../lib/pulseDb';
-import { getSuggestions, getRatingAggregates } from '../../lib/db';
+import { getRatingAggregates } from '../../lib/db';
 import './PulseDashboard.css';
 
 const MEAL_COLORS = ['#f47421', '#243b55', '#64a8d1'];
@@ -380,7 +380,6 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
   const [ratingAggs, setRatingAggs]   = useState({});
 
   useEffect(() => {
-    getSuggestions({ orderBy: 'emphasize_count' }).then(setSuggestions);
     getRatingAggregates().then(setRatingAggs);
   }, []);
 
@@ -393,13 +392,15 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
       getTopItems(university, days),
       getDietaryBreakdown(university),
       getNutritionAverages(university, days),
-    ]).then(([ov, eng, ms, ti, diet, nutr]) => {
+      getAdminSuggestions(university, days),
+    ]).then(([ov, eng, ms, ti, diet, nutr, suggs]) => {
       setOverview(ov);
       setEngagement(eng);
       setMealSplit(ms);
       setTopItems(ti);
       setDietary(diet);
       setNutrition(nutr);
+      setSuggestions(suggs);
       setLoading(false);
     });
   }, [university, days]);
@@ -642,7 +643,7 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
         )}
 
         {/* Community: Suggestions */}
-        <Section title="Student Suggestions" onExport={null}>
+        <Section title={`Top Suggestions — Last ${days} Days`} onExport={null}>
           {suggestions.length === 0 ? (
             <p className="pulse-empty">No suggestions yet.</p>
           ) : (

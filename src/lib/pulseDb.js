@@ -341,3 +341,11 @@ export async function getNutritionAverages(university, days = 30) {
     changeFat:      prev ? pctChange(curr.fat,      prev.fat)      : null,
   };
 }
+
+export async function getAdminSuggestions(university, days = null) {
+  const { data } = await supabase.rpc('get_admin_suggestions', {
+    p_university: university,
+    p_days: days,
+  });
+  return data ?? [];
+}
