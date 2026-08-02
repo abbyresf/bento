@@ -1,44 +1,26 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-// Accept any origin listed in ALLOWED_ORIGINS (comma-separated) or SITE_URL.
-// Set the ALLOWED_ORIGINS secret in Supabase → Edge Functions → Secrets if you
-// need to support multiple domains (e.g. bentodining.com and a staging URL).
-const allowedOrigins = new Set(
-  [
-    Deno.env.get('ALLOWED_ORIGINS') ?? '',
-    Deno.env.get('ALLOWED_ORIGIN')  ?? '',
-    Deno.env.get('SITE_URL')        ?? '',
-  ]
-    .flatMap(s => s.split(','))
-    .map(s => s.trim())
-    .filter(Boolean)
-)
-
-function corsHeaders(origin: string) {
-  const allow = allowedOrigins.has(origin) ? origin : (allowedOrigins.values().next().value ?? '')
-  return {
-    'Access-Control-Allow-Origin':  allow,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  }
+const cors = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-function json(body: unknown, status = 200, origin = '') {
+function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
+    headers: { ...cors, 'Content-Type': 'application/json' },
   })
 }
 
 serve(async (req) => {
-  const origin = req.headers.get('origin') ?? ''
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(origin) })
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
 
   try {
     const { token, password } = await req.json()
 
     if (!token || !password || password.length < 8) {
-      return json({ error: 'Password must be at least 8 characters.' }, 400, origin)
+      return json({ error: 'Password must be at least 8 characters.' }, 400)
     }
 
     const supabase = createClient(
@@ -57,7 +39,7 @@ serve(async (req) => {
       .single()
 
     if (inviteErr || !invite) {
-      return json({ error: 'Invite link is invalid or has already been used.' }, 400, origin)
+      return json({ error: 'Invite link is invalid or has already been used.' }, 400)
     }
 
     // Create auth user with email pre-confirmed
@@ -68,7 +50,7 @@ serve(async (req) => {
     })
 
     if (authErr) {
-      return json({ error: authErr.message }, 400, origin)
+      return json({ error: authErr.message }, 400)
     }
 
     // Create admin record
@@ -81,7 +63,7 @@ serve(async (req) => {
 
     if (adminErr) {
       await supabase.auth.admin.deleteUser(authData.user.id)
-      return json({ error: 'Failed to create admin record.' }, 500, origin)
+      return json({ error: 'Failed to create admin record.' }, 500)
     }
 
     // Mark invite used
@@ -90,8 +72,8 @@ serve(async (req) => {
       .update({ used_at: new Date().toISOString() })
       .eq('id', invite.id)
 
-    return json({ success: true }, 200, origin)
+    return json({ success: true })
   } catch {
-    return json({ error: 'Internal error.' }, 500, origin)
+    return json({ error: 'Internal error.' }, 500)
   }
 })
