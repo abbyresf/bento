@@ -280,9 +280,9 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
             </label>
           ))}
         </div>
-        {restrictions.halal && (
+        {restrictions.halal && !UNIVERSITIES.find(u => u.id === profile.university)?.labelHalal && (
           <p className="dietary-unlabeled-notice">
-            ⚠ Brandeis Dining doesn't label halal items — always confirm with dining staff.
+            ⚠ {UNIVERSITIES.find(u => u.id === profile.university)?.name ?? 'Your dining hall'} doesn't label halal items — always confirm with dining staff.
           </p>
         )}
       </div>
@@ -453,6 +453,7 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
         </div>
         {sectionProgress}
         <MenuRatingOnboarding
+          university={profile.university}
           onDone={() => {
             localStorage.setItem('bento_swipe_done', '1');
             handleNext();

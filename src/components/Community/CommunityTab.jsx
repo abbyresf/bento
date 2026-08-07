@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRatings } from '../../context/RatingsContext';
-import { getSuggestions, getMyEmphasizes, submitSuggestion, toggleEmphasize, flagSuggestion } from '../../lib/db';
+import { getSuggestions, getMyEmphasizes, submitSuggestion, toggleEmphasize, flagSuggestion, getUserProfile } from '../../lib/db';
 import PolicyModal from './PolicyModal';
 import StarRating from './StarRating';
 import './CommunityTab.css';
@@ -111,7 +111,7 @@ function SuggestionCard({ suggestion, emphasized, onEmphasize, onFlag, flagged }
 
 // ── Compose Sheet ────────────────────────────────────────────────────────────
 
-function ComposeSheet({ onClose, onSubmitted }) {
+function ComposeSheet({ onClose, onSubmitted, university }) {
   const [text, setText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -203,16 +203,21 @@ export default function CommunityTab() {
   const [myFlags, setMyFlags]             = useState(new Set());
   const [sortOrder, setSortOrder]         = useState('emphasize_count'); // or 'created_at'
   const [loading, setLoading]             = useState(true);
+  const [university, setUniversity]       = useState(null);
+
+  useEffect(() => {
+    getUserProfile().then(p => setUniversity(p?.university ?? 'brandeis'));
+  }, []);
 
   const loadSuggestions = useCallback(async () => {
     const [suggs, emph] = await Promise.all([
-      getSuggestions({ orderBy: sortOrder }),
+      getSuggestions({ orderBy: sortOrder, university }),
       getMyEmphasizes(),
     ]);
     setSuggestions(suggs);
     setMyEmphasizes(emph);
     setLoading(false);
-  }, [sortOrder]);
+  }, [sortOrder, university]);
 
   useEffect(() => {
     setLoading(true);
@@ -307,7 +312,7 @@ export default function CommunityTab() {
       </button>
 
       {showPolicy  && <PolicyModal onClose={() => setShowPolicy(false)} />}
-      {showCompose && <ComposeSheet onClose={() => setShowCompose(false)} onSubmitted={loadSuggestions} />}
+      {showCompose && <ComposeSheet onClose={() => setShowCompose(false)} onSubmitted={loadSuggestions} university={university} />}
     </div>
   );
 }

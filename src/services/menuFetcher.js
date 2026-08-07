@@ -238,3 +238,153 @@ export async function fetchDiningMenu(config, dateStr = null) {
 }
 
 export const fetchBrandeisMenu = (dateStr = null) => fetchDiningMenu(BRANDEIS_CONFIG, dateStr);
+
+// ── Tufts helpers ─────────────────────────────────────────────────────────────
+
+// Maps a Nutrislice icon slug/help_text to a Bento allergen key.
+// Returns null if the slug is not a recognized allergen.
+function tuftsMapAllergen(slug) {
+  switch (slug) {
+    case 'milk':       return 'milk';
+    case 'egg':        return 'eggs';
+    case 'soy':        return 'soy';
+    case 'gluten':
+    case 'wheat':      return 'wheat';
+    case 'fish':       return 'fish';
+    case 'shellfish':  return 'shellfish';
+    case 'tree-nuts':
+    case 'tree_nuts':
+    case 'treenuts':   return 'treeNuts';
+    case 'peanuts':
+    case 'peanut':     return 'peanuts';
+    case 'sesame':     return 'sesame';
+    default:           return null;
+  }
+}
+
+// Maps a Nutrislice icon slug to a Bento dietary tag.
+// Returns null if it's not a recognized dietary tag.
+function tuftsMapTag(slug, helpText) {
+  const h = helpText.toLowerCase();
+  if (slug === 'vegan'         || h.includes('vegan'))        return ['vegan', 'vegetarian'];
+  if (slug === 'vegetarian'    || h.includes('vegetarian'))   return ['vegetarian'];
+  if (slug === 'halal'         || h.includes('halal'))        return ['halal'];
+  if (slug === 'kosher'        || h.includes('kosher'))       return ['kosher'];
+  if (slug === 'gluten-free'   || h.includes('gluten-free') || h.includes('gluten free')) return ['glutenFree'];
+  if (slug === 'dairy-free'    || h.includes('dairy-free')  || h.includes('dairy free'))  return ['dairyFree'];
+  if (slug === 'nut-free'      || h.includes('nut-free')    || h.includes('nut free'))    return ['nutFree'];
+  return null;
+}
+
+function tuftsParseStation(foodCategory) {
+  const s = (foodCategory ?? '').toLowerCase();
+  if (s.includes('grill'))                                            return 'grill';
+  if (s.includes('deli') || s.includes('sandwich'))                  return 'deli';
+  if (s.includes('salad') || s.includes('greens'))                   return 'salad';
+  if (s.includes('soup'))                                             return 'soup';
+  if (s.includes('side') || s.includes('grain') || s.includes('rice')) return 'sides';
+  if (s.includes('beverage') || s.includes('drink'))                 return 'beverage';
+  if (s.includes('bakery') || s.includes('dessert') || s.includes('pastry')) return 'bakery';
+  if (s.includes('breakfast') || s.includes('egg') || s.includes('waffle')) return 'breakfast';
+  if (s.includes('pizza'))                                            return 'pizza';
+  return 'entree';
+}
+
+function tuftsParseFood(food, mealPeriod) {
+  const n = food.rounded_nutrition_info ?? {};
+  const foodIcons = food.icons?.food_icons ?? [];
+
+  const tagSet = new Set();
+  const allergens = [];
+
+  for (const icon of foodIcons) {
+    const slug     = (icon.slug ?? '').toLowerCase();
+    const helpText = icon.help_text ?? '';
+    // behavior === 1 and help_text starts with "Contains" → allergen
+    if (icon.behavior === 1 || helpText.toLowerCase().startsWith('contains')) {
+      const allergen = tuftsMapAllergen(slug);
+      if (allergen) allergens.push(allergen);
+    } else {
+      const tags = tuftsMapTag(slug, helpText);
+      if (tags) tags.forEach(t => tagSet.add(t));
+    }
+  }
+
+  return {
+    id:        `tu_${food.id ?? food.name.replace(/\W+/g, '_').toLowerCase()}`,
+    name:      food.name,
+    station:   tuftsParseStation(food.food_category),
+    meal:      mealPeriod,
+    nutrition: {
+      calories: Math.round(n.calories  ?? 0),
+      protein:  Math.round(n.g_protein ?? 0),
+      carbs:    Math.round(n.g_carbs   ?? 0),
+      fat:      Math.round(n.g_fat     ?? 0),
+      sodium:   Math.round(n.mg_sodium ?? 0),
+      fiber:    Math.round(n.g_fiber   ?? 0),
+      sugar:    Math.round(n.g_sugar   ?? 0),
+    },
+    tags:        Array.from(tagSet),
+    ingredients: [],
+    allergens,
+  };
+}
+
+// Parses the combined JSON response from /api/tufts.
+// The response shape is: { date, slug, meals: { breakfast: [food], lunch: [food], dinner: [food] } }
+function tuftsParseLocationPage(json) {
+  const meals = { breakfast: [], lunch: [], dinner: [] };
+  let data;
+  try {
+    data = typeof json === 'string' ? JSON.parse(json) : json;
+  } catch {
+    return { meals, isOpen: false };
+  }
+
+  for (const period of ['breakfast', 'lunch', 'dinner']) {
+    const foods = data.meals?.[period] ?? [];
+    for (const food of foods) {
+      if (food?.name) meals[period].push(tuftsParseFood(food, period));
+    }
+  }
+
+  const isOpen = Object.values(meals).some(arr => arr.length > 0);
+  return { meals, isOpen };
+}
+
+// ── Tufts config ──────────────────────────────────────────────────────────────
+
+export const TUFTS_CONFIG = {
+  locations: {
+    carmichael: {
+      id:        'carmichael',
+      slug:      'carmichael-dining-hall',
+      name:      'Carmichael Dining Hall',
+      shortName: 'Carmichael',
+      allItemsKosher: false,
+    },
+    dewick: {
+      id:        'dewick',
+      slug:      'dewick-dining',
+      name:      'Dewick-MacPhie Dining Hall',
+      shortName: 'Dewick',
+      allItemsKosher: false,
+    },
+  },
+  getDiningUrl(slug, dateStr) {
+    return `/api/tufts?slug=${slug}&date=${dateStr}`;
+  },
+  parseLocationPage: tuftsParseLocationPage,
+};
+
+// ── University router ─────────────────────────────────────────────────────────
+
+export function getUniversityConfig(universityId) {
+  switch (universityId) {
+    case 'tufts':    return TUFTS_CONFIG;
+    case 'brandeis':
+    default:         return BRANDEIS_CONFIG;
+  }
+}
+
+export const fetchTuftsMenu = (dateStr = null) => fetchDiningMenu(TUFTS_CONFIG, dateStr);

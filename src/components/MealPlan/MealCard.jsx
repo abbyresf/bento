@@ -20,13 +20,7 @@ function groupItemsByStation(items) {
   });
 }
 
-const LOCATION_OPTIONS = [
-  { id: 'usdan',   label: 'Usdan' },
-  { id: 'sherman', label: 'Farm Table' },
-  { id: 'kosher',  label: 'Kosher Table' },
-];
-
-function LocationPicker({ selectedLocation, onLocationChange, openByLocation, hasMenuByLocation }) {
+function LocationPicker({ locationOptions, selectedLocation, onLocationChange, openByLocation, hasMenuByLocation }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -36,7 +30,7 @@ function LocationPicker({ selectedLocation, onLocationChange, openByLocation, ha
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const current = LOCATION_OPTIONS.find(l => l.id === selectedLocation);
+  const current = locationOptions.find(l => l.id === selectedLocation);
   const isClosed = openByLocation[selectedLocation] === false || hasMenuByLocation[selectedLocation] === false;
 
   return (
@@ -54,7 +48,7 @@ function LocationPicker({ selectedLocation, onLocationChange, openByLocation, ha
 
       {open && (
         <div className="location-picker-menu">
-          {LOCATION_OPTIONS.map(loc => {
+          {locationOptions.map(loc => {
             const closed = openByLocation[loc.id] === false || hasMenuByLocation[loc.id] === false;
             return (
               <button
@@ -82,18 +76,8 @@ export default function MealCard({
   meal,
   mealTime,
   isPast,
-  shermanPlan,
-  usdanPlan,
-  kosherPlan,
-  shermanOpen,
-  usdanOpen,
-  kosherOpen,
-  shermanRawCount,
-  usdanRawCount,
-  kosherRawCount,
-  shermanRawItems,
-  usdanRawItems,
-  kosherRawItems,
+  locationOptions,
+  locationData,
   customPlan,
   onBrowserDone,
   selectedLocation,
@@ -131,14 +115,15 @@ export default function MealCard({
     setShowRecommendations(false);
   }, [selectedLocation]);
 
-  const plansByLocation     = { sherman: shermanPlan, usdan: usdanPlan, kosher: kosherPlan };
-  const openByLocation      = { sherman: shermanOpen, usdan: usdanOpen, kosher: kosherOpen };
-  const rawItemsByLocation  = { sherman: shermanRawItems ?? [], usdan: usdanRawItems ?? [], kosher: kosherRawItems ?? [] };
-  const hasMenuByLocation   = { sherman: shermanRawCount > 0, usdan: usdanRawCount > 0, kosher: kosherRawCount > 0 };
-  const currentRawCount     = { sherman: shermanRawCount, usdan: usdanRawCount, kosher: kosherRawCount }[selectedLocation] ?? 0;
-  const bentoPlan           = plansByLocation[selectedLocation] ?? usdanPlan;
+  const plansByLocation     = Object.fromEntries((locationOptions ?? []).map(l => [l.id, locationData?.[l.id]?.plan]));
+  const openByLocation      = Object.fromEntries((locationOptions ?? []).map(l => [l.id, locationData?.[l.id]?.isOpen ?? true]));
+  const rawItemsByLocation  = Object.fromEntries((locationOptions ?? []).map(l => [l.id, locationData?.[l.id]?.rawItems ?? []]));
+  const hasMenuByLocation   = Object.fromEntries((locationOptions ?? []).map(l => [l.id, (locationData?.[l.id]?.rawCount ?? 0) > 0]));
+  const currentRawCount     = locationData?.[selectedLocation]?.rawCount ?? 0;
+  const firstLocId          = locationOptions?.[0]?.id;
+  const bentoPlan           = plansByLocation[selectedLocation] ?? (firstLocId ? plansByLocation[firstLocId] : undefined);
   const isCurrentLocationOpen = openByLocation[selectedLocation] ?? true;
-  const locationLabel       = { sherman: 'Farm Table', usdan: 'Usdan', kosher: 'Kosher Table' }[selectedLocation] ?? selectedLocation;
+  const locationLabel       = (locationOptions ?? []).find(l => l.id === selectedLocation)?.label ?? selectedLocation;
 
   // Totals shown in footer depend on mode
   const footerTotals = (mode === 'manual' && customPlan)
@@ -149,10 +134,11 @@ export default function MealCard({
     if (showRecommendations && recommendations === null) onLoadRecommendations?.();
   }, [showRecommendations]); // eslint-disable-line
 
-  if (!bentoPlan && !shermanPlan && !usdanPlan && !kosherPlan) return null;
+  if (!bentoPlan && !Object.values(plansByLocation).some(Boolean)) return null;
 
   const allItemsKosher = bentoPlan?.items?.length > 0 && bentoPlan.items.every(i => i.tags?.includes('kosher'));
-  const showKosherBadge = allItemsKosher && (selectedLocation === 'kosher' || isKosherUser);
+  const currentLocOption = (locationOptions ?? []).find(l => l.id === selectedLocation);
+  const showKosherBadge = allItemsKosher && (currentLocOption?.allItemsKosher || isKosherUser);
 
   const mealLabel = meal.charAt(0).toUpperCase() + meal.slice(1);
   const timeRange = `${mealTime.start > 12 ? mealTime.start - 12 : mealTime.start}${mealTime.start >= 12 ? 'pm' : 'am'} – ${mealTime.end > 12 ? mealTime.end - 12 : mealTime.end}${mealTime.end >= 12 ? 'pm' : 'am'}`;
@@ -192,6 +178,7 @@ export default function MealCard({
         </div>
         <div className="meal-header-right">
           <LocationPicker
+            locationOptions={locationOptions ?? []}
             selectedLocation={selectedLocation}
             onLocationChange={onLocationChange}
             openByLocation={openByLocation}

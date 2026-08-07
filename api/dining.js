@@ -41,6 +41,7 @@ export default async function handler(req, res) {
     const { data: cached } = await admin
       .from('menu_cache')
       .select('html_content, fetched_at')
+      .eq('university', 'brandeis')
       .eq('slug', slug)
       .eq('date', dateParam)
       .single();
@@ -74,8 +75,8 @@ export default async function handler(req, res) {
       admin
         .from('menu_cache')
         .upsert(
-          { slug, date: dateParam, html_content: body, fetched_at: new Date().toISOString() },
-          { onConflict: 'slug,date' }
+          { university: 'brandeis', slug, date: dateParam, html_content: body, fetched_at: new Date().toISOString() },
+          { onConflict: 'university,slug,date' }
         )
         .then(() => {})
         .catch(() => {});

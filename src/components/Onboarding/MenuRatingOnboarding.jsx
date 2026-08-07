@@ -3,16 +3,36 @@ import { rateItem } from '../../lib/db';
 import StarRating from '../Community/StarRating';
 import './MenuRatingOnboarding.css';
 
-const STAPLES = [
-  { id: 'staple-margherita-flatbread',  name: 'Margherita Flatbread' },
-  { id: 'staple-cottage-cheese',         name: 'Cottage Cheese' },
-  { id: 'staple-chocolate-chip-cookie',  name: 'Chocolate Chip Cookie' },
-  { id: 'staple-grilled-chicken',        name: 'Grilled Chicken' },
-  { id: 'staple-scrambled-eggs',         name: 'Scrambled Eggs' },
-  { id: 'staple-stir-fry-rice-bowl',     name: 'Stir-Fry Rice Bowl' },
+const STAPLES_BY_UNIVERSITY = {
+  brandeis: [
+    { id: 'staple-margherita-flatbread',  name: 'Margherita Flatbread' },
+    { id: 'staple-cottage-cheese',         name: 'Cottage Cheese' },
+    { id: 'staple-chocolate-chip-cookie',  name: 'Chocolate Chip Cookie' },
+    { id: 'staple-grilled-chicken',        name: 'Grilled Chicken' },
+    { id: 'staple-scrambled-eggs',         name: 'Scrambled Eggs' },
+    { id: 'staple-stir-fry-rice-bowl',     name: 'Stir-Fry Rice Bowl' },
+  ],
+  tufts: [
+    { id: 'staple-tu-french-fries',        name: 'French Fries' },
+    { id: 'staple-tu-grilled-chicken',     name: 'Grilled Chicken' },
+    { id: 'staple-tu-scrambled-eggs',      name: 'Scrambled Eggs' },
+    { id: 'staple-tu-cottage-cheese',      name: 'Cottage Cheese' },
+    { id: 'staple-tu-choc-chip-cookie',    name: 'Chocolate Chip Cookie' },
+    { id: 'staple-tu-stir-fry-rice-bowl',  name: 'Stir-Fry Rice Bowl' },
+  ],
+};
+
+const DEFAULT_STAPLES = [
+  { id: 'staple-grilled-chicken',    name: 'Grilled Chicken' },
+  { id: 'staple-scrambled-eggs',     name: 'Scrambled Eggs' },
+  { id: 'staple-cottage-cheese',     name: 'Cottage Cheese' },
+  { id: 'staple-choc-chip-cookie',   name: 'Chocolate Chip Cookie' },
+  { id: 'staple-stir-fry-rice-bowl', name: 'Stir-Fry Rice Bowl' },
+  { id: 'staple-garden-salad',       name: 'Garden Salad' },
 ];
 
-export default function MenuRatingOnboarding({ onDone }) {
+export default function MenuRatingOnboarding({ onDone, university }) {
+  const staples = STAPLES_BY_UNIVERSITY[university] ?? DEFAULT_STAPLES;
   const [ratings, setRatings] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -25,12 +45,12 @@ export default function MenuRatingOnboarding({ onDone }) {
 
   const handleSubmit = async () => {
     setSubmitting(true);
-    const rated = STAPLES.filter(item => ratings[item.id] > 0);
+    const rated = staples.filter(item => ratings[item.id] > 0);
     await Promise.all(rated.map(item => rateItem(item, ratings[item.id])));
     onDone();
   };
 
-  const anyRated = STAPLES.some(item => ratings[item.id] > 0);
+  const anyRated = staples.some(item => ratings[item.id] > 0);
 
   return (
     <div className="menu-rating-onboarding">
@@ -40,7 +60,7 @@ export default function MenuRatingOnboarding({ onDone }) {
       </p>
 
       <div className="mro-list">
-        {STAPLES.map(item => (
+        {staples.map(item => (
           <div key={item.id} className="mro-item">
             <span className="mro-item-name">{item.name}</span>
             <StarRating

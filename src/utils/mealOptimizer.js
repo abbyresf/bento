@@ -433,19 +433,15 @@ export function findRecommendedAdditions(availableItems, mealTarget, currentTota
   return results;
 }
 
-// Optimize full day across all meals
+// Optimize full day across all meals — works with any set of location IDs.
 export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds, mealDistribution = MEAL_DISTRIBUTION, favoriteIds = new Set()) {
-  const mealTargets = calculateMealTargets(nutritionTargets, mealDistribution);
+  const mealTargets  = calculateMealTargets(nutritionTargets, mealDistribution);
+  const locationIds  = Object.keys(menu.locations ?? {});
+
   const result = {
-    sherman: {},
-    usdan: {},
-    kosher: {},
-    dailyTotals: {
-      sherman: { calories: 0, protein: 0, carbs: 0, fat: 0 },
-      usdan:   { calories: 0, protein: 0, carbs: 0, fat: 0 },
-      kosher:  { calories: 0, protein: 0, carbs: 0, fat: 0 },
-    },
-    targets: nutritionTargets,
+    ...Object.fromEntries(locationIds.map(id => [id, {}])),
+    dailyTotals: Object.fromEntries(locationIds.map(id => [id, { calories: 0, protein: 0, carbs: 0, fat: 0 }])),
+    targets:  nutritionTargets,
     warnings: [],
   };
 
@@ -454,61 +450,25 @@ export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds,
   const dailyUsedIds = new Set(recentItemIds);
 
   for (const meal of ['breakfast', 'lunch', 'dinner']) {
-    // Optimize for Sherman
-    if (menu.locations.sherman.meals[meal]) {
-      const shermanResult = optimizeMeal(
-        menu.locations.sherman.meals[meal],
+    for (const locId of locationIds) {
+      const locMeals = menu.locations[locId]?.meals;
+      if (!locMeals?.[meal]) continue;
+
+      const locResult = optimizeMeal(
+        locMeals[meal],
         mealTargets[meal],
         restrictions,
         dailyUsedIds,
         meal,
         favoriteIds
       );
-      result.sherman[meal] = shermanResult;
-      shermanResult.items.forEach((item) => dailyUsedIds.add(item.id));
+      result[locId][meal] = locResult;
+      locResult.items.forEach(item => dailyUsedIds.add(item.id));
 
-      result.dailyTotals.sherman.calories += shermanResult.totals.calories;
-      result.dailyTotals.sherman.protein += shermanResult.totals.protein;
-      result.dailyTotals.sherman.carbs += shermanResult.totals.carbs;
-      result.dailyTotals.sherman.fat += shermanResult.totals.fat;
-    }
-
-    // Optimize for Usdan
-    if (menu.locations.usdan.meals[meal]) {
-      const usdanResult = optimizeMeal(
-        menu.locations.usdan.meals[meal],
-        mealTargets[meal],
-        restrictions,
-        dailyUsedIds,
-        meal,
-        favoriteIds
-      );
-      result.usdan[meal] = usdanResult;
-      usdanResult.items.forEach((item) => dailyUsedIds.add(item.id));
-
-      result.dailyTotals.usdan.calories += usdanResult.totals.calories;
-      result.dailyTotals.usdan.protein += usdanResult.totals.protein;
-      result.dailyTotals.usdan.carbs += usdanResult.totals.carbs;
-      result.dailyTotals.usdan.fat += usdanResult.totals.fat;
-    }
-
-    // Optimize for Kosher Table
-    if (menu.locations.kosher?.meals[meal]) {
-      const kosherResult = optimizeMeal(
-        menu.locations.kosher.meals[meal],
-        mealTargets[meal],
-        restrictions,
-        dailyUsedIds,
-        meal,
-        favoriteIds
-      );
-      result.kosher[meal] = kosherResult;
-      kosherResult.items.forEach((item) => dailyUsedIds.add(item.id));
-
-      result.dailyTotals.kosher.calories += kosherResult.totals.calories;
-      result.dailyTotals.kosher.protein  += kosherResult.totals.protein;
-      result.dailyTotals.kosher.carbs    += kosherResult.totals.carbs;
-      result.dailyTotals.kosher.fat      += kosherResult.totals.fat;
+      result.dailyTotals[locId].calories += locResult.totals.calories;
+      result.dailyTotals[locId].protein  += locResult.totals.protein;
+      result.dailyTotals[locId].carbs    += locResult.totals.carbs;
+      result.dailyTotals[locId].fat      += locResult.totals.fat;
     }
   }
 

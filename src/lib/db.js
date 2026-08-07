@@ -298,20 +298,24 @@ export async function rateItem(item, rating) {
     await supabase.from('item_ratings').delete().eq('user_id', id).eq('item_id', item.id);
     return;
   }
+  const university = item.id?.startsWith('tu_') ? 'tufts' : 'brandeis';
   await supabase.from('item_ratings').upsert({
     user_id:    id,
     item_id:    item.id,
     item_name:  item.name,
     rating,
+    university,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'user_id,item_id' });
 }
 
 // Returns aggregate ratings for all items — used for the leaderboard and badge.
-export async function getRatingAggregates() {
-  const { data } = await supabase
+export async function getRatingAggregates(university) {
+  let query = supabase
     .from('item_rating_aggregates')
     .select('item_id, item_name, avg_rating, rating_count');
+  if (university) query = query.eq('university', university);
+  const { data } = await query;
   return Object.fromEntries(
     (data ?? []).map(r => [r.item_id, { name: r.item_name, avg: parseFloat(r.avg_rating), count: r.rating_count }])
   );
@@ -319,14 +323,14 @@ export async function getRatingAggregates() {
 
 // ── Suggestions ────────────────────────────────────────────────────────────
 
-export async function getSuggestions({ orderBy = 'emphasize_count' } = {}) {
+export async function getSuggestions({ orderBy = 'emphasize_count', university } = {}) {
   const col = orderBy === 'emphasize_count' ? 'emphasize_count' : 'created_at';
-  const { data } = await supabase
+  let query = supabase
     .from('suggestions')
     .select('id, content, emphasize_count, created_at')
-    .eq('is_hidden', false)
-    .order(col, { ascending: false })
-    .limit(100);
+    .eq('is_hidden', false);
+  if (university) query = query.eq('university', university);
+  const { data } = await query.order(col, { ascending: false }).limit(100);
   return data ?? [];
 }
 
@@ -539,11 +543,11 @@ function localDateStr(d = new Date()) {
 
 // Called when a fresh menu loads — records whether any dining location was open today.
 // Non-critical: errors are intentionally swallowed by the caller.
-export async function recordDiningAvailability(anyOpen) {
+export async function recordDiningAvailability(anyOpen, university = 'brandeis') {
   const today = localDateStr();
   await supabase
     .from('dining_availability')
-    .upsert({ date: today, any_open: anyOpen }, { onConflict: 'date' });
+    .upsert({ date: today, university, any_open: anyOpen }, { onConflict: 'date,university' });
 }
 
 export async function incrementStreak() {
@@ -630,7 +634,10 @@ export async function clearAllData() {
     supabase.from('profiles').update({ weight: null, age: null, terms_accepted: false }).eq('id', id),
   ]);
   // Clear all local state so swipe onboarding, confirmed meals, and menu cache reset
-  ['bento_swipe_done', 'bento_confirmed_meals_v2', 'bento_cached_menu'].forEach(k => {
+  ['bento_swipe_done', 'bento_confirmed_meals_v2',
+   'bento_cached_menu_brandeis', 'bento_cached_menu_tufts',
+   'bento_cached_menu', // legacy key
+  ].forEach(k => {
     try { localStorage.removeItem(k); } catch { /* ignore */ }
   });
   await signOut();
@@ -640,9 +647,10 @@ export async function clearAllData() {
 
 const CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours — refreshes in time for dinner to appear
 
-export function getCachedMenu() {
+export function getCachedMenu(university = 'brandeis') {
   try {
-    const cached = JSON.parse(localStorage.getItem('bento_cached_menu'));
+    const key = `bento_cached_menu_${university}`;
+    const cached = JSON.parse(localStorage.getItem(key));
     if (!cached) return null;
     if (cached.date !== localDateStr()) return null;
     if (Date.now() - cached.fetchedAt > CACHE_TTL_MS) return null;
@@ -650,8 +658,9 @@ export function getCachedMenu() {
   } catch { return null; }
 }
 
-export function setCachedMenu(menu) {
+export function setCachedMenu(menu, university = 'brandeis') {
   try {
-    localStorage.setItem('bento_cached_menu', JSON.stringify({ date: localDateStr(), fetchedAt: Date.now(), menu }));
+    const key = `bento_cached_menu_${university}`;
+    localStorage.setItem(key, JSON.stringify({ date: localDateStr(), fetchedAt: Date.now(), menu }));
   } catch { /* localStorage unavailable */ }
 }

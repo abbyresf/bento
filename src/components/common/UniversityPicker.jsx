@@ -6,7 +6,9 @@ export default function UniversityPicker({ value, onChange, onRequestSchool, sea
   const [query, setQuery] = useState('');
 
   const q = query.toLowerCase();
-  const filtered = (!searchOnly || q)
+  const selectedUni = UNIVERSITIES.find((u) => u.id === value);
+  const showingSearch = !searchOnly || !!q;
+  const filtered = showingSearch
     ? UNIVERSITIES.filter((u) =>
         !q ||
         u.name.toLowerCase().includes(q) ||
@@ -29,7 +31,7 @@ export default function UniversityPicker({ value, onChange, onRequestSchool, sea
         <input
           type="text"
           className="university-search"
-          placeholder="Search universities…"
+          placeholder={searchOnly && selectedUni ? `Change university…` : 'Search universities…'}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -40,39 +42,51 @@ export default function UniversityPicker({ value, onChange, onRequestSchool, sea
         )}
       </div>
 
+      {searchOnly && !q && selectedUni && (
+        <div className="university-current">
+          <div className="university-info">
+            <div className="university-name-row">
+              <span className="university-name">{selectedUni.name}</span>
+              <span className="university-abbr">{selectedUni.abbreviation}</span>
+            </div>
+            <span className="university-location">{selectedUni.location}</span>
+          </div>
+          <svg className="check-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+      )}
+
       <div className="university-list">
-        {filtered.length === 0 ? (
-          searchOnly && !q ? null : (
-            <p className="university-empty">No universities found for "{query}"</p>
-          )
-        ) : (
-          filtered.map((uni) => (
-            <button
-              key={uni.id}
-              type="button"
-              className={`university-option ${value === uni.id ? 'selected' : ''} ${!uni.available ? 'coming-soon' : ''}`}
-              onClick={() => uni.available && handleSelect(uni.id)}
-              disabled={!uni.available}
-            >
-              <div className="university-info">
-                <div className="university-name-row">
-                  <span className="university-name">{uni.name}</span>
-                  <span className="university-abbr">{uni.abbreviation}</span>
-                </div>
-                <span className="university-location">{uni.location}</span>
-              </div>
-              {uni.available ? (
-                value === uni.id && (
-                  <svg className="check-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                )
-              ) : (
-                <span className="coming-soon-badge">Coming soon</span>
-              )}
-            </button>
-          ))
+        {showingSearch && filtered.length === 0 && q && (
+          <p className="university-empty">No universities found for "{query}"</p>
         )}
+        {filtered.map((uni) => (
+          <button
+            key={uni.id}
+            type="button"
+            className={`university-option ${value === uni.id ? 'selected' : ''} ${!uni.available ? 'coming-soon' : ''}`}
+            onClick={() => uni.available && handleSelect(uni.id)}
+            disabled={!uni.available}
+          >
+            <div className="university-info">
+              <div className="university-name-row">
+                <span className="university-name">{uni.name}</span>
+                <span className="university-abbr">{uni.abbreviation}</span>
+              </div>
+              <span className="university-location">{uni.location}</span>
+            </div>
+            {uni.available ? (
+              value === uni.id && (
+                <svg className="check-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              )
+            ) : (
+              <span className="coming-soon-badge">Coming soon</span>
+            )}
+          </button>
+        ))}
       </div>
 
       {onRequestSchool && (

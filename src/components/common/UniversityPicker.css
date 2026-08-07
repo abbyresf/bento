@@ -55,6 +55,16 @@
   color: #475569;
 }
 
+.university-current {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1.125rem;
+  border: 2px solid #f47421;
+  border-radius: 10px;
+  background: #fff8f3;
+}
+
 .university-list {
   display: flex;
   flex-direction: column;

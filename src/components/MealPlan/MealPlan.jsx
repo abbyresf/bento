@@ -22,8 +22,8 @@ function writePlanCache(date, meals) {
 }
 
 import { hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
-import { fetchBrandeisMenu } from '../../services/menuFetcher';
-import { getNutritionTargets, getDietaryRestrictions, getRecentItemIds, addMealToHistory, removeMealFromHistory, setCachedMenu, getCachedMenu, incrementStreak, incrementStreakForDate, getStreak, getConfirmedMealsForDate, recordDiningAvailability } from '../../lib/db';
+import { fetchDiningMenu, getUniversityConfig } from '../../services/menuFetcher';
+import { getUserProfile, getNutritionTargets, getDietaryRestrictions, getRecentItemIds, addMealToHistory, removeMealFromHistory, setCachedMenu, getCachedMenu, incrementStreak, incrementStreakForDate, getStreak, getConfirmedMealsForDate, recordDiningAvailability } from '../../lib/db';
 import { useRatings } from '../../context/RatingsContext';
 import { getNewBadge } from '../../data/badges';
 import { optimizeDay, findAlternatives, findRecommendedAdditions } from '../../utils/mealOptimizer';
@@ -76,6 +76,8 @@ export default function MealPlan({ settingsVersion = 0 }) {
     return { breakfast: null, lunch: null, dinner: null };
   });
   const [confirmedMealIds, setConfirmedMealIds] = useState({ breakfast: null, lunch: null, dinner: null });
+  const [university, setUniversity] = useState('brandeis');
+  const universityRef = useRef('brandeis');
   const [viewDate, setViewDate] = useState(() => localDateStr());
   const [dateLoading, setDateLoading] = useState(false);
   const [, setTick] = useState(0);
@@ -93,35 +95,48 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const loadMenuAndOptimize = useCallback(async (forceRefresh = false) => {
     setLoading(true);
 
-    // Check menu cache synchronously before launching async work
+    // Fetch profile first to get university routing (fast Supabase read)
+    const profileData = await getUserProfile();
+    const uni = profileData?.university ?? 'brandeis';
+    if (uni !== universityRef.current) {
+      // University changed — reset location selection and any in-progress manual plate
+      locationDefaultApplied.current = false;
+      const firstLoc = Object.keys(getUniversityConfig(uni).locations)[0];
+      setSelectedLocation({ breakfast: firstLoc, lunch: firstLoc, dinner: firstLoc });
+      setCustomMeals({ breakfast: null, lunch: null, dinner: null });
+    }
+    universityRef.current = uni;
+    setUniversity(uni);
+    const uniConfig = getUniversityConfig(uni);
+
+    // Check menu cache
     let cachedMenuData = null;
     let cacheState = null;
     if (!forceRefresh) {
-      cachedMenuData = getCachedMenu();
+      cachedMenuData = getCachedMenu(uni);
       if (cachedMenuData) {
         try {
-          const raw = JSON.parse(localStorage.getItem('bento_cached_menu'));
+          const raw = JSON.parse(localStorage.getItem(`bento_cached_menu_${uni}`));
           cacheState = (raw && Date.now() - raw.fetchedAt > 60 * 60 * 1000) ? 'cache' : null;
         } catch { cacheState = null; }
       }
     }
 
+    const offlineFallback = {
+      date: localDateStr(),
+      locations: Object.fromEntries(
+        Object.entries(uniConfig.locations).map(([id, loc]) => [
+          id, { id, name: loc.name, shortName: loc.shortName, meals: { breakfast: [], lunch: [], dinner: [] }, isOpen: false },
+        ])
+      ),
+    };
+
     // Build the menu promise — resolves to { data, offline }
     const menuPromise = cachedMenuData
       ? Promise.resolve({ data: cachedMenuData, offline: false })
-      : fetchBrandeisMenu()
-          .then(data => { setCachedMenu(data); return { data, offline: false }; })
-          .catch(() => ({
-            data: {
-              date: localDateStr(),
-              locations: {
-                sherman: { id: 'sherman', name: 'Farm Table at Sherman', shortName: 'Farm Table', meals: { breakfast: [], lunch: [], dinner: [] }, isOpen: false },
-                usdan:   { id: 'usdan',   name: 'Usdan Kitchen',           shortName: 'Usdan',       meals: { breakfast: [], lunch: [], dinner: [] }, isOpen: false },
-                kosher:  { id: 'kosher',  name: 'Kosher Table at Sherman', shortName: 'Kosher',      meals: { breakfast: [], lunch: [], dinner: [] }, isOpen: false },
-              },
-            },
-            offline: true,
-          }));
+      : fetchDiningMenu(uniConfig)
+          .then(data => { setCachedMenu(data, uni); return { data, offline: false }; })
+          .catch(() => ({ data: offlineFallback, offline: true }));
 
     try {
       // Menu fetch and all user-data queries run simultaneously
@@ -134,7 +149,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
 
       if (!offline) {
         const anyOpen = Object.values(menuData.locations ?? {}).some(loc => loc.isOpen);
-        recordDiningAvailability(anyOpen).catch(() => {});
+        recordDiningAvailability(anyOpen, uni).catch(() => {});
       }
 
       setMenu(menuData);
@@ -187,7 +202,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
     const timer = setTimeout(async () => {
       try {
         const [menuData, confirmedForDate, targets, fetchedRestrictions, recentItems] = await Promise.all([
-          fetchBrandeisMenu(capturedDate),
+          fetchDiningMenu(getUniversityConfig(universityRef.current), capturedDate),
           getConfirmedMealsForDate(capturedDate),
           getNutritionTargets(),
           getDietaryRestrictions(),
@@ -223,12 +238,9 @@ export default function MealPlan({ settingsVersion = 0 }) {
   // Only runs for today — past-date streak is handled in handleConfirmMeal.
   useEffect(() => {
     if (!menu || viewDate !== localDateStr()) return;
-    const availableMeals = ['breakfast', 'lunch', 'dinner'].filter(m => {
-      const s = menu?.locations?.sherman?.meals?.[m]?.length ?? 0;
-      const u = menu?.locations?.usdan?.meals?.[m]?.length ?? 0;
-      const k = menu?.locations?.kosher?.meals?.[m]?.length ?? 0;
-      return s > 0 || u > 0 || k > 0;
-    });
+    const availableMeals = ['breakfast', 'lunch', 'dinner'].filter(m =>
+      Object.values(menu?.locations ?? {}).some(loc => (loc.meals?.[m]?.length ?? 0) > 0)
+    );
     if (availableMeals.length > 0 && !availableMeals.every(m => confirmedMeals[m])) return;
     incrementStreak().then(result => {
       if (!result) return;
@@ -251,7 +263,9 @@ export default function MealPlan({ settingsVersion = 0 }) {
     if (!mealPlan || !restrictions || locationDefaultApplied.current) return;
     locationDefaultApplied.current = true;
 
-    if (restrictions.kosher) {
+    const locationIds = Object.keys(getUniversityConfig(universityRef.current).locations);
+    const kosherLoc = locationIds.find(id => id === 'kosher');
+    if (restrictions.kosher && kosherLoc) {
       setSelectedLocation({ breakfast: 'kosher', lunch: 'kosher', dinner: 'kosher' });
       return;
     }
@@ -261,7 +275,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
       for (const meal of ['breakfast', 'lunch', 'dinner']) {
         const currentItems = mealPlan[prev[meal]]?.[meal]?.items ?? [];
         if (currentItems.length === 0) {
-          const bestLoc = ['sherman', 'usdan', 'kosher'].find(
+          const bestLoc = Object.keys(mealPlan ?? {}).find(
             loc => (mealPlan[loc]?.[meal]?.items ?? []).length > 0
           );
           if (bestLoc) next[meal] = bestLoc;
@@ -271,11 +285,21 @@ export default function MealPlan({ settingsVersion = 0 }) {
     });
   }, [mealPlan, restrictions]);
 
-  // Re-optimize (without refetching menu) when settings change
+  // Re-optimize or reload when settings change
   useEffect(() => {
-    if (settingsVersion === 0 || !menu) return;
+    if (settingsVersion === 0) return;
     let cancelled = false;
-    async function reoptimize() {
+    async function handleSettingsChange() {
+      const profileData = await getUserProfile();
+      if (cancelled) return;
+      const newUni = profileData?.university ?? 'brandeis';
+      if (newUni !== universityRef.current) {
+        // University changed — full menu reload for the new school
+        loadMenuAndOptimize(true);
+        return;
+      }
+      // Same university — re-optimize with updated preferences (no refetch needed)
+      if (!menu) return;
       const [targets, fetchedRestrictions, recentItems] = await Promise.all([
         getNutritionTargets(),
         getDietaryRestrictions(),
@@ -283,13 +307,13 @@ export default function MealPlan({ settingsVersion = 0 }) {
       ]);
       if (cancelled) return;
       setRestrictions(fetchedRestrictions);
-      // Auto-switch to kosher table when kosher restriction is enabled/disabled
-      if (fetchedRestrictions.kosher) {
+      const locIds = Object.keys(getUniversityConfig(universityRef.current).locations);
+      const hasKosherLoc = locIds.includes('kosher');
+      if (fetchedRestrictions.kosher && hasKosherLoc) {
         setSelectedLocation({ breakfast: 'kosher', lunch: 'kosher', dinner: 'kosher' });
       } else {
-        // Reset to default location if kosher was turned off
         setSelectedLocation(prev => {
-          const defaultLoc = Object.keys(menu.locations ?? {}).find(k => k !== 'kosher') ?? 'usdan';
+          const defaultLoc = locIds.find(k => k !== 'kosher') ?? locIds[0];
           const allKosher = Object.values(prev).every(l => l === 'kosher');
           return allKosher ? { breakfast: defaultLoc, lunch: defaultLoc, dinner: defaultLoc } : prev;
         });
@@ -302,7 +326,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
         setRecommendations({ breakfast: null, lunch: null, dinner: null });
       }
     }
-    reoptimize();
+    handleSettingsChange();
     return () => { cancelled = true; };
   }, [settingsVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -535,12 +559,9 @@ export default function MealPlan({ settingsVersion = 0 }) {
   };
 
   const runStreakCheck = async (isViewingToday, updatedConfirmed) => {
-    const availableMeals = ['breakfast', 'lunch', 'dinner'].filter(m => {
-      const s = menu?.locations?.sherman?.meals?.[m]?.length ?? 0;
-      const u = menu?.locations?.usdan?.meals?.[m]?.length ?? 0;
-      const k = menu?.locations?.kosher?.meals?.[m]?.length ?? 0;
-      return s > 0 || u > 0 || k > 0;
-    });
+    const availableMeals = ['breakfast', 'lunch', 'dinner'].filter(m =>
+      Object.values(menu?.locations ?? {}).some(loc => (loc.meals?.[m]?.length ?? 0) > 0)
+    );
     const allConfirmed = availableMeals.length === 0 || availableMeals.every(m => updatedConfirmed[m]);
     if (allConfirmed) {
       const streakFn = isViewingToday ? incrementStreak : () => incrementStreakForDate(viewDate);
@@ -708,18 +729,22 @@ export default function MealPlan({ settingsVersion = 0 }) {
             meal={meal}
             mealTime={MEAL_TIMES[meal]}
             isPast={getMealPast(meal)}
-            shermanPlan={mealPlan.sherman[meal]}
-            usdanPlan={mealPlan.usdan[meal]}
-            kosherPlan={mealPlan.kosher?.[meal]}
-            shermanOpen={menu?.locations?.sherman?.isOpen ?? true}
-            usdanOpen={menu?.locations?.usdan?.isOpen ?? true}
-            kosherOpen={menu?.locations?.kosher?.isOpen ?? true}
-            shermanRawCount={menu?.locations?.sherman?.meals[meal]?.length ?? 0}
-            usdanRawCount={menu?.locations?.usdan?.meals[meal]?.length ?? 0}
-            kosherRawCount={menu?.locations?.kosher?.meals[meal]?.length ?? 0}
-            shermanRawItems={menu?.locations?.sherman?.meals[meal] ?? []}
-            usdanRawItems={menu?.locations?.usdan?.meals[meal] ?? []}
-            kosherRawItems={menu?.locations?.kosher?.meals[meal] ?? []}
+            locationOptions={Object.values(getUniversityConfig(university).locations).map(loc => ({
+              id: loc.id,
+              label: loc.shortName,
+              allItemsKosher: loc.allItemsKosher ?? false,
+            }))}
+            locationData={Object.fromEntries(
+              Object.keys(getUniversityConfig(university).locations).map(locId => [
+                locId,
+                {
+                  plan: mealPlan[locId]?.[meal],
+                  isOpen: menu?.locations?.[locId]?.isOpen ?? true,
+                  rawCount: menu?.locations?.[locId]?.meals?.[meal]?.length ?? 0,
+                  rawItems: menu?.locations?.[locId]?.meals?.[meal] ?? [],
+                },
+              ])
+            )}
             customPlan={customMeals[meal]}
             onBrowserDone={(items) => handleBrowserDone(meal, items)}
             isKosherUser={restrictions?.kosher ?? false}
