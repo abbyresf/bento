@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import LandingHome from './LandingHome';
 import LandingFAQ from './LandingFAQ';
 import LandingContact from './LandingContact';
@@ -7,94 +7,116 @@ import LandingUniversities from './LandingUniversities';
 import TermsPage from '../Terms/TermsPage';
 import './LandingPage.css';
 
-const TABS = [
-  { id: 'home', label: 'Home' },
+const NAV_TABS = [
+  { id: 'home',         label: 'Home' },
   { id: 'universities', label: 'For Universities' },
-  { id: 'faq', label: 'FAQ' },
-  { id: 'terms', label: 'Terms & Conditions' },
-  { id: 'contact', label: 'Contact' },
+  { id: 'faq',          label: 'FAQ' },
+  { id: 'contact',      label: 'Contact' },
 ];
 
 export default function LandingPage({ onGetStarted, initialTab = 'home' }) {
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const [activeTab, setActiveTab]   = useState(initialTab);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [scrolled, setScrolled]     = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
     setDrawerOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
     <div className="landing-page">
-      <header className="landing-nav">
+
+      {/* ── Nav ── */}
+      <header className={`landing-nav${scrolled ? ' scrolled' : ''}`}>
         <div className="landing-nav-inner">
+
+          {/* Mobile: hamburger */}
           <button
             className="landing-hamburger"
             onClick={() => setDrawerOpen(true)}
             aria-label="Open menu"
           >
-            <span />
-            <span />
-            <span />
+            <span /><span /><span />
           </button>
-          <div className="landing-nav-logo-wrap">
-            <img src="/BentoNoWords.png" alt="Bento" className="landing-logo-img" />
-          </div>
-          <div className="landing-nav-spacer" />
+
+          {/* Logo */}
+          <button className="landing-nav-logo-btn" onClick={() => handleTabChange('home')} aria-label="Bento home">
+            <img src="/logo-cropped.png" alt="Bento" className="landing-logo-img" />
+          </button>
+
+          {/* Desktop links */}
+          <nav className="landing-nav-links" aria-label="Main navigation">
+            {NAV_TABS.map(tab => (
+              <button
+                key={tab.id}
+                className={`landing-nav-link${activeTab === tab.id ? ' active' : ''}`}
+                onClick={() => handleTabChange(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+
+          {/* Desktop CTA */}
+          <button className="landing-nav-cta" onClick={onGetStarted}>
+            Get started
+          </button>
+
+          {/* Mobile spacer */}
+          <div className="landing-nav-spacer" aria-hidden="true" />
         </div>
       </header>
 
+      {/* ── Mobile drawer ── */}
       {drawerOpen && (
-        <div
-          className="landing-drawer-overlay"
-          onClick={() => setDrawerOpen(false)}
-        />
+        <div className="landing-drawer-overlay" onClick={() => setDrawerOpen(false)} />
       )}
 
       <nav className={`landing-drawer${drawerOpen ? ' open' : ''}`} aria-hidden={!drawerOpen}>
         <div className="landing-drawer-header">
           <img src="/logo-cropped-beige.png" alt="Bento" className="landing-drawer-logo" />
-          <button
-            className="landing-drawer-close"
-            onClick={() => setDrawerOpen(false)}
-            aria-label="Close menu"
-          >
-            ×
-          </button>
+          <button className="landing-drawer-close" onClick={() => setDrawerOpen(false)} aria-label="Close menu">×</button>
         </div>
         <div className="landing-drawer-items">
-          {TABS.map((tab) => (
+          {NAV_TABS.map(tab => (
             <button
               key={tab.id}
-              className={`landing-drawer-item${activeTab === tab.id ? ' active' : ''}${tab.id === 'universities' ? ' highlight' : ''}`}
+              className={`landing-drawer-item${activeTab === tab.id ? ' active' : ''}`}
               onClick={() => handleTabChange(tab.id)}
             >
               {tab.label}
             </button>
           ))}
+          <div className="landing-drawer-divider" />
+          <button className="landing-drawer-cta" onClick={() => { onGetStarted(); setDrawerOpen(false); }}>
+            Get started — it's free
+          </button>
         </div>
       </nav>
 
+      {/* ── Content ── */}
       <main className="landing-main">
         {activeTab === 'home' && (
-          <LandingHome
-            onGetStarted={onGetStarted}
-            onGoUniversities={() => handleTabChange('universities')}
-          />
+          <LandingHome onGetStarted={onGetStarted} onGoUniversities={() => handleTabChange('universities')} />
         )}
         {activeTab === 'universities' && (
           <LandingUniversities onContact={() => handleTabChange('contact')} />
         )}
-        {activeTab === 'faq' && <LandingFAQ />}
-        {activeTab === 'terms' && (
-          <div className="landing-terms-wrap">
-            <TermsPage />
-          </div>
-        )}
+        {activeTab === 'faq'     && <LandingFAQ />}
+        {activeTab === 'terms'   && <div className="landing-terms-wrap"><TermsPage /></div>}
         {activeTab === 'contact' && <LandingContact />}
         {activeTab === 'request' && <LandingRequestSchool />}
       </main>
 
+      {/* ── Footer ── */}
       <footer className="landing-footer">
         <p className="landing-footer-disclaimer">
           Bento is an independent application and is not affiliated with, endorsed by, or

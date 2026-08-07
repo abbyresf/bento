@@ -3,21 +3,102 @@
   position: sticky;
   top: 0;
   z-index: 900;
-  background: white;
-  border-bottom: 1px solid #e2e8f0;
-  box-shadow: 0 2px 12px rgba(36, 59, 85, 0.06);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: 'Instrument Sans', 'Nunito', sans-serif;
+}
+
+.landing-nav.scrolled {
+  border-bottom-color: rgba(36, 59, 85, 0.08);
+  box-shadow: 0 2px 20px rgba(36, 59, 85, 0.07);
 }
 
 .landing-nav-inner {
-  max-width: 960px;
+  max-width: 1080px;
   margin: 0 auto;
-  padding: 0 1rem;
-  height: 56px;
+  padding: 0 1.25rem;
+  height: 60px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.5rem;
 }
 
+/* Logo button */
+.landing-nav-logo-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.landing-logo-img {
+  height: 36px;
+  width: auto;
+  display: block;
+}
+
+/* Desktop nav links — hidden on mobile */
+.landing-nav-links {
+  display: none;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 2rem;
+  flex: 1;
+}
+
+.landing-nav-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #5a6a7a;
+  border-radius: 8px;
+  transition: color 0.15s, background 0.15s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.landing-nav-link:hover {
+  color: #243b55;
+  background: rgba(36, 59, 85, 0.06);
+}
+
+.landing-nav-link.active {
+  color: #243b55;
+  background: rgba(36, 59, 85, 0.07);
+}
+
+/* Desktop CTA button — hidden on mobile */
+.landing-nav-cta {
+  display: none;
+  background: #f47421;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s, transform 0.1s;
+  font-family: inherit;
+}
+
+.landing-nav-cta:hover {
+  background: #e06318;
+  transform: translateY(-1px);
+}
+
+/* Hamburger — shown on mobile only */
 .landing-hamburger {
   background: none;
   border: none;
@@ -43,21 +124,31 @@
   background: #f47421;
 }
 
-.landing-nav-logo-wrap {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-}
-
-.landing-logo-img {
-  height: 42px;
-  width: auto;
-  display: block;
-}
-
+/* Mobile logo centering spacer */
 .landing-nav-spacer {
   width: 40px;
   flex-shrink: 0;
+}
+
+/* Desktop: flip layout */
+@media (min-width: 768px) {
+  .landing-hamburger,
+  .landing-nav-spacer {
+    display: none;
+  }
+
+  .landing-nav-links {
+    display: flex;
+  }
+
+  .landing-nav-cta {
+    display: block;
+    margin-left: auto;
+  }
+
+  .landing-logo-img {
+    height: 32px;
+  }
 }
 
 /* ── Drawer overlay ── */
@@ -71,7 +162,7 @@
 
 @keyframes lp-fade-in {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
 
 /* ── Drawer ── */
@@ -80,11 +171,11 @@
   top: 0;
   left: 0;
   height: 100vh;
-  width: 272px;
-  background: #243b55;
+  width: 280px;
+  background: #1e3347;
   z-index: 1001;
   transform: translateX(-100%);
-  transition: transform 0.25s ease;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -98,19 +189,19 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .landing-drawer-logo {
-  height: 34px;
+  height: 32px;
   width: auto;
 }
 
 .landing-drawer-close {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.4);
   font-size: 1.6rem;
   line-height: 1;
   cursor: pointer;
@@ -125,7 +216,8 @@
 .landing-drawer-items {
   display: flex;
   flex-direction: column;
-  padding: 0.75rem 0;
+  padding: 0.5rem 0 1.5rem;
+  flex: 1;
 }
 
 .landing-drawer-item {
@@ -136,57 +228,52 @@
   padding: 0.9rem 1.5rem;
   font-size: 1rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, 0.6);
   transition: color 0.15s, background 0.15s;
+  font-family: inherit;
 }
 
 .landing-drawer-item:hover {
   color: white;
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .landing-drawer-item.active {
   color: white;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.09);
 }
 
-.landing-drawer-item.highlight {
-  color: rgba(255, 255, 255, 0.65);
+.landing-drawer-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0.75rem 1.5rem;
 }
 
-.landing-drawer-item.highlight:hover {
+.landing-drawer-cta {
+  margin: 0.5rem 1.25rem 0;
+  background: #f47421;
   color: white;
-  background: rgba(255, 255, 255, 0.07);
-}
-
-/* ── Main wrapper ── */
-.landing-main {
-  min-height: calc(100vh - 56px);
-}
-
-/* ── Universities placeholder ── */
-.landing-coming-soon {
-  max-width: 680px;
-  margin: 0 auto;
-  padding: 5rem 1.5rem;
+  border: none;
+  border-radius: 10px;
+  padding: 0.85rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
   text-align: center;
+  transition: background 0.15s;
+  font-family: inherit;
 }
 
-.landing-coming-soon h2 {
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: #243b55;
-  margin: 0 0 1rem;
+.landing-drawer-cta:hover {
+  background: #e06318;
 }
 
-.landing-coming-soon p {
-  font-size: 1rem;
-  color: #64748b;
-  line-height: 1.65;
-  margin: 0;
+/* ── Main ── */
+.landing-main {
+  min-height: calc(100vh - 60px);
 }
 
-/* ── Terms inside landing ── */
+/* ── Terms ── */
 .landing-terms-wrap {
   max-width: 760px;
   margin: 0 auto;
@@ -198,7 +285,7 @@
   background: #1a2e45;
   color: #94a3b8;
   text-align: center;
-  padding: 2rem 1.5rem;
+  padding: 2.5rem 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -207,7 +294,7 @@
 .landing-footer-disclaimer {
   font-size: 0.78rem;
   line-height: 1.65;
-  color: #64748b;
+  color: #4a5568;
   max-width: 640px;
   margin: 0 auto;
 }
@@ -218,7 +305,7 @@
   justify-content: center;
   gap: 0.5rem;
   font-size: 0.8rem;
-  color: #64748b;
+  color: #4a5568;
   margin: 0;
 }
 
@@ -231,6 +318,7 @@
   cursor: pointer;
   padding: 0;
   transition: color 0.15s;
+  font-family: inherit;
 }
 
 .landing-footer-link:hover {
@@ -239,6 +327,6 @@
 
 .landing-footer-copy {
   font-size: 0.75rem;
-  color: #475569;
+  color: #394a5a;
   margin: 0;
 }

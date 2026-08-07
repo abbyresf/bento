@@ -50,6 +50,7 @@ export default defineConfig({
     }),
   ],
   server: {
+    host: true,
     proxy: {
       // Proxy Brandeis dining requests in dev to avoid CORS.
       // In production, Vercel's /api/dining.js serverless function handles this.
