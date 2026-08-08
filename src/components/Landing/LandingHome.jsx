@@ -229,14 +229,16 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
 
           <div className="lh-hero-phone-col" aria-hidden="true">
             <div className="lh-hero-phone-wrap">
-              {TAGS.map(tag => (
-                <div key={tag.label} className={`lh-tag lh-tag--${tag.pos}`}
-                  style={{ '--tc': tag.color }}>
-                  <span className="lh-tag-dot" />
-                  {tag.label}
-                </div>
-              ))}
-              <Phone className="lh-phone--hero" src="/screenshots/today.png" alt="Bento Today tab" />
+              <div className="lh-phone-anchor">
+                {TAGS.map(tag => (
+                  <div key={tag.label} className={`lh-tag lh-tag--${tag.pos}`}
+                    style={{ '--tc': tag.color }}>
+                    <span className="lh-tag-dot" />
+                    {tag.label}
+                  </div>
+                ))}
+                <Phone className="lh-phone--hero" src="/screenshots/today.png" alt="Bento Today tab" />
+              </div>
             </div>
           </div>
 
