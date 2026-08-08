@@ -152,6 +152,8 @@ function App() {
   }
 
   if (!isAppRoute) {
+    if (session === undefined) return null; // wait for auth before deciding
+    if (session) return <Navigate to="/app" replace />;
     return <LandingPage onGetStarted={() => navigate('/login')} />;
   }
 
