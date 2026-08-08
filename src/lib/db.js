@@ -17,14 +17,14 @@ export async function signIn(email, password) {
 export async function signInWithGoogle() {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: window.location.origin },
+    options: { redirectTo: `${window.location.origin}/app` },
   });
   if (error) throw error;
 }
 
 export async function resetPasswordForEmail(email) {
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin,
+    redirectTo: `${window.location.origin}/app`,
   });
   if (error) throw error;
 }

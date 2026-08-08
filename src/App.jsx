@@ -62,6 +62,7 @@ function App() {
   });
 
   const isAuthRoute = location.pathname === '/login' || location.pathname === '/signup';
+  const isAppRoute  = location.pathname.startsWith('/app');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
@@ -138,13 +139,29 @@ function App() {
     }
   };
 
-  if (session === undefined) {
+  // ── Public routes (/login, /signup, and everything that isn't /app) ──────────
+
+  if (isAuthRoute) {
+    if (session) return <Navigate to="/app" replace />;
+    return (
+      <AuthScreen
+        initialMode={location.pathname === '/signup' ? 'signup' : 'login'}
+        onAuth={() => navigate('/app')}
+      />
+    );
+  }
+
+  if (!isAppRoute) {
+    return <LandingPage onGetStarted={() => navigate('/login')} />;
+  }
+
+  // ── App route (/app) — requires auth ─────────────────────────────────────────
+
+  if (session === undefined || (session && hasCompletedOnboarding === null)) {
     return <div className="app-loading"><div className="spinner"></div></div>;
   }
 
-  if (session && isAuthRoute) {
-    return <Navigate to="/" replace />;
-  }
+  if (!session) return <Navigate to="/login" replace />;
 
   if (passwordRecovery) {
     return (
@@ -173,22 +190,6 @@ function App() {
         </div>
       </div>
     );
-  }
-
-  if (!session) {
-    if (isAuthRoute) {
-      return (
-        <AuthScreen
-          initialMode={location.pathname === '/signup' ? 'signup' : 'login'}
-          onAuth={() => navigate('/')}
-        />
-      );
-    }
-    return <LandingPage onGetStarted={() => navigate('/login')} />;
-  }
-
-  if (hasCompletedOnboarding === null) {
-    return <div className="app-loading"><div className="spinner"></div></div>;
   }
 
   if (showLanding) {
