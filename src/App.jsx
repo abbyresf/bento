@@ -157,6 +157,13 @@ function App() {
 
   // ── App route (/app) — requires auth ─────────────────────────────────────────
 
+  if (showSplash) {
+    return <SplashScreen onDone={() => {
+      localStorage.setItem('bento_splash_ts', Date.now().toString());
+      setShowSplash(false);
+    }} />;
+  }
+
   if (session === undefined || (session && hasCompletedOnboarding === null)) {
     return <div className="app-loading"><div className="spinner"></div></div>;
   }
