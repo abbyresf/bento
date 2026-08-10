@@ -3,9 +3,9 @@ import './LandingAbout.css';
 const TEAM = [
   {
     name: 'Abigail Resheff',
-    role: 'Founder, CEO & Full-Stack Engineer',
+    role: 'Founder, CEO & CTO',
     photo: '/team-abigail.png',
-    bio: 'Abigail designed and built Bento from the ground up, out of frustration with her own dining hall experience at Brandeis. A software engineer and data scientist, she currently develops machine learning systems for NASA\'s Aviation Operations Laboratory, and believes the same rigor that goes into flight simulation should go into figuring out what to eat for lunch.',
+    bio: 'Abigail designed and built Bento from the ground up, out of frustration with her own dining hall experience at Brandeis. A software engineer and data scientist, she currently develops machine learning systems for NASA\'s Airspace Operations Laboratory, and believes the same rigor that goes into flight simulation should go into figuring out what to eat for lunch.',
   },
   {
     name: 'Allison Fuller',

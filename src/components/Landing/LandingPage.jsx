@@ -5,6 +5,7 @@ import LandingContact from './LandingContact';
 import LandingRequestSchool from './LandingRequestSchool';
 import LandingUniversities from './LandingUniversities';
 import TermsPage from '../Terms/TermsPage';
+import PrivacyPage from '../Terms/PrivacyPage';
 import './LandingPage.css';
 
 const NAV_TABS = [
@@ -112,6 +113,7 @@ export default function LandingPage({ onGetStarted, initialTab = 'home' }) {
         )}
         {activeTab === 'about'   && <LandingAbout />}
         {activeTab === 'terms'   && <div className="landing-terms-wrap"><TermsPage /></div>}
+        {activeTab === 'privacy' && <div className="landing-terms-wrap"><PrivacyPage /></div>}
         {activeTab === 'contact' && <LandingContact />}
         {activeTab === 'request' && <LandingRequestSchool />}
       </main>
@@ -127,6 +129,8 @@ export default function LandingPage({ onGetStarted, initialTab = 'home' }) {
         </p>
         <p className="landing-footer-links">
           <button className="landing-footer-link" onClick={() => handleTabChange('terms')}>Terms &amp; Conditions</button>
+          <span>·</span>
+          <button className="landing-footer-link" onClick={() => handleTabChange('privacy')}>Privacy Policy</button>
           <span>·</span>
           <button className="landing-footer-link" onClick={() => handleTabChange('about')}>About</button>
           <span>·</span>
