@@ -1,0 +1,188 @@
+.landing-about {
+  background: var(--cream);
+  font-family: var(--ff-body);
+  color: var(--navy);
+}
+
+/* ── Hero ── */
+.lab-hero {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 72px 24px 64px;
+}
+
+.lab-eyebrow {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--orange);
+  margin: 0 0 20px;
+}
+
+.lab-heading {
+  font-family: var(--ff-disp);
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--navy);
+  margin: 0 0 28px;
+}
+
+.lab-intro {
+  font-size: 1.05rem;
+  line-height: 1.75;
+  color: var(--muted);
+  max-width: 600px;
+  margin: 0;
+}
+
+/* ── What / Who ── */
+.lab-what {
+  border-top: 1px solid var(--border);
+  padding: 64px 24px;
+}
+
+.lab-what-inner {
+  max-width: 760px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+}
+
+.lab-block-title {
+  font-family: var(--ff-disp);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin: 0 0 14px;
+}
+
+.lab-block-body {
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* ── Team ── */
+.lab-team {
+  border-top: 1px solid var(--border);
+  padding: 64px 24px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.lab-team-list {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  margin-top: 32px;
+}
+
+.lab-card {
+  display: flex;
+  flex-direction: row;
+  gap: 36px;
+  align-items: flex-start;
+}
+
+.lab-card-photo-wrap {
+  flex-shrink: 0;
+  width: 180px;
+  height: 238px;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--border);
+}
+
+.lab-card-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+
+.lab-card-text {
+  padding-top: 6px;
+}
+
+.lab-card-name {
+  font-family: var(--ff-disp);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin: 0 0 4px;
+}
+
+.lab-card-role {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--orange);
+  margin: 0 0 14px;
+}
+
+.lab-card-bio {
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: var(--muted);
+  margin: 0;
+  max-width: 480px;
+}
+
+/* ── Contact ── */
+.lab-contact {
+  border-top: 1px solid var(--border);
+  padding: 64px 24px 100px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.lab-contact-hed {
+  font-family: var(--ff-disp);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--navy);
+  margin: 0 0 12px;
+}
+
+.lab-contact-body {
+  font-size: 0.95rem;
+  color: var(--muted);
+  margin: 0 0 20px;
+  line-height: 1.6;
+}
+
+.lab-contact-link {
+  display: inline-block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--orange);
+  text-decoration: none;
+  border-bottom: 1.5px solid var(--orange);
+  padding-bottom: 2px;
+}
+
+.lab-contact-link:hover { opacity: 0.8; }
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .lab-what-inner {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .lab-card {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .lab-card-photo-wrap {
+    width: 140px;
+    height: 185px;
+  }
+}

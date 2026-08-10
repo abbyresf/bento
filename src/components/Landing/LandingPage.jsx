@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import LandingHome from './LandingHome';
-import LandingFAQ from './LandingFAQ';
+import LandingAbout from './LandingAbout';
 import LandingContact from './LandingContact';
 import LandingRequestSchool from './LandingRequestSchool';
 import LandingUniversities from './LandingUniversities';
@@ -10,7 +10,7 @@ import './LandingPage.css';
 const NAV_TABS = [
   { id: 'home',         label: 'Home' },
   { id: 'universities', label: 'For Universities' },
-  { id: 'faq',          label: 'FAQ' },
+  { id: 'about',        label: 'About' },
   { id: 'contact',      label: 'Contact' },
 ];
 
@@ -110,7 +110,7 @@ export default function LandingPage({ onGetStarted, initialTab = 'home' }) {
         {activeTab === 'universities' && (
           <LandingUniversities onContact={() => handleTabChange('contact')} />
         )}
-        {activeTab === 'faq'     && <LandingFAQ />}
+        {activeTab === 'about'   && <LandingAbout />}
         {activeTab === 'terms'   && <div className="landing-terms-wrap"><TermsPage /></div>}
         {activeTab === 'contact' && <LandingContact />}
         {activeTab === 'request' && <LandingRequestSchool />}
@@ -128,7 +128,7 @@ export default function LandingPage({ onGetStarted, initialTab = 'home' }) {
         <p className="landing-footer-links">
           <button className="landing-footer-link" onClick={() => handleTabChange('terms')}>Terms &amp; Conditions</button>
           <span>·</span>
-          <button className="landing-footer-link" onClick={() => handleTabChange('faq')}>FAQ</button>
+          <button className="landing-footer-link" onClick={() => handleTabChange('about')}>About</button>
           <span>·</span>
           <button className="landing-footer-link" onClick={() => handleTabChange('contact')}>Contact</button>
         </p>
