@@ -54,7 +54,7 @@ function emailHtml(inviteLink: string, university: string) {
           </table>
 
           <p style="margin:0;font-size:13px;color:#8a9aaa;line-height:1.5;">
-            This link expires in 7 days and can only be used once. If you weren't expecting this invite, you can ignore this email.
+            This link expires in 24 hours and can only be used once. If you weren't expecting this invite, you can ignore this email.
           </p>
 
         </td></tr>
@@ -110,7 +110,7 @@ serve(async (req) => {
     // Create invite record
     const { data: invite, error: inviteErr } = await supabase
       .from('pulse_invites')
-      .insert({ email: email.toLowerCase().trim(), university, created_by: user.id })
+      .insert({ email: email.toLowerCase().trim(), university, created_by: user.id, expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() })
       .select()
       .single()
 

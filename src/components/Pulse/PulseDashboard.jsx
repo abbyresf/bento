@@ -248,8 +248,7 @@ const CHART_TOOLTIP = {
 // ── Invite modal ──────────────────────────────────────────────────────────────
 
 function InviteModal({ defaultUniversity, onClose }) {
-  const [email, setEmail]           = useState('');
-  const [university, setUniv]       = useState(defaultUniversity);
+  const [email, setEmail] = useState('');
   const [invites, setInvites]       = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]           = useState(null);
@@ -264,7 +263,7 @@ function InviteModal({ defaultUniversity, onClose }) {
     e.preventDefault();
     setError(null); setSentTo(null); setSubmitting(true);
     try {
-      const result = await sendInvite(email, university);
+      const result = await sendInvite(email, defaultUniversity);
       setSentTo({ email, emailSent: result.emailSent, link: result.link });
       setEmail('');
       getInvites().then(setInvites).catch(() => {});
@@ -297,7 +296,7 @@ function InviteModal({ defaultUniversity, onClose }) {
             </div>
             <div className="pulse-invite-field pulse-invite-field-sm">
               <label>University</label>
-              <input type="text" value={university} onChange={e => setUniv(e.target.value)} placeholder="brandeis" required />
+              <input type="text" value={defaultUniversity} readOnly className="pulse-invite-readonly" />
             </div>
             <button type="submit" className="pulse-invite-submit" disabled={submitting}>
               {submitting ? '…' : 'Send'}

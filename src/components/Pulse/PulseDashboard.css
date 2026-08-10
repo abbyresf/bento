@@ -759,6 +759,7 @@
 }
 
 .pulse-invite-field-sm { flex: 0 0 120px; }
+.pulse-invite-readonly { opacity: 0.6; cursor: default; user-select: none; }
 
 .pulse-invite-field label {
   font-size: 0.62rem;

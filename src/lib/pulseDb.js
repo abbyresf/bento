@@ -145,13 +145,19 @@ export async function getAdminRecord() {
 }
 
 export async function sendInvite(email, university) {
-  const { data: { session } } = await supabase.auth.getSession();
   const { data, error } = await supabase.functions.invoke('send-invite', {
     body: { email, university },
-    headers: { Authorization: `Bearer ${session?.access_token}` },
   });
   if (error || data?.error) throw new Error(data?.error ?? error?.message ?? 'Failed to send invite.');
   return data; // { id, emailSent, link }
+}
+
+async function getUserIdsForUniversity(university) {
+  const { data } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('university', university);
+  return (data ?? []).map(p => p.id);
 }
 
 export async function getInvites() {
@@ -172,12 +178,14 @@ export async function getPulseOverview(university, days = 30) {
   const periodStart   = new Date(now - days * 86400000).toISOString();
   const prevPeriodStart = new Date(now - days * 2 * 86400000).toISOString();
 
+  const userIds = await getUserIdsForUniversity(university);
+
   const [totalRes, currActiveRes, currMealsRes, prevActiveRes, prevMealsRes] = await Promise.all([
     supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('university', university),
-    supabase.from('meal_history').select('user_id').gte('confirmed_at', periodStart),
-    supabase.from('meal_history').select('id', { count: 'exact', head: true }).gte('confirmed_at', periodStart),
-    supabase.from('meal_history').select('user_id').gte('confirmed_at', prevPeriodStart).lt('confirmed_at', periodStart),
-    supabase.from('meal_history').select('id', { count: 'exact', head: true }).gte('confirmed_at', prevPeriodStart).lt('confirmed_at', periodStart),
+    supabase.from('meal_history').select('user_id').gte('confirmed_at', periodStart).in('user_id', userIds),
+    supabase.from('meal_history').select('id', { count: 'exact', head: true }).gte('confirmed_at', periodStart).in('user_id', userIds),
+    supabase.from('meal_history').select('user_id').gte('confirmed_at', prevPeriodStart).lt('confirmed_at', periodStart).in('user_id', userIds),
+    supabase.from('meal_history').select('id', { count: 'exact', head: true }).gte('confirmed_at', prevPeriodStart).lt('confirmed_at', periodStart).in('user_id', userIds),
   ]);
 
   const active     = new Set((currActiveRes.data ?? []).map(r => r.user_id)).size;
@@ -200,10 +208,12 @@ export async function getDailyEngagement(university, days = 30) {
   if (useMockData()) return generateMockEngagement(days);
 
   const periodStart = new Date(Date.now() - days * 86400000).toISOString();
+  const userIds = await getUserIdsForUniversity(university);
   const { data } = await supabase
     .from('meal_history')
     .select('confirmed_at, user_id')
-    .gte('confirmed_at', periodStart);
+    .gte('confirmed_at', periodStart)
+    .in('user_id', userIds);
 
   if (!data) return [];
 
@@ -224,10 +234,12 @@ export async function getMealTypeSplit(university, days = 30) {
   if (useMockData()) return generateMockMealSplit(days);
 
   const periodStart = new Date(Date.now() - days * 86400000).toISOString();
+  const userIds = await getUserIdsForUniversity(university);
   const { data } = await supabase
     .from('meal_history')
     .select('meal_type, items')
-    .gte('confirmed_at', periodStart);
+    .gte('confirmed_at', periodStart)
+    .in('user_id', userIds);
 
   if (!data) return [];
 
@@ -246,10 +258,12 @@ export async function getTopItems(university, days = 30) {
   if (useMockData()) return generateMockTopItems(days);
 
   const periodStart = new Date(Date.now() - days * 86400000).toISOString();
+  const userIds = await getUserIdsForUniversity(university);
   const { data } = await supabase
     .from('meal_history')
     .select('items')
-    .gte('confirmed_at', periodStart);
+    .gte('confirmed_at', periodStart)
+    .in('user_id', userIds);
 
   if (!data) return [];
 
@@ -271,9 +285,11 @@ export async function getTopItems(university, days = 30) {
 export async function getDietaryBreakdown(university) {
   if (useMockData()) return generateMockDietary();
 
+  const userIds = await getUserIdsForUniversity(university);
   const { data } = await supabase
     .from('dietary_restrictions')
-    .select('vegan, vegetarian, gluten_free, dairy_free, nut_free, halal, kosher');
+    .select('vegan, vegetarian, gluten_free, dairy_free, nut_free, halal, kosher')
+    .in('user_id', userIds);
 
   if (!data || data.length === 0) return [];
 
@@ -297,9 +313,10 @@ export async function getNutritionAverages(university, days = 30) {
   const periodStart     = new Date(now - days * 86400000).toISOString();
   const prevPeriodStart = new Date(now - days * 2 * 86400000).toISOString();
 
+  const userIds = await getUserIdsForUniversity(university);
   const [currRes, prevRes] = await Promise.all([
-    supabase.from('meal_history').select('items').gte('confirmed_at', periodStart),
-    supabase.from('meal_history').select('items').gte('confirmed_at', prevPeriodStart).lt('confirmed_at', periodStart),
+    supabase.from('meal_history').select('items').gte('confirmed_at', periodStart).in('user_id', userIds),
+    supabase.from('meal_history').select('items').gte('confirmed_at', prevPeriodStart).lt('confirmed_at', periodStart).in('user_id', userIds),
   ]);
 
   function aggregate(rows) {
