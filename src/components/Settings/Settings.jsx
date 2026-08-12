@@ -23,6 +23,8 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
   const [customCarbs, setCustomCarbs] = useState('');
   const [customFat, setCustomFat] = useState('');
   const [saved, setSaved] = useState(false);
+  const [confirming, setConfirming] = useState(null); // 'history' | 'reset' | 'delete'
+  const [actionError, setActionError] = useState(null);
 
   useEffect(() => {
     async function load() {
@@ -90,23 +92,37 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
   };
 
   const handleClearHistory = async () => {
-    if (window.confirm('Clear your meal history? This will reset variety tracking.')) {
+    if (confirming !== 'history') { setConfirming('history'); return; }
+    setConfirming(null);
+    setActionError(null);
+    try {
       await clearMealHistory();
-      alert('Meal history cleared.');
+    } catch (e) {
+      setActionError('Failed to clear meal history. Please try again.');
     }
   };
 
   const handleResetAll = async () => {
-    if (window.confirm('Reset all data and start over? This cannot be undone.')) {
+    if (confirming !== 'reset') { setConfirming('reset'); return; }
+    setConfirming(null);
+    setActionError(null);
+    try {
       await clearAllData();
       onReset();
+    } catch (e) {
+      setActionError('Failed to reset data. Please try again.');
     }
   };
 
   const handleDeleteAccount = async () => {
-    if (window.confirm('Permanently delete your account and all data? This cannot be undone.')) {
+    if (confirming !== 'delete') { setConfirming('delete'); return; }
+    setConfirming(null);
+    setActionError(null);
+    try {
       await deleteAccount();
       onReset();
+    } catch (e) {
+      setActionError('Failed to delete account. Please try again.');
     }
   };
 
@@ -311,16 +327,45 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
         {/* Data Management Section */}
         <section className="settings-section">
           <h3>Data Management</h3>
+          {actionError && <p className="settings-action-error">{actionError}</p>}
           <div className="data-actions">
-            <button className="btn-warning" onClick={handleClearHistory}>
-              Clear Meal History
-            </button>
-            <button className="btn-danger" onClick={handleResetAll}>
-              Reset All Data
-            </button>
-            <button className="btn-danger" onClick={handleDeleteAccount}>
-              Delete Account
-            </button>
+
+            <div className="data-action-row">
+              <button
+                className={confirming === 'history' ? 'btn-danger' : 'btn-warning'}
+                onClick={handleClearHistory}
+              >
+                {confirming === 'history' ? 'Tap again to confirm' : 'Clear Meal History'}
+              </button>
+              {confirming === 'history' && (
+                <button className="btn-secondary" onClick={() => setConfirming(null)}>Cancel</button>
+              )}
+            </div>
+
+            <div className="data-action-row">
+              <button
+                className="btn-danger"
+                onClick={handleResetAll}
+              >
+                {confirming === 'reset' ? 'Tap again to confirm' : 'Reset All Data'}
+              </button>
+              {confirming === 'reset' && (
+                <button className="btn-secondary" onClick={() => setConfirming(null)}>Cancel</button>
+              )}
+            </div>
+
+            <div className="data-action-row">
+              <button
+                className="btn-danger"
+                onClick={handleDeleteAccount}
+              >
+                {confirming === 'delete' ? 'Tap again to confirm' : 'Delete Account'}
+              </button>
+              {confirming === 'delete' && (
+                <button className="btn-secondary" onClick={() => setConfirming(null)}>Cancel</button>
+              )}
+            </div>
+
           </div>
         </section>
       </div>

@@ -321,6 +321,23 @@
   gap: 0.75rem;
 }
 
+.data-action-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.data-action-row .btn-warning,
+.data-action-row .btn-danger {
+  flex: 1;
+}
+
+.settings-action-error {
+  color: #dc2626;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
 /* Buttons */
 .btn-primary,
 .btn-secondary,
