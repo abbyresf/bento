@@ -39,31 +39,91 @@ serve(async (req) => {
       .single()
 
     if (inviteErr || !invite) {
+      console.error('Invite lookup failed:', inviteErr?.message)
       return json({ error: 'Invite link is invalid or has already been used.' }, 400)
     }
 
-    // Create auth user with email pre-confirmed
+    // Try to create a new auth user with the invited email
     const { data: authData, error: authErr } = await supabase.auth.admin.createUser({
       email: invite.email,
       password,
       email_confirm: true,
     })
 
+    let userId: string
+
     if (authErr) {
-      return json({ error: authErr.message }, 400)
+      // If an account with this email already exists (e.g. a student account),
+      // find that user and update their password so they can log in as admin.
+      const alreadyExists =
+        authErr.message?.toLowerCase().includes('already') ||
+        authErr.message?.toLowerCase().includes('exists') ||
+        authErr.status === 422
+
+      if (!alreadyExists) {
+        console.error('createUser failed:', authErr.message)
+        return json({ error: authErr.message }, 400)
+      }
+
+      // Look up the existing user by email
+      const { data: usersData, error: listErr } = await supabase.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000,
+      })
+
+      if (listErr) {
+        console.error('listUsers failed:', listErr.message)
+        return json({ error: 'Failed to locate existing account. Please contact support.' }, 500)
+      }
+
+      const existing = usersData.users.find(
+        (u) => u.email?.toLowerCase() === invite.email.toLowerCase()
+      )
+
+      if (!existing) {
+        console.error('User not found after alreadyExists error for:', invite.email)
+        return json({ error: 'Account lookup failed. Please contact support.' }, 500)
+      }
+
+      // Update their password to what they entered on the invite form
+      const { error: updateErr } = await supabase.auth.admin.updateUserById(existing.id, {
+        password,
+      })
+
+      if (updateErr) {
+        console.error('updateUserById failed:', updateErr.message)
+        return json({ error: 'Failed to update account. Please contact support.' }, 500)
+      }
+
+      userId = existing.id
+    } else {
+      userId = authData.user.id
     }
 
-    // Create admin record
-    const { error: adminErr } = await supabase.from('admin_users').insert({
-      user_id: authData.user.id,
-      university: invite.university,
-      is_active: true,
-      is_super_admin: false,
-    })
+    // Check if admin record already exists for this user + university
+    const { data: existingAdmin } = await supabase
+      .from('admin_users')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('university', invite.university)
+      .single()
 
-    if (adminErr) {
-      await supabase.auth.admin.deleteUser(authData.user.id)
-      return json({ error: 'Failed to create admin record.' }, 500)
+    if (!existingAdmin) {
+      const { error: adminErr } = await supabase.from('admin_users').insert({
+        user_id: userId,
+        university: invite.university,
+        is_active: true,
+        is_super_admin: false,
+      })
+
+      if (adminErr) {
+        console.error('admin_users insert failed:', adminErr.message)
+        // Only roll back if we created a brand-new auth user
+        if (!authErr) {
+          await supabase.auth.admin.deleteUser(userId)
+        }
+        return json({ error: 'Failed to create admin record.' }, 500)
+      }
     }
 
     // Mark invite used
@@ -73,7 +133,8 @@ serve(async (req) => {
       .eq('id', invite.id)
 
     return json({ success: true })
-  } catch {
+  } catch (err) {
+    console.error('Unhandled error in redeem-invite:', err)
     return json({ error: 'Internal error.' }, 500)
   }
 })

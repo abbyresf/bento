@@ -33,7 +33,17 @@ export default function PulseJoin({ token }) {
       const { data, error: fnErr } = await supabase.functions.invoke('redeem-invite', {
         body: { token, password },
       });
-      if (fnErr || data?.error) throw new Error(data?.error ?? fnErr?.message ?? 'Something went wrong.');
+      if (fnErr) {
+        // supabase-js wraps non-2xx responses as FunctionsHttpError.
+        // The actual message lives in fnErr.context (the raw Response).
+        let msg = 'Something went wrong. Please try again.';
+        try {
+          const body = await fnErr.context?.json?.();
+          if (body?.error) msg = body.error;
+        } catch {}
+        throw new Error(msg);
+      }
+      if (data?.error) throw new Error(data.error);
       setDone(true);
     } catch (err) {
       setError(err.message);
