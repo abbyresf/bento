@@ -161,9 +161,11 @@ async function getUserIdsForUniversity(university) {
 }
 
 export async function getInvites() {
+  const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const { data, error } = await supabase
     .from('pulse_invites')
     .select('id, email, university, used_at, expires_at, created_at')
+    .or(`used_at.not.is.null,expires_at.gte.${cutoff}`)
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data ?? [];
