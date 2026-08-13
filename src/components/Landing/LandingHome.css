@@ -799,40 +799,229 @@
 }
 
 /* ═══════════════════════════════════════════
-   UNIVERSITIES
+   WAITLIST
 ═══════════════════════════════════════════ */
-.lh-uni {
-  background: #f3f7ff;
-  padding: 2rem 1.25rem;
+.lh-waitlist {
+  background: linear-gradient(180deg, var(--cream) 0%, #fef4e8 100%);
+  padding: 3.5rem 1.5rem 4rem;
+  border-top: 1px solid var(--border);
+}
+
+.lh-waitlist-inner {
+  max-width: 480px;
+  margin: 0 auto;
   text-align: center;
 }
 
-.lh-uni-inner { max-width: 560px; margin: 0 auto; }
+.lh-waitlist-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--orange);
+  margin: 0 0 0.6rem;
+}
 
-.lh-uni-text {
-  font-size: 0.85rem;
+.lh-waitlist-hed {
+  font-family: var(--ff-disp);
+  font-size: clamp(1.7rem, 6vw, 2.4rem);
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--navy);
+  margin: 0 0 0.75rem;
+}
+
+.lh-waitlist-sub {
+  font-size: 0.88rem;
   line-height: 1.65;
   color: var(--muted);
-  margin: 0 0 1.25rem;
+  margin: 0 0 2rem;
+}
+
+.lh-waitlist-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.lh-waitlist-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.lh-waitlist-input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-family: var(--ff-body);
+  font-size: 0.92rem;
+  color: var(--navy);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.lh-waitlist-input::placeholder { color: var(--muted); opacity: 0.6; }
+
+.lh-waitlist-input:focus {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px rgba(253,143,42,0.12);
+}
+
+.lh-waitlist-input:disabled { opacity: 0.5; }
+
+.lh-waitlist-btn {
+  width: 100%;
+  padding: 0.95rem 1.5rem;
+  background: var(--orange);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-family: var(--ff-body);
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 20px rgba(253,143,42,0.3);
+  min-height: 50px;
+}
+
+.lh-waitlist-btn:hover:not(:disabled) {
+  background: #e87f20;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 28px rgba(253,143,42,0.38);
+}
+
+.lh-waitlist-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.lh-waitlist-error {
+  font-size: 0.8rem;
+  color: #dc2626;
+  margin: 0;
+}
+
+.lh-waitlist-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem 0 1rem;
+}
+
+.lh-waitlist-check {
+  font-size: 2rem;
+  color: var(--green);
+}
+
+.lh-waitlist-success-hed {
+  font-family: var(--ff-disp);
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--navy);
+  margin: 0;
+}
+
+.lh-waitlist-success-sub {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* ═══════════════════════════════════════════
+   UNIVERSITIES
+═══════════════════════════════════════════ */
+.lh-uni {
+  background: linear-gradient(135deg, #0f1f35 0%, #1a2f4a 50%, #0e2340 100%);
+  padding: 4rem 1.5rem 4.5rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.lh-uni::before {
+  content: '';
+  position: absolute;
+  top: -120px; right: -80px;
+  width: 360px; height: 360px;
+  border-radius: 50%;
+  background: rgba(43,151,253,0.10);
+  filter: blur(60px);
+  pointer-events: none;
+}
+
+.lh-uni::after {
+  content: '';
+  position: absolute;
+  bottom: -80px; left: -60px;
+  width: 280px; height: 280px;
+  border-radius: 50%;
+  background: rgba(119,190,61,0.07);
+  filter: blur(50px);
+  pointer-events: none;
+}
+
+.lh-uni-inner {
+  max-width: 560px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.lh-uni-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--blue);
+  margin: 0 0 0.75rem;
+}
+
+.lh-uni-hed {
+  font-family: var(--ff-disp);
+  font-size: clamp(1.9rem, 7vw, 2.8rem);
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: white;
+  margin: 0 0 1rem;
+  text-wrap: balance;
+}
+
+.lh-uni-text {
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.5);
+  margin: 0 0 2rem;
 }
 
 .lh-uni-btn {
-  background: none;
-  border: 1.5px solid var(--blue);
-  color: var(--blue);
-  padding: 0.8rem 1.5rem;
-  border-radius: 50px;
-  font-family: var(--ff-body);
-  font-size: 0.88rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  min-height: 48px;
   display: inline-flex;
   align-items: center;
+  gap: 8px;
+  background: var(--blue);
+  border: none;
+  color: white;
+  padding: 1rem 1.75rem;
+  border-radius: 50px;
+  font-family: var(--ff-body);
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+  min-height: 52px;
+  box-shadow: 0 4px 20px rgba(43,151,253,0.35);
 }
 
-.lh-uni-btn:hover { background: var(--blue); color: white; }
+.lh-uni-btn:hover {
+  background: #1a87f0;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 28px rgba(43,151,253,0.45);
+}
 
 /* ═══════════════════════════════════════════
    ANIMATIONS

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { submitWaitlistEntry } from '../../lib/db';
 import './LandingHome.css';
 
 /* ── SVG Icon Library ── */
@@ -125,14 +126,6 @@ const STEPS = [
   },
 ];
 
-const TESTIMONIALS = [
-  { text: "I've been hitting my protein goal every single day this semester. I genuinely didn't think that was possible at a dining hall.", name: 'M.', role: 'Junior, Pre-Med', color: '#FD8F2A' },
-  { text: "My nut allergy means I can't trust most apps. Bento has been consistently right. That is rare.", name: 'J.', role: 'Sophomore, CS', color: '#77BE3D' },
-  { text: "I gained 12 pounds of muscle this semester. My dining hall is the same. Bento is the difference.", name: 'A.', role: 'Senior, Track', color: '#2B97FD' },
-  { text: "Setup took two minutes. I haven't thought about what to eat since. Exactly what I needed.", name: 'R.', role: 'Freshman', color: '#FD8F2A' },
-  { text: "The dietary restriction filter is the best I've used anywhere. Vegan options come up immediately.", name: 'P.', role: 'Junior, Nutrition', color: '#77BE3D' },
-  { text: "I'm an athlete with very specific macro targets. Bento hits them at my dining hall every day.", name: 'K.', role: 'Sophomore, Swimming', color: '#2B97FD' },
-];
 
 const STATS = [
   { icon: 'calendar', label: 'Live menu every morning', sublabel: 'Your actual dining hall, not a recipe database', color: 'orange' },
@@ -192,6 +185,70 @@ function ShieldIcon() {
   );
 }
 
+/* ── Waitlist form ── */
+function WaitlistForm() {
+  const [school, setSchool] = useState('');
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState(null); // null | 'loading' | 'success' | 'error'
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!school.trim() || !email.trim()) return;
+    setStatus('loading');
+    try {
+      await submitWaitlistEntry(email, school);
+      setStatus('success');
+    } catch {
+      setStatus('error');
+    }
+  };
+
+  if (status === 'success') {
+    return (
+      <div className="lh-waitlist-success">
+        <span className="lh-waitlist-check" aria-hidden="true">✓</span>
+        <p className="lh-waitlist-success-hed">You're on the list.</p>
+        <p className="lh-waitlist-success-sub">We'll reach out when Bento comes to {school}.</p>
+      </div>
+    );
+  }
+
+  return (
+    <form className="lh-waitlist-form" onSubmit={handleSubmit} noValidate>
+      <div className="lh-waitlist-fields">
+        <input
+          className="lh-waitlist-input"
+          type="text"
+          placeholder="Your school"
+          value={school}
+          onChange={e => setSchool(e.target.value)}
+          required
+          disabled={status === 'loading'}
+        />
+        <input
+          className="lh-waitlist-input"
+          type="email"
+          placeholder="Your email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
+          disabled={status === 'loading'}
+        />
+      </div>
+      {status === 'error' && (
+        <p className="lh-waitlist-error">Something went wrong. Try again.</p>
+      )}
+      <button
+        className="lh-waitlist-btn"
+        type="submit"
+        disabled={status === 'loading' || !school.trim() || !email.trim()}
+      >
+        {status === 'loading' ? 'Submitting…' : 'Join the waitlist'}
+      </button>
+    </form>
+  );
+}
+
 /* ── Main component ── */
 export default function LandingHome({ onGetStarted, onGoUniversities }) {
   const glowRef = useRef(null);
@@ -223,19 +280,7 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
         <div className="lh-hero-inner">
           <div className="lh-hero-copy-top">
             <div className="lh-social-row">
-              <div className="lh-avatars">
-                {['M', 'J', 'A', 'K'].map((l, i) => (
-                  <div key={l} className={`lh-avatar lh-avatar--${i}`}>{l}</div>
-                ))}
-              </div>
-              <div className="lh-rating">
-                <span className="lh-stars-row">
-                  {[1,2,3,4,5].map(n => (
-                    <span key={n} className="lh-star-icon">{Icon.star}</span>
-                  ))}
-                </span>
-                <span className="lh-rating-sub">Students at Brandeis are eating smarter</span>
-              </div>
+              <span className="lh-rating-sub">Free for Brandeis &amp; Tufts students</span>
             </div>
 
             <h1 className="lh-hero-headline">
@@ -346,34 +391,6 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section className="lh-testimonials">
-        <div className="lh-testimonials-hd">
-          <p className="lh-eyebrow">What students say</p>
-          <h2 className="lh-section-heading">Straight from<br />students.</h2>
-        </div>
-        <div className="lh-marquee-wrap" aria-hidden="true">
-          <div className="lh-marquee">
-            {[...TESTIMONIALS, ...TESTIMONIALS].map((t, i) => (
-              <div key={i} className="lh-tcard">
-                <div className="lh-tcard-stars">
-                  {[1,2,3,4,5].map(n => (
-                    <span key={n} className="lh-tcard-star">{Icon.star}</span>
-                  ))}
-                </div>
-                <p className="lh-tcard-text">"{t.text}"</p>
-                <div className="lh-tcard-attr">
-                  <div className="lh-tcard-av" style={{ '--av': t.color }}>{t.name}</div>
-                  <div>
-                    <div className="lh-tcard-name">{t.name}</div>
-                    <div className="lh-tcard-role">{t.role}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* TRUST */}
       <div className="lh-trust">
@@ -393,6 +410,18 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
           <div className="lh-faq-list">
             {HOME_FAQS.map(item => <HomeFAQItem key={item.q} {...item} />)}
           </div>
+        </div>
+      </section>
+
+      {/* WAITLIST */}
+      <section className="lh-waitlist">
+        <div className="lh-waitlist-inner">
+          <p className="lh-waitlist-eyebrow">Don't see your school?</p>
+          <h2 className="lh-waitlist-hed">Get early access.</h2>
+          <p className="lh-waitlist-sub">
+            We're expanding to new campuses. Drop your email and we'll reach out when Bento comes to your dining hall.
+          </p>
+          <WaitlistForm />
         </div>
       </section>
 
@@ -420,12 +449,14 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
       {/* UNIVERSITIES */}
       <section className="lh-uni">
         <div className="lh-uni-inner">
+          <p className="lh-uni-eyebrow">For dining administrators</p>
+          <h2 className="lh-uni-hed">Turn student demand<br />into dining decisions.</h2>
           <p className="lh-uni-text">
-            Are you a dining administrator? Bento gives students a better dining experience
-            and gives your team real data on what they actually want.
+            Bento Pulse gives your team real-time insight into what students actually want —
+            dietary needs, station feedback, and gaps in the current menu. No surveys. No guesswork.
           </p>
           <button className="lh-uni-btn" onClick={onGoUniversities}>
-            Bento for Universities
+            Learn about Bento for Universities {Icon.arrow}
           </button>
         </div>
       </section>

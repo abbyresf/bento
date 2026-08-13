@@ -613,6 +613,13 @@ export async function deleteAccount() {
   await supabase.rpc('delete_user');
 }
 
+export async function submitWaitlistEntry(email, universityName) {
+  const { error } = await supabase
+    .from('waitlist_submissions')
+    .insert({ email: email.trim(), university_name: universityName.trim() });
+  if (error) throw error;
+}
+
 export async function submitUniversityRequest({ university, email, name, referral, notify }) {
   const id = await uid().catch(() => null);
   const { error } = await supabase

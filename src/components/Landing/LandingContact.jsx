@@ -43,9 +43,10 @@ export default function LandingContact() {
   return (
     <div className="landing-contact">
       <div className="contact-inner">
-        <h1 className="contact-heading">Contact Us</h1>
+        <p className="contact-eyebrow">Get in touch</p>
+        <h1 className="contact-heading">We'd love to<br />hear from you.</h1>
         <p className="contact-sub">
-          Have a question, a bug report, or just want to say hi? We'd love to hear from you.
+          Question, bug report, or feature idea — send it our way.
         </p>
 
         {status === 'success' ? (

@@ -811,7 +811,53 @@
   margin-top: 0.25rem;
 }
 
-.landing-universities .lpu-form-submit:hover { opacity: 0.88; }
+.landing-universities .lpu-form-submit:hover:not(:disabled) { opacity: 0.88; }
+.landing-universities .lpu-form-submit:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.landing-universities .lpu-consult-error {
+  font-size: 0.8rem;
+  color: #ff8888;
+  background: rgba(255,100,100,0.08);
+  border: 1px solid rgba(255,100,100,0.2);
+  border-radius: 8px;
+  padding: 0.6rem 0.875rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.landing-universities .lpu-consult-error a {
+  color: #ff9999;
+  font-weight: 600;
+}
+
+.landing-universities .lpu-consult-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1rem;
+  text-align: center;
+}
+
+.landing-universities .lpu-consult-check {
+  font-size: 2.25rem;
+  color: var(--lpu-green);
+}
+
+.landing-universities .lpu-consult-success-hed {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--lpu-text);
+  margin: 0;
+}
+
+.landing-universities .lpu-consult-success-sub {
+  font-size: 0.85rem;
+  color: var(--lpu-muted);
+  margin: 0;
+  max-width: 320px;
+  line-height: 1.6;
+}
 
 .landing-universities .lpu-consult-note {
   margin-top: 1rem;

@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import emailjs from '@emailjs/browser';
 import './LandingUniversities.css';
 
 // ── Static chart data ─────────────────────────────────────────────────────────
@@ -273,16 +275,33 @@ const FEATURES = [
 ];
 
 export default function LandingUniversities({ onContact }) {
-  const handleConsultSubmit = (e) => {
+  const [consultStatus, setConsultStatus] = useState('idle'); // idle | sending | success | error
+
+  const handleConsultSubmit = async (e) => {
     e.preventDefault();
     const data = new FormData(e.target);
     const name        = data.get('name') || '';
     const institution = data.get('institution') || '';
     const email       = data.get('email') || '';
     const role        = data.get('role') || '';
-    const subject = encodeURIComponent(`Bento Pulse Consultation Request${institution ? ' — ' + institution : ''}`);
-    const body    = encodeURIComponent(`Name: ${name}\nInstitution: ${institution}\nEmail: ${email}\nRole: ${role}`);
-    window.location.href = `mailto:bentodining@gmail.com?subject=${subject}&body=${body}`;
+    setConsultStatus('sending');
+    try {
+      await emailjs.send(
+        'service_0fhib6k',
+        'template_4r7zn6c',
+        {
+          from_name: `${name}${institution ? ' — ' + institution : ''}`,
+          reply_to:  email,
+          subject:   `Consultation Request${institution ? ' — ' + institution : ''}`,
+          message:   `Name: ${name}\nInstitution: ${institution}\nRole: ${role}\nEmail: ${email}`,
+        },
+        { publicKey: 'urTn8G5d8khZF0NfZ' },
+      );
+      setConsultStatus('success');
+      e.target.reset();
+    } catch {
+      setConsultStatus('error');
+    }
   };
 
   const scrollToForm = () => {
@@ -445,30 +464,45 @@ export default function LandingUniversities({ onContact }) {
             <span className="lpu-cmeta-dot" />
             <span>Free to explore</span>
           </div>
-          <form className="lpu-consult-form" onSubmit={handleConsultSubmit}>
-            <div className="lpu-form-row">
-              <div className="lpu-form-field">
-                <label className="lpu-form-label">Your name</label>
-                <input className="lpu-form-input" name="name" type="text" placeholder="John Doe" />
-              </div>
-              <div className="lpu-form-field">
-                <label className="lpu-form-label">Institution</label>
-                <input className="lpu-form-input" name="institution" type="text" placeholder="State University" />
-              </div>
+          {consultStatus === 'success' ? (
+            <div className="lpu-consult-success">
+              <span className="lpu-consult-check">✓</span>
+              <p className="lpu-consult-success-hed">Request received.</p>
+              <p className="lpu-consult-success-sub">We'll reach out within one business day to find a time that works.</p>
             </div>
-            <div className="lpu-form-row">
-              <div className="lpu-form-field">
-                <label className="lpu-form-label">Work email</label>
-                <input className="lpu-form-input" name="email" type="email" placeholder="john.doe@university.edu" />
-              </div>
-              <div className="lpu-form-field">
-                <label className="lpu-form-label">Your role</label>
-                <input className="lpu-form-input" name="role" type="text" placeholder="Director of Dining Services" />
-              </div>
-            </div>
-            <button className="lpu-form-submit" type="submit">Request a free consultation</button>
-          </form>
-          <p className="lpu-consult-note">We respond within one business day to find a time that works.</p>
+          ) : (
+            <>
+              <form className="lpu-consult-form" onSubmit={handleConsultSubmit}>
+                <div className="lpu-form-row">
+                  <div className="lpu-form-field">
+                    <label className="lpu-form-label">Your name</label>
+                    <input className="lpu-form-input" name="name" type="text" placeholder="Jane Smith" required />
+                  </div>
+                  <div className="lpu-form-field">
+                    <label className="lpu-form-label">Institution</label>
+                    <input className="lpu-form-input" name="institution" type="text" placeholder="State University" required />
+                  </div>
+                </div>
+                <div className="lpu-form-row">
+                  <div className="lpu-form-field">
+                    <label className="lpu-form-label">Work email</label>
+                    <input className="lpu-form-input" name="email" type="email" placeholder="jane@university.edu" required />
+                  </div>
+                  <div className="lpu-form-field">
+                    <label className="lpu-form-label">Your role</label>
+                    <input className="lpu-form-input" name="role" type="text" placeholder="Director of Dining Services" />
+                  </div>
+                </div>
+                {consultStatus === 'error' && (
+                  <p className="lpu-consult-error">Something went wrong. Email us directly at <a href="mailto:bentodining@gmail.com">bentodining@gmail.com</a>.</p>
+                )}
+                <button className="lpu-form-submit" type="submit" disabled={consultStatus === 'sending'}>
+                  {consultStatus === 'sending' ? 'Sending…' : 'Request a free consultation'}
+                </button>
+              </form>
+              <p className="lpu-consult-note">We respond within one business day to find a time that works.</p>
+            </>
+          )}
         </div>
       </section>
 
