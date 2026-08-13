@@ -65,7 +65,6 @@ function App() {
   const isAppRoute  = location.pathname.startsWith('/app');
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
       if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true);
       setSession(s ?? null);
