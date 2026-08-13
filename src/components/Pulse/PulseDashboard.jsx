@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import emailjs from '@emailjs/browser';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   PieChart, Pie, Cell, Legend,
@@ -264,7 +265,21 @@ function InviteModal({ defaultUniversity, onClose }) {
     setError(null); setSentTo(null); setSubmitting(true);
     try {
       const result = await sendInvite(email, defaultUniversity);
-      setSentTo({ email, emailSent: result.emailSent, link: result.link });
+      let emailSent = false;
+      try {
+        await emailjs.send(
+          'service_0fhib6k',
+          'template_g9i3vw6',
+          {
+            email,
+            university: defaultUniversity,
+            invite_link: result.link,
+          },
+          { publicKey: 'urTn8G5d8khZF0NfZ' },
+        );
+        emailSent = true;
+      } catch {}
+      setSentTo({ email, emailSent, link: result.link });
       setEmail('');
       getInvites().then(setInvites).catch(() => {});
     } catch (err) {
