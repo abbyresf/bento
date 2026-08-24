@@ -65,7 +65,17 @@ function App() {
   const isAppRoute  = location.pathname.startsWith('/app');
 
   useEffect(() => {
+    let settled = false;
+
+    // Seed initial session and trigger PKCE code exchange after OAuth redirect.
+    // onAuthStateChange overwrites this once it fires — settled flag prevents
+    // a late-resolving getSession() from clobbering a subsequent SIGNED_OUT event.
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      if (!settled) setSession(s ?? null);
+    });
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
+      settled = true;
       if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true);
       setSession(s ?? null);
     });

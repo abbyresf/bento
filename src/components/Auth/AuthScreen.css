@@ -182,6 +182,68 @@
   margin-top: -0.25rem;
 }
 
+.auth-password-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-password-wrap input {
+  width: 100%;
+  padding-right: 3.5rem;
+}
+
+.auth-show-pw {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.auth-show-pw:hover {
+  color: #374151;
+}
+
+.auth-strength {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.4rem;
+}
+
+.auth-strength span {
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.auth-strength-bar {
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.auth-strength-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.25s, background 0.25s;
+}
+
+.auth-strength--weak span { color: #dc2626; }
+.auth-strength--weak .auth-strength-fill { width: 33%; background: #dc2626; }
+
+.auth-strength--fair span { color: #d97706; }
+.auth-strength--fair .auth-strength-fill { width: 66%; background: #d97706; }
+
+.auth-strength--strong span { color: #16a34a; }
+.auth-strength--strong .auth-strength-fill { width: 100%; background: #16a34a; }
+
 .auth-confirm h2 {
   font-size: 1.2rem;
   font-weight: 800;

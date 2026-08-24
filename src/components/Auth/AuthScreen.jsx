@@ -3,20 +3,52 @@ import { useNavigate } from 'react-router-dom';
 import { signIn, signUp, signInWithGoogle, resetPasswordForEmail } from '../../lib/db';
 import './AuthScreen.css';
 
+function passwordStrength(pw) {
+  if (!pw) return null;
+  if (pw.length < 6) return { level: 'weak', label: 'Too short — minimum 6 characters' };
+  const has_upper = /[A-Z]/.test(pw);
+  const has_lower = /[a-z]/.test(pw);
+  const has_digit = /[0-9]/.test(pw);
+  const has_symbol = /[^A-Za-z0-9]/.test(pw);
+  const score = [has_upper, has_lower, has_digit, has_symbol].filter(Boolean).length;
+  if (pw.length >= 12 && score >= 3) return { level: 'strong', label: 'Strong password' };
+  if (pw.length >= 8 && score >= 2) return { level: 'fair', label: 'Fair — add numbers or symbols to strengthen' };
+  return { level: 'weak', label: 'Weak — use a mix of letters, numbers, and symbols' };
+}
+
+function friendlyAuthError(msg) {
+  if (!msg) return 'Something went wrong. Please try again.';
+  const m = msg.toLowerCase();
+  if (m.includes('invalid login') || m.includes('invalid credentials')) return 'Incorrect email or password.';
+  if (m.includes('email not confirmed')) return 'Please confirm your email first. Check your inbox.';
+  if (m.includes('user already registered') || m.includes('already been registered')) return 'An account with this email already exists. Try logging in.';
+  if (m.includes('password should be')) return 'Password must be at least 6 characters.';
+  if (m.includes('unable to validate') || m.includes('provider')) return 'Google sign-in failed. Please try again or use email instead.';
+  if (m.includes('network') || m.includes('fetch')) return 'Network error. Check your connection and try again.';
+  return 'Something went wrong. Please try again.';
+}
+
 export default function AuthScreen({ onAuth, initialMode = 'login' }) {
   const navigate = useNavigate();
   const [mode, setMode] = useState(initialMode); // 'login' | 'signup' | 'forgot'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState(null);
   const [confirmSent, setConfirmSent] = useState(false);
   const [resetSent, setResetSent] = useState(false);
 
+  const strength = mode === 'signup' ? passwordStrength(password) : null;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    if (mode === 'signup' && strength?.level === 'weak') {
+      setError(strength.label);
+      return;
+    }
     setLoading(true);
     try {
       if (mode === 'signup') {
@@ -27,7 +59,7 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
         onAuth();
       }
     } catch (err) {
-      setError(err.message);
+      setError(friendlyAuthError(err.message));
     } finally {
       setLoading(false);
     }
@@ -41,7 +73,7 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
       await resetPasswordForEmail(email);
       setResetSent(true);
     } catch (err) {
-      setError(err.message);
+      setError(friendlyAuthError(err.message));
     } finally {
       setLoading(false);
     }
@@ -54,7 +86,7 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
       await signInWithGoogle();
       // OAuth redirects away — no further action needed here
     } catch (err) {
-      setError(err.message);
+      setError(friendlyAuthError(err.message));
       setGoogleLoading(false);
     }
   };
@@ -143,14 +175,32 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
               </div>
               <div className="auth-field">
                 <label>Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={mode === 'signup' ? 'At least 6 characters' : ''}
-                  required
-                  autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                />
+                <div className="auth-password-wrap">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder={mode === 'signup' ? 'At least 8 characters recommended' : ''}
+                    required
+                    autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                  />
+                  <button
+                    type="button"
+                    className="auth-show-pw"
+                    onClick={() => setShowPassword(v => !v)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+                {mode === 'signup' && strength && (
+                  <div className={`auth-strength auth-strength--${strength.level}`}>
+                    <div className="auth-strength-bar">
+                      <div className="auth-strength-fill" />
+                    </div>
+                    <span>{strength.label}</span>
+                  </div>
+                )}
               </div>
 
               {error && <p className="auth-error">{error}</p>}
