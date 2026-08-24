@@ -466,7 +466,7 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
   return (
     <div className="onboarding-wizard">
       <div className="wizard-header">
-        <img src="/logo.png" alt="Bento" className="wizard-logo-img" />
+        <img src="/logo-cropped.png" alt="Bento" className="wizard-logo-img" />
         <p className="subtitle">Eat well. Every meal.</p>
       </div>
 

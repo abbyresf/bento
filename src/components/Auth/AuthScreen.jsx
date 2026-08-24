@@ -180,7 +180,6 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder={mode === 'signup' ? 'At least 8 characters recommended' : ''}
                     required
                     autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                   />
@@ -193,6 +192,9 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
                     {showPassword ? 'Hide' : 'Show'}
                   </button>
                 </div>
+                {mode === 'signup' && !strength && (
+                  <p className="auth-pw-hint">At least 8 characters recommended</p>
+                )}
                 {mode === 'signup' && strength && (
                   <div className={`auth-strength auth-strength--${strength.level}`}>
                     <div className="auth-strength-bar">

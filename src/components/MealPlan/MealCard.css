@@ -22,8 +22,12 @@
   border-left-color: #243b55;
 }
 
-.meal-card.past {
+.meal-card.past:not(.confirmed) {
   opacity: 0.65;
+}
+
+.meal-card.past.confirmed {
+  opacity: 1;
 }
 
 .meal-card.confirmed {

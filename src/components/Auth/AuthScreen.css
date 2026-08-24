@@ -210,6 +210,12 @@
   color: #374151;
 }
 
+.auth-pw-hint {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin: 0.3rem 0 0;
+}
+
 .auth-strength {
   display: flex;
   flex-direction: column;

@@ -168,7 +168,7 @@ export default function MealCard({
           </div>
           {(isPast || isConfirmed) && (
             <div className="meal-badges-row">
-              {isPast && <span className="past-badge">Past</span>}
+              {isPast && !isConfirmed && <span className="past-badge">Past</span>}
               {isConfirmed && <span className="confirmed-badge">Confirmed</span>}
               {isConfirmed && (
                 <button className="undo-btn" onClick={e => { e.stopPropagation(); setCollapsed(false); onUndo(); }}>Undo</button>
@@ -184,9 +184,11 @@ export default function MealCard({
             openByLocation={openByLocation}
             hasMenuByLocation={hasMenuByLocation}
           />
-          <svg className={`collapse-chevron ${collapsed ? '' : 'open'}`} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
+          {!isConfirmed && (
+            <svg className={`collapse-chevron ${collapsed ? '' : 'open'}`} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          )}
         </div>
       </div>
 
