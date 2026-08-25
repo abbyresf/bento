@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import './PulseLogin.css';
 
-export default function PulseLogin({ onAuth }) {
+export default function PulseLogin({ onAuth, denied }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -26,10 +26,24 @@ export default function PulseLogin({ onAuth }) {
   return (
     <div className="pulse-login">
       <div className="pulse-login-card">
-        <div className="pulse-login-brand">
-          <img src="/bentopulse.png" alt="Bento Pulse" className="pulse-login-logo" />
+
+        <div className="pulse-login-pill">
+          <img src="/bentopulse.png" alt="Bento Pulse" className="pulse-login-pill-logo" />
         </div>
-        <p className="pulse-login-sub">University dining intelligence.</p>
+
+        <h1 className="pulse-login-headline">
+          Your system knows what's served.{' '}
+          <span className="pulse-login-accent">Bento knows what's eaten.</span>
+        </h1>
+
+        <p className="pulse-login-sub">
+          Real-time dining intelligence for your university.
+        </p>
+
+        {denied && (
+          <p className="pulse-login-error">Your account doesn't have admin access.</p>
+        )}
+
         <form onSubmit={handleSubmit} className="pulse-login-form">
           <div className="pulse-login-field">
             <label>Email</label>
