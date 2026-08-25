@@ -1,3 +1,4 @@
+/* eslint-env node */
 // Vercel serverless function — proxies requests to brandeishospitality.com
 // Checks a shared Supabase menu_cache table before hitting Brandeis so the
 // upstream only gets scraped once per (slug, date) window.

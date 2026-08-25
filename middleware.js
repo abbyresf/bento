@@ -33,7 +33,7 @@ export default function middleware(req) {
            ?? req.headers.get('x-real-ip')
            ?? 'unknown';
 
-  const { ok, remaining } = check(ip);
+  const { ok } = check(ip);
 
   if (!ok) {
     return new Response(

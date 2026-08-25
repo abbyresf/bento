@@ -1,3 +1,4 @@
+/* eslint-env node */
 // Vercel serverless function — proxies Nutrislice requests for Tufts dining.
 // Aggregates breakfast/lunch/dinner for the requested date into a single JSON response.
 //

@@ -31,13 +31,7 @@ function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const joinMatch = location.pathname.match(/^\/admin\/join\/([0-9a-f-]+)$/i);
-  if (joinMatch) return <PulseJoin token={joinMatch[1]} />;
-
-  if (location.pathname.startsWith('/admin')) {
-    return <PulseApp />;
-  }
-
+  // All hooks must be called unconditionally before any early returns
   const [session, setSession] = useState(undefined);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(null);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(null);
@@ -58,22 +52,14 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showSplash, setShowSplash] = useState(() => {
     const last = parseInt(localStorage.getItem('bento_splash_ts') || '0', 10);
-    return Date.now() - last > 3 * 60 * 60 * 1000; // every 3 hours
+    return Date.now() - last > 3 * 60 * 60 * 1000;
   });
-
-  const isAuthRoute = location.pathname === '/login' || location.pathname === '/signup';
-  const isAppRoute  = location.pathname.startsWith('/app');
 
   useEffect(() => {
     let settled = false;
-
-    // Seed initial session and trigger PKCE code exchange after OAuth redirect.
-    // onAuthStateChange overwrites this once it fires — settled flag prevents
-    // a late-resolving getSession() from clobbering a subsequent SIGNED_OUT event.
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       if (!settled) setSession(s ?? null);
     });
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
       settled = true;
       if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true);
@@ -82,14 +68,12 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Capture the install prompt early — it fires before the user reaches the meal plan
   useEffect(() => {
     const handler = (e) => { e.preventDefault(); setDeferredInstallPrompt(e); };
     window.addEventListener('beforeinstallprompt', handler);
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
-  // Show install prompt 2s after landing on the meal plan (once, if not already prompted/installed)
   useEffect(() => {
     const isPreview = location.search.includes('preview_install');
     if (!hasCompletedOnboarding || !hasAcceptedTerms) return;
@@ -100,9 +84,6 @@ function App() {
     return () => clearTimeout(t);
   }, [hasCompletedOnboarding, hasAcceptedTerms, deferredInstallPrompt]);
 
-  // Show tutorial when running as installed PWA and tutorial hasn't been completed.
-  // isStandalone() is the reliable signal on iOS — the browser closes when the user
-  // adds to home screen, so bento_install_prompted is never written in that flow.
   useEffect(() => {
     if (!hasCompletedOnboarding || !hasAcceptedTerms) return;
     if (localStorage.getItem('bento_tutorial_done') === '1') return;
@@ -115,6 +96,12 @@ function App() {
     isOnboardingComplete().then(setHasCompletedOnboarding);
     isTermsAccepted().then(setHasAcceptedTerms);
   }, [session]);
+
+  // ── Computed values & handlers ────────────────────────────────────────────────
+
+  const joinMatch = location.pathname.match(/^\/admin\/join\/([0-9a-f-]+)$/i);
+  const isAuthRoute = location.pathname === '/login' || location.pathname === '/signup';
+  const isAppRoute  = location.pathname.startsWith('/app');
 
   const handleOnboardingComplete = () => setHasCompletedOnboarding(true);
 
@@ -148,7 +135,13 @@ function App() {
     }
   };
 
-  // ── Public routes (/login, /signup, and everything that isn't /app) ──────────
+  const handleGoContact = () => { setLandingInitialTab('contact'); setShowLanding(true); };
+  const handleGoRequestSchool = () => { setLandingInitialTab('request'); setShowLanding(true); };
+
+  // ── Route branching (after all hooks) ────────────────────────────────────────
+
+  if (joinMatch) return <PulseJoin token={joinMatch[1]} />;
+  if (location.pathname.startsWith('/admin')) return <PulseApp />;
 
   if (isAuthRoute) {
     if (session) return <Navigate to="/app" replace />;
@@ -162,7 +155,7 @@ function App() {
   }
 
   if (!isAppRoute) {
-    if (session === undefined) return null; // wait for auth before deciding
+    if (session === undefined) return null;
     if (session) return <Navigate to="/app" replace />;
     return <LandingPage onGetStarted={() => navigate('/login')} />;
   }
@@ -215,9 +208,6 @@ function App() {
     return <LandingPage onGetStarted={() => setShowLanding(false)} initialTab={landingInitialTab} />;
   }
 
-  const handleGoContact = () => { setLandingInitialTab('contact'); setShowLanding(true); };
-  const handleGoRequestSchool = () => { setLandingInitialTab('request'); setShowLanding(true); };
-
   if (!hasCompletedOnboarding) {
     return <OnboardingWizard onComplete={handleOnboardingComplete} onGoContact={handleGoContact} onRequestSchool={handleGoRequestSchool} />;
   }
@@ -248,7 +238,6 @@ function App() {
           onTabChange={(tab) => setActiveTab(tab === activeTab && tab !== 'today' ? 'today' : tab)}
         />
 
-        {/* Settings + help buttons — top-right, today tab only */}
         {activeTab === 'today' && showHelpBtn && !showTutorial && !showInstallPrompt && (
           <button
             className="help-btn"
@@ -308,12 +297,6 @@ function App() {
         )}
 
       </div>
-      {showSplash && (
-        <SplashScreen onDone={() => {
-          localStorage.setItem('bento_splash_ts', Date.now().toString());
-          setShowSplash(false);
-        }} />
-      )}
     </RatingsProvider>
   );
 }
