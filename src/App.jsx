@@ -154,6 +154,7 @@ function App() {
     if (session) return <Navigate to="/app" replace />;
     return (
       <AuthScreen
+        key={location.pathname}
         initialMode={location.pathname === '/signup' ? 'signup' : 'login'}
         onAuth={() => navigate('/app')}
       />
