@@ -23,7 +23,7 @@ function writePlanCache(date, meals) {
 
 import { hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
 import { fetchDiningMenu, getUniversityConfig } from '../../services/menuFetcher';
-import { getUserProfile, getNutritionTargets, getDietaryRestrictions, getRecentItemIds, addMealToHistory, removeMealFromHistory, setCachedMenu, getCachedMenu, incrementStreak, incrementStreakForDate, getStreak, getConfirmedMealsForDate, recordDiningAvailability } from '../../lib/db';
+import { getUserProfile, getNutritionTargets, getDietaryRestrictions, getRecentItemIds, addMealToHistory, removeMealFromHistory, setCachedMenu, getCachedMenu, getCachedMenuAge, incrementStreak, incrementStreakForDate, getStreak, getConfirmedMealsForDate, recordDiningAvailability } from '../../lib/db';
 import { useRatings } from '../../context/RatingsContext';
 import { getNewBadge } from '../../data/badges';
 import { optimizeDay, findAlternatives, findRecommendedAdditions } from '../../utils/mealOptimizer';
@@ -115,10 +115,8 @@ export default function MealPlan({ settingsVersion = 0 }) {
     if (!forceRefresh) {
       cachedMenuData = getCachedMenu(uni);
       if (cachedMenuData) {
-        try {
-          const raw = JSON.parse(localStorage.getItem(`bento_cached_menu_${uni}`));
-          cacheState = (raw && Date.now() - raw.fetchedAt > 60 * 60 * 1000) ? 'cache' : null;
-        } catch { cacheState = null; }
+        const age = getCachedMenuAge(uni);
+        cacheState = (age !== null && age > 60 * 60 * 1000) ? 'cache' : null;
       }
     }
 

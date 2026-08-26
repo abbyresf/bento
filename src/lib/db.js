@@ -643,7 +643,8 @@ export async function clearAllData() {
   ]);
   // Clear all local state so swipe onboarding, confirmed meals, and menu cache reset
   ['bento_swipe_done', 'bento_confirmed_meals_v2',
-   'bento_cached_menu_brandeis', 'bento_cached_menu_tufts',
+   'bento_cached_menu_v2_brandeis', 'bento_cached_menu_v2_tufts',
+   'bento_cached_menu_brandeis', 'bento_cached_menu_tufts', // pre-v2 keys
    'bento_cached_menu', // legacy key
   ].forEach(k => {
     try { localStorage.removeItem(k); } catch { /* ignore */ }
@@ -655,9 +656,14 @@ export async function clearAllData() {
 
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes — matches server-side cache TTL
 
+// Bump this whenever the cached menu's shape changes. v2 drops entries written
+// while the kosher location was being deleted after the Sherman merge — those
+// have no kosher location at all, so it would render as "Closed" until expiry.
+const CACHE_VERSION = 'v2';
+
 export function getCachedMenu(university = 'brandeis') {
   try {
-    const key = `bento_cached_menu_${university}`;
+    const key = `bento_cached_menu_${CACHE_VERSION}_${university}`;
     const cached = JSON.parse(localStorage.getItem(key));
     if (!cached) return null;
     if (cached.date !== localDateStr()) return null;
@@ -666,9 +672,20 @@ export function getCachedMenu(university = 'brandeis') {
   } catch { return null; }
 }
 
+// Age of the cached menu in ms, or null if there is no usable entry.
+// Callers use this to decide whether to flag the menu as stale in the UI.
+export function getCachedMenuAge(university = 'brandeis') {
+  try {
+    const key = `bento_cached_menu_${CACHE_VERSION}_${university}`;
+    const cached = JSON.parse(localStorage.getItem(key));
+    if (!cached?.fetchedAt) return null;
+    return Date.now() - cached.fetchedAt;
+  } catch { return null; }
+}
+
 export function setCachedMenu(menu, university = 'brandeis') {
   try {
-    const key = `bento_cached_menu_${university}`;
+    const key = `bento_cached_menu_${CACHE_VERSION}_${university}`;
     localStorage.setItem(key, JSON.stringify({ date: localDateStr(), fetchedAt: Date.now(), menu }));
   } catch { /* localStorage unavailable */ }
 }

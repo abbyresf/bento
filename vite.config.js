@@ -88,6 +88,10 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         globIgnores: ['logo.png'],
+        // Without this, the SW answers address-bar navigations to /api/* with
+        // the cached app shell, so hitting /api/health in a browser boots the
+        // React app and bounces to /app instead of returning the JSON.
+        navigateFallbackDenylist: [/^\/api\//, /^\/beta\//],
         runtimeCaching: [
           {
             // Cache the Brandeis dining pages for offline fallback

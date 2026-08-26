@@ -219,6 +219,9 @@ export async function fetchDiningMenu(config, dateStr = null) {
 
   // Merge kosher table into sherman so students can build a plate from both
   // without switching locations. Kosher items are already tagged 'kosher'.
+  // The kosher location itself is kept so it stays selectable in its own right —
+  // deleting it here leaves the dropdown entry with no menu data, which renders
+  // as "Closed" even when the kosher table is open.
   if (locations.kosher && locations.sherman) {
     for (const period of ['breakfast', 'lunch', 'dinner']) {
       locations.sherman.meals[period] = [
@@ -227,7 +230,6 @@ export async function fetchDiningMenu(config, dateStr = null) {
       ];
     }
     locations.sherman.isOpen = locations.sherman.isOpen || locations.kosher.isOpen;
-    delete locations.kosher;
   }
 
   const result = {
