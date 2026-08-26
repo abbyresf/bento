@@ -3,7 +3,7 @@ import { useRatings } from '../../context/RatingsContext';
 import StarRating from '../Community/StarRating';
 import './RatingSheet.css';
 
-export default function RatingSheet({ meal, items, onClose }) {
+export default function RatingSheet({ meal, items, diningHall, onClose }) {
   const { myRatings, rateItem } = useRatings();
   const [ratings, setRatings] = useState(() => {
     const init = {};
@@ -26,7 +26,7 @@ export default function RatingSheet({ meal, items, onClose }) {
   const handleSubmit = async () => {
     setSubmitting(true);
     const rated = items.filter(item => ratings[item.id] > 0);
-    await Promise.all(rated.map(item => rateItem(item, ratings[item.id])));
+    await Promise.all(rated.map(item => rateItem(item, ratings[item.id], diningHall ?? null)));
     onClose();
   };
 

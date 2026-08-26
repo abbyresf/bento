@@ -158,8 +158,8 @@ export const BRANDEIS_CONFIG = {
     sherman: {
       id: 'sherman',
       slug: 'the-farm-table-at-sherman-2',
-      name: 'Farm Table at Sherman',
-      shortName: 'Farm Table',
+      name: 'Sherman Dining Hall',
+      shortName: 'Sherman',
     },
     usdan: {
       id: 'usdan',
@@ -215,9 +215,24 @@ export async function fetchDiningMenu(config, dateStr = null) {
     })
   );
 
+  const locations = Object.fromEntries(locationResults);
+
+  // Merge kosher table into sherman so students can build a plate from both
+  // without switching locations. Kosher items are already tagged 'kosher'.
+  if (locations.kosher && locations.sherman) {
+    for (const period of ['breakfast', 'lunch', 'dinner']) {
+      locations.sherman.meals[period] = [
+        ...(locations.sherman.meals[period] ?? []),
+        ...(locations.kosher.meals[period] ?? []),
+      ];
+    }
+    locations.sherman.isOpen = locations.sherman.isOpen || locations.kosher.isOpen;
+    delete locations.kosher;
+  }
+
   const result = {
     date: dateStr,
-    locations: Object.fromEntries(locationResults),
+    locations,
   };
 
   // Only treat as a hard failure if every location came back from the catch block

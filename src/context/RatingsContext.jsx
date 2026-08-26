@@ -21,8 +21,8 @@ export function RatingsProvider({ children }) {
     });
   }, []);
 
-  const rateItem = useCallback(async (item, rating) => {
-    await dbRateItem(item, rating);
+  const rateItem = useCallback(async (item, rating, diningHall = null) => {
+    await dbRateItem(item, rating, diningHall);
     setMyRatings(prev => {
       if (rating === null) {
         const next = { ...prev };

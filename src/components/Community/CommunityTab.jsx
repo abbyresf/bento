@@ -36,7 +36,10 @@ function FoodLeaderboard({ aggregates }) {
       {ranked.map((item, i) => (
         <div key={item.name} className="leaderboard-item">
           <span className="leaderboard-rank">#{i + 1}</span>
-          <span className="leaderboard-name">{item.name}</span>
+          <span className="leaderboard-name">
+            <span className="leaderboard-item-text">{item.name}</span>
+            {item.diningHall && <span className="leaderboard-hall">{item.diningHall}</span>}
+          </span>
           <div className="leaderboard-right">
             <StarRating rating={Math.round(item.avg)} size={13} interactive={false} />
             <span className="leaderboard-avg">{item.avg.toFixed(1)}</span>
@@ -61,12 +64,18 @@ function SuggestionCard({ suggestion, emphasized, onEmphasize, onFlag, flagged }
     const optimistic = !localEmphasized;
     setEmphasized(optimistic);
     setLocalCount(c => optimistic ? c + 1 : Math.max(0, c - 1));
-    const result = await onEmphasize(suggestion.id);
-    if (result) {
-      setEmphasized(result.emphasized);
-      setLocalCount(result.emphasize_count);
+    try {
+      const result = await onEmphasize(suggestion.id);
+      if (result) {
+        setEmphasized(result.emphasized);
+        setLocalCount(result.emphasize_count);
+      }
+    } catch {
+      setEmphasized(localEmphasized);
+      setLocalCount(c => optimistic ? Math.max(0, c - 1) : c + 1);
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   const handleFlag = async () => {

@@ -594,7 +594,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
     }
     // Show rating sheet; defer streak check until it closes
     pendingStreakRef.current = { isViewingToday, updatedConfirmed };
-    setPendingRating({ meal, items: mealItems });
+    setPendingRating({ meal, items: mealItems, locationId: location });
   };
 
   const handleRatingClose = () => {
@@ -770,6 +770,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
         <RatingSheet
           meal={pendingRating.meal}
           items={pendingRating.items}
+          diningHall={menu?.locations?.[pendingRating.locationId]?.shortName ?? null}
           onClose={handleRatingClose}
         />
       )}

@@ -291,7 +291,7 @@ export async function getMyRatings() {
 }
 
 // Upserts a rating. Passing null removes it.
-export async function rateItem(item, rating) {
+export async function rateItem(item, rating, diningHall = null) {
   const id = await uid();
   if (!id) return;
   if (rating === null) {
@@ -300,12 +300,13 @@ export async function rateItem(item, rating) {
   }
   const university = item.id?.startsWith('tu_') ? 'tufts' : 'brandeis';
   await supabase.from('item_ratings').upsert({
-    user_id:    id,
-    item_id:    item.id,
-    item_name:  item.name,
+    user_id:     id,
+    item_id:     item.id,
+    item_name:   item.name,
     rating,
     university,
-    updated_at: new Date().toISOString(),
+    dining_hall: diningHall ?? null,
+    updated_at:  new Date().toISOString(),
   }, { onConflict: 'user_id,item_id' });
 }
 
@@ -313,11 +314,11 @@ export async function rateItem(item, rating) {
 export async function getRatingAggregates(university) {
   let query = supabase
     .from('item_rating_aggregates')
-    .select('item_id, item_name, avg_rating, rating_count');
+    .select('item_id, item_name, avg_rating, rating_count, dining_hall');
   if (university) query = query.eq('university', university);
   const { data } = await query;
   return Object.fromEntries(
-    (data ?? []).map(r => [r.item_id, { name: r.item_name, avg: parseFloat(r.avg_rating), count: r.rating_count }])
+    (data ?? []).map(r => [r.item_id, { name: r.item_name, avg: parseFloat(r.avg_rating), count: r.rating_count, diningHall: r.dining_hall ?? null }])
   );
 }
 
