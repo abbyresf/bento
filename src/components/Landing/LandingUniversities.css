@@ -10,7 +10,7 @@
   --lpu-orange:  #fd8f2a;
   --lpu-green:   #77be3d;
   --lpu-text:    #edf1f7;
-  --lpu-muted:   rgba(237,241,247,0.46);
+  --lpu-muted:   rgba(237,241,247,0.62);
   --lpu-faint:   rgba(237,241,247,0.22);
   --lpu-font:    -apple-system, 'Instrument Sans', 'Inter', 'Segoe UI', sans-serif;
 
@@ -58,17 +58,10 @@
 
 .landing-universities .lpu-hero {
   position: relative;
-  padding: 7rem 1.5rem 5rem;
+  padding: 5rem 1.5rem 5rem;
   text-align: center;
+  background: #ffffff;
   overflow: hidden;
-}
-
-.landing-universities .lpu-hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse 80% 55% at 50% -5%, rgba(253,143,42,0.14) 0%, transparent 68%);
-  pointer-events: none;
 }
 
 .landing-universities .lpu-hero-inner {
@@ -77,34 +70,13 @@
   margin: 0 auto;
 }
 
-.landing-universities .lpu-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  background: rgba(253,143,42,0.1);
-  border: 1px solid rgba(253,143,42,0.22);
-  border-radius: 20px;
-  padding: 0.28rem 0.85rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--lpu-orange);
-  margin-bottom: 2rem;
-}
-
-.landing-universities .lpu-eyebrow-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--lpu-orange);
-  flex-shrink: 0;
-  animation: lpu-blink 2.2s ease-in-out infinite;
-}
-
-@keyframes lpu-blink {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.3; }
+.landing-universities .lpu-hero-logo {
+  height: 52px;
+  width: auto;
+  margin-bottom: 2.25rem;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .landing-universities .lpu-hero-headline {
@@ -112,7 +84,7 @@
   font-weight: 600;
   line-height: 1.1;
   letter-spacing: -0.025em;
-  color: var(--lpu-text);
+  color: var(--lpu-bg);
   margin-bottom: 1.4rem;
   text-wrap: balance;
 }
@@ -123,10 +95,11 @@
 }
 
 .landing-universities .lpu-hero-sub {
-  font-size: 1.02rem;
-  color: var(--lpu-muted);
-  line-height: 1.8;
-  max-width: 540px;
+  font-size: 1.2rem;
+  color: rgba(12, 21, 35, 0.55);
+  font-weight: 300;
+  line-height: 1.7;
+  max-width: 560px;
   margin: 0 auto 2.5rem;
 }
 
@@ -155,8 +128,8 @@
 
 .landing-universities .lpu-btn-ghost {
   background: transparent;
-  color: var(--lpu-muted);
-  border: 1px solid var(--lpu-border);
+  color: rgba(12, 21, 35, 0.55);
+  border: 1px solid rgba(12, 21, 35, 0.18);
   border-radius: 6px;
   padding: 0.72rem 1.4rem;
   font-size: 0.88rem;
@@ -167,8 +140,8 @@
 }
 
 .landing-universities .lpu-btn-ghost:hover {
-  color: var(--lpu-text);
-  border-color: rgba(255,255,255,0.18);
+  color: var(--lpu-bg);
+  border-color: rgba(12, 21, 35, 0.35);
 }
 
 /* ── STATS STRIP ─────────────────────────────────────────────────────────────*/

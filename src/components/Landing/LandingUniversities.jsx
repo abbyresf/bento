@@ -314,12 +314,10 @@ export default function LandingUniversities({ onContact }) {
       {/* ── Hero ── */}
       <section className="lpu-hero">
         <div className="lpu-hero-inner">
-          <div className="lpu-eyebrow">
-            <span className="lpu-eyebrow-dot" />
-            Bento Pulse for Universities
-          </div>
+          <img src="/bentopulse.png" alt="Bento Pulse" className="lpu-hero-logo" />
           <h1 className="lpu-hero-headline">
-            Know exactly<br />how your <em>campus eats.</em>
+            Your system knows what's served.{' '}
+            <em>Bento knows what's eaten.</em>
           </h1>
           <p className="lpu-hero-sub">
             Bento Pulse gives your dining team a live picture of student meal activity, dietary needs, and engagement trends. Captured as students use the app, organized into a dashboard your whole team can act on.
