@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bento Beta — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cream: #faf7f4; --navy: #1a2b3c; --orange: #f47421;
+    --muted: #5a6a7a; --border: #e8e3dd;
+    --ff-disp: 'Fraunces', Georgia, serif;
+    --ff-body: 'Instrument Sans', system-ui, sans-serif;
+  }
+  html, body { min-height: 100vh; background: var(--cream); color: var(--navy); font-family: var(--ff-body); font-size: 15px; }
+  .page { max-width: 900px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  h1 { font-family: var(--ff-disp); font-weight: 900; font-size: 1.8rem; margin-bottom: 0.3rem; }
+  h2 { font-family: var(--ff-disp); font-weight: 700; font-size: 1.2rem; margin-bottom: 0.75rem; }
+  h3 { font-size: 0.95rem; font-weight: 600; color: var(--navy); margin-bottom: 0.4rem; }
+  .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--orange); margin-bottom: 0.4rem; }
+  .muted { color: var(--muted); font-size: 0.875rem; }
+  .tabs { display: flex; gap: 0.5rem; margin: 1.5rem 0 1.25rem; }
+  .tab { padding: 0.5rem 1.25rem; border-radius: 50px; border: 1.5px solid var(--border); background: #fff; font-family: var(--ff-body); font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--muted); transition: all 0.15s; }
+  .tab.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+  .tester-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+  .tester-name { font-weight: 700; font-size: 1rem; }
+  .tester-meta { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
+  .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 50px; font-size: 0.75rem; font-weight: 600; background: #e8f5e9; color: #2e7d32; margin-left: 0.5rem; }
+  .response-list { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+  .response-item { display: grid; grid-template-columns: 80px 1fr; gap: 0.75rem; font-size: 0.875rem; }
+  .response-day { font-weight: 700; color: var(--orange); font-size: 0.8rem; padding-top: 0.1rem; }
+  .response-q { color: var(--muted); font-size: 0.78rem; margin-bottom: 0.15rem; }
+  .response-a { color: var(--navy); font-size: 0.9rem; }
+  .q-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+  .q-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem; }
+  .q-text { color: var(--muted); font-size: 0.85rem; margin-bottom: 1rem; }
+  .choice-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.4rem; }
+  .choice-bar-wrap { flex: 1; height: 8px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .choice-bar { height: 100%; background: var(--orange); border-radius: 99px; }
+  .choice-label { font-size: 0.85rem; color: var(--navy); flex: 0 0 160px; }
+  .choice-count { font-size: 0.8rem; color: var(--muted); min-width: 30px; text-align: right; }
+  .open-response { padding: 0.6rem 0.75rem; background: #faf7f4; border-radius: 8px; font-size: 0.875rem; margin-bottom: 0.4rem; color: var(--navy); }
+  .open-response .r-name { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.2rem; font-weight: 600; }
+  .stat-row { display: flex; gap: 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .stat { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem; flex: 1; min-width: 120px; }
+  .stat-val { font-family: var(--ff-disp); font-weight: 900; font-size: 2rem; color: var(--orange); }
+  .stat-label { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
+  .chevron { transition: transform 0.2s; display: inline-block; }
+  .chevron.open { transform: rotate(180deg); }
+  input[type="password"] { padding: 0.75rem 1rem; border: 1.5px solid var(--border); border-radius: 10px; font-family: var(--ff-body); font-size: 1rem; width: 100%; max-width: 320px; outline: none; margin-bottom: 1rem; }
+  input[type="password"]:focus { border-color: var(--orange); }
+  .btn { padding: 0.75rem 1.75rem; background: var(--orange); color: #fff; border: none; border-radius: 50px; font-family: var(--ff-body); font-weight: 600; font-size: 1rem; cursor: pointer; }
+  #login-view { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; }
+</style>
+</head>
+<body>
+
+<div id="login-view">
+  <h1 style="margin-bottom:0.5rem">Bento Beta Admin</h1>
+  <p class="muted" style="margin-bottom:1.5rem">Enter the admin password to view responses.</p>
+  <input type="password" id="pw" placeholder="Password" />
+  <br/>
+  <button class="btn" onclick="checkPw()">Enter</button>
+  <p id="pw-err" style="color:#dc2626;font-size:0.875rem;margin-top:0.75rem;display:none">Incorrect password.</p>
+</div>
+
+<div id="admin-view" style="display:none">
+  <div class="page">
+    <div class="eyebrow">Admin Dashboard</div>
+    <h1>Bento Beta Responses</h1>
+    <p class="muted" style="margin-bottom:1.5rem">Aug 26 – Sep 8, 2026</p>
+    <div class="stat-row" id="stats"></div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('people')">By Person</button>
+      <button class="tab" onclick="switchTab('questions')">By Question</button>
+    </div>
+    <div id="tab-people"></div>
+    <div id="tab-questions" style="display:none"></div>
+  </div>
+</div>
+
+<script>
+const ADMIN_PASSWORD = 'bentoadmin2026';
+const SUPABASE_URL = 'https://jeexzjphglnpugsuznad.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplZXh6anBoZ2xucHVnc3V6bmFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyMjk2MzYsImV4cCI6MjA5MjgwNTYzNn0.sby08YMsgEHwsDcas2scw734pIrKr8PDf5kV-rMY260';
+
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const QUESTIONS = [
+  { day: 1, title: 'Setup', text: 'Have you completed your Bento setup?', type: 'choice' },
+  { day: 2, title: 'First impressions', text: 'How was your first experience using Bento?', type: 'open' },
+  { day: 3, title: 'Meal planning', text: 'Did the meal plan match what you felt like eating?', type: 'choice' },
+  { day: 4, title: 'Menu accuracy', text: 'How accurate were the dining hall menus?', type: 'choice' },
+  { day: 5, title: 'Dietary preferences', text: 'Did Bento correctly reflect your dietary restrictions?', type: 'choice' },
+  { day: 6, title: 'Usage check-in', text: 'How many times did you open Bento today?', type: 'choice' },
+  { day: 7, title: 'Wishlist', text: 'What\'s one thing you wish Bento could do?', type: 'open' },
+  { day: 8, title: 'Word of mouth', text: 'Have you told anyone about Bento?', type: 'choice' },
+  { day: 9, title: 'Behavior change', text: 'How does Bento change how you decide what to eat?', type: 'open' },
+  { day: 10, title: 'Feature check', text: 'Which feature do you use most?', type: 'choice' },
+  { day: 11, title: 'Pain points', text: 'Anything confusing or frustrating?', type: 'open' },
+  { day: 12, title: 'Habit check', text: 'How often are you letting Bento guide your meals?', type: 'choice' },
+  { day: 13, title: 'Retention', text: 'What would make you keep using Bento?', type: 'open' },
+  { day: 14, title: 'Final rating', text: 'Overall rating + what to fix before launch', type: 'open' },
+];
+
+function checkPw() {
+  const val = document.getElementById('pw').value;
+  if (val === ADMIN_PASSWORD) {
+    document.getElementById('login-view').style.display = 'none';
+    document.getElementById('admin-view').style.display = 'block';
+    loadData();
+  } else {
+    document.getElementById('pw-err').style.display = 'block';
+  }
+}
+document.getElementById('pw').addEventListener('keydown', e => { if (e.key === 'Enter') checkPw(); });
+
+let allTesters = [];
+let allResponses = [];
+
+async function loadData() {
+  const [{ data: testers }, { data: responses }] = await Promise.all([
+    db.from('beta_testers').select('*').order('created_at'),
+    db.from('beta_responses').select('*').order('day_number'),
+  ]);
+  allTesters = testers || [];
+  allResponses = responses || [];
+  renderStats();
+  renderPeople();
+  renderQuestions();
+}
+
+function renderStats() {
+  const total = allTesters.length;
+  const totalResponses = allResponses.length;
+  const avgResponses = total ? (totalResponses / total).toFixed(1) : 0;
+  const today = Math.min(Math.floor((new Date() - new Date('2026-08-26')) / 86400000) + 1, 14);
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="stat-val">${total}</div><div class="stat-label">Testers registered</div></div>
+    <div class="stat"><div class="stat-val">${totalResponses}</div><div class="stat-label">Total responses</div></div>
+    <div class="stat"><div class="stat-val">${avgResponses}</div><div class="stat-label">Avg responses / person</div></div>
+    <div class="stat"><div class="stat-val">${today > 0 ? today : '—'}</div><div class="stat-label">Current day</div></div>`;
+}
+
+function renderPeople() {
+  const el = document.getElementById('tab-people');
+  if (!allTesters.length) { el.innerHTML = '<p class="muted">No testers yet.</p>'; return; }
+
+  el.innerHTML = allTesters.map(t => {
+    const responses = allResponses.filter(r => r.tester_id === t.id).sort((a, b) => a.day_number - b.day_number);
+    const count = responses.length;
+    return `
+      <div class="card">
+        <div class="tester-header" onclick="toggleTester('${t.id}')">
+          <div>
+            <div class="tester-name">${t.name} <span class="badge">${count} / 14</span></div>
+            <div class="tester-meta">${t.email} · Joined ${new Date(t.created_at).toLocaleDateString()}</div>
+          </div>
+          <span class="chevron" id="chev-${t.id}">▼</span>
+        </div>
+        <div id="resp-${t.id}" style="display:none">
+          ${count === 0 ? '<p class="muted" style="margin-top:1rem">No responses yet.</p>' :
+            `<div class="response-list">${responses.map(r => {
+              const q = QUESTIONS[r.day_number - 1];
+              return `<div class="response-item">
+                <div class="response-day">Day ${r.day_number}</div>
+                <div><div class="response-q">${q?.text || ''}</div><div class="response-a">${r.answer}</div></div>
+              </div>`;
+            }).join('')}</div>`}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function toggleTester(id) {
+  const el = document.getElementById(`resp-${id}`);
+  const chev = document.getElementById(`chev-${id}`);
+  const open = el.style.display === 'none';
+  el.style.display = open ? 'block' : 'none';
+  chev.classList.toggle('open', open);
+}
+
+function renderQuestions() {
+  const el = document.getElementById('tab-questions');
+  el.innerHTML = QUESTIONS.map(q => {
+    const responses = allResponses.filter(r => r.day_number === q.day);
+    const count = responses.length;
+
+    let content = '';
+    if (q.type === 'choice') {
+      const tally = {};
+      responses.forEach(r => { tally[r.answer] = (tally[r.answer] || 0) + 1; });
+      const max = Math.max(...Object.values(tally), 1);
+      content = Object.entries(tally).sort((a, b) => b[1] - a[1]).map(([ans, n]) =>
+        `<div class="choice-row">
+          <div class="choice-label">${ans}</div>
+          <div class="choice-bar-wrap"><div class="choice-bar" style="width:${(n/max)*100}%"></div></div>
+          <div class="choice-count">${n}</div>
+        </div>`
+      ).join('');
+    } else {
+      const nameMap = {};
+      allTesters.forEach(t => { nameMap[t.id] = t.name; });
+      content = responses.map(r =>
+        `<div class="open-response"><div class="r-name">${nameMap[r.tester_id] || 'Unknown'}</div>${r.answer}</div>`
+      ).join('');
+    }
+
+    return `<div class="q-card">
+      <div class="eyebrow">Day ${q.day}</div>
+      <div class="q-title">${q.title}</div>
+      <div class="q-text">${q.text} · <strong>${count} response${count !== 1 ? 's' : ''}</strong></div>
+      ${content || '<p class="muted">No responses yet.</p>'}
+    </div>`;
+  }).join('');
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+  document.getElementById('tab-people').style.display = tab === 'people' ? 'block' : 'none';
+  document.getElementById('tab-questions').style.display = tab === 'questions' ? 'block' : 'none';
+}
+</script>
+</body>
+</html>
