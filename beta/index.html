@@ -328,7 +328,7 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const START = new Date('2026-08-26T00:00:00');
 const TOTAL_DAYS = 14;
 
-const DISCLAIMER = `<div class="disclaimer"><strong>A note on honesty</strong>We want your real, unfiltered thoughts — good and bad. Honest feedback is the only kind that helps us build something worth using. There are no wrong answers here.</div>`;
+const DISCLAIMER = `<div class="disclaimer"><strong>A note on honesty</strong>We want your real, unfiltered thoughts, good and bad. Honest feedback is the only kind that helps us build something worth using. There are no wrong answers here.</div>`;
 
 const QUESTIONS = [
   {
@@ -624,7 +624,7 @@ function renderQuestion(day) {
     <div class="card">
       <div class="eyebrow">${q.eyebrow}</div>
       <h2>${q.title || q.question}</h2>
-      ${q.title && q.question !== q.title ? `<p style="font-size:1rem;color:var(--navy);margin-bottom:1rem;font-weight:500">${q.question}</p>` : ''}
+      ${q.title && q.question !== q.title && q.type !== 'task_long' ? `<p style="font-size:1rem;color:var(--navy);margin-bottom:1rem;font-weight:500">${q.question}</p>` : ''}
       ${inner}
     </div>`;
 
