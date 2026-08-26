@@ -6,7 +6,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const CACHE_TTL_SECONDS = 7200;
+const CACHE_TTL_SECONDS = 1800; // 30 minutes
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner'];
 const ALLOWED_SLUGS = new Set(['carmichael-dining-hall', 'dewick-dining']);
 
@@ -42,7 +42,9 @@ export default async function handler(req, res) {
 
   const admin = getSupabaseAdmin();
 
-  if (admin) {
+  const bust = parsedUrl.searchParams.get('bust') === 'true';
+
+  if (admin && !bust) {
     const { data: cached } = await admin
       .from('menu_cache')
       .select('html_content, fetched_at')

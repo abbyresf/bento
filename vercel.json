@@ -1,4 +1,7 @@
 {
+  "crons": [
+    { "path": "/api/health", "schedule": "0 7,10,13,16,19,22 * * *" }
+  ],
   "rewrites": [
     { "source": "/api/dining/(.*)", "destination": "/api/dining" },
     { "source": "/((?!api/|sitemap\\.xml|robots\\.txt).*)", "destination": "/index.html" }

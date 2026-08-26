@@ -37,8 +37,10 @@ export default async function handler(req, res) {
   const parsedUrl = new URL(req.url, 'http://localhost');
   const dateParam = parsedUrl.searchParams.get('date') || new Date().toISOString().slice(0, 10);
 
+  const bust = parsedUrl.searchParams.get('bust') === 'true';
+
   // Check shared DB cache before hitting Brandeis
-  if (admin && slug) {
+  if (admin && slug && !bust) {
     const { data: cached } = await admin
       .from('menu_cache')
       .select('html_content, fetched_at')
