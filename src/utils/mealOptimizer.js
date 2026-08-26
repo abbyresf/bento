@@ -1,7 +1,8 @@
 // Meal optimization algorithm
 // Uses a greedy heuristic to select meals that best match nutrition targets
 
-import { MEAL_DISTRIBUTION, calculateMealTargets } from './tdeeCalculator';
+import { MEAL_DISTRIBUTION, calculateMealTargets } from './tdeeCalculator.js';
+import { getRole, ROLE, ACCESSORY_ROLES, isNutritionalBeverage } from './foodRoles.js';
 
 // Structured allergens Brandeis publishes in allergens_list.
 // Keys match restriction fields; values match the normalized allergens_list strings.
@@ -77,19 +78,17 @@ function scoreItem(item, target, currentTotals) {
     Math.max(0, item.nutrition.calories - remaining.calories) * 2 +
     Math.max(0, item.nutrition.fat - remaining.fat) * 3;
 
-  return calorieScore + proteinScore + carbScore + fatScore + overPenalty;
+  // Reward fiber directly. Dining-hall menus are full of near-identical sides
+  // that differ mainly in fiber, and macro fitting alone treats a 9g bean
+  // side as interchangeable with a 1g one.
+  const fiberBonus = Math.min(item.nutrition.fiber ?? 0, 8) * 10;
+
+  return calorieScore + proteinScore + carbScore + fatScore + overPenalty - fiberBonus;
 }
 
 // Get variety penalty based on recent history
 function getVarietyPenalty(itemId, recentItemIds) {
   return recentItemIds.has(itemId) ? 100 : 0;
-}
-
-// Returns true for items that are toppings/add-ons rather than standalone meal items.
-// These should only be included after a substantial main item is already selected,
-// never as the primary pick (e.g. pumpkin seeds, chia seeds, flax seeds).
-function isSupplementItem(item) {
-  return item.nutrition.calories < 80 && item.nutrition.protein < 3;
 }
 
 // Categorize items by type (entree, side, beverage, etc.)
@@ -151,21 +150,26 @@ function getWithinMealPenalty(item, selectedItems) {
   return penalty;
 }
 
-// Returns true for salad-station items that are raw protein toppings rather than
-// complete salad dishes (e.g. "Sliced Grilled Chicken" at the salad bar).
-// These shouldn't be recommended as a standalone salad component.
-function isSaladTopping(item) {
-  if (item.station !== 'salad') return false;
-  // A real salad dish has meaningful carbs or fiber
-  if (item.nutrition.carbs >= 8 || (item.nutrition.fiber ?? 0) >= 2) return false;
-  // High-protein, low-carb/fiber salad-bar items are protein toppings
-  return item.nutrition.protein >= 8;
+// Brandeis publishes some items with every macro at zero. That is missing
+// data, not an empty food, and such items must not be scored against a target.
+function hasUsableNutrition(item) {
+  const n = item?.nutrition ?? {};
+  return (n.calories ?? 0) > 0 || (n.protein ?? 0) > 0 || (n.carbs ?? 0) > 0;
 }
+
+// Proteins people actually eat in the morning. Without this, the breakfast
+// anchor is whichever protein scores best campus-wide — which is how shawarma
+// beef ends up recommended at 8am.
+const BREAKFAST_PROTEIN = /\b(egg|eggs|omelet|omelette|frittata|scrambled|yogurt|cottage cheese|bacon|sausage|ham|lox|smoked salmon|tofu scramble|skyr)\b/i;
 
 // Penalize items that don't belong in the given meal context
 function getMealContextPenalty(item, mealType) {
   if (!mealType) return 0;
   const s = item.station;
+
+  if (mealType === 'breakfast' && getRole(item) === ROLE.PROTEIN && !BREAKFAST_PROTEIN.test(item.name ?? '')) {
+    return 200;
+  }
 
   if (mealType === 'breakfast') {
     // Preferred breakfast stations — no penalty
@@ -198,6 +202,10 @@ function selectBestItem(items, target, currentTotals, restrictions, recentItemId
   for (const item of items) {
     if (excludeIds.has(item.id)) continue;
     if (!passesHardRestrictions(item, restrictions)) continue;
+    // Items published with no nutrition at all cannot be reasoned about, and
+    // they score as a perfect fit for whatever budget is left — an item of
+    // "zero" is always closest to a small remaining gap.
+    if (!hasUsableNutrition(item)) continue;
 
     const baseScore = scoreItem(item, target, currentTotals);
     const softPenalty = getSoftPenalty(item, restrictions);
@@ -270,65 +278,122 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
     usedIds.add(item.id);
   }
 
+  // Condiments and garnishes are never plate components. They are the reason a
+  // balsamic vinaigrette used to win a slot: with a small calorie gap left,
+  // a dressing scores better than any real food.
+  const eligible = availableItems.filter(item => !ACCESSORY_ROLES.has(getRole(item)));
+
+  // Pick the best item among the given roles. Roles are tried in order, so a
+  // composed dish is preferred to a bare protein for the anchor slot.
+  // `reserve` holds calories back for the slots still to be filled. Without it
+  // a single 330-calorie banana bread consumes the whole breakfast budget and
+  // the plate never reaches its protein target.
+  function pickRole(roles, { reserve = 0 } = {}) {
+    const budgetedTarget = reserve
+      ? { ...mealTarget, calories: Math.max(mealTarget.calories - reserve, currentTotals.calories) }
+      : mealTarget;
+    for (const role of roles) {
+      const pool = eligible.filter(item => getRole(item) === role);
+      if (pool.length === 0) continue;
+      const item = selectBestItem(pool, budgetedTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected, favoriteIds);
+      if (item) return item;
+    }
+    return null;
+  }
+
+  const roomFor = fraction => currentTotals.calories < mealTarget.calories * fraction;
+
+  // Topping up protein is not a macro-gap problem: the generic score rewards
+  // whatever best fits the remaining calories, which is how a 7g cottage
+  // cheese beat 22g of chicken. Here the most protein that still fits wins.
+  function pickProteinTopUp() {
+    const remaining = mealTarget.calories - currentTotals.calories;
+    let best = null;
+    for (const item of eligible) {
+      if (usedIds.has(item.id)) continue;
+      if (getRole(item) !== ROLE.PROTEIN) continue;
+      if (!hasUsableNutrition(item)) continue;
+      if (!passesHardRestrictions(item, restrictions)) continue;
+      if (getMealContextPenalty(item, mealType) >= 200) continue;
+      if (getWithinMealPenalty(item, selected) > 0) continue;
+      if (item.nutrition.calories > remaining * 1.15) continue;
+      if (!best || item.nutrition.protein > best.nutrition.protein) best = item;
+    }
+    return best;
+  }
+
   if (isBreakfast) {
-    // Breakfast: pick 1-2 substantial main items first, then optionally one supplement.
-    // "Main" = not a supplement (not a topping/add-on with trivial calories/protein).
-    // This prevents pumpkin seeds / chia seeds from being the primary recommendation.
-    const mainPool = availableItems.filter((item) => !isSupplementItem(item));
-    const supplementPool = availableItems.filter((item) => isSupplementItem(item));
+    // Breakfast is anchored on protein — eggs, yogurt, cottage cheese — so a
+    // pastry can never become the centrepiece of the meal.
+    const anchor = pickRole([ROLE.PROTEIN, ROLE.COMPOSED], { reserve: 150 });
+    if (anchor) addItem(anchor);
 
-    // Pick up to 2 main items, then a 3rd if still well under target
-    for (let i = 0; i < 2; i++) {
-      const item = selectBestItem(mainPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, 'breakfast', selected, favoriteIds);
-      if (item) addItem(item);
-    }
-    if (selected.length > 0 && currentTotals.calories < mealTarget.calories * 0.6) {
-      const item = selectBestItem(mainPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, 'breakfast', selected, favoriteIds);
-      if (item) addItem(item);
+    // Protein is brought to a floor before any calories go to carbohydrate.
+    // Filling the grain slot first lets a large pastry take the whole budget.
+    if (currentTotals.protein < mealTarget.protein * 0.6) {
+      const more = pickProteinTopUp();
+      if (more) addItem(more);
     }
 
-    // Only add a supplement (e.g. seeds on top of yogurt/oatmeal) if we already have
-    // at least one main and still have meaningful calorie headroom
-    if (selected.length > 0 && currentTotals.calories < mealTarget.calories * 0.75) {
-      const supp = selectBestItem(supplementPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, 'breakfast', selected, favoriteIds);
-      if (supp) addItem(supp);
-    }
+    const grain = pickRole([ROLE.GRAIN], { reserve: 80 });
+    if (grain) addItem(grain);
 
-    // Add beverage
-    const beverage = selectBestItem(categorized.beverages, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, 'breakfast', selected, favoriteIds);
-    if (beverage) addItem(beverage, 'Beverage');
+    const produce = pickRole([ROLE.FRUIT, ROLE.VEGETABLE]);
+    if (produce) addItem(produce);
   } else {
-    // Lunch/Dinner: 1 entree + optional side + optional salad/soup + optional bread + beverage.
-    // Bakery items (rolls, bread) are never entrees — they only appear as an extra alongside a real entree.
-    // Supplement-type items are skipped entirely for lunch/dinner.
+    // Lunch and dinner: an anchor, a vegetable, and a carbohydrate. The
+    // structure is filled first and the macro fit decides which item within
+    // each role — not whether the role gets filled at all.
+    const anchor = pickRole([ROLE.COMPOSED, ROLE.PROTEIN]);
+    if (anchor) addItem(anchor);
+    const anchorRole = anchor ? getRole(anchor) : null;
 
-    // 1. Select entree (entrees pool already excludes bakery since categorizeItems splits them)
-    const entree = selectBestItem(categorized.entrees, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected, favoriteIds);
-    if (entree) addItem(entree);
+    // A vegetable goes on every plate, even when the calorie budget is tight.
+    const vegetable = pickRole([ROLE.VEGETABLE]);
+    if (vegetable) addItem(vegetable);
 
-    // 2. Select side
-    const side = selectBestItem(categorized.sides, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected, favoriteIds);
-    if (side) addItem(side);
-
-    // 3. Add salad if room in calorie budget.
-    // Prefer complete salad dishes (have carbs/fiber) over bare protein toppings
-    // like "Sliced Grilled Chicken" — those are salad-bar add-ons, not meals.
-    if (currentTotals.calories < mealTarget.calories * 0.7) {
-      const completeSalads = categorized.salads.filter((item) => !isSaladTopping(item));
-      const saladPool = completeSalads.length > 0 ? completeSalads : categorized.salads;
-      const salad = selectBestItem(saladPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected, favoriteIds);
-      if (salad) addItem(salad);
+    // Protein floor before carbohydrate, for the same reason as breakfast.
+    if (currentTotals.protein < mealTarget.protein * 0.7) {
+      const more = pickProteinTopUp();
+      if (more) addItem(more);
     }
 
-    // 4. Optionally add a bread/roll alongside the entree (never as the only item)
-    if (entree && currentTotals.calories < mealTarget.calories * 0.85) {
-      const roll = selectBestItem(categorized.bakery, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected, favoriteIds);
-      if (roll) addItem(roll);
+    // A composed dish already carries its carbohydrate, so only add a grain
+    // when the anchor was a bare protein or carbs are still well short.
+    const needsGrain = anchorRole !== ROLE.COMPOSED
+      || currentTotals.carbs < mealTarget.carbs * 0.5;
+    if (needsGrain) {
+      const grain = pickRole([ROLE.GRAIN]);
+      if (grain) addItem(grain);
     }
 
-    // 5. Add beverage
-    const beverage = selectBestItem(categorized.beverages, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected, favoriteIds);
+    // Soup or fruit rounds the meal out only if real room remains.
+    if (roomFor(0.7)) {
+      const extra = pickRole([ROLE.SOUP, ROLE.FRUIT]);
+      if (extra) addItem(extra);
+    }
+  }
+
+  // A beverage earns a slot only when it carries nutrition — milk or a protein
+  // smoothie. Water and black coffee are not a recommendation.
+  const beverages = eligible.filter(item => getRole(item) === ROLE.BEVERAGE && isNutritionalBeverage(item));
+  if (beverages.length > 0 && roomFor(0.9)) {
+    const beverage = selectBestItem(beverages, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected, favoriteIds);
     if (beverage) addItem(beverage, 'Beverage');
+  }
+
+  // Dessert is only ever an extra: the plate must already be complete and the
+  // calories must genuinely fit.
+  const hasStructure = selected.some(i => {
+    const r = getRole(i);
+    return r === ROLE.PROTEIN || r === ROLE.COMPOSED;
+  });
+  if (hasStructure && roomFor(0.8)) {
+    const dessertPool = eligible.filter(item => getRole(item) === ROLE.DESSERT);
+    const dessert = selectBestItem(dessertPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected, favoriteIds);
+    if (dessert && currentTotals.calories + dessert.nutrition.calories <= mealTarget.calories * 1.05) {
+      addItem(dessert, 'Fits your remaining calories');
+    }
   }
 
   // Check if we hit targets reasonably
@@ -345,6 +410,14 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
     }
     if (proteinPercent < 60) {
       warnings.push('Consider adding protein-rich foods');
+    }
+
+    // Structure is prioritised over hitting macros exactly, so when the hall
+    // genuinely has no vegetable to offer, say so rather than quietly
+    // shipping a plate without one.
+    const rolesOnPlate = new Set(selected.map(getRole));
+    if (!rolesOnPlate.has(ROLE.VEGETABLE) && !rolesOnPlate.has(ROLE.SOUP)) {
+      warnings.push('No vegetable side available at this location right now');
     }
 
     // Halal is not labeled by Brandeis — warn when active
@@ -371,9 +444,14 @@ export function findAlternative(currentItem, availableItems, mealTarget, current
     fat: currentMealTotals.fat - currentItem.nutrition.fat,
   };
 
-  // Find items in similar category
-  const sameStation = availableItems.filter((item) => item.station === currentItem.station);
-  const candidates = sameStation.length > 1 ? sameStation : availableItems;
+  // Offer a swap that plays the same part in the meal. Matching on role rather
+  // than station keeps a chicken entree swapping for other mains instead of
+  // for whatever shares its dining-hall station label — which, at the salad
+  // bar, means dressings and shredded cheese.
+  const usable = availableItems.filter(item => !ACCESSORY_ROLES.has(getRole(item)));
+  const currentRole = getRole(currentItem);
+  const sameRole = usable.filter(item => getRole(item) === currentRole);
+  const candidates = sameRole.length > 1 ? sameRole : usable;
 
   const allExcluded = new Set([...excludeIds, currentItem.id]);
   const alternative = selectBestItem(candidates, mealTarget, totalsWithoutItem, restrictions, recentItemIds, allExcluded);
@@ -410,9 +488,30 @@ export function findRecommendedAdditions(availableItems, mealTarget, currentTota
   const results = [];
   const cumExcludeIds = new Set(excludeIds);
 
+  // Suggestions were dominated by 10-calorie salad-bar toppings, because with
+  // a nearly-full plate the smallest thing on the menu is the closest macro
+  // fit. Drop accessories, then lead with whatever the plate is actually
+  // missing before falling back to a general best fit.
+  const usable = availableItems.filter(item => !ACCESSORY_ROLES.has(getRole(item)));
+  const rolesOnPlate = new Set(selectedItems.map(getRole));
+  const missingRoles = [ROLE.PROTEIN, ROLE.VEGETABLE, ROLE.GRAIN].filter(role => {
+    if (role === ROLE.PROTEIN) return !rolesOnPlate.has(ROLE.PROTEIN) && !rolesOnPlate.has(ROLE.COMPOSED);
+    if (role === ROLE.GRAIN) return !rolesOnPlate.has(ROLE.GRAIN) && !rolesOnPlate.has(ROLE.COMPOSED);
+    return !rolesOnPlate.has(role);
+  });
+
   for (let i = 0; i < count; i++) {
+    // Each pass re-checks which roles are still missing, so the suggestions
+    // fill the gaps in order rather than offering three of the same thing.
+    const stillMissing = missingRoles.filter(role => !results.some(r => getRole(r) === role));
+    let pool = usable;
+    if (stillMissing.length > 0) {
+      const gapPool = usable.filter(item => stillMissing.includes(getRole(item)));
+      if (gapPool.length > 0) pool = gapPool;
+    }
+
     const candidate = selectBestItem(
-      availableItems,
+      pool,
       mealTarget,
       currentTotals,
       restrictions,

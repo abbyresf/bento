@@ -1,0 +1,6820 @@
+{
+"breakfast": [
+{
+"name": "Scrambled Eggs",
+"station": "entree",
+"cal": 230,
+"pro": 16,
+"carb": 0,
+"fat": 17,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher",
+"vegetarian"
+],
+"allergens": [
+"eggs"
+]
+},
+{
+"name": "Chickpea Scramble",
+"station": "entree",
+"cal": 200,
+"pro": 4,
+"carb": 12,
+"fat": 16,
+"fib": 3,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Pancakes",
+"station": "entree",
+"cal": 230,
+"pro": 2,
+"carb": 33,
+"fat": 10,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Turkey Bacon",
+"station": "entree",
+"cal": 0,
+"pro": 0,
+"carb": 0,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher"
+],
+"allergens": []
+},
+{
+"name": "O'Brien Potatoes",
+"station": "entree",
+"cal": 140,
+"pro": 2,
+"carb": 17,
+"fat": 7,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Maple Syrup",
+"station": "entree",
+"cal": 60,
+"pro": 0,
+"carb": 13,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Fried Egg",
+"station": "entree",
+"cal": 110,
+"pro": 7,
+"carb": 1,
+"fat": 8,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher",
+"vegetarian"
+],
+"allergens": [
+"eggs"
+]
+},
+{
+"name": "Fresh Pineapple",
+"station": "entree",
+"cal": 90,
+"pro": 1,
+"carb": 20,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Honeydew Melon",
+"station": "entree",
+"cal": 35,
+"pro": 0,
+"carb": 8,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Cantaloupe",
+"station": "entree",
+"cal": 30,
+"pro": 1,
+"carb": 6,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Bananas",
+"station": "entree",
+"cal": 130,
+"pro": 1,
+"carb": 29,
+"fat": 0,
+"fib": 2,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Apples",
+"station": "entree",
+"cal": 120,
+"pro": 1,
+"carb": 27,
+"fat": 0,
+"fib": 4,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Assorted Bagels",
+"station": "entree",
+"cal": 140,
+"pro": 3,
+"carb": 28,
+"fat": 1,
+"fib": 1,
+"tags": [
+"kosher"
+],
+"allergens": [
+"sesame",
+"soy",
+"wheat"
+]
+},
+{
+"name": "Oranges",
+"station": "entree",
+"cal": 120,
+"pro": 2,
+"carb": 27,
+"fat": 0,
+"fib": 5,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Tater Tots",
+"station": "allgood",
+"cal": 180,
+"pro": 2,
+"carb": 22,
+"fat": 10,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Plain Bagel",
+"station": "allgood",
+"cal": 260,
+"pro": 2,
+"carb": 53,
+"fat": 6,
+"fib": 4,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Everything Bagel",
+"station": "allgood",
+"cal": 270,
+"pro": 3,
+"carb": 52,
+"fat": 7,
+"fib": 6,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Just Egg\u00ae Patty",
+"station": "allgood",
+"cal": 100,
+"pro": 7,
+"carb": 2,
+"fat": 7,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Blueberries",
+"station": "salad",
+"cal": 15,
+"pro": 0,
+"carb": 3,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sliced Strawberries",
+"station": "salad",
+"cal": 15,
+"pro": 0,
+"carb": 3,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Mandarin Oranges",
+"station": "salad",
+"cal": 100,
+"pro": 1,
+"carb": 23,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Dried Cranberries",
+"station": "salad",
+"cal": 130,
+"pro": 0,
+"carb": 33,
+"fat": 0,
+"fib": 3,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Pumpkin Seeds",
+"station": "salad",
+"cal": 170,
+"pro": 8,
+"carb": 4,
+"fat": 14,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Cinnamon Sugar",
+"station": "salad",
+"cal": 60,
+"pro": 0,
+"carb": 14,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Overnight Chia & Honey Oats",
+"station": "salad",
+"cal": 220,
+"pro": 5,
+"carb": 37,
+"fat": 6,
+"fib": 5,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Spicy Potato Hash",
+"station": "grill",
+"cal": 350,
+"pro": 7,
+"carb": 69,
+"fat": 6,
+"fib": 8,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Turkey Sausage Patty",
+"station": "grill",
+"cal": 90,
+"pro": 7,
+"carb": 1,
+"fat": 6,
+"fib": 0,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "Scrambled Pesto Eggs",
+"station": "grill",
+"cal": 330,
+"pro": 19,
+"carb": 1,
+"fat": 27,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"eggs",
+"milk"
+]
+},
+{
+"name": "Buttermilk Pancakes",
+"station": "grill",
+"cal": 170,
+"pro": 5,
+"carb": 32,
+"fat": 2,
+"fib": 1,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"milk",
+"wheat"
+]
+},
+{
+"name": "Hard-Boiled Eggs",
+"station": "grill",
+"cal": 90,
+"pro": 7,
+"carb": 1,
+"fat": 6,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"eggs"
+]
+},
+{
+"name": "Pancake & Waffle Syrup",
+"station": "grill",
+"cal": 100,
+"pro": 0,
+"carb": 26,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Old Fashioned Oatmeal",
+"station": "bakery",
+"cal": 120,
+"pro": 4,
+"carb": 20,
+"fat": 2,
+"fib": 3,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Cottage Cheese",
+"station": "bakery",
+"cal": 45,
+"pro": 7,
+"carb": 3,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Nonfat Plain Greek Yogurt",
+"station": "bakery",
+"cal": 120,
+"pro": 11,
+"carb": 5,
+"fat": 6,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Nonfat Strawberry Greek Yogurt",
+"station": "bakery",
+"cal": 90,
+"pro": 9,
+"carb": 13,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Nonfat Vanilla Greek Yogurt",
+"station": "bakery",
+"cal": 90,
+"pro": 9,
+"carb": 11,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Red & Green Grapes",
+"station": "bakery",
+"cal": 60,
+"pro": 1,
+"carb": 15,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Watermelon",
+"station": "bakery",
+"cal": 50,
+"pro": 1,
+"carb": 12,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Granola",
+"station": "bakery",
+"cal": 130,
+"pro": 2,
+"carb": 20,
+"fat": 4,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"soy"
+]
+},
+{
+"name": "Chocolate Chips",
+"station": "bakery",
+"cal": 100,
+"pro": 1,
+"carb": 14,
+"fat": 6,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk",
+"soy"
+]
+},
+{
+"name": "Flax Seed",
+"station": "bakery",
+"cal": 60,
+"pro": 2,
+"carb": 3,
+"fat": 4,
+"fib": 3,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sugar In the Raw",
+"station": "bakery",
+"cal": 15,
+"pro": 0,
+"carb": 4,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Hash Brown Patty",
+"station": "entree",
+"cal": 110,
+"pro": 1,
+"carb": 12,
+"fat": 6,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Roasted Tofu",
+"station": "entree",
+"cal": 130,
+"pro": 11,
+"carb": 3,
+"fat": 7,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"soy"
+]
+},
+{
+"name": "Just\u00ae Scrambled Eggs",
+"station": "entree",
+"cal": 140,
+"pro": 12,
+"carb": 2,
+"fat": 10,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Shredded Vegan Cheddar",
+"station": "entree",
+"cal": 90,
+"pro": 0,
+"carb": 6,
+"fat": 7,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Salsa Verde",
+"station": "entree",
+"cal": 20,
+"pro": 1,
+"carb": 3,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Blueberry Muffin",
+"station": "bakery",
+"cal": 230,
+"pro": 2,
+"carb": 42,
+"fat": 6,
+"fib": 1,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"eggs",
+"milk",
+"soy",
+"wheat"
+]
+},
+{
+"name": "Banana Bread",
+"station": "bakery",
+"cal": 330,
+"pro": 3,
+"carb": 59,
+"fat": 9,
+"fib": 1,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"eggs",
+"milk",
+"soy",
+"wheat"
+]
+}
+],
+"lunch": [
+{
+"name": "Jerk Chicken",
+"station": "entree",
+"cal": 210,
+"pro": 34,
+"carb": 1,
+"fat": 6,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher"
+],
+"allergens": []
+},
+{
+"name": "Rice & Black Beans",
+"station": "entree",
+"cal": 130,
+"pro": 4,
+"carb": 25,
+"fat": 2,
+"fib": 2,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Baked Plantains",
+"station": "entree",
+"cal": 290,
+"pro": 2,
+"carb": 55,
+"fat": 6,
+"fib": 2,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Jerk Tofu",
+"station": "entree",
+"cal": 120,
+"pro": 11,
+"carb": 3,
+"fat": 5,
+"fib": 2,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"soy"
+]
+},
+{
+"name": "Jerk Sauce",
+"station": "entree",
+"cal": 45,
+"pro": 1,
+"carb": 10,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"soy"
+]
+},
+{
+"name": "Braised Collard Greens",
+"station": "entree",
+"cal": 100,
+"pro": 3,
+"carb": 8,
+"fat": 7,
+"fib": 4,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Turkey Burger",
+"station": "grill",
+"cal": 260,
+"pro": 29,
+"carb": 22,
+"fat": 4,
+"fib": 1,
+"tags": [
+"kosher"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Grilled Beef Kielbasa",
+"station": "grill",
+"cal": 240,
+"pro": 18,
+"carb": 2,
+"fat": 24,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher"
+],
+"allergens": []
+},
+{
+"name": "Black Bean Burger Patty",
+"station": "grill",
+"cal": 170,
+"pro": 15,
+"carb": 26,
+"fat": 5,
+"fib": 9,
+"tags": [
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"soy",
+"wheat"
+]
+},
+{
+"name": "New England Style Hot Dog Roll",
+"station": "grill",
+"cal": 110,
+"pro": 4,
+"carb": 19,
+"fat": 2,
+"fib": 1,
+"tags": [
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"soy",
+"wheat"
+]
+},
+{
+"name": "Crispy French Fries",
+"station": "grill",
+"cal": 240,
+"pro": 1,
+"carb": 23,
+"fat": 17,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sliced Tomatoes",
+"station": "grill",
+"cal": 10,
+"pro": 0,
+"carb": 2,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sliced Red Onions",
+"station": "grill",
+"cal": 10,
+"pro": 0,
+"carb": 1,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Romaine Lettuce",
+"station": "grill",
+"cal": 15,
+"pro": 1,
+"carb": 2,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Chipotle Mayonnaise",
+"station": "grill",
+"cal": 210,
+"pro": 0,
+"carb": 2,
+"fat": 22,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher",
+"vegetarian"
+],
+"allergens": [
+"eggs"
+]
+},
+{
+"name": "BBQ Sauce",
+"station": "grill",
+"cal": 140,
+"pro": 1,
+"carb": 36,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Smoked Salmon Uramaki",
+"station": "entree",
+"cal": 240,
+"pro": 9,
+"carb": 13,
+"fat": 17,
+"fib": 4,
+"tags": [
+"glutenFree",
+"kosher"
+],
+"allergens": [
+"fish",
+"sesame"
+]
+},
+{
+"name": "California Uramaki",
+"station": "entree",
+"cal": 240,
+"pro": 7,
+"carb": 17,
+"fat": 17,
+"fib": 4,
+"tags": [
+"glutenFree",
+"kosher"
+],
+"allergens": [
+"fish",
+"sesame"
+]
+},
+{
+"name": "Vegetable Uramaki",
+"station": "entree",
+"cal": 240,
+"pro": 7,
+"carb": 16,
+"fat": 17,
+"fib": 5,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"sesame"
+]
+},
+{
+"name": "Field Greens",
+"station": "salad",
+"cal": 20,
+"pro": 1,
+"carb": 3,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Shredded Carrots",
+"station": "salad",
+"cal": 15,
+"pro": 0,
+"carb": 3,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sliced Bell Peppers",
+"station": "salad",
+"cal": 10,
+"pro": 0,
+"carb": 2,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sliced Cucumber",
+"station": "salad",
+"cal": 5,
+"pro": 0,
+"carb": 1,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Tuna Salad",
+"station": "salad",
+"cal": 290,
+"pro": 17,
+"carb": 4,
+"fat": 22,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher"
+],
+"allergens": [
+"eggs",
+"fish"
+]
+},
+{
+"name": "Diced Tofu",
+"station": "salad",
+"cal": 100,
+"pro": 11,
+"carb": 3,
+"fat": 3,
+"fib": 2,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"soy"
+]
+},
+{
+"name": "Roasted Corn",
+"station": "salad",
+"cal": 110,
+"pro": 3,
+"carb": 21,
+"fat": 3,
+"fib": 2,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Grape Tomatoes",
+"station": "salad",
+"cal": 15,
+"pro": 1,
+"carb": 3,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Kalamata Olives",
+"station": "salad",
+"cal": 50,
+"pro": 0,
+"carb": 1,
+"fat": 5,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Jalapeno Peppers",
+"station": "salad",
+"cal": 10,
+"pro": 0,
+"carb": 2,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Roasted Beets",
+"station": "salad",
+"cal": 60,
+"pro": 2,
+"carb": 13,
+"fat": 0,
+"fib": 3,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Baby Spinach",
+"station": "salad",
+"cal": 15,
+"pro": 2,
+"carb": 1,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Hardcooked Egg",
+"station": "salad",
+"cal": 70,
+"pro": 5,
+"carb": 0,
+"fat": 4,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher",
+"vegetarian"
+],
+"allergens": [
+"eggs"
+]
+},
+{
+"name": "Banana Peppers",
+"station": "salad",
+"cal": 15,
+"pro": 0,
+"carb": 2,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Mandarin Oranges",
+"station": "salad",
+"cal": 100,
+"pro": 1,
+"carb": 23,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Red Kidney Beans",
+"station": "salad",
+"cal": 120,
+"pro": 8,
+"carb": 21,
+"fat": 0,
+"fib": 9,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Garbanzo Beans",
+"station": "salad",
+"cal": 90,
+"pro": 4,
+"carb": 14,
+"fat": 1,
+"fib": 4,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Ranch Dressing",
+"station": "salad",
+"cal": 30,
+"pro": 0,
+"carb": 5,
+"fat": 1,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Caesar Dressing",
+"station": "salad",
+"cal": 35,
+"pro": 0,
+"carb": 5,
+"fat": 1,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Thousand Island Dressing",
+"station": "salad",
+"cal": 20,
+"pro": 0,
+"carb": 4,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Yellow Rice",
+"station": "allgood",
+"cal": 50,
+"pro": 1,
+"carb": 7,
+"fat": 2,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Roasted Broccoli & Carrots",
+"station": "allgood",
+"cal": 70,
+"pro": 1,
+"carb": 7,
+"fat": 4,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Chicken Kabobs",
+"station": "allgood",
+"cal": 150,
+"pro": 19,
+"carb": 4,
+"fat": 7,
+"fib": 1,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "Baby Arugula",
+"station": "salad",
+"cal": 5,
+"pro": 1,
+"carb": 1,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Diced Seasoned Chicken",
+"station": "salad",
+"cal": 120,
+"pro": 22,
+"carb": 0,
+"fat": 4,
+"fib": 0,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "Chilled Quinoa",
+"station": "salad",
+"cal": 140,
+"pro": 5,
+"carb": 23,
+"fat": 2,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Diced Mixed Bell Peppers",
+"station": "salad",
+"cal": 10,
+"pro": 0,
+"carb": 2,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Diced Red Onions",
+"station": "salad",
+"cal": 10,
+"pro": 0,
+"carb": 1,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Marinated Artichoke Hearts",
+"station": "salad",
+"cal": 140,
+"pro": 3,
+"carb": 11,
+"fat": 10,
+"fib": 5,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Tomato Cucumber Salad",
+"station": "salad",
+"cal": 25,
+"pro": 1,
+"carb": 3,
+"fat": 1,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Roasted Beet & Arugula Salad",
+"station": "salad",
+"cal": 130,
+"pro": 2,
+"carb": 10,
+"fat": 9,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Lemon Dijon Vinaigrette",
+"station": "salad",
+"cal": 90,
+"pro": 0,
+"carb": 7,
+"fat": 4,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Cheese Pizza",
+"station": "pizza",
+"cal": 250,
+"pro": 12,
+"carb": 29,
+"fat": 8,
+"fib": 1,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"milk",
+"wheat"
+]
+},
+{
+"name": "Pepperoni Pizza",
+"station": "pizza",
+"cal": 270,
+"pro": 13,
+"carb": 29,
+"fat": 9,
+"fib": 1,
+"tags": [],
+"allergens": [
+"milk",
+"wheat"
+]
+},
+{
+"name": "Margherita Pizza",
+"station": "pizza",
+"cal": 250,
+"pro": 12,
+"carb": 29,
+"fat": 8,
+"fib": 1,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"milk",
+"wheat"
+]
+},
+{
+"name": "Greek Salad",
+"station": "pizza",
+"cal": 190,
+"pro": 10,
+"carb": 15,
+"fat": 9,
+"fib": 5,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Greek Chickpea Salad",
+"station": "pizza",
+"cal": 70,
+"pro": 3,
+"carb": 7,
+"fat": 4,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Mac & Cheese",
+"station": "entree",
+"cal": 260,
+"pro": 11,
+"carb": 30,
+"fat": 11,
+"fib": 2,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"milk",
+"wheat"
+]
+},
+{
+"name": "Cavatappi",
+"station": "entree",
+"cal": 90,
+"pro": 3,
+"carb": 18,
+"fat": 0,
+"fib": 1,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Marinara Sauce",
+"station": "entree",
+"cal": 25,
+"pro": 0,
+"carb": 2,
+"fat": 2,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Whole Steamed Green Beans",
+"station": "entree",
+"cal": 40,
+"pro": 2,
+"carb": 7,
+"fat": 0,
+"fib": 3,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Hearty Meat Sauce",
+"station": "entree",
+"cal": 90,
+"pro": 5,
+"carb": 3,
+"fat": 6,
+"fib": 0,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "Grilled Baguette",
+"station": "entree",
+"cal": 130,
+"pro": 3,
+"carb": 20,
+"fat": 3,
+"fib": 1,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"eggs",
+"milk",
+"wheat"
+]
+},
+{
+"name": "Grated Parmesan Cheese",
+"station": "entree",
+"cal": 60,
+"pro": 6,
+"carb": 0,
+"fat": 4,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Buttermilk Cheddar Mashed Potatoes",
+"station": "entree",
+"cal": 130,
+"pro": 4,
+"carb": 19,
+"fat": 4,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Calico Baked Beans",
+"station": "entree",
+"cal": 150,
+"pro": 4,
+"carb": 27,
+"fat": 1,
+"fib": 5,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Crispy Chicken Thigh",
+"station": "entree",
+"cal": 380,
+"pro": 42,
+"carb": 140,
+"fat": 11,
+"fib": 6,
+"tags": [],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Chef's Special",
+"station": "grill",
+"cal": 0,
+"pro": 0,
+"carb": 0,
+"fat": 0,
+"fib": 0,
+"tags": [],
+"allergens": []
+},
+{
+"name": "Hoagie Roll",
+"station": "grill",
+"cal": 240,
+"pro": 8,
+"carb": 47,
+"fat": 2,
+"fib": 2,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Smokey Grilled Chicken Thighs",
+"station": "grill",
+"cal": 160,
+"pro": 16,
+"carb": 3,
+"fat": 8,
+"fib": 1,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "Sweet Thai Chili Sauce",
+"station": "grill",
+"cal": 50,
+"pro": 0,
+"carb": 12,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"sesame"
+]
+},
+{
+"name": "Beyond Sausage & Peppers",
+"station": "grill",
+"cal": 280,
+"pro": 15,
+"carb": 19,
+"fat": 15,
+"fib": 4,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Kosher Pickle Spears",
+"station": "grill",
+"cal": 5,
+"pro": 0,
+"carb": 4,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Flour Tortilla",
+"station": "deli",
+"cal": 190,
+"pro": 5,
+"carb": 36,
+"fat": 5,
+"fib": 1,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Marble Rye Bread",
+"station": "deli",
+"cal": 220,
+"pro": 8,
+"carb": 40,
+"fat": 2,
+"fib": 4,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Multigrain Bread",
+"station": "deli",
+"cal": 110,
+"pro": 4,
+"carb": 21,
+"fat": 2,
+"fib": 1,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Sourdough Bread",
+"station": "deli",
+"cal": 110,
+"pro": 4,
+"carb": 20,
+"fat": 1,
+"fib": 1,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Sliced Roast Beef",
+"station": "deli",
+"cal": 90,
+"pro": 15,
+"carb": 0,
+"fat": 3,
+"fib": 0,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "Sliced Turkey Breast",
+"station": "deli",
+"cal": 100,
+"pro": 18,
+"carb": 0,
+"fat": 1,
+"fib": 0,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "Homestyle Egg Salad",
+"station": "deli",
+"cal": 260,
+"pro": 9,
+"carb": 2,
+"fat": 22,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"eggs"
+]
+},
+{
+"name": "Chicken Salad",
+"station": "deli",
+"cal": 250,
+"pro": 14,
+"carb": 1,
+"fat": 21,
+"fib": 0,
+"tags": [
+"glutenFree"
+],
+"allergens": [
+"eggs"
+]
+},
+{
+"name": "American Cheese",
+"station": "deli",
+"cal": 50,
+"pro": 3,
+"carb": 1,
+"fat": 4,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Sliced Cheddar Cheese",
+"station": "deli",
+"cal": 60,
+"pro": 3,
+"carb": 0,
+"fat": 4,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Grilled Vegetables",
+"station": "deli",
+"cal": 70,
+"pro": 1,
+"carb": 9,
+"fat": 4,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Leaf Lettuce",
+"station": "deli",
+"cal": 0,
+"pro": 0,
+"carb": 1,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Hummus",
+"station": "deli",
+"cal": 130,
+"pro": 3,
+"carb": 6,
+"fat": 10,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"sesame"
+]
+},
+{
+"name": "Dijon Mustard",
+"station": "deli",
+"cal": 30,
+"pro": 1,
+"carb": 1,
+"fat": 1,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Mayonnaise",
+"station": "deli",
+"cal": 100,
+"pro": 0,
+"carb": 0,
+"fat": 11,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"eggs"
+]
+},
+{
+"name": "Mayonnaise Pesto",
+"station": "deli",
+"cal": 190,
+"pro": 1,
+"carb": 0,
+"fat": 20,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"eggs",
+"milk"
+]
+},
+{
+"name": "Dill Pickle Slices",
+"station": "deli",
+"cal": 0,
+"pro": 0,
+"carb": 0,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Chicken Caesar Wrap",
+"station": "deli",
+"cal": 580,
+"pro": 41,
+"carb": 38,
+"fat": 30,
+"fib": 2,
+"tags": [],
+"allergens": [
+"eggs",
+"fish",
+"milk",
+"wheat"
+]
+},
+{
+"name": "Brown Rice",
+"station": "sides",
+"cal": 110,
+"pro": 2,
+"carb": 21,
+"fat": 1,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Farro",
+"station": "sides",
+"cal": 130,
+"pro": 5,
+"carb": 25,
+"fat": 0,
+"fib": 5,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Cottage Cheese",
+"station": "bakery",
+"cal": 45,
+"pro": 7,
+"carb": 3,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Nonfat Strawberry Greek Yogurt",
+"station": "bakery",
+"cal": 90,
+"pro": 9,
+"carb": 13,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Nonfat Vanilla Greek Yogurt",
+"station": "bakery",
+"cal": 90,
+"pro": 9,
+"carb": 11,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Cantaloupe",
+"station": "bakery",
+"cal": 30,
+"pro": 1,
+"carb": 6,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Red Grapes",
+"station": "bakery",
+"cal": 60,
+"pro": 1,
+"carb": 15,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Honeydew Melon",
+"station": "bakery",
+"cal": 30,
+"pro": 0,
+"carb": 7,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Fresh Pineapple",
+"station": "bakery",
+"cal": 80,
+"pro": 1,
+"carb": 20,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Granola",
+"station": "bakery",
+"cal": 130,
+"pro": 2,
+"carb": 20,
+"fat": 4,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"soy"
+]
+},
+{
+"name": "Chocolate Chips",
+"station": "bakery",
+"cal": 100,
+"pro": 1,
+"carb": 14,
+"fat": 6,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk",
+"soy"
+]
+},
+{
+"name": "Flax Seed",
+"station": "bakery",
+"cal": 60,
+"pro": 2,
+"carb": 3,
+"fat": 4,
+"fib": 3,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sugar In the Raw",
+"station": "bakery",
+"cal": 15,
+"pro": 0,
+"carb": 4,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Water Chestnuts",
+"station": "bakery",
+"cal": 20,
+"pro": 0,
+"carb": 4,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sliced Black Olives",
+"station": "bakery",
+"cal": 0,
+"pro": 0,
+"carb": 1,
+"fat": 2,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Potato Salad",
+"station": "bakery",
+"cal": 230,
+"pro": 3,
+"carb": 14,
+"fat": 18,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"eggs"
+]
+},
+{
+"name": "Vietnamese Rice Noodle Salad",
+"station": "bakery",
+"cal": 130,
+"pro": 3,
+"carb": 27,
+"fat": 0,
+"fib": 2,
+"tags": [
+"glutenFree"
+],
+"allergens": [
+"fish"
+]
+},
+{
+"name": "Lentil Soup",
+"station": "soup",
+"cal": 140,
+"pro": 7,
+"carb": 25,
+"fat": 3,
+"fib": 7,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Red Beets",
+"station": "salad",
+"cal": 45,
+"pro": 1,
+"carb": 6,
+"fat": 2,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Chickpeas",
+"station": "salad",
+"cal": 20,
+"pro": 1,
+"carb": 3,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Shredded Cheddar Cheese",
+"station": "salad",
+"cal": 120,
+"pro": 6,
+"carb": 1,
+"fat": 9,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Feta Cheese Crumbles",
+"station": "salad",
+"cal": 90,
+"pro": 5,
+"carb": 1,
+"fat": 6,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Hard-Boiled Eggs",
+"station": "salad",
+"cal": 80,
+"pro": 6,
+"carb": 1,
+"fat": 5,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"eggs"
+]
+},
+{
+"name": "Sliced Grilled Chicken",
+"station": "salad",
+"cal": 150,
+"pro": 29,
+"carb": 0,
+"fat": 4,
+"fib": 0,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "Balsamic Vinaigrette",
+"station": "salad",
+"cal": 170,
+"pro": 0,
+"carb": 3,
+"fat": 18,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Italian Dressing",
+"station": "salad",
+"cal": 0,
+"pro": 0,
+"carb": 0,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Honey Mustard Dressing",
+"station": "salad",
+"cal": 140,
+"pro": 1,
+"carb": 12,
+"fat": 9,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"eggs",
+"milk"
+]
+},
+{
+"name": "Balsamic Vinegar",
+"station": "salad",
+"cal": 20,
+"pro": 0,
+"carb": 4,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Olive Oil",
+"station": "salad",
+"cal": 120,
+"pro": 0,
+"carb": 0,
+"fat": 14,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Seasoned Croutons",
+"station": "salad",
+"cal": 60,
+"pro": 2,
+"carb": 10,
+"fat": 2,
+"fib": 0,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"milk",
+"wheat"
+]
+},
+{
+"name": "Hearty Mediterranean Bowl",
+"station": "entree",
+"cal": 330,
+"pro": 10,
+"carb": 53,
+"fat": 10,
+"fib": 9,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"sesame",
+"wheat"
+]
+},
+{
+"name": "Salad-e Shirazi",
+"station": "entree",
+"cal": 40,
+"pro": 0,
+"carb": 3,
+"fat": 3,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Chocolate Brownie",
+"station": "bakery",
+"cal": 190,
+"pro": 2,
+"carb": 33,
+"fat": 6,
+"fib": 1,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"eggs",
+"milk",
+"soy",
+"wheat"
+]
+},
+{
+"name": "Chocolate Mousse Cake",
+"station": "bakery",
+"cal": 200,
+"pro": 2,
+"carb": 30,
+"fat": 7,
+"fib": 1,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"eggs",
+"milk",
+"soy",
+"wheat"
+]
+},
+{
+"name": "Peach Oatmeal Bar",
+"station": "bakery",
+"cal": 460,
+"pro": 5,
+"carb": 67,
+"fat": 19,
+"fib": 2,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"eggs",
+"milk",
+"soy",
+"wheat"
+]
+},
+{
+"name": "Chocolate Whoopie Pie",
+"station": "bakery",
+"cal": 450,
+"pro": 4,
+"carb": 77,
+"fat": 13,
+"fib": 3,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"eggs",
+"milk",
+"soy",
+"wheat"
+]
+},
+{
+"name": "Fudgy Brownie Cookies",
+"station": "bakery",
+"cal": 170,
+"pro": 3,
+"carb": 27,
+"fat": 8,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Chocolate Chunk Cookies",
+"station": "bakery",
+"cal": 190,
+"pro": 2,
+"carb": 28,
+"fat": 8,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Oatmeal Cranberry Cookies",
+"station": "bakery",
+"cal": 170,
+"pro": 2,
+"carb": 29,
+"fat": 5,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Chicken Lettuce Wraps",
+"station": "allgood",
+"cal": 70,
+"pro": 6,
+"carb": 3,
+"fat": 3,
+"fib": 0,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "Jasmine Rice",
+"station": "allgood",
+"cal": 140,
+"pro": 3,
+"carb": 29,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Roasted Cauliflower",
+"station": "allgood",
+"cal": 50,
+"pro": 1,
+"carb": 4,
+"fat": 4,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sliced Cucumbers",
+"station": "salad",
+"cal": 10,
+"pro": 0,
+"carb": 2,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sliced Red Bell Peppers",
+"station": "salad",
+"cal": 15,
+"pro": 1,
+"carb": 4,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Broccoli Florets",
+"station": "salad",
+"cal": 15,
+"pro": 1,
+"carb": 2,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Cider Vinaigrette",
+"station": "salad",
+"cal": 70,
+"pro": 0,
+"carb": 7,
+"fat": 4,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Farfalle Pasta",
+"station": "entree",
+"cal": 100,
+"pro": 3,
+"carb": 20,
+"fat": 0,
+"fib": 2,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Penne Pasta",
+"station": "entree",
+"cal": 100,
+"pro": 4,
+"carb": 20,
+"fat": 0,
+"fib": 2,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Homemade Alfredo Sauce",
+"station": "entree",
+"cal": 90,
+"pro": 4,
+"carb": 5,
+"fat": 7,
+"fib": 0,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"milk",
+"wheat"
+]
+},
+{
+"name": "Balsamic Marinated Grape Tomatoes",
+"station": "entree",
+"cal": 70,
+"pro": 1,
+"carb": 4,
+"fat": 5,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sauteed Spinach",
+"station": "entree",
+"cal": 80,
+"pro": 4,
+"carb": 4,
+"fat": 6,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sauteed Fresh Mushrooms",
+"station": "entree",
+"cal": 150,
+"pro": 3,
+"carb": 5,
+"fat": 14,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Grilled Chicken Thigh",
+"station": "entree",
+"cal": 180,
+"pro": 18,
+"carb": 1,
+"fat": 11,
+"fib": 0,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "Roasted Garlic",
+"station": "entree",
+"cal": 45,
+"pro": 1,
+"carb": 6,
+"fat": 1,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Steamed Broccoli",
+"station": "entree",
+"cal": 20,
+"pro": 1,
+"carb": 4,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sauteed Onions",
+"station": "entree",
+"cal": 130,
+"pro": 2,
+"carb": 15,
+"fat": 8,
+"fib": 3,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Fresh Zucchini",
+"station": "entree",
+"cal": 10,
+"pro": 1,
+"carb": 2,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Garlic Knots",
+"station": "entree",
+"cal": 120,
+"pro": 3,
+"carb": 18,
+"fat": 4,
+"fib": 1,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"soy",
+"wheat"
+]
+},
+{
+"name": "Herb Roasted Turkey",
+"station": "entree",
+"cal": 170,
+"pro": 25,
+"carb": 1,
+"fat": 7,
+"fib": 0,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "Buttermilk Mashed Potatoes",
+"station": "entree",
+"cal": 150,
+"pro": 3,
+"carb": 22,
+"fat": 6,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Turkey Gravy",
+"station": "entree",
+"cal": 30,
+"pro": 1,
+"carb": 6,
+"fat": 2,
+"fib": 0,
+"tags": [],
+"allergens": [
+"milk",
+"soy",
+"wheat"
+]
+},
+{
+"name": "White Bean and Spinach Saute",
+"station": "entree",
+"cal": 45,
+"pro": 3,
+"carb": 9,
+"fat": 0,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Housemade Cranberry Sauce",
+"station": "entree",
+"cal": 30,
+"pro": 0,
+"carb": 7,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Caprese Pizza",
+"station": "pizza",
+"cal": 200,
+"pro": 9,
+"carb": 32,
+"fat": 2,
+"fib": 2,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"milk",
+"wheat"
+]
+},
+{
+"name": "Roasted Mushroom Calzone",
+"station": "pizza",
+"cal": 310,
+"pro": 15,
+"carb": 32,
+"fat": 12,
+"fib": 2,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"milk",
+"wheat"
+]
+},
+{
+"name": "Hot Honey",
+"station": "pizza",
+"cal": 120,
+"pro": 0,
+"carb": 0,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Balsamic Glaze",
+"station": "pizza",
+"cal": 70,
+"pro": 0,
+"carb": 16,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "White Rice",
+"station": "sides",
+"cal": 120,
+"pro": 3,
+"carb": 27,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Middle Eastern Falafel",
+"station": "sides",
+"cal": 45,
+"pro": 2,
+"carb": 9,
+"fat": 0,
+"fib": 2,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Plant Based Meatballs in Middle Eastern Tomato Sauce",
+"station": "sides",
+"cal": 180,
+"pro": 15,
+"carb": 14,
+"fat": 7,
+"fib": 4,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"soy",
+"wheat"
+]
+},
+{
+"name": "Signature Smash Burger",
+"station": "grill",
+"cal": 130,
+"pro": 9,
+"carb": 1,
+"fat": 10,
+"fib": 1,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "House Pickles",
+"station": "grill",
+"cal": 20,
+"pro": 0,
+"carb": 3,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Chipotle Ranch",
+"station": "grill",
+"cal": 110,
+"pro": 1,
+"carb": 3,
+"fat": 2,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"eggs",
+"milk"
+]
+},
+{
+"name": "Pickle Pepper Relish",
+"station": "grill",
+"cal": 0,
+"pro": 0,
+"carb": 0,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Beyond Burger Patty",
+"station": "grill",
+"cal": 240,
+"pro": 20,
+"carb": 7,
+"fat": 14,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Hamburger Bun",
+"station": "grill",
+"cal": 120,
+"pro": 4,
+"carb": 22,
+"fat": 2,
+"fib": 1,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Sliced Swiss Cheese",
+"station": "deli",
+"cal": 60,
+"pro": 4,
+"carb": 0,
+"fat": 4,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Sliced Provolone Cheese",
+"station": "deli",
+"cal": 50,
+"pro": 4,
+"carb": 0,
+"fat": 4,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "White Bread",
+"station": "deli",
+"cal": 70,
+"pro": 2,
+"carb": 13,
+"fat": 0,
+"fib": 1,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"soy",
+"wheat"
+]
+},
+{
+"name": "Ciabatta Roll",
+"station": "deli",
+"cal": 280,
+"pro": 8,
+"carb": 52,
+"fat": 3,
+"fib": 2,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "White Sub Roll",
+"station": "deli",
+"cal": 200,
+"pro": 7,
+"carb": 36,
+"fat": 2,
+"fib": 1,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Sliced Mozzarella Cheese",
+"station": "deli",
+"cal": 150,
+"pro": 10,
+"carb": 2,
+"fat": 10,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Basil Pesto",
+"station": "deli",
+"cal": 160,
+"pro": 5,
+"carb": 1,
+"fat": 15,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Signature Chips",
+"station": "deli",
+"cal": 160,
+"pro": 1,
+"carb": 14,
+"fat": 11,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Lemon Tahini Chickpea Salad",
+"station": "deli",
+"cal": 80,
+"pro": 3,
+"carb": 7,
+"fat": 4,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"sesame"
+]
+},
+{
+"name": "Spinach Wrap",
+"station": "deli",
+"cal": 210,
+"pro": 8,
+"carb": 35,
+"fat": 5,
+"fib": 2,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Burrito Bowl",
+"station": "entree",
+"cal": 210,
+"pro": 8,
+"carb": 33,
+"fat": 6,
+"fib": 8,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"soy"
+]
+},
+{
+"name": "Chicken Noodle Soup",
+"station": "soup",
+"cal": 90,
+"pro": 5,
+"carb": 9,
+"fat": 3,
+"fib": 1,
+"tags": [],
+"allergens": [
+"eggs",
+"wheat"
+]
+},
+{
+"name": "Minestrone Soup",
+"station": "soup",
+"cal": 100,
+"pro": 5,
+"carb": 13,
+"fat": 2,
+"fib": 3,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"milk",
+"wheat"
+]
+},
+{
+"name": "Oyster Crackers",
+"station": "soup",
+"cal": 70,
+"pro": 1,
+"carb": 9,
+"fat": 3,
+"fib": 0,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"soy",
+"wheat"
+]
+},
+{
+"name": "Hard Cooked Egg",
+"station": "entree",
+"cal": 80,
+"pro": 6,
+"carb": 1,
+"fat": 5,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"eggs"
+]
+},
+{
+"name": "Roasted Tofu",
+"station": "entree",
+"cal": 180,
+"pro": 15,
+"carb": 4,
+"fat": 9,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"soy"
+]
+},
+{
+"name": "Diced Chicken",
+"station": "entree",
+"cal": 180,
+"pro": 25,
+"carb": 1,
+"fat": 8,
+"fib": 0,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "Lite Italian Dressing",
+"station": "entree",
+"cal": 110,
+"pro": 0,
+"carb": 2,
+"fat": 12,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Honey Balsamic Vinaigrette",
+"station": "entree",
+"cal": 170,
+"pro": 0,
+"carb": 4,
+"fat": 18,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Lentil Bean Salad",
+"station": "entree",
+"cal": 110,
+"pro": 5,
+"carb": 16,
+"fat": 3,
+"fib": 5,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Watermelon & Feta Salad",
+"station": "entree",
+"cal": 70,
+"pro": 2,
+"carb": 12,
+"fat": 2,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Roasted Beets & Carrots",
+"station": "entree",
+"cal": 90,
+"pro": 1,
+"carb": 12,
+"fat": 4,
+"fib": 3,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Pesto Tortellini Salad",
+"station": "entree",
+"cal": 310,
+"pro": 16,
+"carb": 14,
+"fat": 13,
+"fib": 2,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"eggs",
+"milk",
+"wheat"
+]
+},
+{
+"name": "Corn & Black Bean Salad",
+"station": "entree",
+"cal": 180,
+"pro": 3,
+"carb": 15,
+"fat": 14,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Shredded Parmesan Cheese",
+"station": "entree",
+"cal": 220,
+"pro": 20,
+"carb": 2,
+"fat": 14,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Roasted Shawarma Chickpeas",
+"station": "entree",
+"cal": 90,
+"pro": 4,
+"carb": 13,
+"fat": 2,
+"fib": 4,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Chile-Roasted Corn",
+"station": "entree",
+"cal": 130,
+"pro": 4,
+"carb": 24,
+"fat": 3,
+"fib": 3,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Pickled Red Onions",
+"station": "entree",
+"cal": 15,
+"pro": 0,
+"carb": 3,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Roasted Mushrooms",
+"station": "entree",
+"cal": 130,
+"pro": 3,
+"carb": 5,
+"fat": 12,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Roasted Brussels Sprouts",
+"station": "entree",
+"cal": 50,
+"pro": 3,
+"carb": 7,
+"fat": 2,
+"fib": 4,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Vegan Tzatziki Sauce",
+"station": "entree",
+"cal": 100,
+"pro": 0,
+"carb": 1,
+"fat": 11,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Nonfat Plain Greek Yogurt",
+"station": "bakery",
+"cal": 70,
+"pro": 10,
+"carb": 4,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Fresh Fruit Salad",
+"station": "bakery",
+"cal": 40,
+"pro": 0,
+"carb": 9,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Raisins",
+"station": "bakery",
+"cal": 90,
+"pro": 1,
+"carb": 23,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Golden Raisins",
+"station": "bakery",
+"cal": 130,
+"pro": 1,
+"carb": 31,
+"fat": 0,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sunflower Seeds",
+"station": "bakery",
+"cal": 0,
+"pro": 0,
+"carb": 0,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Pepitas",
+"station": "bakery",
+"cal": 110,
+"pro": 6,
+"carb": 3,
+"fat": 9,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Chia Seeds",
+"station": "bakery",
+"cal": 80,
+"pro": 2,
+"carb": 6,
+"fat": 4,
+"fib": 5,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Assorted Sweet Loren's Cookies",
+"station": "bakery",
+"cal": 180,
+"pro": 2,
+"carb": 28,
+"fat": 7,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+}
+],
+"dinner": [
+{
+"name": "Cheese Quesadilla",
+"station": "deli",
+"cal": 460,
+"pro": 8,
+"carb": 63,
+"fat": 18,
+"fib": 2,
+"tags": [
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Black Bean Quesadilla",
+"station": "deli",
+"cal": 410,
+"pro": 11,
+"carb": 63,
+"fat": 12,
+"fib": 6,
+"tags": [
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Sauteed Peppers and Onions",
+"station": "deli",
+"cal": 30,
+"pro": 1,
+"carb": 5,
+"fat": 1,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Mexican Brown Rice",
+"station": "deli",
+"cal": 100,
+"pro": 2,
+"carb": 21,
+"fat": 1,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Turkey Burger",
+"station": "grill",
+"cal": 260,
+"pro": 29,
+"carb": 22,
+"fat": 4,
+"fib": 1,
+"tags": [
+"kosher"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Grilled Beef Kielbasa",
+"station": "grill",
+"cal": 240,
+"pro": 18,
+"carb": 2,
+"fat": 24,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher"
+],
+"allergens": []
+},
+{
+"name": "New England Style Hot Dog Roll",
+"station": "grill",
+"cal": 110,
+"pro": 4,
+"carb": 19,
+"fat": 2,
+"fib": 1,
+"tags": [
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"soy",
+"wheat"
+]
+},
+{
+"name": "Crispy French Fries",
+"station": "grill",
+"cal": 240,
+"pro": 1,
+"carb": 23,
+"fat": 17,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sliced Tomatoes",
+"station": "grill",
+"cal": 10,
+"pro": 0,
+"carb": 2,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sliced Red Onions",
+"station": "grill",
+"cal": 10,
+"pro": 0,
+"carb": 1,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Black Bean Burger Patty",
+"station": "grill",
+"cal": 170,
+"pro": 15,
+"carb": 26,
+"fat": 5,
+"fib": 9,
+"tags": [
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"soy",
+"wheat"
+]
+},
+{
+"name": "Romaine Lettuce",
+"station": "grill",
+"cal": 15,
+"pro": 1,
+"carb": 2,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Smoked Salmon Uramaki",
+"station": "entree",
+"cal": 240,
+"pro": 9,
+"carb": 13,
+"fat": 17,
+"fib": 4,
+"tags": [
+"glutenFree",
+"kosher"
+],
+"allergens": [
+"fish",
+"sesame"
+]
+},
+{
+"name": "California Uramaki",
+"station": "entree",
+"cal": 240,
+"pro": 7,
+"carb": 17,
+"fat": 17,
+"fib": 4,
+"tags": [
+"glutenFree",
+"kosher"
+],
+"allergens": [
+"fish",
+"sesame"
+]
+},
+{
+"name": "Vegetable Uramaki",
+"station": "entree",
+"cal": 240,
+"pro": 7,
+"carb": 16,
+"fat": 17,
+"fib": 5,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"sesame"
+]
+},
+{
+"name": "Field Greens",
+"station": "salad",
+"cal": 20,
+"pro": 1,
+"carb": 3,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Shredded Carrots",
+"station": "salad",
+"cal": 15,
+"pro": 0,
+"carb": 3,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sliced Bell Peppers",
+"station": "salad",
+"cal": 10,
+"pro": 0,
+"carb": 2,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sliced Cucumber",
+"station": "salad",
+"cal": 5,
+"pro": 0,
+"carb": 1,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Tuna Salad",
+"station": "salad",
+"cal": 290,
+"pro": 17,
+"carb": 4,
+"fat": 22,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher"
+],
+"allergens": [
+"eggs",
+"fish"
+]
+},
+{
+"name": "Diced Tofu",
+"station": "salad",
+"cal": 100,
+"pro": 11,
+"carb": 3,
+"fat": 3,
+"fib": 2,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"soy"
+]
+},
+{
+"name": "Roasted Corn",
+"station": "salad",
+"cal": 110,
+"pro": 3,
+"carb": 21,
+"fat": 3,
+"fib": 2,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Grape Tomatoes",
+"station": "salad",
+"cal": 15,
+"pro": 1,
+"carb": 3,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sliced Mushrooms",
+"station": "salad",
+"cal": 0,
+"pro": 1,
+"carb": 1,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Hardcooked Egg",
+"station": "salad",
+"cal": 70,
+"pro": 5,
+"carb": 0,
+"fat": 4,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher",
+"vegetarian"
+],
+"allergens": [
+"eggs"
+]
+},
+{
+"name": "Hummus",
+"station": "salad",
+"cal": 130,
+"pro": 3,
+"carb": 6,
+"fat": 10,
+"fib": 2,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"sesame"
+]
+},
+{
+"name": "Banana Peppers",
+"station": "salad",
+"cal": 15,
+"pro": 0,
+"carb": 2,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Mandarin Oranges",
+"station": "salad",
+"cal": 100,
+"pro": 1,
+"carb": 23,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Brown Lentils",
+"station": "salad",
+"cal": 100,
+"pro": 7,
+"carb": 21,
+"fat": 0,
+"fib": 6,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Red Kidney Beans",
+"station": "salad",
+"cal": 120,
+"pro": 8,
+"carb": 21,
+"fat": 0,
+"fib": 9,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Garbanzo Beans",
+"station": "salad",
+"cal": 90,
+"pro": 4,
+"carb": 14,
+"fat": 1,
+"fib": 4,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Ranch Dressing",
+"station": "salad",
+"cal": 30,
+"pro": 0,
+"carb": 5,
+"fat": 1,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Caesar Dressing",
+"station": "salad",
+"cal": 35,
+"pro": 0,
+"carb": 5,
+"fat": 1,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Thousand Island Dressing",
+"station": "salad",
+"cal": 20,
+"pro": 0,
+"carb": 4,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"kosher",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Yellow Rice",
+"station": "allgood",
+"cal": 50,
+"pro": 1,
+"carb": 7,
+"fat": 2,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sauteed Peppers, Onions, and Mushrooms",
+"station": "allgood",
+"cal": 50,
+"pro": 2,
+"carb": 7,
+"fat": 2,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Shawarma Beef",
+"station": "allgood",
+"cal": 190,
+"pro": 25,
+"carb": 1,
+"fat": 9,
+"fib": 0,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "Vegan Tzatziki Sauce",
+"station": "allgood",
+"cal": 280,
+"pro": 0,
+"carb": 2,
+"fat": 30,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Baby Arugula",
+"station": "salad",
+"cal": 5,
+"pro": 1,
+"carb": 1,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Baby Spinach",
+"station": "salad",
+"cal": 15,
+"pro": 2,
+"carb": 1,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Diced Seasoned Chicken",
+"station": "salad",
+"cal": 120,
+"pro": 22,
+"carb": 0,
+"fat": 4,
+"fib": 0,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "Chilled Quinoa",
+"station": "salad",
+"cal": 140,
+"pro": 5,
+"carb": 23,
+"fat": 2,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Diced Mixed Bell Peppers",
+"station": "salad",
+"cal": 10,
+"pro": 0,
+"carb": 2,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Diced Red Onions",
+"station": "salad",
+"cal": 10,
+"pro": 0,
+"carb": 1,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Garbanzo Bean Salad",
+"station": "salad",
+"cal": 90,
+"pro": 2,
+"carb": 9,
+"fat": 5,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Marinated Artichoke Hearts",
+"station": "salad",
+"cal": 140,
+"pro": 3,
+"carb": 11,
+"fat": 10,
+"fib": 5,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Roasted Beet & Arugula Salad",
+"station": "salad",
+"cal": 130,
+"pro": 2,
+"carb": 10,
+"fat": 9,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Lemon Dijon Vinaigrette",
+"station": "salad",
+"cal": 90,
+"pro": 0,
+"carb": 7,
+"fat": 4,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Cheese Pizza",
+"station": "pizza",
+"cal": 250,
+"pro": 12,
+"carb": 29,
+"fat": 8,
+"fib": 1,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"milk",
+"wheat"
+]
+},
+{
+"name": "Pepperoni Pizza",
+"station": "pizza",
+"cal": 270,
+"pro": 13,
+"carb": 29,
+"fat": 9,
+"fib": 1,
+"tags": [],
+"allergens": [
+"milk",
+"wheat"
+]
+},
+{
+"name": "Margherita Pizza",
+"station": "pizza",
+"cal": 250,
+"pro": 12,
+"carb": 29,
+"fat": 8,
+"fib": 1,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"milk",
+"wheat"
+]
+},
+{
+"name": "Caesar Salad",
+"station": "pizza",
+"cal": 190,
+"pro": 6,
+"carb": 8,
+"fat": 14,
+"fib": 1,
+"tags": [],
+"allergens": [
+"eggs",
+"fish",
+"milk",
+"wheat"
+]
+},
+{
+"name": "Mac & Cheese",
+"station": "entree",
+"cal": 260,
+"pro": 11,
+"carb": 30,
+"fat": 11,
+"fib": 2,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"milk",
+"wheat"
+]
+},
+{
+"name": "Cavatappi",
+"station": "entree",
+"cal": 90,
+"pro": 3,
+"carb": 18,
+"fat": 0,
+"fib": 1,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Hearty Meat Sauce",
+"station": "entree",
+"cal": 90,
+"pro": 5,
+"carb": 3,
+"fat": 6,
+"fib": 0,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "Steamed Broccoli Florets",
+"station": "entree",
+"cal": 20,
+"pro": 2,
+"carb": 3,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Grilled Baguette",
+"station": "entree",
+"cal": 130,
+"pro": 3,
+"carb": 20,
+"fat": 3,
+"fib": 1,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"eggs",
+"milk",
+"wheat"
+]
+},
+{
+"name": "Grated Parmesan Cheese",
+"station": "entree",
+"cal": 60,
+"pro": 6,
+"carb": 0,
+"fat": 4,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Basmati Rice",
+"station": "entree",
+"cal": 140,
+"pro": 3,
+"carb": 30,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Aloo Gobi",
+"station": "entree",
+"cal": 70,
+"pro": 2,
+"carb": 10,
+"fat": 3,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Saag Paneer",
+"station": "entree",
+"cal": 150,
+"pro": 10,
+"carb": 9,
+"fat": 10,
+"fib": 4,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Chicken Tikka Masala",
+"station": "entree",
+"cal": 300,
+"pro": 26,
+"carb": 5,
+"fat": 19,
+"fib": 0,
+"tags": [
+"glutenFree"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Tandoori Naan",
+"station": "entree",
+"cal": 390,
+"pro": 12,
+"carb": 63,
+"fat": 9,
+"fib": 3,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"eggs",
+"milk",
+"wheat"
+]
+},
+{
+"name": "Raita",
+"station": "entree",
+"cal": 25,
+"pro": 2,
+"carb": 1,
+"fat": 1,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Tuna Melt on Sourdough",
+"station": "grill",
+"cal": 310,
+"pro": 18,
+"carb": 3,
+"fat": 24,
+"fib": 0,
+"tags": [],
+"allergens": [
+"eggs",
+"fish",
+"milk",
+"wheat"
+]
+},
+{
+"name": "Grilled Cheese & Tomato",
+"station": "grill",
+"cal": 360,
+"pro": 10,
+"carb": 30,
+"fat": 20,
+"fib": 2,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"milk",
+"soy",
+"wheat"
+]
+},
+{
+"name": "Classic Grilled Cheese",
+"station": "grill",
+"cal": 350,
+"pro": 10,
+"carb": 29,
+"fat": 20,
+"fib": 2,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"milk",
+"soy",
+"wheat"
+]
+},
+{
+"name": "Tuna Melt on Texas Toast",
+"station": "grill",
+"cal": 280,
+"pro": 14,
+"carb": 23,
+"fat": 14,
+"fib": 1,
+"tags": [],
+"allergens": [
+"eggs",
+"fish",
+"soy",
+"wheat"
+]
+},
+{
+"name": "Grilled Cheese",
+"station": "grill",
+"cal": 400,
+"pro": 11,
+"carb": 5,
+"fat": 15,
+"fib": 0,
+"tags": [],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Flour Tortilla",
+"station": "deli",
+"cal": 190,
+"pro": 5,
+"carb": 36,
+"fat": 5,
+"fib": 1,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Marble Rye Bread",
+"station": "deli",
+"cal": 220,
+"pro": 8,
+"carb": 40,
+"fat": 2,
+"fib": 4,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Multigrain Bread",
+"station": "deli",
+"cal": 110,
+"pro": 4,
+"carb": 21,
+"fat": 2,
+"fib": 1,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Sourdough Bread",
+"station": "deli",
+"cal": 110,
+"pro": 4,
+"carb": 20,
+"fat": 1,
+"fib": 1,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Sliced Roast Beef",
+"station": "deli",
+"cal": 90,
+"pro": 15,
+"carb": 0,
+"fat": 3,
+"fib": 0,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "Sliced Turkey Breast",
+"station": "deli",
+"cal": 100,
+"pro": 18,
+"carb": 0,
+"fat": 1,
+"fib": 0,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "Homestyle Egg Salad",
+"station": "deli",
+"cal": 260,
+"pro": 9,
+"carb": 2,
+"fat": 22,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"eggs"
+]
+},
+{
+"name": "Chicken Salad",
+"station": "deli",
+"cal": 250,
+"pro": 14,
+"carb": 1,
+"fat": 21,
+"fib": 0,
+"tags": [
+"glutenFree"
+],
+"allergens": [
+"eggs"
+]
+},
+{
+"name": "American Cheese",
+"station": "deli",
+"cal": 50,
+"pro": 3,
+"carb": 1,
+"fat": 4,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Sliced Cheddar Cheese",
+"station": "deli",
+"cal": 60,
+"pro": 3,
+"carb": 0,
+"fat": 4,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Grilled Vegetables",
+"station": "deli",
+"cal": 70,
+"pro": 1,
+"carb": 9,
+"fat": 4,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Leaf Lettuce",
+"station": "deli",
+"cal": 0,
+"pro": 0,
+"carb": 1,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Dijon Mustard",
+"station": "deli",
+"cal": 30,
+"pro": 1,
+"carb": 1,
+"fat": 1,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Mayonnaise",
+"station": "deli",
+"cal": 100,
+"pro": 0,
+"carb": 0,
+"fat": 11,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"eggs"
+]
+},
+{
+"name": "Mayonnaise Pesto",
+"station": "deli",
+"cal": 190,
+"pro": 1,
+"carb": 0,
+"fat": 20,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"eggs",
+"milk"
+]
+},
+{
+"name": "Dill Pickle Slices",
+"station": "deli",
+"cal": 0,
+"pro": 0,
+"carb": 0,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Chicken Caesar Wrap",
+"station": "deli",
+"cal": 580,
+"pro": 41,
+"carb": 38,
+"fat": 30,
+"fib": 2,
+"tags": [],
+"allergens": [
+"eggs",
+"fish",
+"milk",
+"wheat"
+]
+},
+{
+"name": "Chef's Special",
+"station": "deli",
+"cal": 0,
+"pro": 0,
+"carb": 0,
+"fat": 0,
+"fib": 0,
+"tags": [],
+"allergens": []
+},
+{
+"name": "White Rice",
+"station": "sides",
+"cal": 30,
+"pro": 1,
+"carb": 7,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Farro",
+"station": "sides",
+"cal": 130,
+"pro": 5,
+"carb": 25,
+"fat": 0,
+"fib": 5,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Cottage Cheese",
+"station": "bakery",
+"cal": 45,
+"pro": 7,
+"carb": 3,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Nonfat Strawberry Greek Yogurt",
+"station": "bakery",
+"cal": 90,
+"pro": 9,
+"carb": 13,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Nonfat Vanilla Greek Yogurt",
+"station": "bakery",
+"cal": 90,
+"pro": 9,
+"carb": 11,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Cantaloupe",
+"station": "bakery",
+"cal": 30,
+"pro": 1,
+"carb": 6,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Red Grapes",
+"station": "bakery",
+"cal": 60,
+"pro": 1,
+"carb": 15,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Honeydew Melon",
+"station": "bakery",
+"cal": 30,
+"pro": 0,
+"carb": 7,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Fresh Pineapple",
+"station": "bakery",
+"cal": 80,
+"pro": 1,
+"carb": 20,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Watermelon",
+"station": "bakery",
+"cal": 50,
+"pro": 1,
+"carb": 12,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Granola",
+"station": "bakery",
+"cal": 130,
+"pro": 2,
+"carb": 20,
+"fat": 4,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"soy"
+]
+},
+{
+"name": "Chocolate Chips",
+"station": "bakery",
+"cal": 100,
+"pro": 1,
+"carb": 14,
+"fat": 6,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk",
+"soy"
+]
+},
+{
+"name": "Flax Seed",
+"station": "bakery",
+"cal": 60,
+"pro": 2,
+"carb": 3,
+"fat": 4,
+"fib": 3,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sugar In the Raw",
+"station": "bakery",
+"cal": 15,
+"pro": 0,
+"carb": 4,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Tomato Basil Soup",
+"station": "soup",
+"cal": 90,
+"pro": 2,
+"carb": 12,
+"fat": 3,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Italian Wedding Soup",
+"station": "soup",
+"cal": 110,
+"pro": 5,
+"carb": 8,
+"fat": 6,
+"fib": 1,
+"tags": [],
+"allergens": [
+"eggs",
+"milk",
+"soy",
+"wheat"
+]
+},
+{
+"name": "Red Beets",
+"station": "salad",
+"cal": 45,
+"pro": 1,
+"carb": 6,
+"fat": 2,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sliced Black Olives",
+"station": "salad",
+"cal": 0,
+"pro": 0,
+"carb": 1,
+"fat": 2,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Chickpeas",
+"station": "salad",
+"cal": 20,
+"pro": 1,
+"carb": 3,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Shredded Cheddar Cheese",
+"station": "salad",
+"cal": 120,
+"pro": 6,
+"carb": 1,
+"fat": 9,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Feta Cheese Crumbles",
+"station": "salad",
+"cal": 90,
+"pro": 5,
+"carb": 1,
+"fat": 6,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Shaved Parmesan",
+"station": "salad",
+"cal": 120,
+"pro": 9,
+"carb": 2,
+"fat": 8,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Hard-Boiled Eggs",
+"station": "salad",
+"cal": 80,
+"pro": 6,
+"carb": 1,
+"fat": 5,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"eggs"
+]
+},
+{
+"name": "Sliced Grilled Chicken",
+"station": "salad",
+"cal": 150,
+"pro": 29,
+"carb": 0,
+"fat": 4,
+"fib": 0,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "Balsamic Vinaigrette",
+"station": "salad",
+"cal": 170,
+"pro": 0,
+"carb": 3,
+"fat": 18,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Italian Dressing",
+"station": "salad",
+"cal": 0,
+"pro": 0,
+"carb": 0,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Honey Mustard Dressing",
+"station": "salad",
+"cal": 140,
+"pro": 1,
+"carb": 12,
+"fat": 9,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"eggs",
+"milk"
+]
+},
+{
+"name": "Seasoned Croutons",
+"station": "salad",
+"cal": 60,
+"pro": 2,
+"carb": 10,
+"fat": 2,
+"fib": 0,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"milk",
+"wheat"
+]
+},
+{
+"name": "Balsamic Vinegar",
+"station": "salad",
+"cal": 20,
+"pro": 0,
+"carb": 4,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Olive Oil",
+"station": "salad",
+"cal": 120,
+"pro": 0,
+"carb": 0,
+"fat": 14,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Chili Garlic Vegetable Lo Mein Bowl",
+"station": "entree",
+"cal": 570,
+"pro": 27,
+"carb": 74,
+"fat": 17,
+"fib": 10,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"sesame",
+"soy"
+]
+},
+{
+"name": "Asian Edamame Salad",
+"station": "entree",
+"cal": 120,
+"pro": 8,
+"carb": 8,
+"fat": 7,
+"fib": 4,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"sesame",
+"soy"
+]
+},
+{
+"name": "Chicken Enchilada Casserole",
+"station": "allgood",
+"cal": 160,
+"pro": 15,
+"carb": 11,
+"fat": 7,
+"fib": 2,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "Roasted Okra & Corn",
+"station": "allgood",
+"cal": 70,
+"pro": 1,
+"carb": 9,
+"fat": 2,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Red Beans & Rice",
+"station": "allgood",
+"cal": 140,
+"pro": 2,
+"carb": 27,
+"fat": 0,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Cider Vinaigrette",
+"station": "salad",
+"cal": 70,
+"pro": 0,
+"carb": 7,
+"fat": 4,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sliced Red Bell Peppers",
+"station": "salad",
+"cal": 15,
+"pro": 1,
+"carb": 4,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Broccoli Florets",
+"station": "salad",
+"cal": 15,
+"pro": 1,
+"carb": 2,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Marinara Sauce",
+"station": "entree",
+"cal": 25,
+"pro": 0,
+"carb": 2,
+"fat": 2,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "White Wine Cream Sauce",
+"station": "entree",
+"cal": 110,
+"pro": 0,
+"carb": 1,
+"fat": 10,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Balsamic Marinated Grape Tomatoes",
+"station": "entree",
+"cal": 70,
+"pro": 1,
+"carb": 4,
+"fat": 5,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Kale & Onions",
+"station": "entree",
+"cal": 35,
+"pro": 1,
+"carb": 4,
+"fat": 2,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sauteed Fresh Mushrooms",
+"station": "entree",
+"cal": 150,
+"pro": 3,
+"carb": 5,
+"fat": 14,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Meatballs",
+"station": "entree",
+"cal": 180,
+"pro": 12,
+"carb": 3,
+"fat": 12,
+"fib": 0,
+"tags": [],
+"allergens": [
+"eggs",
+"fish",
+"milk",
+"sesame",
+"soy",
+"wheat"
+]
+},
+{
+"name": "Garlic Knots",
+"station": "entree",
+"cal": 120,
+"pro": 3,
+"carb": 18,
+"fat": 4,
+"fib": 1,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"soy",
+"wheat"
+]
+},
+{
+"name": "Fresh Zucchini",
+"station": "entree",
+"cal": 10,
+"pro": 1,
+"carb": 2,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sauteed Onions",
+"station": "entree",
+"cal": 130,
+"pro": 2,
+"carb": 15,
+"fat": 8,
+"fib": 3,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Turkey Pot Pie",
+"station": "entree",
+"cal": 160,
+"pro": 10,
+"carb": 14,
+"fat": 10,
+"fib": 1,
+"tags": [],
+"allergens": [
+"fish",
+"milk",
+"soy",
+"wheat"
+]
+},
+{
+"name": "Creamy Mashed Potatoes",
+"station": "entree",
+"cal": 130,
+"pro": 3,
+"carb": 22,
+"fat": 3,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Panko Fried Tofu",
+"station": "entree",
+"cal": 290,
+"pro": 21,
+"carb": 48,
+"fat": 7,
+"fib": 4,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"soy",
+"wheat"
+]
+},
+{
+"name": "Caprese Pizza",
+"station": "pizza",
+"cal": 200,
+"pro": 9,
+"carb": 32,
+"fat": 2,
+"fib": 2,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"milk",
+"wheat"
+]
+},
+{
+"name": "Roasted Mushroom Calzone",
+"station": "pizza",
+"cal": 310,
+"pro": 15,
+"carb": 32,
+"fat": 12,
+"fib": 2,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"milk",
+"wheat"
+]
+},
+{
+"name": "Balsamic Glaze",
+"station": "pizza",
+"cal": 70,
+"pro": 0,
+"carb": 16,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Hot Honey",
+"station": "pizza",
+"cal": 120,
+"pro": 0,
+"carb": 0,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Signature Smash Burger",
+"station": "grill",
+"cal": 130,
+"pro": 9,
+"carb": 1,
+"fat": 10,
+"fib": 1,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "House Pickles",
+"station": "grill",
+"cal": 20,
+"pro": 0,
+"carb": 3,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Signature Chips",
+"station": "grill",
+"cal": 130,
+"pro": 1,
+"carb": 11,
+"fat": 9,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Hamburger Bun",
+"station": "grill",
+"cal": 120,
+"pro": 4,
+"carb": 22,
+"fat": 2,
+"fib": 1,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Sliced Swiss Cheese",
+"station": "deli",
+"cal": 60,
+"pro": 4,
+"carb": 0,
+"fat": 4,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Sliced Provolone Cheese",
+"station": "deli",
+"cal": 50,
+"pro": 4,
+"carb": 0,
+"fat": 4,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "White Bread",
+"station": "deli",
+"cal": 70,
+"pro": 2,
+"carb": 13,
+"fat": 0,
+"fib": 1,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"soy",
+"wheat"
+]
+},
+{
+"name": "Whole Wheat Bread",
+"station": "deli",
+"cal": 0,
+"pro": 0,
+"carb": 0,
+"fat": 0,
+"fib": 0,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Chipotle Mayonnaise",
+"station": "deli",
+"cal": 200,
+"pro": 0,
+"carb": 0,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"eggs"
+]
+},
+{
+"name": "Spinach Wrap",
+"station": "deli",
+"cal": 210,
+"pro": 8,
+"carb": 35,
+"fat": 5,
+"fib": 2,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"wheat"
+]
+},
+{
+"name": "Chicken Noodle Soup",
+"station": "soup",
+"cal": 90,
+"pro": 5,
+"carb": 9,
+"fat": 3,
+"fib": 1,
+"tags": [],
+"allergens": [
+"eggs",
+"wheat"
+]
+},
+{
+"name": "Minestrone Soup",
+"station": "soup",
+"cal": 100,
+"pro": 5,
+"carb": 13,
+"fat": 2,
+"fib": 3,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"milk",
+"wheat"
+]
+},
+{
+"name": "Oyster Crackers",
+"station": "soup",
+"cal": 70,
+"pro": 1,
+"carb": 9,
+"fat": 3,
+"fib": 0,
+"tags": [
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"soy",
+"wheat"
+]
+},
+{
+"name": "Sliced Cucumbers",
+"station": "entree",
+"cal": 10,
+"pro": 0,
+"carb": 2,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Kalamata Olives",
+"station": "entree",
+"cal": 0,
+"pro": 0,
+"carb": 0,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Roasted Chicken",
+"station": "entree",
+"cal": 110,
+"pro": 15,
+"carb": 0,
+"fat": 5,
+"fib": 0,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "Tuna",
+"station": "entree",
+"cal": 90,
+"pro": 20,
+"carb": 0,
+"fat": 1,
+"fib": 0,
+"tags": [
+"glutenFree"
+],
+"allergens": []
+},
+{
+"name": "Chopped Hard-Cooked Egg",
+"station": "entree",
+"cal": 70,
+"pro": 5,
+"carb": 0,
+"fat": 4,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"eggs"
+]
+},
+{
+"name": "Roasted Tofu",
+"station": "entree",
+"cal": 130,
+"pro": 11,
+"carb": 3,
+"fat": 7,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"soy"
+]
+},
+{
+"name": "Edamame",
+"station": "entree",
+"cal": 110,
+"pro": 10,
+"carb": 8,
+"fat": 4,
+"fib": 4,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": [
+"soy"
+]
+},
+{
+"name": "Lite Italian Dressing",
+"station": "entree",
+"cal": 110,
+"pro": 0,
+"carb": 2,
+"fat": 12,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Honey Balsamic Vinaigrette",
+"station": "entree",
+"cal": 170,
+"pro": 0,
+"carb": 4,
+"fat": 18,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Roasted Beets & Carrots",
+"station": "entree",
+"cal": 90,
+"pro": 1,
+"carb": 12,
+"fat": 4,
+"fib": 3,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Lemon Herb Lentils",
+"station": "entree",
+"cal": 100,
+"pro": 8,
+"carb": 23,
+"fat": 0,
+"fib": 7,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Corn & Black Bean Salad",
+"station": "entree",
+"cal": 180,
+"pro": 3,
+"carb": 15,
+"fat": 14,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Pesto Tortellini Salad",
+"station": "entree",
+"cal": 310,
+"pro": 16,
+"carb": 14,
+"fat": 13,
+"fib": 2,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"eggs",
+"milk",
+"wheat"
+]
+},
+{
+"name": "Watermelon & Feta Salad",
+"station": "entree",
+"cal": 70,
+"pro": 2,
+"carb": 12,
+"fat": 2,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegetarian"
+],
+"allergens": [
+"milk"
+]
+},
+{
+"name": "Roasted Shawarma Chickpeas",
+"station": "entree",
+"cal": 90,
+"pro": 4,
+"carb": 13,
+"fat": 2,
+"fib": 4,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Chile-Roasted Corn",
+"station": "entree",
+"cal": 130,
+"pro": 4,
+"carb": 24,
+"fat": 3,
+"fib": 3,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Pickled Red Onions",
+"station": "entree",
+"cal": 15,
+"pro": 0,
+"carb": 3,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Roasted Mushrooms",
+"station": "entree",
+"cal": 130,
+"pro": 3,
+"carb": 5,
+"fat": 12,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Roasted Cauliflower",
+"station": "entree",
+"cal": 50,
+"pro": 1,
+"carb": 4,
+"fat": 4,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Roasted Brussels Sprouts",
+"station": "entree",
+"cal": 50,
+"pro": 3,
+"carb": 7,
+"fat": 2,
+"fib": 4,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Fresh Fruit Salad",
+"station": "bakery",
+"cal": 40,
+"pro": 0,
+"carb": 9,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Raisins",
+"station": "bakery",
+"cal": 90,
+"pro": 1,
+"carb": 23,
+"fat": 0,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Golden Raisins",
+"station": "bakery",
+"cal": 130,
+"pro": 1,
+"carb": 31,
+"fat": 0,
+"fib": 2,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Sunflower Seeds",
+"station": "bakery",
+"cal": 0,
+"pro": 0,
+"carb": 0,
+"fat": 0,
+"fib": 0,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Pepitas",
+"station": "bakery",
+"cal": 110,
+"pro": 6,
+"carb": 3,
+"fat": 9,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Chia Seeds",
+"station": "bakery",
+"cal": 80,
+"pro": 2,
+"carb": 6,
+"fat": 4,
+"fib": 5,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+},
+{
+"name": "Chocolate Mousse Cake",
+"station": "bakery",
+"cal": 230,
+"pro": 2,
+"carb": 30,
+"fat": 10,
+"fib": 1,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"eggs",
+"milk",
+"soy",
+"wheat"
+]
+},
+{
+"name": "Peach Oatmeal Bar",
+"station": "bakery",
+"cal": 460,
+"pro": 5,
+"carb": 67,
+"fat": 19,
+"fib": 2,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"eggs",
+"milk",
+"soy",
+"wheat"
+]
+},
+{
+"name": "Chocolate Brownie",
+"station": "bakery",
+"cal": 190,
+"pro": 2,
+"carb": 33,
+"fat": 6,
+"fib": 1,
+"tags": [
+"vegetarian"
+],
+"allergens": [
+"eggs",
+"milk",
+"soy",
+"wheat"
+]
+},
+{
+"name": "Assorted Sweet Loren's Cookies",
+"station": "bakery",
+"cal": 180,
+"pro": 2,
+"carb": 28,
+"fat": 7,
+"fib": 1,
+"tags": [
+"glutenFree",
+"vegan",
+"vegetarian"
+],
+"allergens": []
+}
+]
+}

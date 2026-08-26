@@ -8,7 +8,8 @@
     "prebuild": "rm -rf node_modules/.vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:meals": "node test/mealPlan.test.mjs"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
