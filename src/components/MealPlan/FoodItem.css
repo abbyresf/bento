@@ -39,6 +39,21 @@
   margin: 0;
 }
 
+/* Serving table within a hall (Farm Table / Kosher Table). Kept quieter than
+   .food-reason so the recommendation copy stays the loudest line. */
+.food-source {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+  background: #f1f5f9;
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  margin: 0.3rem 0 0 0;
+}
+
 .food-reason {
   font-size: 0.8rem;
   color: #f47421;

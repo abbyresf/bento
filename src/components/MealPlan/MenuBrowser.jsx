@@ -89,7 +89,10 @@ export default function MenuBrowser({ meal, locationLabel, items, initialSelecte
               return (
                 <div key={item.id} className={`browser-item ${isSelected ? 'selected' : ''}`}>
                   <div className="browser-item-info">
-                    <span className="browser-item-name">{item.name}</span>
+                    <span className="browser-item-name">
+                      {item.name}
+                      {item.source && <span className="browser-item-source">{item.source}</span>}
+                    </span>
                     <span className="browser-item-macros">
                       {item.nutrition?.calories || 0} cal · {item.nutrition?.protein || 0}g P · {item.nutrition?.carbs || 0}g C · {item.nutrition?.fat || 0}g F
                     </span>

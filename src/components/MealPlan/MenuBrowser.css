@@ -148,6 +148,21 @@
   text-overflow: ellipsis;
 }
 
+/* Serving table within a hall — shown only when the hall has more than one. */
+.browser-item-source {
+  display: inline-block;
+  margin-left: 0.4rem;
+  font-size: 0.63rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+  background: #f1f5f9;
+  border-radius: 4px;
+  padding: 0.05rem 0.35rem;
+  vertical-align: 1px;
+}
+
 .browser-item-macros {
   font-size: 0.72rem;
   color: #94a3b8;

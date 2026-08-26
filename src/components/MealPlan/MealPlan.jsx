@@ -22,7 +22,7 @@ function writePlanCache(date, meals) {
 }
 
 import { hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
-import { fetchDiningMenu, getUniversityConfig } from '../../services/menuFetcher';
+import { fetchDiningMenu, getUniversityConfig, getSelectableLocations } from '../../services/menuFetcher';
 import { getUserProfile, getNutritionTargets, getDietaryRestrictions, getRecentItemIds, addMealToHistory, removeMealFromHistory, setCachedMenu, getCachedMenu, getCachedMenuAge, incrementStreak, incrementStreakForDate, getStreak, getConfirmedMealsForDate, recordDiningAvailability } from '../../lib/db';
 import { useRatings } from '../../context/RatingsContext';
 import { getNewBadge } from '../../data/badges';
@@ -101,7 +101,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
     if (uni !== universityRef.current) {
       // University changed — reset location selection and any in-progress manual plate
       locationDefaultApplied.current = false;
-      const firstLoc = Object.keys(getUniversityConfig(uni).locations)[0];
+      const firstLoc = Object.keys(getSelectableLocations(getUniversityConfig(uni)))[0];
       setSelectedLocation({ breakfast: firstLoc, lunch: firstLoc, dinner: firstLoc });
       setCustomMeals({ breakfast: null, lunch: null, dinner: null });
     }
@@ -123,7 +123,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
     const offlineFallback = {
       date: localDateStr(),
       locations: Object.fromEntries(
-        Object.entries(uniConfig.locations).map(([id, loc]) => [
+        Object.entries(getSelectableLocations(uniConfig)).map(([id, loc]) => [
           id, { id, name: loc.name, shortName: loc.shortName, meals: { breakfast: [], lunch: [], dinner: [] }, isOpen: false },
         ])
       ),
@@ -255,18 +255,13 @@ export default function MealPlan({ settingsVersion = 0 }) {
     return () => clearInterval(id);
   }, []);
 
-  // On first load: if kosher user, default all meals to kosher table;
-  // otherwise auto-select the location that actually has items for each meal.
+  // On first load, auto-select the location that actually has items for each
+  // meal. Kosher students are no longer steered to a separate location — the
+  // kosher table is part of Sherman now, and their restriction filters the
+  // plate, so they can take from either table in the same hall.
   useEffect(() => {
     if (!mealPlan || !restrictions || locationDefaultApplied.current) return;
     locationDefaultApplied.current = true;
-
-    const locationIds = Object.keys(getUniversityConfig(universityRef.current).locations);
-    const kosherLoc = locationIds.find(id => id === 'kosher');
-    if (restrictions.kosher && kosherLoc) {
-      setSelectedLocation({ breakfast: 'kosher', lunch: 'kosher', dinner: 'kosher' });
-      return;
-    }
 
     setSelectedLocation(prev => {
       const next = { ...prev };
@@ -305,17 +300,16 @@ export default function MealPlan({ settingsVersion = 0 }) {
       ]);
       if (cancelled) return;
       setRestrictions(fetchedRestrictions);
-      const locIds = Object.keys(getUniversityConfig(universityRef.current).locations);
-      const hasKosherLoc = locIds.includes('kosher');
-      if (fetchedRestrictions.kosher && hasKosherLoc) {
-        setSelectedLocation({ breakfast: 'kosher', lunch: 'kosher', dinner: 'kosher' });
-      } else {
-        setSelectedLocation(prev => {
-          const defaultLoc = locIds.find(k => k !== 'kosher') ?? locIds[0];
-          const allKosher = Object.values(prev).every(l => l === 'kosher');
-          return allKosher ? { breakfast: defaultLoc, lunch: defaultLoc, dinner: defaultLoc } : prev;
-        });
-      }
+      // Changing the kosher restriction no longer moves you to another
+      // location; it just changes what the optimizer puts on the plate. Only
+      // drop a selection that points at a location which no longer exists.
+      const locIds = Object.keys(getSelectableLocations(getUniversityConfig(universityRef.current)));
+      setSelectedLocation(prev => {
+        if (Object.values(prev).every(l => locIds.includes(l))) return prev;
+        return Object.fromEntries(
+          Object.entries(prev).map(([meal, loc]) => [meal, locIds.includes(loc) ? loc : locIds[0]])
+        );
+      });
       if (targets) {
         if (cancelled) return;
         const optimized = optimizeDay(menu, targets, fetchedRestrictions, recentItems, undefined, highRatedIdsRef.current);
@@ -727,13 +721,12 @@ export default function MealPlan({ settingsVersion = 0 }) {
             meal={meal}
             mealTime={MEAL_TIMES[meal]}
             isPast={getMealPast(meal)}
-            locationOptions={Object.values(getUniversityConfig(university).locations).map(loc => ({
+            locationOptions={Object.values(getSelectableLocations(getUniversityConfig(university))).map(loc => ({
               id: loc.id,
               label: loc.shortName,
-              allItemsKosher: loc.allItemsKosher ?? false,
             }))}
             locationData={Object.fromEntries(
-              Object.keys(getUniversityConfig(university).locations).map(locId => [
+              Object.keys(getSelectableLocations(getUniversityConfig(university))).map(locId => [
                 locId,
                 {
                   plan: mealPlan[locId]?.[meal],

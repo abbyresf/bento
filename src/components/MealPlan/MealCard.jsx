@@ -136,9 +136,11 @@ export default function MealCard({
 
   if (!bentoPlan && !Object.values(plansByLocation).some(Boolean)) return null;
 
+  // No location is wholly kosher any more — the kosher table is one of two
+  // inside Sherman — so the badge is earned by the plate itself, and only
+  // matters to a student who keeps kosher.
   const allItemsKosher = bentoPlan?.items?.length > 0 && bentoPlan.items.every(i => i.tags?.includes('kosher'));
-  const currentLocOption = (locationOptions ?? []).find(l => l.id === selectedLocation);
-  const showKosherBadge = allItemsKosher && (currentLocOption?.allItemsKosher || isKosherUser);
+  const showKosherBadge = allItemsKosher && isKosherUser;
 
   const mealLabel = meal.charAt(0).toUpperCase() + meal.slice(1);
   const timeRange = `${mealTime.start > 12 ? mealTime.start - 12 : mealTime.start}${mealTime.start >= 12 ? 'pm' : 'am'} – ${mealTime.end > 12 ? mealTime.end - 12 : mealTime.end}${mealTime.end >= 12 ? 'pm' : 'am'}`;

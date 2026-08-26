@@ -155,11 +155,16 @@ function brandeisParseLocationPage(html) {
 
 export const BRANDEIS_CONFIG = {
   locations: {
+    // Sherman is one hall with two serving tables. Both are fetched separately
+    // because Brandeis publishes them as separate pages, then merged into a
+    // single location so a plate can draw from either. `sourceLabel` is what
+    // the UI shows per item so you know which table to walk to.
     sherman: {
       id: 'sherman',
       slug: 'the-farm-table-at-sherman-2',
       name: 'Sherman Dining Hall',
       shortName: 'Sherman',
+      sourceLabel: 'Farm Table',
     },
     usdan: {
       id: 'usdan',
@@ -172,7 +177,9 @@ export const BRANDEIS_CONFIG = {
       slug: 'the-farm-table-at-sherman',
       name: 'Kosher Table at Sherman',
       shortName: 'Kosher',
+      sourceLabel: 'Kosher Table',
       allItemsKosher: true,
+      mergeInto: 'sherman',
     },
   },
   getDiningUrl(slug, dateStr) {
@@ -207,6 +214,13 @@ export async function fetchDiningMenu(config, dateStr = null) {
             items.forEach(item => { if (!item.tags.includes('kosher')) item.tags.push('kosher'); })
           );
         }
+        // Stamp the serving table on each item before locations are merged —
+        // afterwards there is no way to tell which table an item came from.
+        if (locationConfig.sourceLabel) {
+          Object.values(meals).forEach(items =>
+            items.forEach(item => { item.source = locationConfig.sourceLabel; })
+          );
+        }
         return [locationId, { ...locationConfig, meals, isOpen }];
       } catch (err) {
         console.warn(`Failed to fetch ${locationConfig.name}:`, err.message);
@@ -217,19 +231,22 @@ export async function fetchDiningMenu(config, dateStr = null) {
 
   const locations = Object.fromEntries(locationResults);
 
-  // Merge kosher table into sherman so students can build a plate from both
-  // without switching locations. Kosher items are already tagged 'kosher'.
-  // The kosher location itself is kept so it stays selectable in its own right —
-  // deleting it here leaves the dropdown entry with no menu data, which renders
-  // as "Closed" even when the kosher table is open.
-  if (locations.kosher && locations.sherman) {
+  // Fold each location that declares `mergeInto` into its target, so tables
+  // sharing a dining hall become one selectable location and a single plate can
+  // draw from both. Items keep their `source`, so the UI can still say which
+  // table to walk to. Kosher items stay tagged 'kosher', so a student who has
+  // set the kosher restriction is filtered to them by the optimizer.
+  for (const [locationId, locationConfig] of Object.entries(config.locations)) {
+    const target = locationConfig.mergeInto;
+    if (!target || !locations[locationId] || !locations[target]) continue;
     for (const period of ['breakfast', 'lunch', 'dinner']) {
-      locations.sherman.meals[period] = [
-        ...(locations.sherman.meals[period] ?? []),
-        ...(locations.kosher.meals[period] ?? []),
+      locations[target].meals[period] = [
+        ...(locations[target].meals[period] ?? []),
+        ...(locations[locationId].meals[period] ?? []),
       ];
     }
-    locations.sherman.isOpen = locations.sherman.isOpen || locations.kosher.isOpen;
+    locations[target].isOpen = locations[target].isOpen || locations[locationId].isOpen;
+    delete locations[locationId];
   }
 
   const result = {
@@ -395,6 +412,14 @@ export const TUFTS_CONFIG = {
 };
 
 // ── University router ─────────────────────────────────────────────────────────
+
+// Locations a student can actually pick. Excludes any table that gets merged
+// into another, since those have no standalone entry in the fetched menu.
+export function getSelectableLocations(config) {
+  return Object.fromEntries(
+    Object.entries(config.locations).filter(([, loc]) => !loc.mergeInto)
+  );
+}
 
 export function getUniversityConfig(universityId) {
   switch (universityId) {

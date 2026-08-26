@@ -7,7 +7,7 @@ const BADGE_MIN_AVG   = 4.0;
 const BADGE_MIN_COUNT = 5;
 
 export default function FoodItem({ item, isExpanded, onToggleExpand, alternatives, onLoadAlternatives, onSwapToItem, onRemove, disabled }) {
-  const { name, nutrition, reason, tags, station } = item;
+  const { name, nutrition, reason, tags, station, source } = item;
   const { aggregates } = useRatings();
   const agg = aggregates[item.id];
   const showBadge = agg && agg.avg >= BADGE_MIN_AVG && agg.count >= BADGE_MIN_COUNT;
@@ -32,6 +32,8 @@ export default function FoodItem({ item, isExpanded, onToggleExpand, alternative
             {name}
             {showBadge && <span className="students-like-badge">Students like this!</span>}
           </h4>
+          {/* Which serving table to walk to, when the hall has more than one. */}
+          {source && <p className="food-source">{source}</p>}
           {reason && <p className="food-reason">{reason}</p>}
           <div className="food-tags">
             {(tags ?? []).slice(0, 3).map((tag) => (
