@@ -142,6 +142,7 @@ function App() {
 
   if (joinMatch) return <PulseJoin token={joinMatch[1]} />;
   if (location.pathname.startsWith('/admin')) return <PulseApp />;
+  if (location.pathname === '/preview') return <LandingPage onGetStarted={() => navigate('/login')} />;
 
   if (isAuthRoute) {
     if (session) return <Navigate to="/app" replace />;

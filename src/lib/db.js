@@ -653,7 +653,7 @@ export async function clearAllData() {
 
 // ── Menu cache (stays local — ephemeral per device) ────────────────────────
 
-const CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours — refreshes in time for dinner to appear
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes — matches server-side cache TTL
 
 export function getCachedMenu(university = 'brandeis') {
   try {
