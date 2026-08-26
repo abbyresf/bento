@@ -357,7 +357,6 @@ const QUESTIONS = [
     title: 'First impressions',
     question: 'How was your first experience using Bento?',
     sub: 'Rate it 1 to 5, then tell us what stood out, good or bad.',
-    disclaimer: true,
   },
   {
     day: 3,
@@ -385,11 +384,17 @@ const QUESTIONS = [
   },
   {
     day: 6,
-    type: 'multiple_choice',
+    type: 'task',
     eyebrow: 'Day 6',
-    title: 'Usage check-in',
-    question: 'How many times did you open Bento today?',
-    options: ['I didn\'t open it', 'Once', 'Twice', 'Three or more times'],
+    title: 'Try the community tab',
+    intro: 'The community tab lets students post anonymous suggestions that go directly to dining services. Your post could actually change what gets served.',
+    steps: [
+      'Open Bento from your home screen',
+      'Tap the <strong>Community</strong> tab at the bottom',
+      'Post a suggestion or upvote one that resonates with you',
+    ],
+    question: 'Did you check it out?',
+    options: ['Yes, I posted something', 'Yes, I just browsed', 'I couldn\'t find it', 'Not yet'],
   },
   {
     day: 7,
@@ -398,7 +403,6 @@ const QUESTIONS = [
     title: 'Your wishlist',
     question: 'What\'s one thing you wish Bento could do that it currently can\'t?',
     placeholder: 'Be as specific as you want',
-    disclaimer: true,
   },
   {
     day: 8,
@@ -415,15 +419,14 @@ const QUESTIONS = [
     title: 'Behavior change',
     question: 'Compared to how you normally decide what to eat at the dining hall, how does Bento change things?',
     placeholder: 'Tell us what\'s different, or what isn\'t',
-    disclaimer: true,
   },
   {
     day: 10,
-    type: 'multiple_choice',
+    type: 'long_answer',
     eyebrow: 'Day 10',
-    title: 'Feature check',
-    question: 'Which feature do you find yourself using most?',
-    options: ['Daily meal plan', 'Menu browser', 'Rating meals', 'Community tab', 'Insights and weekly summaries', 'I haven\'t explored much yet'],
+    title: 'How you use it',
+    question: 'What\'s the first thing you do when you open Bento?',
+    placeholder: 'Walk us through it',
   },
   {
     day: 11,
@@ -433,7 +436,6 @@ const QUESTIONS = [
     question: 'What\'s working well and what isn\'t?',
     placeholder_positive: 'What\'s been working well',
     placeholder_constructive: 'What\'s been frustrating or confusing',
-    disclaimer: true,
   },
   {
     day: 12,
@@ -450,7 +452,6 @@ const QUESTIONS = [
     title: 'Retention',
     question: 'What would make you keep using Bento after the beta ends?',
     placeholder: 'Be honest, what would it take?',
-    disclaimer: true,
   },
   {
     day: 14,
@@ -458,8 +459,7 @@ const QUESTIONS = [
     eyebrow: 'Day 14: Final day',
     title: 'Last one.',
     question: 'Overall, how would you rate Bento?',
-    sub: 'Rate it 1 to 5, then tell us the single most important thing we should fix before launch.',
-    disclaimer: true,
+    sub: 'Rate it 1 to 5, then tell us: what\'s one thing you\'d change before we launch?',
   },
 ];
 
@@ -592,6 +592,7 @@ function renderQuestion(day) {
     inner += `<p style="font-weight:600;margin:1.25rem 0 0.5rem;font-size:0.95rem">${q.followup}</p>`;
     inner += `<textarea id="answer" placeholder="${q.placeholder || 'Share your thoughts'}"></textarea>`;
   } else if (q.type === 'task') {
+    if (q.intro) inner += `<p style="color:var(--muted);font-size:0.95rem;margin-bottom:1.25rem;line-height:1.6">${q.intro}</p>`;
     if (q.disclaimer) inner += DISCLAIMER;
     inner += `<ul class="steps-list">${q.steps.map((s, i) => `<li><div class="step-num">${i + 1}</div><span>${s}</span></li>`).join('')}</ul>`;
     inner += `<p style="font-weight:600;margin-bottom:0.75rem;font-size:0.95rem">${q.question}</p>`;
@@ -615,6 +616,7 @@ function renderQuestion(day) {
     inner += `<textarea id="answer" placeholder="Tell us more" style="margin-top:0.5rem"></textarea>`;
   }
 
+  inner += `<div style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border)"><label for="extra" style="font-weight:400;color:var(--muted);font-size:0.82rem;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.4rem">Anything else on your mind?</label><textarea id="extra" placeholder="Optional" style="min-height:80px"></textarea></div>`;
   inner += `<div id="err" class="error-msg" style="display:none"></div>`;
   inner += `<button class="btn" id="submit-btn">Submit →</button>`;
 
@@ -682,6 +684,9 @@ async function handleSubmit(day, q) {
     if (!text) { err.textContent = 'Please add a written response too.'; err.style.display = 'block'; return; }
     answer = `${starRating}/5: ${text}`;
   }
+
+  const extra = (document.getElementById('extra')?.value || '').trim();
+  if (extra) answer += ` | Extra: ${extra}`;
 
   btn.disabled = true; btn.textContent = 'Saving…';
 
