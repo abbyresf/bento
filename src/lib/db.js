@@ -69,7 +69,29 @@ export async function getUserProfile() {
     activityLevel: data.activity_level,
     goal:          data.goal,
     university:    data.university,
+    // Which nutrition numbers this person wants to see. Defaults to visible so
+    // a missing row never silently hides information someone relies on.
+    nutritionDisplay: {
+      calories: data.show_calories ?? true,
+      protein:  data.show_protein  ?? true,
+      carbs:    data.show_carbs    ?? true,
+      fat:      data.show_fat      ?? true,
+    },
   };
+}
+
+// Stored on the profile, but updated on its own so toggling a switch in
+// Settings never has to round-trip the rest of the profile.
+export async function setNutritionDisplay(prefs) {
+  const id = await uid();
+  if (!id) return;
+  await supabase.from('profiles').update({
+    show_calories: prefs.calories ?? true,
+    show_protein:  prefs.protein  ?? true,
+    show_carbs:    prefs.carbs    ?? true,
+    show_fat:      prefs.fat      ?? true,
+    updated_at:    new Date().toISOString(),
+  }).eq('id', id);
 }
 
 export async function setUserProfile(profile) {
@@ -86,6 +108,12 @@ export async function setUserProfile(profile) {
     activity_level: profile.activityLevel,
     goal:           profile.goal,
     university:     profile.university,
+    ...(profile.nutritionDisplay ? {
+      show_calories: profile.nutritionDisplay.calories ?? true,
+      show_protein:  profile.nutritionDisplay.protein  ?? true,
+      show_carbs:    profile.nutritionDisplay.carbs    ?? true,
+      show_fat:      profile.nutritionDisplay.fat      ?? true,
+    } : {}),
     updated_at:     new Date().toISOString(),
   });
 }

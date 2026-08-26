@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { DIETARY_TAGS } from '../../data/mockMenu';
 import { useRatings } from '../../context/RatingsContext';
+import { useNutritionDisplay } from '../../context/NutritionDisplayContext';
 import './FoodItem.css';
 
 const BADGE_MIN_AVG   = 4.0;
@@ -9,6 +10,7 @@ const BADGE_MIN_COUNT = 5;
 export default function FoodItem({ item, isExpanded, onToggleExpand, alternatives, onLoadAlternatives, onSwapToItem, onRemove, disabled }) {
   const { name, nutrition, reason, tags, station, source } = item;
   const { aggregates } = useRatings();
+  const display = useNutritionDisplay();
   const agg = aggregates[item.id];
   const showBadge = agg && agg.avg >= BADGE_MIN_AVG && agg.count >= BADGE_MIN_COUNT;
 
@@ -18,6 +20,15 @@ export default function FoodItem({ item, isExpanded, onToggleExpand, alternative
       onLoadAlternatives?.();
     }
   }, [isExpanded]); // eslint-disable-line
+
+  // Swap suggestions summarise macros in one line; it is built from whichever
+  // metrics are visible, and omitted entirely when none are.
+  const macroSummary = (n) => [
+    display.calories && `${n.calories} cal`,
+    display.protein  && `${n.protein}g P`,
+    display.carbs    && `${n.carbs}g C`,
+    display.fat      && `${n.fat}g F`,
+  ].filter(Boolean).join(' \u00b7 ');
 
   const handleRemove = (e) => {
     e.stopPropagation();
@@ -44,24 +55,36 @@ export default function FoodItem({ item, isExpanded, onToggleExpand, alternative
           </div>
         </div>
 
-        <div className="food-item-macros">
-          <div className="macro">
-            <span className="macro-value">{nutrition?.calories ?? '—'}</span>
-            <span className="macro-label">cal</span>
+        {/* Each macro is shown only if this person wants to see it; with all
+            four hidden the row disappears rather than leaving an empty strip. */}
+        {(display.calories || display.protein || display.carbs || display.fat) && (
+          <div className="food-item-macros">
+            {display.calories && (
+              <div className="macro">
+                <span className="macro-value">{nutrition?.calories ?? '\u2014'}</span>
+                <span className="macro-label">cal</span>
+              </div>
+            )}
+            {display.protein && (
+              <div className="macro">
+                <span className="macro-value">{nutrition?.protein != null ? `${nutrition.protein}g` : '\u2014'}</span>
+                <span className="macro-label">P</span>
+              </div>
+            )}
+            {display.carbs && (
+              <div className="macro">
+                <span className="macro-value">{nutrition?.carbs != null ? `${nutrition.carbs}g` : '\u2014'}</span>
+                <span className="macro-label">C</span>
+              </div>
+            )}
+            {display.fat && (
+              <div className="macro">
+                <span className="macro-value">{nutrition?.fat != null ? `${nutrition.fat}g` : '\u2014'}</span>
+                <span className="macro-label">F</span>
+              </div>
+            )}
           </div>
-          <div className="macro">
-            <span className="macro-value">{nutrition?.protein != null ? `${nutrition.protein}g` : '—'}</span>
-            <span className="macro-label">P</span>
-          </div>
-          <div className="macro">
-            <span className="macro-value">{nutrition?.carbs != null ? `${nutrition.carbs}g` : '—'}</span>
-            <span className="macro-label">C</span>
-          </div>
-          <div className="macro">
-            <span className="macro-value">{nutrition?.fat != null ? `${nutrition.fat}g` : '—'}</span>
-            <span className="macro-label">F</span>
-          </div>
-        </div>
+        )}
 
         <div className="food-item-actions">
 
@@ -104,6 +127,7 @@ export default function FoodItem({ item, isExpanded, onToggleExpand, alternative
             <p>{station ? station.charAt(0).toUpperCase() + station.slice(1) : '—'}</p>
           </div>
 
+          {display.anyVisible && (
           <div className="details-section">
             <h5>Additional Nutrition</h5>
             <div className="nutrition-grid">
@@ -127,6 +151,7 @@ export default function FoodItem({ item, isExpanded, onToggleExpand, alternative
               )}
             </div>
           </div>
+          )}
 
           <div className="details-section">
             <h5>Dietary Info</h5>
@@ -155,9 +180,9 @@ export default function FoodItem({ item, isExpanded, onToggleExpand, alternative
                       onClick={(e) => { e.stopPropagation(); onSwapToItem(alt); }}
                     >
                       <span className="alt-name">{alt.name}</span>
-                      <span className="alt-macros">
-                        {alt.nutrition.calories} cal · {alt.nutrition.protein}g P · {alt.nutrition.carbs}g C · {alt.nutrition.fat}g F
-                      </span>
+                      {macroSummary(alt.nutrition) && (
+                        <span className="alt-macros">{macroSummary(alt.nutrition)}</span>
+                      )}
                     </button>
                   ))}
                 </div>

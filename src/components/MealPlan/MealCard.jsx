@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import FoodItem from './FoodItem';
 import MenuBrowser from './MenuBrowser';
 import { STATIONS } from '../../data/mockMenu';
+import { useNutritionDisplay } from '../../context/NutritionDisplayContext';
 import './MealCard.css';
 
 const CATEGORY_ORDER = ['breakfast', 'entree', 'grill', 'deli', 'pizza', 'allgood', 'sides', 'soup', 'salad', 'bakery', 'beverage'];
@@ -95,6 +96,7 @@ export default function MealCard({
   onUndo,
   isKosherUser,
 }) {
+  const display = useNutritionDisplay();
   const [collapsed, setCollapsed] = useState(isPast);
   const [expandedItem, setExpandedItem] = useState(null);
   const [showRecommendations, setShowRecommendations] = useState(false);
@@ -155,6 +157,15 @@ export default function MealCard({
     setMode('manual');
     setShowRecommendations(false);
   };
+
+  // Warnings quote targets back at you ("Meal is under calorie target (65%)").
+  // Someone who hid a metric should not meet it again inside a warning, so
+  // those are dropped rather than reworded.
+  const visibleWarnings = (bentoPlan?.warnings ?? []).filter(w => {
+    if (!display.calories && /calorie/i.test(w)) return false;
+    if (!display.protein && /protein/i.test(w)) return false;
+    return true;
+  });
 
   const locationAvailable = isCurrentLocationOpen && currentRawCount > 0;
 
@@ -230,9 +241,9 @@ export default function MealCard({
       {/* ── Bento's Pick content ─────────────────────────────── */}
       {!collapsed && locationAvailable && mode === 'bento' && (
         <>
-          {bentoPlan.warnings?.length > 0 && (
+          {visibleWarnings.length > 0 && (
             <div className="meal-warnings">
-              {bentoPlan.warnings.map((warning, i) => (
+              {visibleWarnings.map((warning, i) => (
                 <div key={i} className="warning">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -293,12 +304,14 @@ export default function MealCard({
                             <span className="rec-name">{rec.name}</span>
                             <span className="rec-reason">{rec.reason}</span>
                           </div>
-                          <div className="rec-macros">
-                            <span>{rec.nutrition.calories} cal</span>
-                            <span>{rec.nutrition.protein}g P</span>
-                            <span>{rec.nutrition.carbs}g C</span>
-                            <span>{rec.nutrition.fat}g F</span>
-                          </div>
+                          {display.anyVisible && (
+                            <div className="rec-macros">
+                              {display.calories && <span>{rec.nutrition.calories} cal</span>}
+                              {display.protein && <span>{rec.nutrition.protein}g P</span>}
+                              {display.carbs && <span>{rec.nutrition.carbs}g C</span>}
+                              {display.fat && <span>{rec.nutrition.fat}g F</span>}
+                            </div>
+                          )}
                         </button>
                       ))}
                     </div>
@@ -318,7 +331,9 @@ export default function MealCard({
               {customPlan.items.map(item => (
                 <div key={item.id} className="manual-item-row">
                   <span className="manual-item-name">{item.name}</span>
-                  <span className="manual-item-cal">{item.nutrition?.calories ?? 0} cal</span>
+                  {display.calories && (
+                    <span className="manual-item-cal">{item.nutrition?.calories ?? 0} cal</span>
+                  )}
                 </div>
               ))}
             </div>
@@ -354,24 +369,34 @@ export default function MealCard({
               Kosher certified
             </div>
           )}
-          <div className="meal-totals">
-            <div className="total-item">
-              <span className="total-value">{footerTotals.calories || 0}</span>
-              <span className="total-label">cal</span>
+          {(display.calories || display.protein || display.carbs || display.fat) && (
+            <div className="meal-totals">
+              {display.calories && (
+                <div className="total-item">
+                  <span className="total-value">{footerTotals.calories || 0}</span>
+                  <span className="total-label">cal</span>
+                </div>
+              )}
+              {display.protein && (
+                <div className="total-item">
+                  <span className="total-value">{footerTotals.protein || 0}g</span>
+                  <span className="total-label">protein</span>
+                </div>
+              )}
+              {display.carbs && (
+                <div className="total-item">
+                  <span className="total-value">{footerTotals.carbs || 0}g</span>
+                  <span className="total-label">carbs</span>
+                </div>
+              )}
+              {display.fat && (
+                <div className="total-item">
+                  <span className="total-value">{footerTotals.fat || 0}g</span>
+                  <span className="total-label">fat</span>
+                </div>
+              )}
             </div>
-            <div className="total-item">
-              <span className="total-value">{footerTotals.protein || 0}g</span>
-              <span className="total-label">protein</span>
-            </div>
-            <div className="total-item">
-              <span className="total-value">{footerTotals.carbs || 0}g</span>
-              <span className="total-label">carbs</span>
-            </div>
-            <div className="total-item">
-              <span className="total-value">{footerTotals.fat || 0}g</span>
-              <span className="total-label">fat</span>
-            </div>
-          </div>
+          )}
 
           {!isConfirmed && (
             <button

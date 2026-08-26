@@ -419,3 +419,25 @@
   box-shadow: none;
   animation: none;
 }
+
+
+/* Turns every nutrition metric off (or back on) in one tap — the common case
+   for someone who does not want to see counts at all. */
+.hide-all-numbers-btn {
+  margin-top: 0.85rem;
+  padding: 0.55rem 1.1rem;
+  background: transparent;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 50px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.hide-all-numbers-btn:hover {
+  border-color: #f47421;
+  color: #f47421;
+}

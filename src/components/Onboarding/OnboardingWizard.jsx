@@ -6,12 +6,12 @@ import UniversityPicker from '../common/UniversityPicker';
 import MenuRatingOnboarding from './MenuRatingOnboarding';
 import './OnboardingWizard.css';
 
-const STEPS = ['university', 'basics', 'activity', 'goals', 'dietary', 'swipe', 'review'];
+const STEPS = ['university', 'basics', 'activity', 'goals', 'dietary', 'numbers', 'swipe', 'review'];
 
 const SECTIONS = [
   { label: 'About You',   steps: ['university', 'basics'] },
   { label: 'Your Goals',  steps: ['activity', 'goals'] },
-  { label: 'Preferences', steps: ['dietary', 'swipe'] },
+  { label: 'Preferences', steps: ['dietary', 'numbers', 'swipe'] },
 ];
 
 export default function OnboardingWizard({ onComplete, onGoContact, onRequestSchool }) {
@@ -46,6 +46,13 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
     allergies: [],
     avoidIngredients: [],
   });
+  // Which nutrition numbers to show. Asked during onboarding rather than left
+  // to be discovered in Settings, because someone who needs the numbers hidden
+  // needs them hidden before they first see a meal plan.
+  const [nutritionDisplay, setNutritionDisplay] = useState({
+    calories: true, protein: true, carbs: true, fat: true,
+  });
+
   const [errors, setErrors] = useState({});
 
   const validateBasics = () => {
@@ -92,7 +99,7 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
   const handleComplete = async () => {
     const targets = calculateTargets();
     await Promise.all([
-      setUserProfile(profile),
+      setUserProfile({ ...profile, nutritionDisplay }),
       setNutritionTargets(targets),
       setDietaryRestrictions(restrictions),
     ]);
@@ -408,6 +415,59 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
     );
   };
 
+  const METRIC_LABELS = [
+    ['calories', 'Calories'],
+    ['protein',  'Protein'],
+    ['carbs',    'Carbs'],
+    ['fat',      'Fat'],
+  ];
+
+  const toggleMetric = (key) =>
+    setNutritionDisplay(prev => ({ ...prev, [key]: !prev[key] }));
+
+  const allHidden = !nutritionDisplay.calories && !nutritionDisplay.protein
+    && !nutritionDisplay.carbs && !nutritionDisplay.fat;
+
+  const renderNumbersStep = () => (
+    <div className="step-content">
+      <h2>Nutrition numbers</h2>
+      <p className="step-description">
+        Bento can show calories and macros on your plan, or keep them out of sight.
+        Turn off anything you would rather not see. You can change this any time in Settings.
+      </p>
+
+      <div className="dietary-toggles">
+        {METRIC_LABELS.map(([key, label]) => (
+          <label key={key} className={`dietary-toggle ${nutritionDisplay[key] ? 'active' : ''}`}>
+            <input
+              type="checkbox"
+              checked={nutritionDisplay[key]}
+              onChange={() => toggleMetric(key)}
+            />
+            <span>Show {label.toLowerCase()}</span>
+          </label>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        className="hide-all-numbers-btn"
+        onClick={() => setNutritionDisplay(
+          allHidden
+            ? { calories: true, protein: true, carbs: true, fat: true }
+            : { calories: false, protein: false, carbs: false, fat: false }
+        )}
+      >
+        {allHidden ? 'Show all numbers' : 'Hide all numbers'}
+      </button>
+
+      <p className="section-note">
+        Bento still builds balanced meals either way. Hiding the numbers only
+        changes what you see, never what gets recommended.
+      </p>
+    </div>
+  );
+
   const renderStep = () => {
     switch (STEPS[currentStep]) {
       case 'university': return renderUniversityStep();
@@ -415,6 +475,7 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
       case 'activity':   return renderActivityStep();
       case 'goals':      return renderGoalsStep();
       case 'dietary':    return renderDietaryStep();
+      case 'numbers':    return renderNumbersStep();
       case 'review':     return renderReviewStep();
       default:           return null;
     }

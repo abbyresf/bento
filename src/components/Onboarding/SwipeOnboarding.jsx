@@ -67,7 +67,14 @@ function selectOnboardingItems(menu) {
 const THRESHOLD = 90;
 const FLY_DURATION = 400; // ms — slightly longer than the 0.38s CSS transition
 
-export default function SwipeOnboarding({ onDone, embedded }) {
+export default function SwipeOnboarding({ onDone, embedded, nutritionDisplay = { calories: true, protein: true }}) {
+  // The wizard asks about numbers before this screen, so respect it here too;
+  // an onboarding flow that flashes calorie counts undoes the choice.
+  const swipeMacros = (n) => [
+    nutritionDisplay.calories && `${n.calories} cal`,
+    nutritionDisplay.protein && `${n.protein}g protein`,
+  ].filter(Boolean).join(' \u00b7 ');
+
   const [items, setItems]           = useState([]);
   const [loading, setLoading]       = useState(true);
   const [fetchError, setFetchError] = useState(false);
@@ -262,10 +269,8 @@ export default function SwipeOnboarding({ onDone, embedded }) {
               {STATION_LABELS[item.station] ?? item.station}
             </p>
             <h3 className="swipe-item-name">{item.name}</h3>
-            {item.nutrition.calories > 0 && (
-              <p className="swipe-item-cal">
-                {item.nutrition.calories} cal · {item.nutrition.protein}g protein
-              </p>
+            {item.nutrition.calories > 0 && swipeMacros(item.nutrition) && (
+              <p className="swipe-item-cal">{swipeMacros(item.nutrition)}</p>
             )}
             {item.tags.length > 0 && (
               <div className="swipe-tags">

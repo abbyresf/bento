@@ -12,9 +12,11 @@ import {
 } from '../../lib/db';
 import { calculateNutritionTargets, ACTIVITY_LEVELS, GOALS } from '../../utils/tdeeCalculator';
 import UniversityPicker from '../common/UniversityPicker';
+import { useNutritionDisplay } from '../../context/NutritionDisplayContext';
 import './Settings.css';
 
 export default function Settings({ onClose, onReset, onSave, onGoContact, tabMode = false }) {
+  const display = useNutritionDisplay();
   const [profile, setProfile] = useState(null);
   const [targets, setTargets] = useState(null);
   const [restrictions, setRestrictions] = useState(null);
@@ -222,44 +224,57 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
         </section>
 
         {/* Nutrition Targets Section */}
+        {/* A targets panel is a calorie counter by another name, so it follows
+            the same preference. Hidden metrics keep their stored values; they
+            are simply not shown or edited here. */}
+        {display.anyVisible && (
         <section className="settings-section">
           <h3>Daily Nutrition Targets</h3>
           <p className="section-note">Calculated values can be manually overridden.</p>
           <div className="settings-grid">
-            <div className="setting-item">
-              <label>Calories</label>
-              <input
-                type="number"
-                value={customCalories}
-                onChange={(e) => setCustomCalories(e.target.value)}
-              />
-            </div>
-            <div className="setting-item">
-              <label>Protein (g)</label>
-              <input
-                type="number"
-                value={customProtein}
-                onChange={(e) => setCustomProtein(e.target.value)}
-              />
-            </div>
-            <div className="setting-item">
-              <label>Carbs (g)</label>
-              <input
-                type="number"
-                value={customCarbs}
-                onChange={(e) => setCustomCarbs(e.target.value)}
-              />
-            </div>
-            <div className="setting-item">
-              <label>Fat (g)</label>
-              <input
-                type="number"
-                value={customFat}
-                onChange={(e) => setCustomFat(e.target.value)}
-              />
-            </div>
+            {display.calories && (
+              <div className="setting-item">
+                <label>Calories</label>
+                <input
+                  type="number"
+                  value={customCalories}
+                  onChange={(e) => setCustomCalories(e.target.value)}
+                />
+              </div>
+            )}
+            {display.protein && (
+              <div className="setting-item">
+                <label>Protein (g)</label>
+                <input
+                  type="number"
+                  value={customProtein}
+                  onChange={(e) => setCustomProtein(e.target.value)}
+                />
+              </div>
+            )}
+            {display.carbs && (
+              <div className="setting-item">
+                <label>Carbs (g)</label>
+                <input
+                  type="number"
+                  value={customCarbs}
+                  onChange={(e) => setCustomCarbs(e.target.value)}
+                />
+              </div>
+            )}
+            {display.fat && (
+              <div className="setting-item">
+                <label>Fat (g)</label>
+                <input
+                  type="number"
+                  value={customFat}
+                  onChange={(e) => setCustomFat(e.target.value)}
+                />
+              </div>
+            )}
           </div>
         </section>
+        )}
 
         {/* Dietary Restrictions Section */}
         <section className="settings-section">
@@ -325,6 +340,42 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
         </section>
 
         {/* Data Management Section */}
+        <section className="settings-section">
+          <h3>Nutrition Numbers</h3>
+          <p className="section-note">
+            Choose what Bento shows you. Anything turned off is hidden from your
+            daily progress and from every menu item. Your meals are still built
+            the same way, so this only changes what you see.
+          </p>
+          <div className="dietary-toggles">
+            {[['calories', 'Calories'], ['protein', 'Protein'], ['carbs', 'Carbs'], ['fat', 'Fat']].map(([key, label]) => (
+              <label key={key} className={`dietary-toggle ${display[key] ? 'active' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={display[key]}
+                  onChange={() => display.updateDisplay({
+                    calories: display.calories, protein: display.protein,
+                    carbs: display.carbs, fat: display.fat,
+                    [key]: !display[key],
+                  })}
+                />
+                <span>Show {label.toLowerCase()}</span>
+              </label>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="hide-all-numbers-btn"
+            onClick={() => display.updateDisplay(
+              display.anyVisible
+                ? { calories: false, protein: false, carbs: false, fat: false }
+                : { calories: true, protein: true, carbs: true, fat: true }
+            )}
+          >
+            {display.anyVisible ? 'Hide all numbers' : 'Show all numbers'}
+          </button>
+        </section>
+
         <section className="settings-section">
           <h3>Data Management</h3>
           {actionError && <p className="settings-action-error">{actionError}</p>}

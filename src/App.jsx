@@ -17,6 +17,7 @@ import PulseJoin from './components/Pulse/PulseJoin';
 import MyRatings from './components/MyRatings/MyRatings';
 import CommunityTab from './components/Community/CommunityTab';
 import { RatingsProvider } from './context/RatingsContext';
+import { NutritionDisplayProvider } from './context/NutritionDisplayContext';
 import SplashScreen from './components/Splash/SplashScreen';
 import './App.css';
 
@@ -219,6 +220,7 @@ function App() {
 
   return (
     <RatingsProvider>
+      <NutritionDisplayProvider>
       <div className="app">
         <div className="tab-content">
           {activeTab === 'today' && (
@@ -298,6 +300,7 @@ function App() {
         )}
 
       </div>
+      </NutritionDisplayProvider>
     </RatingsProvider>
   );
 }

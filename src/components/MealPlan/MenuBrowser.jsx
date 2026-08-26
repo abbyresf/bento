@@ -1,11 +1,13 @@
 import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { STATIONS } from '../../data/mockMenu';
+import { useNutritionDisplay } from '../../context/NutritionDisplayContext';
 import './MenuBrowser.css';
 
 const CATEGORY_ORDER = ['breakfast', 'entree', 'grill', 'deli', 'pizza', 'allgood', 'sides', 'soup', 'salad', 'bakery', 'beverage'];
 
 export default function MenuBrowser({ meal, locationLabel, items, initialSelected, onDone, onClose, className = '' }) {
+  const display = useNutritionDisplay();
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(() => new Set(initialSelected?.map(i => i.id) ?? []));
 
@@ -44,6 +46,15 @@ export default function MenuBrowser({ meal, locationLabel, items, initialSelecte
       return next;
     });
   };
+
+  // Built from whichever metrics this person wants to see; empty when none,
+  // in which case the line is not rendered at all.
+  const browserMacros = (n) => [
+    display.calories && `${n?.calories || 0} cal`,
+    display.protein  && `${n?.protein  || 0}g P`,
+    display.carbs    && `${n?.carbs    || 0}g C`,
+    display.fat      && `${n?.fat      || 0}g F`,
+  ].filter(Boolean).join(' \u00b7 ');
 
   const mealLabel = meal.charAt(0).toUpperCase() + meal.slice(1);
 
@@ -93,9 +104,9 @@ export default function MenuBrowser({ meal, locationLabel, items, initialSelecte
                       {item.name}
                       {item.source && <span className="browser-item-source">{item.source}</span>}
                     </span>
-                    <span className="browser-item-macros">
-                      {item.nutrition?.calories || 0} cal · {item.nutrition?.protein || 0}g P · {item.nutrition?.carbs || 0}g C · {item.nutrition?.fat || 0}g F
-                    </span>
+                    {browserMacros(item.nutrition) && (
+                      <span className="browser-item-macros">{browserMacros(item.nutrition)}</span>
+                    )}
                   </div>
                   <button
                     className={`browser-add-btn ${isSelected ? 'added' : ''}`}
@@ -120,18 +131,20 @@ export default function MenuBrowser({ meal, locationLabel, items, initialSelecte
       </div>
 
       <div className="browser-footer">
-        {selected.size > 0 ? (
+        {selected.size > 0 && display.anyVisible ? (
           <div className="browser-totals">
-            <span className="browser-total-item"><strong>{totals.calories}</strong> cal</span>
-            <span className="browser-total-sep">·</span>
-            <span className="browser-total-item"><strong>{totals.protein}g</strong> protein</span>
-            <span className="browser-total-sep">·</span>
-            <span className="browser-total-item"><strong>{totals.carbs}g</strong> carbs</span>
-            <span className="browser-total-sep">·</span>
-            <span className="browser-total-item"><strong>{totals.fat}g</strong> fat</span>
+            {display.calories && <span className="browser-total-item"><strong>{totals.calories}</strong> cal</span>}
+            {display.calories && display.protein && <span className="browser-total-sep">·</span>}
+            {display.protein && <span className="browser-total-item"><strong>{totals.protein}g</strong> protein</span>}
+            {display.protein && display.carbs && <span className="browser-total-sep">·</span>}
+            {display.carbs && <span className="browser-total-item"><strong>{totals.carbs}g</strong> carbs</span>}
+            {display.carbs && display.fat && <span className="browser-total-sep">·</span>}
+            {display.fat && <span className="browser-total-item"><strong>{totals.fat}g</strong> fat</span>}
           </div>
-        ) : (
+        ) : selected.size === 0 ? (
           <p className="browser-hint">Tap + to add what you're eating</p>
+        ) : (
+          <p className="browser-hint">{selected.size} item{selected.size !== 1 ? 's' : ''} on your plate</p>
         )}
         <button className="browser-done" onClick={() => onDone(selectedItems)}>
           {selected.size > 0

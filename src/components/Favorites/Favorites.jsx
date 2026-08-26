@@ -1,10 +1,21 @@
 import { STATIONS, DIETARY_TAGS } from '../../data/mockMenu';
 import { useFavorites } from '../../context/FavoritesContext';
+import { useNutritionDisplay } from '../../context/NutritionDisplayContext';
 import './Favorites.css';
 
 const STATION_ORDER = ['breakfast', 'entree', 'grill', 'deli', 'pizza', 'allgood', 'sides', 'soup', 'salad', 'bakery', 'beverage'];
 
 export default function Favorites({ onClose, tabMode = false }) {
+  const display = useNutritionDisplay();
+
+  // Same rule as the meal plan: only the metrics this person wants to see.
+  const favMacros = (n) => [
+    display.calories && `${n?.calories ?? '\u2014'} cal`,
+    display.protein  && (n?.protein != null ? `${n.protein}g P` : '\u2014'),
+    display.carbs    && (n?.carbs   != null ? `${n.carbs}g C`   : '\u2014'),
+    display.fat      && (n?.fat     != null ? `${n.fat}g F`     : '\u2014'),
+  ].filter(Boolean).join(' \u00b7 ');
+
   const { favorites, toggleFavorite } = useFavorites();
 
   const handleUnfavorite = (item) => {
@@ -58,12 +69,9 @@ export default function Favorites({ onClose, tabMode = false }) {
                   <div className="favorite-item-info">
                     <span className="favorite-name">{item.name}</span>
                     <div className="favorite-meta">
-                      <span className="favorite-macros">
-                        {item.nutrition?.calories ?? '—'} cal
-                        {' · '}{item.nutrition?.protein != null ? `${item.nutrition.protein}g P` : '—'}
-                        {' · '}{item.nutrition?.carbs != null ? `${item.nutrition.carbs}g C` : '—'}
-                        {' · '}{item.nutrition?.fat != null ? `${item.nutrition.fat}g F` : '—'}
-                      </span>
+                      {favMacros(item.nutrition) && (
+                        <span className="favorite-macros">{favMacros(item.nutrition)}</span>
+                      )}
                       {item.tags?.length > 0 && (
                         <div className="favorite-tags">
                           {item.tags.slice(0, 3).map((tag) => (
