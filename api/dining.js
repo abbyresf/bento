@@ -8,7 +8,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const CACHE_TTL_SECONDS = 7200; // 2 hours
+const CACHE_TTL_SECONDS = 1800; // 30 minutes
 
 function getSupabaseAdmin() {
   const url = process.env.VITE_SUPABASE_URL;
