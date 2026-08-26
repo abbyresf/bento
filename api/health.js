@@ -60,11 +60,18 @@ async function checkTufts(slug, name, dateStr) {
         }).then(r => r.ok ? r.json() : null).catch(() => null)
       )
     );
+    // Distinguish "Nutrislice answered, this hall just isn't serving" from
+    // "we couldn't reach Nutrislice at all". Without this, a closed hall is
+    // indistinguishable from a broken scraper and pages every day it's shut.
+    const reachable = responses.some(r => r !== null);
+    if (!reachable) {
+      return { slug, name, university: 'tufts', status: 'error', error: 'Nutrislice unreachable', item_count: 0 };
+    }
     const itemCount = responses.reduce((sum, data) => {
       const day = data?.days?.find(d => d.date === dateStr);
       return sum + (day?.menu_items?.filter(i => i.food?.name).length ?? 0);
     }, 0);
-    return { slug, name, university: 'tufts', status: itemCount === 0 ? 'degraded' : 'ok', item_count: itemCount };
+    return { slug, name, university: 'tufts', status: itemCount === 0 ? 'closed' : 'ok', item_count: itemCount };
   } catch (err) {
     return { slug, name, university: 'tufts', status: 'error', error: err.message, item_count: 0 };
   }
@@ -92,6 +99,20 @@ export default async function handler(req, res) {
   ]);
 
   const results = [...brandeisResults, ...tuftsResults];
+
+  // A single dark hall is normal. Every hall at one school going dark on the
+  // same day is far more likely to be a broken parser than a closed campus,
+  // so escalate that case even though each location looked merely closed.
+  for (const university of ['brandeis', 'tufts']) {
+    const forUni = results.filter(r => r.university === university);
+    if (forUni.length && forUni.every(r => r.status === 'closed')) {
+      forUni.forEach(r => {
+        r.status = 'degraded';
+        r.error = 'All locations at this university returned no items';
+      });
+    }
+  }
+
   const admin = getSupabaseAdmin();
 
   if (bust && admin) {

@@ -44,8 +44,18 @@
   .choice-bar { height: 100%; background: var(--orange); border-radius: 99px; }
   .choice-label { font-size: 0.85rem; color: var(--navy); flex: 0 0 160px; }
   .choice-count { font-size: 0.8rem; color: var(--muted); min-width: 30px; text-align: right; }
-  .open-response { padding: 0.6rem 0.75rem; background: #faf7f4; border-radius: 8px; font-size: 0.875rem; margin-bottom: 0.4rem; color: var(--navy); }
+  .open-response { padding: 0.6rem 0.75rem; background: #faf7f4; border-radius: 8px; font-size: 0.875rem; margin-bottom: 0.4rem; color: var(--navy); white-space: pre-wrap; }
   .open-response .r-name { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.2rem; font-weight: 600; }
+  .q-section { margin-top: 1.15rem; padding-top: 1.15rem; border-top: 1px solid var(--border); }
+  .q-section:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
+  .q-section-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.6rem; }
+  .q-section-label .n { color: var(--orange); }
+  .rating-star { flex: 0 0 34px; color: var(--orange); font-weight: 600; font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+  .rating-avg { font-size: 0.85rem; margin-bottom: 0.6rem; }
+  .rating-avg strong { font-family: var(--ff-disp); font-size: 1.1rem; color: var(--orange); }
+  .parsed-label { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--orange); margin-bottom: 0.15rem; }
+  .response-part { margin-bottom: 0.4rem; }
+  .empty-note { color: var(--muted); font-size: 0.82rem; font-style: italic; }
   .stat-row { display: flex; gap: 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
   .stat { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem; flex: 1; min-width: 120px; }
   .stat-val { font-family: var(--ff-disp); font-weight: 900; font-size: 2rem; color: var(--orange); }
@@ -92,21 +102,23 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Mirrors the question set in index.html. `type` uses the same names the
+// questionnaire uses, since the answer format is determined by the type there.
 const QUESTIONS = [
-  { day: 1, title: 'Setup', text: 'Have you completed your Bento setup?', type: 'choice' },
-  { day: 2, title: 'First impressions', text: 'How was your first experience using Bento?', type: 'open' },
-  { day: 3, title: 'Meal planning', text: 'Did the meal plan match what you felt like eating?', type: 'choice' },
-  { day: 4, title: 'Menu accuracy', text: 'How accurate were the dining hall menus?', type: 'choice' },
-  { day: 5, title: 'Dietary preferences', text: 'Did Bento correctly reflect your dietary restrictions?', type: 'choice' },
-  { day: 6, title: 'Community tab', text: 'Head to the community tab and post or upvote a suggestion.', type: 'choice' },
-  { day: 7, title: 'Wishlist', text: 'What\'s one thing you wish Bento could do?', type: 'open' },
-  { day: 8, title: 'Word of mouth', text: 'Have you told anyone about Bento?', type: 'choice' },
-  { day: 9, title: 'Behavior change', text: 'How does Bento change how you decide what to eat?', type: 'open' },
-  { day: 10, title: 'How you use it', text: 'What\'s the first thing you do when you open Bento?', type: 'open' },
-  { day: 11, title: 'Pain points', text: 'What\'s working, and what isn\'t?', type: 'open' },
-  { day: 12, title: 'Habit check', text: 'How often are you letting Bento guide your meals?', type: 'choice' },
-  { day: 13, title: 'Retention', text: 'What would make you keep using Bento after beta ends?', type: 'open' },
-  { day: 14, title: 'Final rating', text: 'Rate it 1–5, then tell us: what\'s one thing you\'d change?', type: 'open' },
+  { day: 1,  title: 'Set up your Bento account', text: 'Did you complete your setup?',                                          type: 'task_long' , options: ['Yes, all done', 'Mostly, ran into a small issue', 'No, I need help'] },
+  { day: 2,  title: 'First impressions',         text: 'How was your first experience using Bento?',                            type: 'rating_text' },
+  { day: 3,  title: 'Meal planning',             text: 'Did the meal plan Bento suggested match what you actually felt like eating?', type: 'multiple_choice' , options: ['Yes, it was spot on', 'Mostly yes', 'Somewhat', 'Not really', 'I didn\'t follow it'] },
+  { day: 4,  title: 'Menu accuracy',             text: 'How accurate were the dining hall menus shown in the app?',             type: 'multiple_choice' , options: ['Very accurate', 'Mostly accurate', 'Sometimes off', 'Often wrong', 'I haven\'t checked the menus yet'] },
+  { day: 5,  title: 'Dietary preferences',       text: 'Did Bento correctly reflect your dietary restrictions or preferences?', type: 'multiple_choice' , options: ['Yes, perfectly', 'Mostly', 'Some gaps', 'No, something was off', 'I didn\'t set any restrictions'] },
+  { day: 6,  title: 'Try the community tab',     text: 'Did you check it out?',                                                 type: 'task' , options: ['Yes, I posted something', 'Yes, I just browsed', 'I couldn\'t find it', 'Not yet'] },
+  { day: 7,  title: 'Your wishlist',             text: 'What\'s one thing you wish Bento could do that it currently can\'t?',   type: 'long_answer' },
+  { day: 8,  title: 'Word of mouth',             text: 'Have you told anyone about Bento?',                                     type: 'multiple_choice' , options: ['Yes, and they downloaded it', 'Yes, but they haven\'t yet', 'No, not yet'] },
+  { day: 9,  title: 'Behavior change',           text: 'How does Bento change how you decide what to eat?',                     type: 'long_answer' },
+  { day: 10, title: 'How you use it',            text: 'What\'s the first thing you do when you open Bento?',                   type: 'long_answer' },
+  { day: 11, title: 'Pain points',               text: 'What\'s working well and what isn\'t?',                                 type: 'dual_long_answer' },
+  { day: 12, title: 'Habit check',               text: 'How often are you actually letting Bento guide what you eat?',          type: 'multiple_choice' , options: ['Every meal', 'Most meals', 'Sometimes', 'Rarely', 'Not really using it to guide meals'] },
+  { day: 13, title: 'Retention',                 text: 'What would make you keep using Bento after the beta ends?',             type: 'long_answer' },
+  { day: 14, title: 'Last one.',                 text: 'Overall, how would you rate Bento?',                                    type: 'rating_text' },
 ];
 
 function checkPw() {
@@ -148,6 +160,110 @@ function renderStats() {
     <div class="stat"><div class="stat-val">${today > 0 ? today : '—'}</div><div class="stat-label">Current day</div></div>`;
 }
 
+// ── Answer parsing ────────────────────────────────────────────────────────────
+// Answers are stored as pipe-joined strings by handleSubmit in index.html:
+//   task_long        → "Setup: {option} | Onboarding feedback: {text}"
+//   dual_long_answer → "Positive: {text} | Constructive: {text}"   ('(none)' if blank)
+//   rating_text      → "{n}/5: {text}"
+//   multiple_choice  → the option text verbatim
+// Any type may have " | Extra: {text}" appended from the optional box.
+
+// Responses are free text from testers, so escape before it reaches innerHTML.
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+}
+
+function splitExtra(answer) {
+  const marker = ' | Extra: ';
+  const i = String(answer ?? '').lastIndexOf(marker);
+  return i === -1
+    ? { core: String(answer ?? ''), extra: '' }
+    : { core: answer.slice(0, i), extra: answer.slice(i + marker.length) };
+}
+
+function nameOf(testerId) {
+  return (allTesters.find(t => t.id === testerId) || {}).name || 'Unknown';
+}
+
+const isBlank = v => !v || v === '(none)';
+
+// Splits one stored answer into labelled parts for the per-person view.
+function parseAnswer(type, rawAnswer) {
+  const { core, extra } = splitExtra(rawAnswer);
+  const parts = [];
+  let m;
+
+  if (type === 'task_long' && (m = core.match(/^Setup: (.*?) \| Onboarding feedback: ([\s\S]*)$/))) {
+    parts.push({ label: 'Setup', text: m[1] });
+    if (!isBlank(m[2])) parts.push({ label: 'Onboarding feedback', text: m[2] });
+  } else if (type === 'dual_long_answer' && (m = core.match(/^Positive: ([\s\S]*?) \| Constructive: ([\s\S]*)$/))) {
+    if (!isBlank(m[1])) parts.push({ label: 'Working well', text: m[1] });
+    if (!isBlank(m[2])) parts.push({ label: 'Needs work',   text: m[2] });
+  } else if (type === 'rating_text' && (m = core.match(/^(\d)\/5: ([\s\S]*)$/))) {
+    parts.push({ label: 'Rating', text: `${m[1]} / 5` });
+    if (!isBlank(m[2])) parts.push({ label: 'Comments', text: m[2] });
+  } else if (core) {
+    parts.push({ label: null, text: core });
+  }
+
+  if (extra) parts.push({ label: 'Anything else', text: extra });
+  return parts;
+}
+
+// ── Section renderers ─────────────────────────────────────────────────────────
+
+function section(label, count, body) {
+  const n = count === undefined ? '' : ` <span class="n">${count}</span>`;
+  return `<div class="q-section"><div class="q-section-label">${esc(label)}${n}</div>${body}</div>`;
+}
+
+// Bar chart. Bars are scaled against the largest tally so shares stay readable
+// even when one option dominates; the count is always shown alongside.
+function choiceChart(tally, options) {
+  const total = Object.values(tally).reduce((s, n) => s + n, 0);
+  if (!total) return '<p class="empty-note">No responses yet.</p>';
+  // Seed every option at zero so an option nobody picked still shows a row —
+  // "nobody chose this" is a finding, not an absence.
+  const seeded = {};
+  (options || []).forEach(o => { seeded[o] = 0; });
+  Object.entries(tally).forEach(([a, n]) => { seeded[a] = n; });
+  const max = Math.max(...Object.values(seeded), 1);
+  // Keep the questionnaire's option order; anything unrecognised goes last.
+  const order = a => { const i = (options || []).indexOf(a); return i === -1 ? 999 : i; };
+  return Object.entries(seeded)
+    .sort((a, b) => b[1] - a[1] || order(a[0]) - order(b[0]))
+    .map(([answer, n]) => `
+      <div class="choice-row">
+        <div class="choice-label">${esc(answer)}</div>
+        <div class="choice-bar-wrap"><div class="choice-bar" style="width:${(n / max) * 100}%"></div></div>
+        <div class="choice-count">${n} · ${Math.round((n / total) * 100)}%</div>
+      </div>`)
+    .join('');
+}
+
+function responseList(items) {
+  if (!items.length) return '<p class="empty-note">No responses yet.</p>';
+  return items.map(({ name, text }) =>
+    `<div class="open-response"><div class="r-name">${esc(name)}</div>${esc(text)}</div>`
+  ).join('');
+}
+
+function ratingChart(ratings) {
+  if (!ratings.length) return '<p class="empty-note">No ratings yet.</p>';
+  const tally = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  ratings.forEach(r => { tally[r] = (tally[r] || 0) + 1; });
+  const avg = (ratings.reduce((s, r) => s + r, 0) / ratings.length).toFixed(1);
+  const max = Math.max(...Object.values(tally), 1);
+  const rows = [5, 4, 3, 2, 1].map(star => `
+    <div class="choice-row">
+      <div class="rating-star">${star} ★</div>
+      <div class="choice-bar-wrap"><div class="choice-bar" style="width:${(tally[star] / max) * 100}%"></div></div>
+      <div class="choice-count">${tally[star]}</div>
+    </div>`).join('');
+  return `<div class="rating-avg">Average <strong>${avg}</strong> / 5 across ${ratings.length} rating${ratings.length !== 1 ? 's' : ''}</div>${rows}`;
+}
+
 function renderPeople() {
   const el = document.getElementById('tab-people');
   if (!allTesters.length) { el.innerHTML = '<p class="muted">No testers yet.</p>'; return; }
@@ -167,10 +283,15 @@ function renderPeople() {
         <div id="resp-${t.id}" style="display:none">
           ${count === 0 ? '<p class="muted" style="margin-top:1rem">No responses yet.</p>' :
             `<div class="response-list">${responses.map(r => {
-              const q = QUESTIONS[r.day_number - 1];
+              const q = QUESTIONS.find(x => x.day === r.day_number);
+              const parts = parseAnswer(q?.type, r.answer).map(p =>
+                `<div class="response-part">
+                  ${p.label ? `<div class="parsed-label">${esc(p.label)}</div>` : ''}
+                  <div class="response-a">${esc(p.text)}</div>
+                </div>`).join('');
               return `<div class="response-item">
                 <div class="response-day">Day ${r.day_number}</div>
-                <div><div class="response-q">${q?.text || ''}</div><div class="response-a">${r.answer}</div></div>
+                <div><div class="response-q">${esc(q?.text || '')}</div>${parts}</div>
               </div>`;
             }).join('')}</div>`}
         </div>
@@ -192,31 +313,62 @@ function renderQuestions() {
     const responses = allResponses.filter(r => r.day_number === q.day);
     const count = responses.length;
 
+    // Each answer is split into its component parts, then like parts are
+    // grouped across testers so every sub-question gets its own section:
+    // choices aggregate into a chart, free text collects into a list.
+    const tally = {};
+    const extras = [];
+    const ratings = [];
+    const lists = { main: [], onboarding: [], positive: [], constructive: [] };
+
+    responses.forEach(r => {
+      const { core, extra } = splitExtra(r.answer);
+      const name = nameOf(r.tester_id);
+      let m;
+
+      if (q.type === 'multiple_choice' || q.type === 'task') {
+        tally[core] = (tally[core] || 0) + 1;
+      } else if (q.type === 'task_long' && (m = core.match(/^Setup: (.*?) \| Onboarding feedback: ([\s\S]*)$/))) {
+        tally[m[1]] = (tally[m[1]] || 0) + 1;
+        if (!isBlank(m[2])) lists.onboarding.push({ name, text: m[2] });
+      } else if (q.type === 'dual_long_answer' && (m = core.match(/^Positive: ([\s\S]*?) \| Constructive: ([\s\S]*)$/))) {
+        if (!isBlank(m[1])) lists.positive.push({ name, text: m[1] });
+        if (!isBlank(m[2])) lists.constructive.push({ name, text: m[2] });
+      } else if (q.type === 'rating_text' && (m = core.match(/^(\d)\/5: ([\s\S]*)$/))) {
+        ratings.push(Number(m[1]));
+        if (!isBlank(m[2])) lists.main.push({ name, text: m[2] });
+      } else if (core) {
+        lists.main.push({ name, text: core });
+      }
+
+      if (extra) extras.push({ name, text: extra });
+    });
+
     let content = '';
-    if (q.type === 'choice') {
-      const tally = {};
-      responses.forEach(r => { tally[r.answer] = (tally[r.answer] || 0) + 1; });
-      const max = Math.max(...Object.values(tally), 1);
-      content = Object.entries(tally).sort((a, b) => b[1] - a[1]).map(([ans, n]) =>
-        `<div class="choice-row">
-          <div class="choice-label">${ans}</div>
-          <div class="choice-bar-wrap"><div class="choice-bar" style="width:${(n/max)*100}%"></div></div>
-          <div class="choice-count">${n}</div>
-        </div>`
-      ).join('');
+    if (q.type === 'multiple_choice' || q.type === 'task') {
+      content += section('Responses', count, choiceChart(tally, q.options));
+    } else if (q.type === 'task_long') {
+      content += section('Setup', count, choiceChart(tally, q.options));
+      content += section('Onboarding feedback', lists.onboarding.length, responseList(lists.onboarding));
+    } else if (q.type === 'dual_long_answer') {
+      content += section('Working well', lists.positive.length, responseList(lists.positive));
+      content += section('Needs work', lists.constructive.length, responseList(lists.constructive));
+    } else if (q.type === 'rating_text') {
+      content += section('Ratings', ratings.length, ratingChart(ratings));
+      content += section('Written responses', lists.main.length, responseList(lists.main));
     } else {
-      const nameMap = {};
-      allTesters.forEach(t => { nameMap[t.id] = t.name; });
-      content = responses.map(r =>
-        `<div class="open-response"><div class="r-name">${nameMap[r.tester_id] || 'Unknown'}</div>${r.answer}</div>`
-      ).join('');
+      content += section('Responses', count, responseList(lists.main));
+    }
+
+    if (extras.length) {
+      content += section('Anything else', extras.length, responseList(extras));
     }
 
     return `<div class="q-card">
       <div class="eyebrow">Day ${q.day}</div>
-      <div class="q-title">${q.title}</div>
-      <div class="q-text">${q.text} · <strong>${count} response${count !== 1 ? 's' : ''}</strong></div>
-      ${content || '<p class="muted">No responses yet.</p>'}
+      <div class="q-title">${esc(q.title)}</div>
+      <div class="q-text">${esc(q.text)} · <strong>${count} response${count !== 1 ? 's' : ''}</strong></div>
+      ${content}
     </div>`;
   }).join('');
 }
