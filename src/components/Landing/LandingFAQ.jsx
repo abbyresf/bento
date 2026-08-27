@@ -16,11 +16,11 @@ const FAQS = [
   },
   {
     q: 'How does the meal recommendation work?',
-    a: 'Bento uses a scoring algorithm that weighs your macro targets, calorie budget, dietary restrictions, and past favorites. It tries to maximize how close your plate gets to your daily goals given what\'s available at each station.',
+    a: 'Bento uses a scoring algorithm that weighs your macro targets, calorie budget, dietary restrictions, and the dishes you have rated highly. It tries to maximize how close your plate gets to your daily goals given what\'s available at each station.',
   },
   {
     q: 'Will Bento remember my preferences?',
-    a: 'Yes. Your dietary restrictions, calorie goals, and favorited foods are all saved to your account. Favorites also get a boost in the recommendation engine so the more you use Bento, the better it fits your taste.',
+    a: 'Yes. Your dietary restrictions, calorie goals, and food ratings are all saved to your account. Dishes you rate highly get a boost in the recommendation engine, so the more you rate, the better Bento fits your taste.',
   },
   {
     q: 'Which universities does Bento support?',

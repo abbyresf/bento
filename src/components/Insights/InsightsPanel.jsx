@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { getWeeklySummaries, getWeeklyHistoryFromMealHistory, getNutritionTargets, getDailyGoalHits, getDailyBreakdown } from '../../lib/db';
+import { getWeeklySummaries, getWeeklyHistoryFromMealHistory, getNutritionTargets, getDailyGoalHits, getDailyBreakdown, getStreak } from '../../lib/db';
 import WeeklySummaryCard from './WeeklySummaryCard';
 import DailyBreakdown from './DailyBreakdown';
+import BadgesPanel from '../Badges/BadgesPanel';
+import { BADGES, getEarnedBadges } from '../../data/badges';
 import './InsightsPanel.css';
 
 function formatWeekRange(weekStart) {
@@ -85,6 +87,37 @@ function Callouts({ latest, targets, goalHits }) {
   );
 }
 
+// The live streak figure, moved off the meal-plan header. A streak only counts
+// as running if a meal was confirmed today or yesterday; otherwise it has
+// lapsed and showing the old number would overstate it.
+function CurrentStreak({ streak, onOpenBadges }) {
+  if (!streak) return null;
+
+  const current = streak.effectiveStreak;
+  const earned = getEarnedBadges(streak.longestStreak ?? 0).length;
+
+  return (
+    <div className="streak-current">
+      <div className="streak-current-main">
+        <span className="streak-current-flame">{current > 0 ? '🔥' : '·'}</span>
+        <div className="streak-current-text">
+          <span className="streak-current-count">
+            {current > 0 ? `${current} day${current !== 1 ? 's' : ''}` : 'No streak yet'}
+          </span>
+          <span className="streak-current-sub">
+            {current > 0
+              ? `Longest: ${streak.longestStreak} day${streak.longestStreak !== 1 ? 's' : ''}`
+              : 'Confirm a meal to start one'}
+          </span>
+        </div>
+      </div>
+      <button className="streak-badges-btn" onClick={onOpenBadges}>
+        {earned} / {BADGES.length} badges
+      </button>
+    </div>
+  );
+}
+
 function StreakHistory({ summaries }) {
   const empty = !summaries?.length;
 
@@ -125,6 +158,8 @@ export default function InsightsPanel({ onClose, tabMode = false }) {
   const [targets, setTargets] = useState(null);
   const [goalHits, setGoalHits] = useState(null);
   const [dailyDays, setDailyDays] = useState(null);
+  const [streak, setStreak] = useState(null);
+  const [showBadges, setShowBadges] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -134,11 +169,19 @@ export default function InsightsPanel({ onClose, tabMode = false }) {
       getDailyGoalHits(),
       getWeeklyHistoryFromMealHistory(8),
       getDailyBreakdown(),
-    ]).then(([s, t, g, h, d]) => {
+      getStreak(),
+    ]).then(([s, t, g, h, d, st]) => {
       setSummaries(s?.length ? s : h);
       setTargets(t);
       setGoalHits(g);
       setDailyDays(d);
+      // A streak only counts as running if a meal was confirmed today or
+      // yesterday; otherwise it lapsed and showing the stored number would
+      // overstate it.
+      const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const active = st?.lastConfirmedDate === iso(new Date())
+        || st?.lastConfirmedDate === iso(new Date(Date.now() - 86400000));
+      setStreak(st ? { ...st, effectiveStreak: active ? st.currentStreak : 0 } : null);
       setLoading(false);
     });
   }, []);
@@ -179,6 +222,7 @@ export default function InsightsPanel({ onClose, tabMode = false }) {
                   Start confirming meals to see your stats here.
                 </p>
               )}
+              <CurrentStreak streak={streak} onOpenBadges={() => setShowBadges(true)} />
               <WeeklySummaryCard summary={latest} targets={targets} />
               <DailyBreakdown days={dailyDays} targets={targets} />
               <Callouts latest={latest} targets={targets} goalHits={goalHits} />
@@ -186,6 +230,9 @@ export default function InsightsPanel({ onClose, tabMode = false }) {
             </>
           )}
         </div>
+        {showBadges && (
+          <BadgesPanel longestStreak={streak?.longestStreak ?? 0} onClose={() => setShowBadges(false)} />
+        )}
       </div>
     );
   }
@@ -214,6 +261,7 @@ export default function InsightsPanel({ onClose, tabMode = false }) {
                   Start confirming meals to see your stats here.
                 </p>
               )}
+              <CurrentStreak streak={streak} onOpenBadges={() => setShowBadges(true)} />
               <WeeklySummaryCard summary={latest} targets={targets} />
               <DailyBreakdown days={dailyDays} targets={targets} />
               <Callouts latest={latest} targets={targets} goalHits={goalHits} />
@@ -221,6 +269,9 @@ export default function InsightsPanel({ onClose, tabMode = false }) {
             </>
           )}
         </div>
+        {showBadges && (
+          <BadgesPanel longestStreak={streak?.longestStreak ?? 0} onClose={() => setShowBadges(false)} />
+        )}
       </div>
     </>
   );

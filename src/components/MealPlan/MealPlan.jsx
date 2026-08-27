@@ -29,10 +29,8 @@ import { getNewBadge } from '../../data/badges';
 import { optimizeDay, findAlternatives, findRecommendedAdditions } from '../../utils/mealOptimizer';
 import MealCard from './MealCard';
 import DailySummary from './DailySummary';
-import StreakBadge from '../Streak/StreakBadge';
 import StreakCelebration from '../Streak/StreakCelebration';
 import BadgeCelebration from '../Badges/BadgeCelebration';
-import BadgesPanel from '../Badges/BadgesPanel';
 import RatingSheet from './RatingSheet';
 import './MealPlan.css';
 
@@ -62,7 +60,6 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const [showStreakCelebration, setShowStreakCelebration] = useState(false);
   const [pendingBadge, setPendingBadge] = useState(null);
   const [newBadge, setNewBadge] = useState(null);
-  const [showBadgesPanel, setShowBadgesPanel] = useState(false);
   const [customMeals, setCustomMeals] = useState(() => {
     const today = localDateStr();
     // New per-date cache takes priority
@@ -83,10 +80,11 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const [, setTick] = useState(0);
   const initialMountRef = useRef(true);
 
-  // High-rated items from context — ref keeps loadMenuAndOptimize stable (no dep on highRatedIds)
-  const { highRatedIds: contextHighRatedIds } = useRatings();
-  const highRatedIdsRef = useRef(contextHighRatedIds);
-  useEffect(() => { highRatedIdsRef.current = contextHighRatedIds; }, [contextHighRatedIds]);
+  // The student's own star ratings, id -> stars. A ref keeps
+  // loadMenuAndOptimize stable (no dependency on the ratings themselves).
+  const { ratingsById: contextRatings } = useRatings();
+  const ratingsByIdRef = useRef(contextRatings);
+  useEffect(() => { ratingsByIdRef.current = contextRatings; }, [contextRatings]);
 
   // Post-confirmation rating sheet
   const [pendingRating, setPendingRating] = useState(null); // { meal, items }
@@ -157,7 +155,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
       setRestrictions(fetchedRestrictions);
 
       if (targets) {
-        const optimized = optimizeDay(menuData, targets, fetchedRestrictions, recentItems, undefined, highRatedIdsRef.current);
+        const optimized = optimizeDay(menuData, targets, fetchedRestrictions, recentItems, undefined, ratingsByIdRef.current);
         setMealPlan(optimized);
       }
     } finally {
@@ -219,7 +217,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
         setRestrictions(fetchedRestrictions);
 
         if (targets) {
-          const optimized = optimizeDay(menuData, targets, fetchedRestrictions, recentItems, undefined, highRatedIdsRef.current);
+          const optimized = optimizeDay(menuData, targets, fetchedRestrictions, recentItems, undefined, ratingsByIdRef.current);
           setMealPlan(optimized);
         }
       } catch {
@@ -312,7 +310,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
       });
       if (targets) {
         if (cancelled) return;
-        const optimized = optimizeDay(menu, targets, fetchedRestrictions, recentItems, undefined, highRatedIdsRef.current);
+        const optimized = optimizeDay(menu, targets, fetchedRestrictions, recentItems, undefined, ratingsByIdRef.current);
         setMealPlan(optimized);
         setItemAlternatives({});
         setRecommendations({ breakfast: null, lunch: null, dinner: null });
@@ -356,7 +354,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
       meal,
       currentMealPlan.items,
       3,
-      highRatedIdsRef.current
+      ratingsByIdRef.current
     );
     setRecommendations((prev) => ({ ...prev, [meal]: recs }));
   };
@@ -463,7 +461,8 @@ export default function MealPlan({ settingsVersion = 0 }) {
       restrictions,
       recentItems,
       excludeIds,
-      4
+      4,
+      ratingsByIdRef.current
     );
     setItemAlternatives((prev) => ({ ...prev, [key]: alts }));
   };
@@ -668,14 +667,6 @@ export default function MealPlan({ settingsVersion = 0 }) {
       <header className="meal-plan-header">
         <div className="header-top">
           <img src="/logo-cropped.png" alt="Bento" className="header-logo-sm" />
-          {(() => {
-            const yesterday = localDateStr(new Date(Date.now() - 86400000));
-            const active = streak.lastConfirmedDate === todayStr || streak.lastConfirmedDate === yesterday;
-            const effectiveStreak = active ? streak.currentStreak : 0;
-            return effectiveStreak > 0 ? (
-              <StreakBadge streak={effectiveStreak} onClick={() => setShowBadgesPanel(true)} />
-            ) : null;
-          })()}
         </div>
         <div className="date-nav">
           <button className="date-nav-btn" onClick={() => navigateDate(-1)} aria-label="Previous day">
@@ -739,6 +730,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
             customPlan={customMeals[meal]}
             onBrowserDone={(items) => handleBrowserDone(meal, items)}
             isKosherUser={restrictions?.kosher ?? false}
+            restrictions={restrictions}
             selectedLocation={selectedLocation[meal]}
             onLocationChange={(loc) => handleLocationChange(meal, loc)}
             itemAlternatives={itemAlternatives}
@@ -780,12 +772,6 @@ export default function MealPlan({ settingsVersion = 0 }) {
         />
       )}
 
-      {showBadgesPanel && (
-        <BadgesPanel
-          longestStreak={streak.longestStreak}
-          onClose={() => setShowBadgesPanel(false)}
-        />
-      )}
     </div>
   );
 }

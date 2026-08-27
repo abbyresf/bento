@@ -192,3 +192,67 @@
   box-shadow: none;
   animation: none;
 }
+
+/* Current streak — moved here from the meal-plan header. Sits at the top of
+   Insights as the summary line the streak history below expands on. */
+.streak-current {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: #fff;
+  border: 1px solid #e8e3dd;
+  border-radius: 14px;
+  margin-bottom: 1rem;
+}
+
+.streak-current-main {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.streak-current-flame {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.streak-current-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.streak-current-count {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #243b55;
+}
+
+.streak-current-sub {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+/* Badges were previously reachable only by tapping the header streak badge;
+   this is their entry point now. */
+.streak-badges-btn {
+  flex-shrink: 0;
+  padding: 0.4rem 0.8rem;
+  background: transparent;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 50px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.streak-badges-btn:hover {
+  border-color: #f47421;
+  color: #f47421;
+}

@@ -11,7 +11,7 @@
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { optimizeMeal, findRecommendedAdditions } from '../src/utils/mealOptimizer.js';
+import { optimizeMeal, findRecommendedAdditions, findAlternatives, optimizeDay, passesHardRestrictions } from '../src/utils/mealOptimizer.js';
 import { getRole, ROLE, ACCESSORY_ROLES } from '../src/utils/foodRoles.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -132,6 +132,116 @@ for (const [profileName, restrictions] of PROFILES) {
     const fiber = plan.items.reduce((s, i) => s + (i.nutrition.fiber ?? 0), 0);
     console.log(`  ${meal}: ${plan.totals.calories}cal ${plan.totals.protein}p ${fiber}fib — ${names}`);
   }
+}
+
+// ── The student's own ratings ─────────────────────────────────────────────────
+// A low rating has to actually do something. Before this existed, telling
+// Bento you disliked a dish changed nothing at all: only 4-5 stars were read,
+// so a one-star meal could be recommended again the next day at full weight.
+
+console.log('\n### ratings');
+{
+  const items = toItems(menu.lunch, 'lunch');
+  const target = TARGETS.lunch;
+  const base = optimizeMeal(items, target, {}, new Set(), 'lunch', new Map());
+  const anchor = base.items[0];
+
+  const onePlate = optimizeMeal(items, target, {}, new Set(), 'lunch', new Map([[anchor.id, 1]]));
+  check('one star drops the item from the plate',
+    !onePlate.items.some(i => i.id === anchor.id), anchor.name);
+
+  const threePlate = optimizeMeal(items, target, {}, new Set(), 'lunch', new Map([[anchor.id, 3]]));
+  check('three stars is a no-op',
+    threePlate.items.map(i => i.id).join() === base.items.map(i => i.id).join());
+
+  const fivePlate = optimizeMeal(items, target, {}, new Set(), 'lunch', new Map([[anchor.id, 5]]));
+  check('five stars keeps the item',
+    fivePlate.items.some(i => i.id === anchor.id), anchor.name);
+
+  // Swaps are where a student is actively asking for something else, so the
+  // signal has to reach them too.
+  const cold = findAlternatives(base.items[1] ?? base.items[0], items, target, base.totals, {}, new Set(), new Set(), 6, new Map());
+  if (cold.length) {
+    const warm = findAlternatives(base.items[1] ?? base.items[0], items, target, base.totals, {}, new Set(), new Set(), 6, new Map([[cold[0].id, 1]]));
+    check('a disliked dish sinks in the swap list',
+      warm.findIndex(a => a.id === cold[0].id) !== 0, cold[0].name);
+    const liked = findAlternatives(base.items[1] ?? base.items[0], items, target, base.totals, {}, new Set(), new Set(), 6, new Map([[cold[3]?.id, 5]]));
+    if (cold[3]) {
+      check('a liked dish rises in the swap list',
+        liked.findIndex(a => a.id === cold[3].id) < 3, cold[3].name);
+    }
+  }
+
+  // Penalties, not exclusions: a thin menu must still yield a real plate even
+  // if the student has disliked everything on it.
+  const kosherItems = items.filter(i => i.tags.includes('kosher'));
+  const allDisliked = new Map(kosherItems.map(i => [i.id, 1]));
+  const thin = optimizeMeal(items, target, { kosher: true }, new Set(), 'lunch', allDisliked);
+  check('disliking every available item still produces a plate',
+    thin.items.length > 0);
+  check('that plate still respects the restriction',
+    thin.items.every(i => i.tags.includes('kosher')));
+  console.log(`  lunch: ${base.items.map(i => i.name).join(', ')}`);
+}
+
+// ── Locations are alternatives, not a sequence ────────────────────────────────
+// A student eats at one hall. Sharing the "seen already" set across locations
+// meant whichever was optimized second got a worse plate, penalised for food
+// the student would never eat.
+
+console.log('\n### location independence');
+{
+  const meals = {
+    breakfast: toItems(menu.breakfast, 'breakfast'),
+    lunch:     toItems(menu.lunch, 'lunch'),
+    dinner:    toItems(menu.dinner, 'dinner'),
+  };
+  const dayTargets = { calories: 2000, macros: { protein: 130, carbs: 230, fat: 70 } };
+  const plan = (order) => optimizeDay(
+    { locations: Object.fromEntries(order.map(id => [id, { meals }])) },
+    dayTargets, {}, new Set());
+  const show = (r, loc) => ['breakfast', 'lunch', 'dinner']
+    .map(m => r[loc][m].items.map(i => i.id).join()).join('|');
+
+  const a = plan(['sherman', 'usdan']);
+  const b = plan(['usdan', 'sherman']);
+
+  check('identical menus give both locations the same plan',
+    show(a, 'sherman') === show(a, 'usdan'));
+  check('plans do not depend on which location is optimized first',
+    show(a, 'sherman') === show(b, 'sherman') && show(a, 'usdan') === show(b, 'usdan'));
+  console.log(`  sherman: ${a.sherman.lunch.items.map(i => i.name).join(', ')}`);
+}
+
+// ── Build My Plate obeys the same filters ─────────────────────────────────────
+// Browsing the menu by hand used to show everything, so a kosher or vegan
+// student could be offered items Bento would never recommend them. The manual
+// list is filtered with the same predicate the optimizer uses.
+
+console.log('\n### build my plate');
+{
+  const items = toItems(menu.lunch, 'lunch');
+  for (const [profileName, restrictions] of PROFILES) {
+    const allowed = items.filter(i => passesHardRestrictions(i, restrictions));
+    check(`${profileName}: browser offers nothing that breaks the restriction`,
+      allowed.every(i => {
+        if (restrictions.vegan && !i.tags.includes('vegan')) return false;
+        if (restrictions.vegetarian && !i.tags.includes('vegetarian') && !i.tags.includes('vegan')) return false;
+        if (restrictions.glutenFree && !i.tags.includes('glutenFree')) return false;
+        if (restrictions.kosher && !i.tags.includes('kosher')) return false;
+        if (restrictions.milk && i.allergens.includes('milk')) return false;
+        if (restrictions.treeNuts && i.allergens.includes('tree nuts')) return false;
+        return true;
+      }));
+    // Whatever the optimizer puts on the plate must be findable by hand too,
+    // or a student could not rebuild their own recommended meal.
+    const plan = optimizeMeal(items, TARGETS.lunch, restrictions, new Set(), 'lunch');
+    const allowedIds = new Set(allowed.map(i => i.id));
+    check(`${profileName}: every recommended item is browsable`,
+      plan.items.every(i => allowedIds.has(i.id)),
+      plan.items.filter(i => !allowedIds.has(i.id)).map(i => i.name).join(', '));
+  }
+  console.log(`  kosher sees ${items.filter(i => passesHardRestrictions(i, { kosher: true })).length} of ${items.length} lunch items`);
 }
 
 console.log(failures === 0 ? '\nAll composition invariants hold.' : `\n${failures} assertion(s) failed.`);

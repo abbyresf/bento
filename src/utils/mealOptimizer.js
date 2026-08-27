@@ -191,11 +191,37 @@ function getMealContextPenalty(item, mealType) {
   return 0;
 }
 
-// Bonus applied to items the user has favorited (negative = improves score)
-const FAVORITE_BONUS = -80;
+// How a student's own star rating moves an item's score (negative improves it).
+//
+// Deliberately asymmetric: putting something on the plate that a student told
+// us they disliked is a worse mistake than merely failing to favour something
+// they liked, so the penalties outweigh the bonus. For scale, eating an item
+// yesterday costs +100 and repeating a protein within one meal costs +300.
+//
+// These are penalties, not exclusions. On a thin menu — the kosher pool is
+// around 34 items, vegan breakfast is thinner — hard-excluding disliked food
+// could leave a plate with no protein at all. A large penalty means a
+// one-star dish returns only when nothing else can fill the role.
+const RATING_ADJUSTMENT = {
+  1: 400,   // last resort only
+  2: 180,   // worse than having eaten it yesterday
+  3: 0,     // neutral: no opinion either way
+  4: -80,
+  5: -80,
+};
+
+function getRatingAdjustment(item, ratingsById) {
+  if (!ratingsById || typeof ratingsById.get !== 'function') return 0;
+  return RATING_ADJUSTMENT[ratingsById.get(item.id)] ?? 0;
+}
+
+// A dish rated this low should never be chosen by a slot that picks on a
+// single axis (the protein top-up maximises grams and would otherwise ignore
+// the student's opinion entirely).
+const DISLIKED_THRESHOLD = 2;
 
 // Select best item from a list given constraints
-function selectBestItem(items, target, currentTotals, restrictions, recentItemIds, excludeIds = new Set(), mealType = null, selectedItems = [], favoriteIds = new Set()) {
+function selectBestItem(items, target, currentTotals, restrictions, recentItemIds, excludeIds = new Set(), mealType = null, selectedItems = [], ratingsById = new Map()) {
   let bestItem = null;
   let bestScore = Infinity;
 
@@ -212,8 +238,8 @@ function selectBestItem(items, target, currentTotals, restrictions, recentItemId
     const varietyPenalty = getVarietyPenalty(item.id, recentItemIds);
     const contextPenalty = getMealContextPenalty(item, mealType);
     const withinMealPenalty = getWithinMealPenalty(item, selectedItems);
-    const favoriteBonus = favoriteIds.has(item.id) ? FAVORITE_BONUS : 0;
-    const totalScore = baseScore + softPenalty + varietyPenalty + contextPenalty + withinMealPenalty + favoriteBonus;
+    const ratingAdjustment = getRatingAdjustment(item, ratingsById);
+    const totalScore = baseScore + softPenalty + varietyPenalty + contextPenalty + withinMealPenalty + ratingAdjustment;
 
     if (totalScore < bestScore) {
       bestScore = totalScore;
@@ -256,7 +282,7 @@ function generateReason(item, target, currentTotals) {
 }
 
 // Optimize a single meal
-export function optimizeMeal(availableItems, mealTarget, restrictions, recentItemIds, mealType = null, favoriteIds = new Set()) {
+export function optimizeMeal(availableItems, mealTarget, restrictions, recentItemIds, mealType = null, ratingsById = new Map()) {
   const categorized = categorizeItems(availableItems);
   const selected = [];
   const currentTotals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
@@ -295,7 +321,7 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
     for (const role of roles) {
       const pool = eligible.filter(item => getRole(item) === role);
       if (pool.length === 0) continue;
-      const item = selectBestItem(pool, budgetedTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected, favoriteIds);
+      const item = selectBestItem(pool, budgetedTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected, ratingsById);
       if (item) return item;
     }
     return null;
@@ -316,6 +342,9 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
       if (!passesHardRestrictions(item, restrictions)) continue;
       if (getMealContextPenalty(item, mealType) >= 200) continue;
       if (getWithinMealPenalty(item, selected) > 0) continue;
+      // This slot ranks on protein alone, so a disliked item would otherwise
+      // win on grams regardless of the student's opinion.
+      if ((ratingsById?.get?.(item.id) ?? 5) <= DISLIKED_THRESHOLD) continue;
       if (item.nutrition.calories > remaining * 1.15) continue;
       if (!best || item.nutrition.protein > best.nutrition.protein) best = item;
     }
@@ -378,7 +407,7 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
   // smoothie. Water and black coffee are not a recommendation.
   const beverages = eligible.filter(item => getRole(item) === ROLE.BEVERAGE && isNutritionalBeverage(item));
   if (beverages.length > 0 && roomFor(0.9)) {
-    const beverage = selectBestItem(beverages, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected, favoriteIds);
+    const beverage = selectBestItem(beverages, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected, ratingsById);
     if (beverage) addItem(beverage, 'Beverage');
   }
 
@@ -390,7 +419,7 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
   });
   if (hasStructure && roomFor(0.8)) {
     const dessertPool = eligible.filter(item => getRole(item) === ROLE.DESSERT);
-    const dessert = selectBestItem(dessertPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected, favoriteIds);
+    const dessert = selectBestItem(dessertPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected, ratingsById);
     if (dessert && currentTotals.calories + dessert.nutrition.calories <= mealTarget.calories * 1.05) {
       addItem(dessert, 'Fits your remaining calories');
     }
@@ -424,6 +453,17 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
     if (restrictions.halal) {
       warnings.push('Brandeis Dining doesn\'t label halal items — always verify with dining staff');
     }
+
+    // Dietary tags fail safe: an item without a "vegan" tag is excluded for a
+    // vegan. Allergens fail open: an item is excluded only when the allergen is
+    // positively declared, and most items declare none. That asymmetry is
+    // unavoidable — no dining hall certifies what a dish does *not* contain —
+    // but a student trusting the filter deserves to know it.
+    const hasAllergenRestriction = STRUCTURED_ALLERGENS.some(([key]) => restrictions[key])
+      || (restrictions.allergies?.length ?? 0) > 0;
+    if (hasAllergenRestriction) {
+      warnings.push('Allergen filtering relies on Brandeis\'s labels, which are incomplete — always confirm with dining staff');
+    }
   }
 
   return {
@@ -435,7 +475,7 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
 }
 
 // Find best alternative for an item
-export function findAlternative(currentItem, availableItems, mealTarget, currentMealTotals, restrictions, recentItemIds, excludeIds) {
+export function findAlternative(currentItem, availableItems, mealTarget, currentMealTotals, restrictions, recentItemIds, excludeIds, ratingsById = new Map()) {
   // Remove current item's contribution from totals
   const totalsWithoutItem = {
     calories: currentMealTotals.calories - currentItem.nutrition.calories,
@@ -454,7 +494,7 @@ export function findAlternative(currentItem, availableItems, mealTarget, current
   const candidates = sameRole.length > 1 ? sameRole : usable;
 
   const allExcluded = new Set([...excludeIds, currentItem.id]);
-  const alternative = selectBestItem(candidates, mealTarget, totalsWithoutItem, restrictions, recentItemIds, allExcluded);
+  const alternative = selectBestItem(candidates, mealTarget, totalsWithoutItem, restrictions, recentItemIds, allExcluded, null, [], ratingsById);
 
   if (alternative) {
     return {
@@ -467,12 +507,12 @@ export function findAlternative(currentItem, availableItems, mealTarget, current
 }
 
 // Find multiple ranked alternatives for an item (for dropdown display)
-export function findAlternatives(currentItem, availableItems, mealTarget, currentMealTotals, restrictions, recentItemIds, excludeIds, count = 4) {
+export function findAlternatives(currentItem, availableItems, mealTarget, currentMealTotals, restrictions, recentItemIds, excludeIds, count = 4, ratingsById = new Map()) {
   const results = [];
   const cumExcludeIds = new Set(excludeIds);
 
   for (let i = 0; i < count; i++) {
-    const alt = findAlternative(currentItem, availableItems, mealTarget, currentMealTotals, restrictions, recentItemIds, cumExcludeIds);
+    const alt = findAlternative(currentItem, availableItems, mealTarget, currentMealTotals, restrictions, recentItemIds, cumExcludeIds, ratingsById);
     if (!alt) break;
     results.push(alt);
     cumExcludeIds.add(alt.id);
@@ -484,7 +524,7 @@ export function findAlternatives(currentItem, availableItems, mealTarget, curren
 // Find personalized recommended additions for a meal (e.g. a 3rd item)
 // Uses the same scoring/penalty logic as the main optimizer, applied to the
 // remaining macro budget after existing items are already on the plate.
-export function findRecommendedAdditions(availableItems, mealTarget, currentTotals, restrictions, recentItemIds, excludeIds, mealType = null, selectedItems = [], count = 3, favoriteIds = new Set()) {
+export function findRecommendedAdditions(availableItems, mealTarget, currentTotals, restrictions, recentItemIds, excludeIds, mealType = null, selectedItems = [], count = 3, ratingsById = new Map()) {
   const results = [];
   const cumExcludeIds = new Set(excludeIds);
 
@@ -519,7 +559,7 @@ export function findRecommendedAdditions(availableItems, mealTarget, currentTota
       cumExcludeIds,
       mealType,
       selectedItems,
-      favoriteIds
+      ratingsById
     );
     if (!candidate) break;
     results.push({
@@ -533,7 +573,7 @@ export function findRecommendedAdditions(availableItems, mealTarget, currentTota
 }
 
 // Optimize full day across all meals — works with any set of location IDs.
-export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds, mealDistribution = MEAL_DISTRIBUTION, favoriteIds = new Set()) {
+export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds, mealDistribution = MEAL_DISTRIBUTION, ratingsById = new Map()) {
   const mealTargets  = calculateMealTargets(nutritionTargets, mealDistribution);
   const locationIds  = Object.keys(menu.locations ?? {});
 
@@ -546,10 +586,16 @@ export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds,
 
   // Accumulate items used across meals today so later meals (dinner) avoid the
   // same picks as earlier ones (lunch). Starts with history-based recent items.
-  const dailyUsedIds = new Set(recentItemIds);
+  // Each location's day is planned independently. A student eats at one hall,
+  // so these plans are alternatives to choose between, not a sequence — and
+  // sharing a "seen already" set across them meant whichever location happened
+  // to be optimized second was penalised for food the student will never eat.
+  // Within a location the set still carries across meals, so the same dish
+  // does not turn up at both lunch and dinner.
+  for (const locId of locationIds) {
+    const locUsedIds = new Set(recentItemIds);
 
-  for (const meal of ['breakfast', 'lunch', 'dinner']) {
-    for (const locId of locationIds) {
+    for (const meal of ['breakfast', 'lunch', 'dinner']) {
       const locMeals = menu.locations[locId]?.meals;
       if (!locMeals?.[meal]) continue;
 
@@ -557,12 +603,12 @@ export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds,
         locMeals[meal],
         mealTargets[meal],
         restrictions,
-        dailyUsedIds,
+        locUsedIds,
         meal,
-        favoriteIds
+        ratingsById
       );
       result[locId][meal] = locResult;
-      locResult.items.forEach(item => dailyUsedIds.add(item.id));
+      locResult.items.forEach(item => locUsedIds.add(item.id));
 
       result.dailyTotals[locId].calories += locResult.totals.calories;
       result.dailyTotals[locId].protein  += locResult.totals.protein;

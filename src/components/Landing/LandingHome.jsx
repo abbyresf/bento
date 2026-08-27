@@ -156,7 +156,7 @@ function Phone({ src, alt = '', className = '' }) {
 const HOME_FAQS = [
   { q: 'Is Bento free to use?', a: 'Yes. Bento is completely free for all university students. No account, no subscription, and no credit card needed.' },
   { q: 'How does Bento get the dining hall menu?', a: 'Bento pulls your university\'s live dining menu directly so your meal plan always reflects what\'s actually being served that day. No manual data entry required.' },
-  { q: 'How does the meal recommendation work?', a: 'Bento uses a scoring algorithm that weighs your macro targets, calorie budget, dietary restrictions, and past favorites to find the best options from what\'s available at each station.' },
+  { q: 'How does the meal recommendation work?', a: 'Bento uses a scoring algorithm that weighs your macro targets, calorie budget, dietary restrictions, and the dishes you have rated highly to find the best options from what\'s available at each station.' },
   { q: 'Which universities does Bento support?', a: 'Bento is currently available at Brandeis University, with more schools being added. During onboarding you can see which universities are supported and choose yours.' },
   { q: 'Can I use Bento if I have food allergies?', a: 'Yes. You can specify allergies and dietary preferences during setup and Bento will filter meal recommendations accordingly. Always verify allergen information directly with dining staff before eating.' },
   { q: 'Is Bento affiliated with my university?', a: 'No. Bento is an independent application and is not affiliated with, endorsed by, or sponsored by any university or its dining services.' },

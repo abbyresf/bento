@@ -42,8 +42,15 @@ export function RatingsProvider({ children }) {
       .map(([id]) => id)
   );
 
+  // The full signal, id -> stars. The optimizer needs the low ratings too:
+  // telling Bento you disliked something should stop it coming back, not just
+  // fail to help.
+  const ratingsById = new Map(
+    Object.entries(myRatings).map(([id, v]) => [id, v.rating])
+  );
+
   return (
-    <RatingsContext.Provider value={{ myRatings, aggregates, highRatedIds, rateItem, loadingRatings }}>
+    <RatingsContext.Provider value={{ myRatings, aggregates, highRatedIds, ratingsById, rateItem, loadingRatings }}>
       {children}
     </RatingsContext.Provider>
   );

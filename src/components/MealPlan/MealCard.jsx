@@ -95,6 +95,7 @@ export default function MealCard({
   onConfirm,
   onUndo,
   isKosherUser,
+  restrictions,
 }) {
   const display = useNutritionDisplay();
   const [collapsed, setCollapsed] = useState(isPast);
@@ -417,6 +418,7 @@ export default function MealCard({
         meal={meal}
         locationLabel={locationLabel}
         items={rawItemsByLocation[selectedLocation]}
+        restrictions={restrictions}
         initialSelected={customPlan?.items}
         onDone={(items) => { onBrowserDone(items); setShowBrowser(false); }}
         onClose={() => setShowBrowser(false)}

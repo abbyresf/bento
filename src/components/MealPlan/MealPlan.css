@@ -93,7 +93,6 @@
 }
 
 .settings-btn,
-.favorites-btn,
 .insights-btn,
 .home-btn {
   padding: 0.5rem;
@@ -129,16 +128,12 @@
 }
 
 .settings-btn:hover,
-.favorites-btn:hover,
 .insights-btn:hover,
 .home-btn:hover {
   background: #f1f5f9;
   color: #243b55;
 }
 
-.favorites-btn:hover svg {
-  color: #f47421;
-}
 
 .insights-btn:hover svg {
   color: #f47421;
@@ -289,8 +284,7 @@
 
   .home-btn,
   .settings-btn,
-  .favorites-btn,
-  .insights-btn {
+    .insights-btn {
     display: none;
   }
 

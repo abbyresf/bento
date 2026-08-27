@@ -1,21 +1,32 @@
 import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { STATIONS } from '../../data/mockMenu';
+import { passesHardRestrictions } from '../../utils/mealOptimizer';
 import { useNutritionDisplay } from '../../context/NutritionDisplayContext';
 import './MenuBrowser.css';
 
 const CATEGORY_ORDER = ['breakfast', 'entree', 'grill', 'deli', 'pizza', 'allgood', 'sides', 'soup', 'salad', 'bakery', 'beverage'];
 
-export default function MenuBrowser({ meal, locationLabel, items, initialSelected, onDone, onClose, className = '' }) {
+export default function MenuBrowser({ meal, locationLabel, items, restrictions, initialSelected, onDone, onClose, className = '' }) {
   const display = useNutritionDisplay();
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(() => new Set(initialSelected?.map(i => i.id) ?? []));
 
+  // Dietary restrictions apply here exactly as they do to Bento's own picks.
+  // Browsing the menu by hand should not be a way around a filter the student
+  // set — a kosher student sees only kosher items, and so on.
+  const allowed = useMemo(() => {
+    if (!restrictions) return items;
+    return items.filter(item => passesHardRestrictions(item, restrictions));
+  }, [items, restrictions]);
+
+  const hiddenCount = items.length - allowed.length;
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return items;
+    if (!search.trim()) return allowed;
     const q = search.toLowerCase();
-    return items.filter(item => item.name.toLowerCase().includes(q));
-  }, [items, search]);
+    return allowed.filter(item => item.name.toLowerCase().includes(q));
+  }, [allowed, search]);
 
   const grouped = useMemo(() => {
     const groups = {};
@@ -31,7 +42,7 @@ export default function MenuBrowser({ meal, locationLabel, items, initialSelecte
     });
   }, [filtered]);
 
-  const selectedItems = items.filter(item => selected.has(item.id));
+  const selectedItems = allowed.filter(item => selected.has(item.id));
   const totals = selectedItems.reduce((acc, item) => ({
     calories: acc.calories + (item.nutrition?.calories || 0),
     protein:  acc.protein  + (item.nutrition?.protein  || 0),
@@ -68,7 +79,12 @@ export default function MenuBrowser({ meal, locationLabel, items, initialSelecte
         </button>
         <div className="browser-title">
           <span className="browser-meal">{mealLabel} · Browse Menu</span>
-          <span className="browser-location">{locationLabel}</span>
+          <span className="browser-location">
+            {locationLabel}
+            {/* Say why the list is short, so a filtered menu does not look
+                like a broken one. */}
+            {hiddenCount > 0 && ` · ${hiddenCount} hidden by your filters`}
+          </span>
         </div>
       </div>
 
@@ -90,7 +106,11 @@ export default function MenuBrowser({ meal, locationLabel, items, initialSelecte
 
       <div className="browser-list">
         {grouped.length === 0 && (
-          <p className="browser-empty">No items match "{search}"</p>
+          <p className="browser-empty">
+            {allowed.length === 0
+              ? 'Nothing on this menu matches your dietary restrictions.'
+              : `No items match "${search}"`}
+          </p>
         )}
         {grouped.map(([station, stationItems]) => (
           <div key={station} className="browser-station">

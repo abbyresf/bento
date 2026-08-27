@@ -288,7 +288,7 @@ export default function SwipeOnboarding({ onDone, embedded, nutritionDisplay = {
           </svg>
         </button>
         <p className="swipe-status">{likedCount > 0 ? `${likedCount} saved` : 'Swipe or tap'}</p>
-        <button className="swipe-btn swipe-btn-yes" onClick={() => decide(true)} aria-label="Favorite">
+        <button className="swipe-btn swipe-btn-yes" onClick={() => decide(true)} aria-label="Like this dish">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" stroke="none">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
           </svg>
