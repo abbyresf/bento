@@ -92,6 +92,9 @@ export default defineConfig({
         // the cached app shell, so hitting /api/health in a browser boots the
         // React app and bounces to /app instead of returning the JSON.
         navigateFallbackDenylist: [/^\/api\//, /^\/beta\//],
+        // Push handlers live in their own file so the build strategy stays
+        // generateSW — Workbox keeps owning caching, this only adds push.
+        importScripts: ['/push-sw.js'],
         runtimeCaching: [
           {
             // Cache the Brandeis dining pages for offline fallback

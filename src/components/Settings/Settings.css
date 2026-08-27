@@ -441,3 +441,14 @@
   border-color: #f47421;
   color: #f47421;
 }
+
+/* Explains why the reminder switch is unavailable rather than just hiding it —
+   on iPhone the fix is a home-screen install, which the student can act on. */
+.push-unavailable,
+.push-note {
+  margin-top: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  background: #faf7f4;
+  border-radius: 8px;
+  line-height: 1.5;
+}

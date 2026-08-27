@@ -13,10 +13,14 @@ import {
 import { calculateNutritionTargets, ACTIVITY_LEVELS, GOALS } from '../../utils/tdeeCalculator';
 import UniversityPicker from '../common/UniversityPicker';
 import { useNutritionDisplay } from '../../context/NutritionDisplayContext';
+import { pushSupport, subscribeToPush, unsubscribeFromPush, getPushEnabled } from '../../lib/push';
 import './Settings.css';
 
 export default function Settings({ onClose, onReset, onSave, onGoContact, tabMode = false }) {
   const display = useNutritionDisplay();
+  const [pushOn, setPushOn] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushNote, setPushNote] = useState(null);
   const [profile, setProfile] = useState(null);
   const [targets, setTargets] = useState(null);
   const [restrictions, setRestrictions] = useState(null);
@@ -36,6 +40,7 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
         getDietaryRestrictions(),
       ]);
       setProfile(loadedProfile);
+      getPushEnabled().then(setPushOn).catch(() => {});
       setTargets(loadedTargets);
       setRestrictions(loadedRestrictions);
       if (loadedTargets) {
@@ -340,6 +345,61 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
         </section>
 
         {/* Data Management Section */}
+        <section className="settings-section">
+          <h3>Meal Reminders</h3>
+          <p className="section-note">
+            A single notification at lunchtime telling you what's being served.
+            No sound beyond your normal notification settings, and never more
+            than once a day.
+          </p>
+          {(() => {
+            const support = pushSupport();
+            if (!support.ok && !pushOn) {
+              // Each reason needs a different response from the student, so
+              // they are spelled out rather than collapsed into one error.
+              const messages = {
+                'needs-install': 'Add Bento to your home screen first — iPhone only delivers notifications to installed apps, not Safari tabs.',
+                'blocked': 'Notifications are blocked for Bento in your browser settings. You\'ll need to re-allow them there before turning this on.',
+                'unsupported': 'This browser doesn\'t support notifications.',
+                'not-configured': 'Notifications aren\'t available yet.',
+              };
+              return <p className="section-note push-unavailable">{messages[support.reason]}</p>;
+            }
+            return (
+              <>
+                <label className={`dietary-toggle ${pushOn ? 'active' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={pushOn}
+                    disabled={pushBusy}
+                    onChange={async () => {
+                      setPushBusy(true);
+                      setPushNote(null);
+                      if (pushOn) {
+                        await unsubscribeFromPush();
+                        setPushOn(false);
+                      } else {
+                        const r = await subscribeToPush();
+                        if (r.ok) setPushOn(true);
+                        else setPushNote(
+                          r.reason === 'blocked'
+                            ? 'Your browser blocked the request. Re-allow notifications for Bento in its settings.'
+                            : r.reason === 'dismissed'
+                              ? 'No problem — you can turn this on any time.'
+                              : 'Something went wrong. Try again in a moment.'
+                        );
+                      }
+                      setPushBusy(false);
+                    }}
+                  />
+                  <span>{pushBusy ? 'Just a moment…' : 'Remind me at lunchtime'}</span>
+                </label>
+                {pushNote && <p className="section-note push-note">{pushNote}</p>}
+              </>
+            );
+          })()}
+        </section>
+
         <section className="settings-section">
           <h3>Nutrition Numbers</h3>
           <p className="section-note">

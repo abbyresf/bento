@@ -1,16 +1,39 @@
 {
   "crons": [
-    { "path": "/api/health", "schedule": "0 15 * * *" }
+    {
+      "path": "/api/health",
+      "schedule": "0 15 * * *"
+    },
+    {
+      "path": "/api/send-reminders",
+      "schedule": "15 15 * * *"
+    }
   ],
   "rewrites": [
-    { "source": "/api/dining/(.*)", "destination": "/api/dining" },
-    { "source": "/((?!api/|sitemap\\.xml|robots\\.txt).*)", "destination": "/index.html" }
+    {
+      "source": "/api/dining/(.*)",
+      "destination": "/api/dining"
+    },
+    {
+      "source": "/((?!api/|sitemap\\.xml|robots\\.txt).*)",
+      "destination": "/index.html"
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
-      "has": [{ "type": "host", "value": "bento-sooty.vercel.app" }],
-      "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }]
+      "has": [
+        {
+          "type": "host",
+          "value": "bento-sooty.vercel.app"
+        }
+      ],
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
+        }
+      ]
     },
     {
       "source": "/(.*)",
