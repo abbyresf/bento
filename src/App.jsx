@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
-import { isOnboardingComplete, isTermsAccepted, setTermsAccepted, signOut, updatePassword } from './lib/db';
+import { isOnboardingComplete, isTermsAccepted, setTermsAccepted, signOut, updatePassword, recordInstallState } from './lib/db';
 import AuthScreen from './components/Auth/AuthScreen';
 import LandingPage from './components/Landing/LandingPage';
 import OnboardingWizard from './components/Onboarding/OnboardingWizard';
@@ -26,6 +26,12 @@ function isStandalone() {
 }
 function isIOS() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+function devicePlatform() {
+  if (isIOS()) return 'ios';
+  if (/Android/i.test(navigator.userAgent)) return 'android';
+  if (/Mobi/i.test(navigator.userAgent)) return 'other';
+  return 'desktop';
 }
 
 function App() {
@@ -96,6 +102,10 @@ function App() {
     if (!session) return;
     isOnboardingComplete().then(setHasCompletedOnboarding);
     isTermsAccepted().then(setHasAcceptedTerms);
+    // Whether this is a home-screen install decides whether push can ever
+    // reach this student, so it is recorded rather than only detected.
+    recordInstallState({ installed: isStandalone(), platform: devicePlatform() })
+      .catch(() => {});
   }, [session]);
 
   // ── Computed values & handlers ────────────────────────────────────────────────

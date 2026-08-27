@@ -182,8 +182,12 @@ export async function getPulseOverview(university, days = 30) {
 
   const userIds = await getUserIdsForUniversity(university);
 
-  const [totalRes, currActiveRes, currMealsRes, prevActiveRes, prevMealsRes] = await Promise.all([
+  const [totalRes, installedRes, currActiveRes, currMealsRes, prevActiveRes, prevMealsRes] = await Promise.all([
     supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('university', university),
+    // Home-screen installs. iOS delivers web push only to an installed app, so
+    // this is the ceiling on how many students a notification can ever reach.
+    supabase.from('profiles').select('id', { count: 'exact', head: true })
+      .eq('university', university).eq('is_installed', true),
     supabase.from('meal_history').select('user_id').gte('confirmed_at', periodStart).in('user_id', userIds),
     supabase.from('meal_history').select('id', { count: 'exact', head: true }).gte('confirmed_at', periodStart).in('user_id', userIds),
     supabase.from('meal_history').select('user_id').gte('confirmed_at', prevPeriodStart).lt('confirmed_at', periodStart).in('user_id', userIds),
@@ -195,8 +199,13 @@ export async function getPulseOverview(university, days = 30) {
   const meals      = currMealsRes.count ?? 0;
   const prevMeals  = prevMealsRes.count ?? 0;
 
+  const total     = totalRes.count ?? 0;
+  const installed = installedRes.count ?? 0;
+
   return {
-    totalStudents:      totalRes.count ?? 0,
+    totalStudents:      total,
+    installedStudents:  installed,
+    installRate:        total > 0 ? Math.round((installed / total) * 100) : null,
     activeThisPeriod:   active,
     mealsThisPeriod:    meals,
     prevActiveStudents: prevActive,

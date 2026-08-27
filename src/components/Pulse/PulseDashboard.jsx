@@ -67,6 +67,7 @@ function exportAll({ university, days, overview, engagement, mealSplit, topItems
   lines.push('=== AT A GLANCE ===', 'Metric,Value,Change vs Prior Period');
   if (overview) {
     lines.push(`Registered Students,${overview.totalStudents},`);
+    lines.push(`Installed to Home Screen,${overview.installedStudents ?? 0},${overview.installRate ?? ''}%`);
     lines.push(`Active Students,${overview.activeThisPeriod},${overview.changeActive != null ? overview.changeActive + '%' : ''}`);
     lines.push(`Meals Confirmed,${overview.mealsThisPeriod},${overview.changeMeals != null ? overview.changeMeals + '%' : ''}`);
   }
@@ -476,6 +477,14 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
               <KPICard
                 label="Registered Students"
                 value={overview?.totalStudents?.toLocaleString()}
+              />
+              {/* Installed to the home screen. On iOS this is the ceiling on
+                  push reach — a browser tab can never receive a notification. */}
+              <KPICard
+                label="Installed to Home Screen"
+                value={overview?.installRate != null
+                  ? `${overview.installedStudents} (${overview.installRate}%)`
+                  : '—'}
               />
               <KPICard
                 label="Active Students"

@@ -118,6 +118,49 @@ export async function setUserProfile(profile) {
   });
 }
 
+// ── Install tracking ───────────────────────────────────────────────────────
+
+// Records whether the app is running as an installed PWA. This gates the
+// notification work: iOS delivers web push only to a home-screen install, so
+// without this number "should we build push" is unanswerable.
+//
+// Writes are skipped when nothing changed. This runs on every load, and a
+// per-load write for a value that changes maybe once per user would be pure
+// noise. installed_at is set once and never cleared, so someone who installs
+// and later removes the app stays distinguishable from someone who never did.
+const INSTALL_CACHE_KEY = 'bento_install_state_v1';
+
+export async function recordInstallState({ installed, platform }) {
+  const id = await uid();
+  if (!id) return;
+
+  const signature = `${installed}|${platform}`;
+  try {
+    if (localStorage.getItem(INSTALL_CACHE_KEY) === signature) return;
+  } catch { /* localStorage unavailable — fall through and write */ }
+
+  const patch = {
+    is_installed:       installed,
+    install_platform:   platform,
+    last_install_check: new Date().toISOString(),
+  };
+
+  // Only stamp the first install, never overwrite it on later visits.
+  if (installed) {
+    const { data } = await supabase
+      .from('profiles')
+      .select('installed_at')
+      .eq('id', id)
+      .maybeSingle();
+    if (!data?.installed_at) patch.installed_at = new Date().toISOString();
+  }
+
+  const { error } = await supabase.from('profiles').update(patch).eq('id', id);
+  if (error) return; // leave the cache unset so the next load retries
+
+  try { localStorage.setItem(INSTALL_CACHE_KEY, signature); } catch { /* ignore */ }
+}
+
 // ── Nutrition Targets ──────────────────────────────────────────────────────
 
 export async function getNutritionTargets() {
