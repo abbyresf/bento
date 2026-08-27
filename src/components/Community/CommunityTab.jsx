@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRatings } from '../../context/RatingsContext';
-import { getSuggestions, getMyEmphasizes, submitSuggestion, toggleEmphasize, flagSuggestion, getUserProfile } from '../../lib/db';
+import { getSuggestions, getMyEmphasizes, getMyFlags, submitSuggestion, toggleEmphasize, flagSuggestion, getUserProfile } from '../../lib/db';
 import PolicyModal from './PolicyModal';
 import StarRating from './StarRating';
 import './CommunityTab.css';
@@ -8,6 +8,9 @@ import './CommunityTab.css';
 // "Students like this!" threshold: avg >= 4.0 and at least 5 ratings
 const BADGE_MIN_AVG   = 4.0;
 const BADGE_MIN_COUNT = 5;
+
+// How many dishes the leaderboard shows.
+const TOP_ITEMS = 5;
 
 function timeAgo(ts) {
   const diff = (Date.now() - new Date(ts).getTime()) / 1000;
@@ -23,7 +26,7 @@ function FoodLeaderboard({ aggregates }) {
   const ranked = Object.values(aggregates)
     .filter(a => a.count >= 2)
     .sort((a, b) => b.avg - a.avg || b.count - a.count)
-    .slice(0, 10);
+    .slice(0, TOP_ITEMS);
 
   if (ranked.length === 0) return (
     <div className="leaderboard-empty">
@@ -68,7 +71,11 @@ function SuggestionCard({ suggestion, emphasized, onEmphasize, onFlag, flagged }
       const result = await onEmphasize(suggestion.id);
       if (result) {
         setEmphasized(result.emphasized);
-        setLocalCount(result.emphasize_count);
+        // The count is authoritative from the server, but guard against a null
+        // coming back rather than rendering an empty tally.
+        if (typeof result.emphasize_count === 'number') {
+          setLocalCount(result.emphasize_count);
+        }
       }
     } catch {
       setEmphasized(localEmphasized);
@@ -219,12 +226,16 @@ export default function CommunityTab() {
   }, []);
 
   const loadSuggestions = useCallback(async () => {
-    const [suggs, emph] = await Promise.all([
+    // Flags are loaded, not just tracked in memory — a flag left no per-user
+    // record before, so the icon reset on every reload.
+    const [suggs, emph, flags] = await Promise.all([
       getSuggestions({ orderBy: sortOrder, university }),
       getMyEmphasizes(),
+      getMyFlags(),
     ]);
     setSuggestions(suggs);
     setMyEmphasizes(emph);
+    setMyFlags(flags);
     setLoading(false);
   }, [sortOrder, university]);
 
@@ -246,8 +257,16 @@ export default function CommunityTab() {
   };
 
   const handleFlag = async (suggestionId) => {
-    await flagSuggestion(suggestionId);
     setMyFlags(prev => new Set([...prev, suggestionId]));
+    try {
+      await flagSuggestion(suggestionId);
+    } catch {
+      setMyFlags(prev => {
+        const next = new Set(prev);
+        next.delete(suggestionId);
+        return next;
+      });
+    }
   };
 
   return (

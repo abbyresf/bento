@@ -385,8 +385,21 @@ export async function toggleEmphasize(suggestionId) {
   return data?.[0] ?? null;
 }
 
+// Which suggestions this user has already flagged. Without this the flag icon
+// resets on every reload, since a flag left no per-user record.
+export async function getMyFlags() {
+  const id = await uid();
+  if (!id) return new Set();
+  const { data } = await supabase
+    .from('suggestion_flags')
+    .select('suggestion_id')
+    .eq('user_id', id);
+  return new Set((data ?? []).map(r => r.suggestion_id));
+}
+
 export async function flagSuggestion(suggestionId) {
-  await supabase.rpc('flag_suggestion', { p_suggestion_id: suggestionId });
+  const { error } = await supabase.rpc('flag_suggestion', { p_suggestion_id: suggestionId });
+  if (error) throw error;
 }
 
 // ── Weekly summaries ───────────────────────────────────────────────────────
