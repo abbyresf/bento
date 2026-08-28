@@ -1,7 +1,11 @@
 /* eslint-env node */
-// Sends the daily lunch reminder.
+// Sends a meal reminder.
 //
-// Route: /api/send-reminders  (Vercel cron, once daily)
+// Route: /api/send-reminders?meal=lunch|dinner
+//
+// Vercel's Hobby plan allows a cron to run only once per day, so the second
+// send is driven by an external scheduler hitting the same route with
+// ?meal=dinner. Both paths are protected by CRON_SECRET.
 //
 // The content is the point. "Don't forget to log your meal" is a chore; naming
 // what is actually being served is a reason to open the app. So the reminder
@@ -9,6 +13,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
+import { reminderMessage } from './reminderMessages.js';
 
 function getSupabaseAdmin() {
   const url = process.env.VITE_SUPABASE_URL;
@@ -21,35 +26,22 @@ function todayET() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
 
-// A headline drawn from what is actually on the menu today. Falls back to
-// something honest rather than inventing a dish when the menu is unavailable.
-async function buildMessage(origin, university) {
-  const slug = university === 'tufts' ? null : 'the-farm-table-at-sherman-2';
-  if (!slug) return { title: 'Lunch is on', body: 'See what\'s good today' };
-
-  try {
-    const res = await fetch(`${origin}/api/dining/locations/${slug}/?date=${todayET()}`, {
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!res.ok) throw new Error(String(res.status));
-    const html = await res.text();
-
-    // Pull a few dish names straight out of the page. This is a headline, not
-    // a meal plan, so a light parse is enough and avoids importing the full
-    // scraper into a cron function.
-    const names = [...html.matchAll(/class="show-nutrition[^"]*"[^>]*>([^<]{4,40})</g)]
-      .map(m => m[1].trim())
-      .filter(n => !/sauce|dressing|syrup|mayo|seeds?$/i.test(n));
-
-    if (names.length === 0) throw new Error('no items');
-    const pick = names[Math.floor(Math.random() * Math.min(names.length, 12))];
-    return { title: `${pick} today`, body: 'Tap to see your plate for lunch' };
-  } catch {
-    return { title: 'Lunch is on', body: 'Tap to see your plate for today' };
-  }
-}
-
 export default async function handler(req, res) {
+  // This endpoint pushes to every opted-in student, so it must not be callable
+  // by anyone who knows the URL. Vercel's scheduler sends CRON_SECRET as a
+  // bearer token; any other caller has to present the same value.
+  const secret = process.env.CRON_SECRET;
+  if (secret) {
+    const provided = (req.headers.authorization || '').replace(/^Bearer /, '')
+      || new URL(req.url, 'http://localhost').searchParams.get('key');
+    if (provided !== secret) return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  // Which meal this run is for. Defaults to lunch so an unqualified call
+  // behaves as before.
+  const meal = new URL(req.url, 'http://localhost').searchParams.get('meal') === 'dinner'
+    ? 'dinner' : 'lunch';
+
   const admin = getSupabaseAdmin();
   if (!admin) return res.status(500).json({ error: 'Supabase not configured' });
 
@@ -80,24 +72,19 @@ export default async function handler(req, res) {
 
   if (!subs?.length) return res.status(200).json({ sent: 0, note: 'no subscriptions' });
 
-  const origin = `https://${req.headers.host}`;
-  const uniById = Object.fromEntries((optedIn ?? []).map(p => [p.id, p.university]));
-
-  // One message per university, not per student: the menu is the same for
-  // everyone on a campus, and this keeps the scrape to a single fetch.
-  const messageByUni = {};
-  for (const uni of new Set(Object.values(uniById))) {
-    messageByUni[uni] = await buildMessage(origin, uni);
-  }
+  // One message for everyone, rotating by day. Nothing is fetched: the copy
+  // makes no claim about what is being served, so there is nothing to look up.
+  // One line, sent as the title with no body: a body would read as a second
+  // thought and is the half a lock screen truncates.
+  const line = reminderMessage(meal, todayET());
 
   let sent = 0, pruned = 0, failed = 0;
 
   await Promise.all(subs.map(async (sub) => {
-    const msg = messageByUni[uniById[sub.user_id]] ?? { title: 'Bento', body: 'Your plate is ready' };
     try {
       await webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-        JSON.stringify({ ...msg, tag: 'bento-lunch', url: '/app' })
+        JSON.stringify({ title: line, body: '', tag: `bento-${meal}`, url: '/app' })
       );
       sent++;
       await admin.from('push_subscriptions')
@@ -119,5 +106,5 @@ export default async function handler(req, res) {
     }
   }));
 
-  res.status(200).json({ sent, pruned, failed, recipients: subs.length });
+  res.status(200).json({ meal, line, sent, pruned, failed, recipients: subs.length });
 }

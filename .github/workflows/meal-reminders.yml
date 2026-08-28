@@ -1,0 +1,32 @@
+# Meal reminders.
+#
+# Vercel's Hobby plan runs a cron at most once per day, and Bento needs two
+# sends. The lunch run stays on Vercel's own scheduler (vercel.json); this
+# workflow drives the dinner run by calling the same endpoint with ?meal=dinner.
+#
+# GitHub's scheduler fires in UTC and has no daylight-saving awareness, so the
+# two entries below cover EDT and EST. The endpoint is safe to call twice on the
+# changeover day: iOS collapses notifications sharing a tag, so a student sees
+# one dinner reminder either way.
+name: Meal reminders
+
+on:
+  schedule:
+    - cron: '45 20 * * *'   # 16:45 EDT (Mar-Nov)
+    - cron: '45 21 * * *'   # 16:45 EST (Nov-Mar)
+  workflow_dispatch:        # lets you fire one by hand to test
+
+jobs:
+  dinner:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send dinner reminder
+        run: |
+          code=$(curl -sS -o /tmp/out.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://bentodining.com/api/send-reminders?meal=dinner")
+          echo "HTTP $code"
+          cat /tmp/out.json
+          # Fail the run on a non-200 so a broken send is visible in Actions
+          # rather than silently doing nothing every evening.
+          test "$code" = "200"

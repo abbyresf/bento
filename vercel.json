@@ -5,7 +5,7 @@
       "schedule": "0 15 * * *"
     },
     {
-      "path": "/api/send-reminders",
+      "path": "/api/send-reminders?meal=lunch",
       "schedule": "15 15 * * *"
     }
   ],
