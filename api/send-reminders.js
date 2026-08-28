@@ -74,8 +74,6 @@ export default async function handler(req, res) {
 
   // One message for everyone, rotating by day. Nothing is fetched: the copy
   // makes no claim about what is being served, so there is nothing to look up.
-  // One line, sent as the title with no body: a body would read as a second
-  // thought and is the half a lock screen truncates.
   const line = reminderMessage(meal, todayET());
 
   let sent = 0, pruned = 0, failed = 0;
@@ -84,7 +82,11 @@ export default async function handler(req, res) {
     try {
       await webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-        JSON.stringify({ title: line, body: '', tag: `bento-${meal}`, url: '/app' })
+        // Name in the title, message underneath, the way LinkedIn and most
+        // native apps do it. An empty body is not neutral on iOS: it fills the
+        // gap with its own "from Bento" attribution, which reads as a sign off
+        // nobody wrote.
+        JSON.stringify({ title: 'Bento', body: line, tag: `bento-${meal}`, url: '/app' })
       );
       sent++;
       await admin.from('push_subscriptions')

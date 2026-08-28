@@ -1,9 +1,10 @@
 /* eslint-env node */
 // Copy for the daily meal reminders.
 //
-// One line each, sent as the notification title with no body. A title plus body
-// reads as two thoughts and buries the joke in the second one, which is also
-// the half a locked phone is most likely to cut off.
+// One line each. The notification puts "Bento" in the bold title and the line
+// underneath as the body, the way LinkedIn and most native apps do it. Leaving
+// the body empty is not neutral on iOS: it fills the gap with its own
+// "from Bento" attribution, which reads as a sign off nobody wrote.
 //
 // Three rules hold every line together.
 //
@@ -15,8 +16,8 @@
 //    that oversells gets distrusted the first time the plate disappoints.
 //    Claim the plate is ready, not that it is delicious.
 //
-// 3. No em dashes, and nothing over about 42 characters so a lock screen shows
-//    the whole line. Both checked by the test rather than by eye.
+// 3. No em dashes, and short enough to sit on one body line. Checked by the
+//    audit rather than by eye.
 //
 // No dining hall is named: it reads wrong to a student who eats elsewhere, and
 // breaks outright once a second university is on.
