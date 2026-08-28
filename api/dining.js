@@ -73,16 +73,19 @@ export default async function handler(req, res) {
 
     const body = await upstream.text();
 
-    // Write to cache in the background so it doesn't delay the response
     if (admin && slug && upstream.ok) {
-      admin
+      // Awaited deliberately. A serverless function is frozen the moment it
+      // responds, so a fire-and-forget write is killed before it reaches the
+      // database — which is why this cache had never stored a single row. The
+      // cost is one write on a miss; the saving is skipping the upstream
+      // scrape entirely on every subsequent request.
+      const { error: cacheError } = await admin
         .from('menu_cache')
         .upsert(
           { university: 'brandeis', slug, date: dateParam, html_content: body, fetched_at: new Date().toISOString() },
           { onConflict: 'university,slug,date' }
-        )
-        .then(() => {})
-        .catch(() => {});
+        );
+      if (cacheError) console.error('menu_cache write failed:', cacheError.message);
     }
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
