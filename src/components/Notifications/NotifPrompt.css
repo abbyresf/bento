@@ -1,0 +1,86 @@
+/* Matches the compose sheet and install prompt: bottom sheet on phones, since
+   the action button needs to sit under the thumb. */
+.notif-prompt-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  z-index: 300;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: notifFade 0.15s ease;
+}
+
+.notif-prompt {
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 480px;
+  padding: 1.5rem 1.25rem 2rem;
+  text-align: center;
+  animation: notifRise 0.2s ease;
+}
+
+.notif-prompt-icon {
+  font-size: 2rem;
+  line-height: 1;
+  margin-bottom: 0.6rem;
+}
+
+.notif-prompt h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #243b55;
+  margin-bottom: 0.5rem;
+}
+
+.notif-prompt p {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #64748b;
+  margin-bottom: 1.1rem;
+}
+
+.notif-prompt-note {
+  background: #faf7f4;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.notif-prompt-yes {
+  width: 100%;
+  padding: 0.85rem;
+  background: #f47421;
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
+
+.notif-prompt-yes:disabled { opacity: 0.6; cursor: default; }
+
+.notif-prompt-no {
+  width: 100%;
+  padding: 0.7rem;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+@keyframes notifFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes notifRise {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* The app's meal plan is light-only, so this follows suit rather than
+   half-supporting a dark palette. */

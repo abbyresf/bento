@@ -348,9 +348,8 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
         <section className="settings-section">
           <h3>Meal Reminders</h3>
           <p className="section-note">
-            A single notification at lunchtime telling you what's being served.
-            No sound beyond your normal notification settings, and never more
-            than once a day.
+            Two a day, at lunch and at dinner. Your plate is already sorted,
+            you just have to show up. Turn them off whenever.
           </p>
           {(() => {
             const support = pushSupport();
@@ -392,7 +391,7 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
                       setPushBusy(false);
                     }}
                   />
-                  <span>{pushBusy ? 'Just a moment…' : 'Remind me at lunchtime'}</span>
+                  <span>{pushBusy ? 'Just a moment…' : 'Turn on notifications'}</span>
                 </label>
                 {pushNote && <p className="section-note push-note">{pushNote}</p>}
               </>

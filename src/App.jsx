@@ -18,6 +18,7 @@ import MyRatings from './components/MyRatings/MyRatings';
 import CommunityTab from './components/Community/CommunityTab';
 import { RatingsProvider } from './context/RatingsContext';
 import { NutritionDisplayProvider } from './context/NutritionDisplayContext';
+import NotifPrompt from './components/Notifications/NotifPrompt';
 import SplashScreen from './components/Splash/SplashScreen';
 import './App.css';
 
@@ -232,6 +233,7 @@ function App() {
     <RatingsProvider>
       <NutritionDisplayProvider>
       <div className="app">
+        {hasCompletedOnboarding && hasAcceptedTerms && !showTutorial && !showInstallPrompt && <NotifPrompt />}
         <div className="tab-content">
           {activeTab === 'today' && (
             <MealPlan settingsVersion={settingsVersion} />
