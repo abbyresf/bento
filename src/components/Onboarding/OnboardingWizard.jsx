@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ACTIVITY_LEVELS, GOALS, calculateNutritionTargets } from '../../utils/tdeeCalculator';
-import { setUserProfile, setNutritionTargets, setDietaryRestrictions } from '../../lib/db';
+import { setUserProfile, setNutritionTargets, setDietaryRestrictions, setNutritionDisplay as saveNutritionDisplay } from '../../lib/db';
 import { UNIVERSITIES } from '../../data/universities';
 import UniversityPicker from '../common/UniversityPicker';
 import MenuRatingOnboarding from './MenuRatingOnboarding';
@@ -99,7 +99,8 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
   const handleComplete = async () => {
     const targets = calculateTargets();
     await Promise.all([
-      setUserProfile({ ...profile, nutritionDisplay }),
+      setUserProfile(profile),
+      saveNutritionDisplay(nutritionDisplay),
       setNutritionTargets(targets),
       setDietaryRestrictions(restrictions),
     ]);

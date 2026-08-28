@@ -37,14 +37,19 @@ export function NutritionDisplayProvider({ children }) {
     return () => { cancelled = true; };
   }, []);
 
-  // Applied locally first so the switch responds immediately; the write is
-  // what persists it.
+  // Applied locally first so the switch responds immediately, then reverted if
+  // the write fails. Leaving the switch showing a state the database never
+  // received is the worse outcome: it looks saved, and silently forgets on the
+  // next launch — which is exactly how a preference appears not to stick.
   const updateDisplay = useCallback(async (next) => {
-    setPrefs(next);
+    let previous;
+    setPrefs(current => { previous = current; return next; });
     try {
       await setNutritionDisplay(next);
+      return { ok: true };
     } catch {
-      /* the local state still reflects the choice for this session */
+      if (previous) setPrefs(previous);
+      return { ok: false };
     }
   }, []);
 

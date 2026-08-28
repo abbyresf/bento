@@ -108,12 +108,11 @@ export async function setUserProfile(profile) {
     activity_level: profile.activityLevel,
     goal:           profile.goal,
     university:     profile.university,
-    ...(profile.nutritionDisplay ? {
-      show_calories: profile.nutritionDisplay.calories ?? true,
-      show_protein:  profile.nutritionDisplay.protein  ?? true,
-      show_carbs:    profile.nutritionDisplay.carbs    ?? true,
-      show_fat:      profile.nutritionDisplay.fat      ?? true,
-    } : {}),
+    // Nutrition-display columns are deliberately NOT written here. Settings
+    // loads the profile once at mount, so saving it would push a stale copy of
+    // the preference over whatever the toggles had since written — which is
+    // exactly how turning a metric back on failed to stick. setNutritionDisplay
+    // is the only writer for those columns.
     updated_at:     new Date().toISOString(),
   });
 }
