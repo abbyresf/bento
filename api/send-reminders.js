@@ -82,11 +82,12 @@ export default async function handler(req, res) {
     try {
       await webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-        // Name in the title, message underneath, the way LinkedIn and most
-        // native apps do it. An empty body is not neutral on iOS: it fills the
-        // gap with its own "from Bento" attribution, which reads as a sign off
-        // nobody wrote.
-        JSON.stringify({ title: 'Bento', body: line, tag: `bento-${meal}`, url: '/app' })
+        // The message goes in the title. iOS appends its own "from Bento"
+        // attribution to every web push from an installed app, sourced from the
+        // manifest name, and there is no payload field that suppresses it.
+        // Putting the name in the title as well only prints it twice, so the
+        // title carries the message and iOS supplies the attribution.
+        JSON.stringify({ title: line, body: '', tag: `bento-${meal}`, url: '/app' })
       );
       sent++;
       await admin.from('push_subscriptions')

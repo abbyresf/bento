@@ -1,10 +1,10 @@
 /* eslint-env node */
 // Copy for the daily meal reminders.
 //
-// One line each. The notification puts "Bento" in the bold title and the line
-// underneath as the body, the way LinkedIn and most native apps do it. Leaving
-// the body empty is not neutral on iOS: it fills the gap with its own
-// "from Bento" attribution, which reads as a sign off nobody wrote.
+// One line each, sent as the notification title. iOS adds its own "from Bento"
+// attribution line to every web push from an installed app, taken from the
+// manifest name, and no payload field suppresses it. Naming Bento in the title
+// as well only prints it twice, so the title carries the message alone.
 //
 // Three rules hold every line together.
 //
