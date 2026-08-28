@@ -188,6 +188,26 @@ export const BRANDEIS_CONFIG = {
   parseLocationPage: brandeisParseLocationPage,
 };
 
+// Collapses repeats of the same dish within one meal period.
+//
+// Brandeis lists a dish under every station that serves it, which is true to
+// the hall — sliced red onions really are at the grill, the salad bar and the
+// deli — but it means one dish arrives three times with the same recipe id.
+// Left alone, the browse list shows it three times and, worse, selecting it
+// once yields three servings, because selection is by id and every copy
+// matches. The first occurrence wins; station is only used for grouping.
+function dedupeMeals(meals) {
+  for (const period of Object.keys(meals)) {
+    const seen = new Set();
+    meals[period] = meals[period].filter(item => {
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
+  }
+  return meals;
+}
+
 // ── Generic fetcher ───────────────────────────────────────────────────────────
 
 // Fetch the full menu for all locations defined in config.
@@ -206,7 +226,8 @@ export async function fetchDiningMenu(config, dateStr = null) {
         const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
         if (!res.ok) throw new Error(`HTTP ${res.status} for ${locationConfig.slug}`);
         const html = await res.text();
-        const { meals, isOpen } = config.parseLocationPage(html);
+        const { meals: parsedMeals, isOpen } = config.parseLocationPage(html);
+        const meals = dedupeMeals(parsedMeals);
         // Force-tag every item from an allItemsKosher location so the optimizer
         // can safely include them for kosher dietary restrictions.
         if (locationConfig.allItemsKosher) {
@@ -246,6 +267,7 @@ export async function fetchDiningMenu(config, dateStr = null) {
       ];
     }
     locations[target].isOpen = locations[target].isOpen || locations[locationId].isOpen;
+    dedupeMeals(locations[target].meals);
     delete locations[locationId];
   }
 

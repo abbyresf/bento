@@ -13,6 +13,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { optimizeMeal, findRecommendedAdditions, findAlternatives, optimizeDay, passesHardRestrictions } from '../src/utils/mealOptimizer.js';
 import { getRole, ROLE, ACCESSORY_ROLES } from '../src/utils/foodRoles.js';
+import { fetchDiningMenu, BRANDEIS_CONFIG } from '../src/services/menuFetcher.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const menu = JSON.parse(readFileSync(join(here, 'fixtures/brandeis-menu-2026-08-26.json'), 'utf8'));
@@ -242,6 +243,55 @@ console.log('\n### build my plate');
       plan.items.filter(i => !allowedIds.has(i.id)).map(i => i.name).join(', '));
   }
   console.log(`  kosher sees ${items.filter(i => passesHardRestrictions(i, { kosher: true })).length} of ${items.length} lunch items`);
+}
+
+// ── One dish, one entry ───────────────────────────────────────────────────────
+// Brandeis lists a dish under every station that serves it — sliced red onions
+// appear three times at Usdan lunch and four times at dinner. Selection is by
+// id, so every copy matched: the browse list showed the dish three times and a
+// single tap put three servings on the plate and in the meal card.
+
+console.log('\n### duplicate menu items');
+{
+  const dish = (id, name, station) => ({
+    id, name, station, meal: 'lunch',
+    nutrition: { calories: 10, protein: 0, carbs: 1, fat: 0, fiber: 0 },
+    tags: [], ingredients: [], allergens: [],
+  });
+
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: true, status: 200, text: async () => 'x' });
+
+  const config = {
+    ...BRANDEIS_CONFIG,
+    parseLocationPage: () => ({ isOpen: true, meals: {
+      breakfast: [],
+      lunch: [
+        dish('bh_A', 'Sliced Red Onions', 'grill'),
+        dish('bh_B', 'Grilled Chicken', 'grill'),
+        dish('bh_A', 'Sliced Red Onions', 'salad'),
+        dish('bh_A', 'Sliced Red Onions', 'deli'),
+      ],
+      dinner: [],
+    }}),
+  };
+
+  const menu = await fetchDiningMenu(config, '2026-08-27');
+  globalThis.fetch = realFetch;
+
+  for (const [locId, data] of Object.entries(menu.locations)) {
+    const ids = data.meals.lunch.map(i => i.id);
+    check(`${locId}: no dish appears twice in one meal`,
+      ids.length === new Set(ids).size, ids.join(', '));
+  }
+
+  // The bug as a student met it: selecting one dish must yield one serving.
+  const lunch = menu.locations.usdan.meals.lunch;
+  const selected = new Set(['bh_A']);
+  const picked = [...selected].map(id => lunch.find(i => i.id === id)).filter(Boolean);
+  check('selecting one dish adds exactly one serving', picked.length === 1,
+    `got ${picked.length}`);
+  console.log(`  usdan lunch: ${lunch.length} items from 4 raw rows`);
 }
 
 console.log(failures === 0 ? '\nAll composition invariants hold.' : `\n${failures} assertion(s) failed.`);

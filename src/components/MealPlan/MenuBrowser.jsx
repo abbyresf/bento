@@ -16,11 +16,26 @@ export default function MenuBrowser({ meal, locationLabel, items, restrictions, 
   // Browsing the menu by hand should not be a way around a filter the student
   // set — a kosher student sees only kosher items, and so on.
   const allowed = useMemo(() => {
-    if (!restrictions) return items;
-    return items.filter(item => passesHardRestrictions(item, restrictions));
+    const passing = restrictions
+      ? items.filter(item => passesHardRestrictions(item, restrictions))
+      : items;
+    // Collapse repeats defensively as well as at the source. Brandeis lists a
+    // dish under every station serving it, and a menu cached before that was
+    // handled upstream still carries the duplicates — so this keeps a stale
+    // cache from showing one dish three times and, worse, adding three
+    // servings when it is tapped once.
+    const byId = new Map();
+    for (const item of passing) {
+      if (!byId.has(item.id)) byId.set(item.id, item);
+    }
+    return [...byId.values()];
   }, [items, restrictions]);
 
-  const hiddenCount = items.length - allowed.length;
+  // Counts only what the restrictions removed, not the de-duplicated repeats:
+  // telling a student that onions listed at three stations are "2 hidden by
+  // your filters" would be false.
+  const distinctCount = new Set(items.map(i => i.id)).size;
+  const hiddenCount = distinctCount - allowed.length;
 
   const filtered = useMemo(() => {
     if (!search.trim()) return allowed;
@@ -42,7 +57,12 @@ export default function MenuBrowser({ meal, locationLabel, items, restrictions, 
     });
   }, [filtered]);
 
-  const selectedItems = allowed.filter(item => selected.has(item.id));
+  // One entry per selected id. Filtering the array instead would return every
+  // copy of a duplicated dish, which is what turned a single tap into three
+  // servings on the plate and in the meal card.
+  const selectedItems = [...selected]
+    .map(id => allowed.find(item => item.id === id))
+    .filter(Boolean);
   const totals = selectedItems.reduce((acc, item) => ({
     calories: acc.calories + (item.nutrition?.calories || 0),
     protein:  acc.protein  + (item.nutrition?.protein  || 0),
