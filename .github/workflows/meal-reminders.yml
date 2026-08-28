@@ -4,6 +4,10 @@
 # sends. The lunch run stays on Vercel's own scheduler (vercel.json); this
 # workflow drives the dinner run by calling the same endpoint with ?meal=dinner.
 #
+# The canonical host is used directly. The apex domain 308s to www, and curl
+# strips the Authorization header when a redirect changes host, so going via
+# the apex would silently arrive unauthenticated.
+#
 # GitHub's scheduler fires in UTC and has no daylight-saving awareness, so the
 # two entries below cover EDT and EST. The endpoint is safe to call twice on the
 # changeover day: iOS collapses notifications sharing a tag, so a student sees
@@ -24,7 +28,7 @@ jobs:
         run: |
           code=$(curl -sS -o /tmp/out.json -w '%{http_code}' \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://bentodining.com/api/send-reminders?meal=dinner")
+            "https://www.bentodining.com/api/send-reminders?meal=dinner")
           echo "HTTP $code"
           cat /tmp/out.json
           # Fail the run on a non-200 so a broken send is visible in Actions
