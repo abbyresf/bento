@@ -8,23 +8,50 @@
 # strips the Authorization header when a redirect changes host, so going via
 # the apex would silently arrive unauthenticated.
 #
-# GitHub's scheduler fires in UTC and has no daylight-saving awareness, so the
-# two entries below cover EDT and EST. The endpoint is safe to call twice on the
-# changeover day: iOS collapses notifications sharing a tag, so a student sees
-# one dinner reminder either way.
+# GitHub's scheduler fires in UTC and has no daylight-saving awareness. It does
+# NOT pick whichever of the two entries below matches the current offset: it runs
+# BOTH, every day. That sent the dinner reminder twice a day, an hour apart, all
+# year. The original note here claimed the notification `tag` would hide that,
+# which was wrong. A tag replaces a notification still sitting in the tray, so an
+# alert an hour later arrives as a brand new one.
+#
+# Two things stop it now. The guard below runs the send only on the entry that
+# actually lands at 16:45 Eastern, so the time is right in both EDT and EST. And
+# the endpoint itself claims the meal-day in `reminder_sends` before sending, so
+# even a hand-replayed run cannot produce a second notification.
 name: Meal reminders
 
 on:
   schedule:
-    - cron: '45 20 * * *'   # 16:45 EDT (Mar-Nov)
-    - cron: '45 21 * * *'   # 16:45 EST (Nov-Mar)
+    - cron: '45 20 * * *'   # 16:45 EDT, and 15:45 EST
+    - cron: '45 21 * * *'   # 17:45 EDT, and 16:45 EST
   workflow_dispatch:        # lets you fire one by hand to test
+
+# A queued run must never overlap one already sending.
+concurrency:
+  group: meal-reminders
+  cancel-in-progress: false
 
 jobs:
   dinner:
     runs-on: ubuntu-latest
     steps:
+      - name: Skip the entry that is not 16:45 Eastern
+        id: gate
+        run: |
+          hour=$(TZ=America/New_York date +%H)
+          echo "Eastern hour is $hour"
+          # Exactly one of the two cron entries lands in the 16:00 ET hour on any
+          # given date, whichever offset is in force. The other exits here.
+          # A manual dispatch always proceeds.
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ] && [ "$hour" != "16" ]; then
+            echo "run=no" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=yes" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Send dinner reminder
+        if: steps.gate.outputs.run == 'yes'
         run: |
           code=$(curl -sS -o /tmp/out.json -w '%{http_code}' \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \

@@ -306,7 +306,7 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
             </div>
             {restrictions.halal && (
               <p className="dietary-unlabeled-notice">
-                ⚠ Your dining hall may not label halal items — always confirm with dining staff.
+                ⚠ Your dining hall may not label halal items. Always confirm with dining staff.
               </p>
             )}
           </div>
@@ -357,10 +357,15 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
               // Each reason needs a different response from the student, so
               // they are spelled out rather than collapsed into one error.
               const messages = {
-                'needs-install': 'Add Bento to your home screen first — iPhone only delivers notifications to installed apps, not Safari tabs.',
+                'needs-install': 'Add Bento to your home screen first. iPhone only delivers notifications to installed apps, not Safari tabs.',
                 'blocked': 'Notifications are blocked for Bento in your browser settings. You\'ll need to re-allow them there before turning this on.',
                 'unsupported': 'This browser doesn\'t support notifications.',
-                'not-configured': 'Notifications aren\'t available yet.',
+                // Reached only when the app is running a build made before the
+                // VAPID key was configured, because that key is baked in at
+                // build time. The old copy ("not available yet") described it as
+                // a feature still to come, so students waited for something that
+                // had already shipped instead of updating. Say what to do.
+                'not-configured': 'This copy of Bento is out of date. Close it completely and reopen it, or remove it from your home screen and add it again.',
               };
               return <p className="section-note push-unavailable">{messages[support.reason]}</p>;
             }
@@ -384,7 +389,7 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
                           r.reason === 'blocked'
                             ? 'Your browser blocked the request. Re-allow notifications for Bento in its settings.'
                             : r.reason === 'dismissed'
-                              ? 'No problem — you can turn this on any time.'
+                              ? 'No problem. You can turn this on any time.'
                               : 'Something went wrong. Try again in a moment.'
                         );
                       }
