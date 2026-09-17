@@ -811,14 +811,16 @@ export async function clearAllData() {
     supabase.from('weekly_summaries').delete().eq('user_id', id),
     supabase.from('profiles').update({ weight: null, age: null, terms_accepted: false }).eq('id', id),
   ]);
-  // Clear all local state so swipe onboarding, confirmed meals, and menu cache reset
-  ['bento_swipe_done', 'bento_confirmed_meals_v2',
-   'bento_cached_menu_v2_brandeis', 'bento_cached_menu_v2_tufts',
-   'bento_cached_menu_brandeis', 'bento_cached_menu_tufts', // pre-v2 keys
-   'bento_cached_menu', // legacy key
-  ].forEach(k => {
-    try { localStorage.removeItem(k); } catch { /* ignore */ }
-  });
+  // Clear every local key rather than a hand-maintained list. That list had
+  // drifted: it named the v2 menu cache and two older generations but not v3,
+  // and it never mentioned the meal-plan cache at all, so a reset quietly left
+  // a 30-day plan cache and a stale menu behind. Enumerating by prefix cannot
+  // fall out of date the next time a key is versioned.
+  try {
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('bento_'))
+      .forEach(k => localStorage.removeItem(k));
+  } catch { /* localStorage unavailable */ }
   await signOut();
 }
 
