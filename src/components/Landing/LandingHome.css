@@ -9,7 +9,7 @@
   --green:   #77BE3D;
   --blue:    #2B97FD;
   --muted:   #7A8EA0;
-  --border:  rgba(26,43,60,0.09);
+  --lh-border:  rgba(26,43,60,0.09);
   --ff-disp: 'Fraunces', Georgia, serif;
   --ff-scr:  'Dancing Script', cursive;
   --ff-body: 'Instrument Sans', 'Nunito', system-ui, sans-serif;
@@ -323,7 +323,7 @@
   gap: 8px;
   background: transparent;
   color: var(--navy);
-  border: 1.5px solid var(--border);
+  border: 1.5px solid var(--lh-border);
   padding: 1rem 1.5rem;
   border-radius: 50px;
   font-family: var(--ff-body);
@@ -416,7 +416,7 @@
   display: flex;
   gap: 1rem;
   padding: 1.25rem 0;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--lh-border);
 }
 
 .lh-step:last-child { border-bottom: none; }
@@ -450,7 +450,7 @@
   width: 2px;
   flex: 1;
   min-height: 1rem;
-  background: var(--border);
+  background: var(--lh-border);
   margin-top: 8px;
   border-radius: 1px;
 }
@@ -547,7 +547,7 @@
   font-size: 0.65rem;
   font-weight: 800;
   letter-spacing: 0.1em;
-  color: var(--border);
+  color: var(--lh-border);
 }
 
 .lh-feat-title {
@@ -804,7 +804,7 @@
 .lh-waitlist {
   background: linear-gradient(180deg, var(--cream) 0%, #fef4e8 100%);
   padding: 3.5rem 1.5rem 4rem;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--lh-border);
 }
 
 .lh-waitlist-inner {
@@ -855,7 +855,7 @@
   width: 100%;
   padding: 0.875rem 1rem;
   background: white;
-  border: 1px solid var(--border);
+  border: 1px solid var(--lh-border);
   border-radius: 12px;
   font-family: var(--ff-body);
   font-size: 0.92rem;

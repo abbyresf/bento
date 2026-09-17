@@ -8,6 +8,8 @@
 
 // ── Brandeis helpers ──────────────────────────────────────────────────────────
 
+import { parseServingSize, servingSizeFromParts } from '../utils/servingSize.js';
+
 function brandeisTabLabelToMealPeriod(label) {
   const l = label.toLowerCase();
   if (l.includes('breakfast') || l.includes('brunch') || l.includes('continental')) return 'breakfast';
@@ -64,6 +66,9 @@ function brandeisParseMenuItemEl(liEl, mealPeriod, stationName) {
   let tags = [];
   let ingredients = [];
   let allergens = [];
+  // { amount, unit, label } or null. Absent on roughly 6% of dishes, so every
+  // consumer has to cope with null rather than assume it is there.
+  let serving = null;
 
   if (nutritionEl) {
     try {
@@ -94,6 +99,8 @@ function brandeisParseMenuItemEl(liEl, mealPeriod, stationName) {
           .slice(0, 20);
       }
 
+      serving = parseServingSize(data.serving_size);
+
       if (data.allergens_list) {
         allergens = data.allergens_list
           .split(',')
@@ -111,6 +118,7 @@ function brandeisParseMenuItemEl(liEl, mealPeriod, stationName) {
     station: brandeisParseStation(stationName),
     meal: mealPeriod,
     nutrition,
+    serving,
     tags,
     ingredients,
     allergens,
@@ -380,6 +388,10 @@ function tuftsParseFood(food, mealPeriod) {
       fiber:    Math.round(n.g_fiber   ?? 0),
       sugar:    Math.round(n.g_sugar   ?? 0),
     },
+    serving: servingSizeFromParts(
+      food.serving_size_info?.serving_size_amount,
+      food.serving_size_info?.serving_size_unit,
+    ),
     tags:        Array.from(tagSet),
     ingredients: [],
     allergens,

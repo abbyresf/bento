@@ -90,6 +90,7 @@ export default function MealCard({
   onLoadRecommendations,
   onAddItem,
   onRemoveItem,
+  onServingsChange,
   isConfirmed,
   isConfirming,
   onConfirm,
@@ -273,6 +274,7 @@ export default function MealCard({
                       onLoadAlternatives={() => onLoadAlternatives(meal, selectedLocation, index, item)}
                       onSwapToItem={(newItem) => onSwapToItem(index, newItem)}
                       onRemove={() => onRemoveItem?.(item.id)}
+                      onServingsChange={(n) => onServingsChange?.(item.id, n)}
                       disabled={false}
                     />
                   ))}

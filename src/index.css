@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+@import './styles/tokens.css';
 
 * {
   box-sizing: border-box;
@@ -8,9 +9,8 @@
   font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color-scheme: light;
-  color: #243b55;
-  background-color: #faf7f4;
+  color: var(--text-primary);
+  background-color: var(--bg-app);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -22,6 +22,8 @@ body {
   min-width: 320px;
   min-height: 100vh;
   overflow-x: hidden;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
 }
 
 #root {
@@ -30,7 +32,7 @@ body {
 }
 
 a {
-  color: #f47421;
+  color: var(--accent-text);
   text-decoration: none;
 }
 
@@ -38,14 +40,31 @@ a:hover {
   text-decoration: underline;
 }
 
+/* Buttons do not inherit colour: the user agent sets `color: buttontext`,
+   which under color-scheme: dark resolves to pure white. Every button whose
+   own rule does not set a colour was picking that up, which both breaks the
+   no-pure-white rule and puts an unmanaged value on screen. */
 button {
   font-family: inherit;
+  color: var(--text-primary);
 }
 
+/* Form controls need explicit colours. Left alone they fall back to the user
+   agent's own palette, which under color-scheme: dark paints a neutral grey
+   that belongs to no ramp and reads as a hole in the navy. */
 input,
 select,
 textarea {
   font-family: inherit;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-disabled);
+  opacity: 1; /* Firefox dims placeholders further, which drops them below AA */
 }
 
 /* Scrollbar Styling */
@@ -55,20 +74,19 @@ textarea {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--surface);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--divider);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--text-disabled);
 }
 
-/* Selection */
 ::selection {
-  background: #fde8d4;
-  color: #243b55;
+  background: var(--selection-bg);
+  color: var(--selection-fg);
 }

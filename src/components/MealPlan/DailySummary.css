@@ -1,17 +1,18 @@
 .daily-summary {
-  background: white;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 16px;
   padding: 1.25rem;
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
-  box-shadow: 0 1px 3px rgba(36, 59, 85, 0.08);
+  box-shadow: var(--shadow-sm);
   line-height: 1;
 }
 
 .daily-summary h2 {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #94a3b8;
+  color: var(--text-disabled);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin: 0 0 1rem 0;
@@ -38,17 +39,17 @@
 .summary-label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #243b55;
+  color: var(--text-primary);
 }
 
 .summary-values {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 .progress-bar {
   height: 8px;
-  background: #e2e8f0;
+  background: var(--border);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -60,15 +61,15 @@
 }
 
 .summary-item.good .progress-fill {
-  background: #4cae70;
+  background: var(--fern-fill);
 }
 
 .summary-item.under .progress-fill {
-  background: #f47421;
+  background: var(--btn-bg);
 }
 
 .summary-item.over .progress-fill {
-  background: #ef4444;
+  background: var(--danger-fill);
 }
 
 .summary-percent {
@@ -78,15 +79,15 @@
 }
 
 .summary-item.good .summary-percent {
-  color: #2e8a52;
+  color: var(--fern-text);
 }
 
 .summary-item.under .summary-percent {
-  color: #d9641a;
+  color: var(--btn-bg-hover);
 }
 
 .summary-item.over .summary-percent {
-  color: #dc2626;
+  color: var(--danger-text);
 }
 
 @media (max-width: 640px) {

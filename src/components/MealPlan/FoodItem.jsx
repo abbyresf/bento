@@ -2,13 +2,14 @@ import { useEffect } from 'react';
 import { DIETARY_TAGS } from '../../data/mockMenu';
 import { useRatings } from '../../context/RatingsContext';
 import { useNutritionDisplay } from '../../context/NutritionDisplayContext';
+import { formatServing, itemNutrition, servingsOf, MAX_SERVINGS } from '../../utils/servingSize.js';
 import './FoodItem.css';
 
 const BADGE_MIN_AVG   = 4.0;
 const BADGE_MIN_COUNT = 5;
 
-export default function FoodItem({ item, isExpanded, onToggleExpand, alternatives, onLoadAlternatives, onSwapToItem, onRemove, disabled }) {
-  const { name, nutrition, reason, tags, station, source } = item;
+export default function FoodItem({ item, isExpanded, onToggleExpand, alternatives, onLoadAlternatives, onSwapToItem, onRemove, onServingsChange, disabled }) {
+  const { name, nutrition, reason, tags, station, source, serving } = item;
   const { aggregates } = useRatings();
   const display = useNutritionDisplay();
   const agg = aggregates[item.id];
@@ -30,6 +31,19 @@ export default function FoodItem({ item, isExpanded, onToggleExpand, alternative
     display.fat      && `${n.fat}g F`,
   ].filter(Boolean).join(' \u00b7 ');
 
+  // Shown regardless of the nutrition toggles. A portion description is not a
+  // calorie count: "1 cup" tells someone what a serving is without putting a
+  // number on their body, which is the thing those toggles exist to hide.
+  // Everything on screen reflects how many servings were taken, not one.
+  const servings = servingsOf(item);
+  const shown = itemNutrition(item);
+  const servingLabel = formatServing(serving, servings);
+
+  const step = (delta) => (e) => {
+    e.stopPropagation();
+    onServingsChange?.(servings + delta);
+  };
+
   const handleRemove = (e) => {
     e.stopPropagation();
     onRemove?.();
@@ -44,7 +58,12 @@ export default function FoodItem({ item, isExpanded, onToggleExpand, alternative
             {showBadge && <span className="students-like-badge">Students like this!</span>}
           </h4>
           {/* Which serving table to walk to, when the hall has more than one. */}
-          {source && <p className="food-source">{source}</p>}
+          {(source || servingLabel) && (
+            <p className="food-meta">
+              {source && <span className="food-source">{source}</span>}
+              {servingLabel && <span className="food-serving">{servingLabel}</span>}
+            </p>
+          )}
           {reason && <p className="food-reason">{reason}</p>}
           <div className="food-tags">
             {(tags ?? []).slice(0, 3).map((tag) => (
@@ -61,28 +80,46 @@ export default function FoodItem({ item, isExpanded, onToggleExpand, alternative
           <div className="food-item-macros">
             {display.calories && (
               <div className="macro">
-                <span className="macro-value">{nutrition?.calories ?? '\u2014'}</span>
+                <span className="macro-value">{nutrition?.calories != null ? shown.calories : '\u2014'}</span>
                 <span className="macro-label">cal</span>
               </div>
             )}
             {display.protein && (
               <div className="macro">
-                <span className="macro-value">{nutrition?.protein != null ? `${nutrition.protein}g` : '\u2014'}</span>
+                <span className="macro-value">{nutrition?.protein != null ? `${shown.protein}g` : '\u2014'}</span>
                 <span className="macro-label">P</span>
               </div>
             )}
             {display.carbs && (
               <div className="macro">
-                <span className="macro-value">{nutrition?.carbs != null ? `${nutrition.carbs}g` : '\u2014'}</span>
+                <span className="macro-value">{nutrition?.carbs != null ? `${shown.carbs}g` : '\u2014'}</span>
                 <span className="macro-label">C</span>
               </div>
             )}
             {display.fat && (
               <div className="macro">
-                <span className="macro-value">{nutrition?.fat != null ? `${nutrition.fat}g` : '\u2014'}</span>
+                <span className="macro-value">{nutrition?.fat != null ? `${shown.fat}g` : '\u2014'}</span>
                 <span className="macro-label">F</span>
               </div>
             )}
+          </div>
+        )}
+
+          {onServingsChange && (
+          <div className="servings-stepper" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="servings-btn"
+              onClick={step(-1)}
+              disabled={servings <= 1}
+              aria-label={`Fewer servings of ${name}`}
+            >&minus;</button>
+            <span className="servings-count" aria-live="polite">{servings}</span>
+            <button
+              className="servings-btn"
+              onClick={step(1)}
+              disabled={servings >= MAX_SERVINGS}
+              aria-label={`More servings of ${name}`}
+            >+</button>
           </div>
         )}
 
@@ -124,7 +161,12 @@ export default function FoodItem({ item, isExpanded, onToggleExpand, alternative
         <div className="food-item-details">
           <div className="details-section">
             <h5>Station</h5>
-            <p>{station ? station.charAt(0).toUpperCase() + station.slice(1) : '—'}</p>
+            <p>{station ? station.charAt(0).toUpperCase() + station.slice(1) : '\u2014'}</p>
+          </div>
+
+          <div className="details-section">
+            <h5>Serving size</h5>
+            <p>{servingLabel ?? 'Not listed by the dining hall'}</p>
           </div>
 
           {display.anyVisible && (

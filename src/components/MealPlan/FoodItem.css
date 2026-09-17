@@ -1,5 +1,5 @@
 .food-item {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   border-radius: 12px;
   margin-bottom: 0.5rem;
   overflow: hidden;
@@ -11,11 +11,11 @@
 }
 
 .food-item:hover {
-  border-color: #cbd5e1;
+  border-color: var(--divider);
 }
 
 .food-item.expanded {
-  border-color: #f47421;
+  border-color: var(--btn-bg);
 }
 
 /* Main Row */
@@ -25,38 +25,65 @@
   padding: 0.75rem 1rem;
   cursor: pointer;
   gap: 1rem;
+  /* Wraps at any width rather than only below a breakpoint. Adding the servings
+     stepper pushed the row over its budget and squeezed the dish name down to
+     36px, so the row now gives way instead of crushing the one part that has to
+     stay readable. */
+  flex-wrap: wrap;
 }
 
 .food-item-info {
-  flex: 1;
-  min-width: 0;
+  /* A floor, so the name keeps a readable column no matter what shares the row. */
+  flex: 1 1 55%;
+  min-width: 150px;
 }
 
 .food-name {
   font-size: 0.95rem;
   font-weight: 600;
-  color: #243b55;
+  color: var(--text-primary);
   margin: 0;
 }
 
 /* Serving table within a hall (Farm Table / Kosher Table). Kept quieter than
    .food-reason so the recommendation copy stays the loudest line. */
+/* Serving table and serving size share one line. Both are quiet metadata and
+   neither should compete with the recommendation copy below them. */
+.food-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0.3rem 0 0 0;
+}
+
+.food-serving {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  background: var(--surface-sunk);
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+}
+
 .food-source {
   display: inline-block;
   font-size: 0.68rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #64748b;
-  background: #f1f5f9;
+  color: var(--text-secondary);
+  background: var(--surface-sunk);
   border-radius: 4px;
   padding: 0.1rem 0.4rem;
-  margin: 0.3rem 0 0 0;
 }
 
 .food-reason {
   font-size: 0.8rem;
-  color: #f47421;
+  color: var(--accent-text);
   margin: 0.25rem 0 0.5rem 0;
   font-weight: 500;
 }
@@ -71,40 +98,40 @@
   font-size: 0.7rem;
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--surface-sunk);
+  color: var(--text-secondary);
   font-weight: 600;
 }
 
 .food-tag.vegetarian {
-  background: #edfaf3;
-  color: #2e8a52;
+  background: var(--tag-veg-bg);
+  color: var(--tag-veg-text);
 }
 
 .food-tag.vegan {
-  background: #d1fae5;
-  color: #047857;
+  background: var(--tag-vegan-bg);
+  color: var(--tag-vegan-text);
 }
 
 .food-tag.glutenFree {
-  background: #fff8f3;
-  color: #c05a12;
+  background: var(--tag-gf-bg);
+  color: var(--tag-gf-text);
 }
 
 .food-tag.dairyFree {
-  background: #e0e7ff;
-  color: #4338ca;
+  background: var(--tag-dairyfree-bg);
+  color: var(--tag-dairyfree-text);
 }
 
 .food-tag.nutFree {
-  background: #fce7f3;
-  color: #be185d;
+  background: var(--tag-nutfree-bg);
+  color: var(--tag-nutfree-text);
 }
 
 .food-tag.halal,
 .food-tag.kosher {
-  background: #f3e8ff;
-  color: #7c3aed;
+  background: var(--tag-faith-bg);
+  color: var(--tag-faith-text);
 }
 
 /* Macros */
@@ -123,12 +150,12 @@
 .macro-value {
   font-size: 0.9rem;
   font-weight: 700;
-  color: #243b55;
+  color: var(--text-primary);
 }
 
 .macro-label {
   font-size: 0.65rem;
-  color: #94a3b8;
+  color: var(--text-disabled);
   text-transform: uppercase;
   font-weight: 600;
 }
@@ -154,11 +181,11 @@
 }
 
 .expand-btn {
-  color: #94a3b8;
+  color: var(--text-disabled);
 }
 
 .expand-btn:hover {
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 .expand-btn svg {
@@ -170,9 +197,9 @@
   margin-left: 0.4rem;
   font-size: 0.65rem;
   font-weight: 600;
-  background: #fff4ed;
-  color: #f47421;
-  border: 1px solid #fed7aa;
+  background: var(--accent-tint);
+  color: var(--accent-text);
+  border: 1px solid var(--accent-tint-border);
   border-radius: 4px;
   padding: 1px 5px;
   vertical-align: middle;
@@ -180,18 +207,18 @@
 }
 
 .remove-btn {
-  color: #cbd5e1;
+  color: var(--divider);
 }
 
 .remove-btn:hover {
-  color: #ef4444;
+  color: var(--danger-text);
 }
 
 /* Expanded Details */
 .food-item-details {
   padding: 1rem;
-  background: #faf7f4;
-  border-top: 1px solid #e2e8f0;
+  background: var(--surface-sunk);
+  border-top: 1px solid var(--border);
 }
 
 .details-section {
@@ -205,7 +232,7 @@
 .details-section h5 {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin: 0 0 0.5rem 0;
@@ -213,7 +240,7 @@
 
 .details-section p {
   margin: 0;
-  color: #374151;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
@@ -230,13 +257,13 @@
 
 .nutrition-label {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 .nutrition-value {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #243b55;
+  color: var(--text-primary);
 }
 
 .all-tags {
@@ -247,7 +274,7 @@
 
 /* Alternatives */
 .alternatives-section {
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border);
   padding-top: 1rem;
   margin-top: 0.25rem;
 }
@@ -255,7 +282,7 @@
 .alts-loading,
 .alts-empty {
   font-size: 0.82rem;
-  color: #94a3b8;
+  color: var(--text-disabled);
   margin: 0;
 }
 
@@ -272,8 +299,8 @@
   gap: 0.15rem;
   width: 100%;
   padding: 0.5rem 0.75rem;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
   cursor: pointer;
   text-align: left;
@@ -281,19 +308,19 @@
 }
 
 .alt-item:hover {
-  background: #f8faff;
-  border-color: #f47421;
+  background: var(--surface-sunk);
+  border-color: var(--btn-bg);
 }
 
 .alt-name {
   font-size: 0.88rem;
   font-weight: 600;
-  color: #243b55;
+  color: var(--text-primary);
 }
 
 .alt-macros {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 @media (max-width: 640px) {
@@ -331,7 +358,7 @@
     width: 100%;
     padding-top: 0.3rem;
     margin-top: 0.3rem;
-    border-top: 1px dashed #e2e8f0;
+    border-top: 1px dashed var(--border);
     gap: 0.75rem;
     justify-content: flex-start;
   }
@@ -350,4 +377,52 @@
   .macro-label {
     font-size: 0.62rem;
   }
+
+  /* On a phone the row is already carrying the name, the chevron and the remove
+     button. Adding the stepper inline squeezed the name onto three lines, so it
+     gets its own line under the macros instead. */
+  .servings-stepper {
+    order: 4;
+    margin-left: auto;
+    margin-top: 0.35rem;
+  }
+}
+
+/* Servings stepper. Sits in the row actions and stops click propagation so
+   tapping it never also expands or collapses the item. */
+.servings-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 1px;
+  flex-shrink: 0;
+}
+
+.servings-btn {
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.servings-btn:hover:not(:disabled) { background: var(--surface-sunk); color: var(--text-primary); }
+.servings-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.servings-count {
+  min-width: 14px;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }

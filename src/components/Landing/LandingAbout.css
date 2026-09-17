@@ -39,7 +39,7 @@
 
 /* ── What / Who ── */
 .lab-what {
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--lh-border);
   padding: 64px 24px;
 }
 
@@ -68,7 +68,7 @@
 
 /* ── Team ── */
 .lab-team {
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--lh-border);
   padding: 64px 24px;
   max-width: 760px;
   margin: 0 auto;
@@ -94,7 +94,7 @@
   height: 238px;
   border-radius: var(--r-lg);
   overflow: hidden;
-  background: var(--border);
+  background: var(--lh-border);
 }
 
 .lab-card-photo {
@@ -136,7 +136,7 @@
 
 /* ── Contact ── */
 .lab-contact {
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--lh-border);
   padding: 64px 24px 100px;
   max-width: 760px;
   margin: 0 auto;

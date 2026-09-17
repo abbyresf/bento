@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signIn, signUp, signInWithGoogle, resetPasswordForEmail } from '../../lib/db';
 import './AuthScreen.css';
+import BentoLogo from '../common/BentoLogo';
 
 function passwordStrength(pw) {
   if (!pw) return null;
@@ -94,7 +95,7 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
   return (
     <div className="auth-screen">
       <div className="auth-card">
-        <img src="/logo-cropped.png" alt="Bento" className="auth-logo" />
+        <BentoLogo className="auth-logo" />
 
         {confirmSent ? (
           <div className="auth-confirm">

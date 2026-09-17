@@ -5,6 +5,28 @@
     <link rel="icon" type="image/png" href="/BentoNoWords.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <!-- Placeholder. The boot script below rewrites this before first paint,
+         and ThemeContext keeps it in sync afterwards. Without it the iOS
+         status bar and Android address bar stay cream over a navy app. -->
+    <meta name="theme-color" content="#FBF9F7" />
+
+    <!-- Theme boot. Must stay inline, blocking, and above the stylesheet:
+         anything async paints the default theme first and flashes. Mirrors
+         applyTheme() in src/context/ThemeContext.jsx. -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('bento_theme');
+          if (stored !== 'light' && stored !== 'dark' && stored !== 'system') stored = 'system';
+          if (stored !== 'system') document.documentElement.setAttribute('data-theme', stored);
+          var dark = stored === 'dark' || (stored === 'system' &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches);
+          var m = document.querySelector('meta[name="theme-color"]');
+          if (m) m.content = dark ? '#24384F' : '#FBF9F7';
+        } catch (e) { /* private mode: fall through to the light default */ }
+      })();
+    </script>
+
     <!-- Google Search Console verification -->
     <meta name="google-site-verification" content="wPQWYqbBEX9H6EN6S-2Il5SlY7yw6W10BifE3YfLw4Y" />
 

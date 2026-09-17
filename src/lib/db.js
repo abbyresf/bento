@@ -94,6 +94,54 @@ export async function setNutritionDisplay(prefs) {
   }).eq('id', id);
 }
 
+// ── Feedback ───────────────────────────────────────────────────────────────
+
+// Stored rather than emailed. See migration 030 for why.
+// Returns { ok } / { ok: false, reason } so the sheet can say what happened
+// instead of showing a generic failure.
+export async function sendFeedback({ topic, message, replyEmail }) {
+  const id = await uid();
+  if (!id) return { ok: false, reason: 'signed-out' };
+
+  const profile = await getUserProfile().catch(() => null);
+
+  const { error } = await supabase.from('feedback').insert({
+    user_id:     id,
+    topic,
+    message:     message.trim(),
+    reply_email: replyEmail?.trim() || null,
+    university:  profile?.university ?? null,
+    // A surprising share of reports turn out to be a stale cached bundle, so
+    // record enough to tell that apart from a real bug without asking.
+    app_context: {
+      installed: window.matchMedia('(display-mode: standalone)').matches
+        || window.navigator.standalone === true,
+      ua: navigator.userAgent.slice(0, 300),
+      viewport: `${window.innerWidth}x${window.innerHeight}`,
+      at: new Date().toISOString(),
+    },
+  });
+
+  if (error) return { ok: false, reason: error.code === '42P01' ? 'not-migrated' : 'failed' };
+  return { ok: true };
+}
+
+// Theme preference. localStorage is the source of truth on load — reading this
+// before first paint would flash the wrong theme — so this write exists only so
+// the choice follows someone to a second device. Failures are swallowed: until
+// migration 028 is run the column does not exist, and the app is fully usable
+// either way.
+export async function setThemePref(theme) {
+  try {
+    const id = await uid();
+    if (!id) return;
+    await supabase.from('profiles').update({
+      theme,
+      updated_at: new Date().toISOString(),
+    }).eq('id', id);
+  } catch { /* offline, signed out, or column not migrated */ }
+}
+
 export async function setUserProfile(profile) {
   const id = await uid();
   if (!id) return;

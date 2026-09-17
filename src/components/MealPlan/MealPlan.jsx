@@ -25,6 +25,9 @@ import { hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
 import { fetchDiningMenu, getUniversityConfig, getSelectableLocations } from '../../services/menuFetcher';
 import { getUserProfile, getNutritionTargets, getDietaryRestrictions, getRecentItemIds, addMealToHistory, removeMealFromHistory, setCachedMenu, getCachedMenu, getCachedMenuAge, incrementStreak, incrementStreakForDate, getStreak, getConfirmedMealsForDate, recordDiningAvailability } from '../../lib/db';
 import { useRatings } from '../../context/RatingsContext';
+import { sumItems, MAX_SERVINGS } from '../../utils/servingSize.js';
+import BentoLogo from '../common/BentoLogo';
+import ThemePreview from '../Settings/ThemePreview';
 import { getNewBadge } from '../../data/badges';
 import { optimizeDay, findAlternatives, findRecommendedAdditions } from '../../utils/mealOptimizer';
 import MealCard from './MealCard';
@@ -32,6 +35,9 @@ import DailySummary from './DailySummary';
 import StreakCelebration from '../Streak/StreakCelebration';
 import BadgeCelebration from '../Badges/BadgeCelebration';
 import RatingSheet from './RatingSheet';
+import Confetti from './Confetti';
+import FeedbackSheet from '../Feedback/FeedbackSheet';
+import '../Feedback/FeedbackSheet.css';
 import './MealPlan.css';
 
 export default function MealPlan({ settingsVersion = 0 }) {
@@ -58,6 +64,8 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const [restrictions, setRestrictions] = useState(null);
   const [streak, setStreak] = useState({ currentStreak: 0, longestStreak: 0, lastConfirmedDate: null });
   const [showStreakCelebration, setShowStreakCelebration] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const [pendingBadge, setPendingBadge] = useState(null);
   const [newBadge, setNewBadge] = useState(null);
   const [customMeals, setCustomMeals] = useState(() => {
@@ -229,15 +237,12 @@ export default function MealPlan({ settingsVersion = 0 }) {
     return () => { clearTimeout(timer); setDateLoading(false); };
   }, [viewDate, loadMenuAndOptimize]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Retroactive streak check: if today's menu loads and all meals are already confirmed
-  // (e.g. confirmed before deploy or in a prior session), fire the streak now.
-  // Only runs for today — past-date streak is handled in handleConfirmMeal.
+  // Retroactive streak check: if today's menu loads and a meal is already
+  // confirmed (in a prior session, or before this rule changed), fire the streak
+  // now. Only runs for today. Past dates are handled in handleConfirmMeal.
   useEffect(() => {
     if (!menu || viewDate !== localDateStr()) return;
-    const availableMeals = ['breakfast', 'lunch', 'dinner'].filter(m =>
-      Object.values(menu?.locations ?? {}).some(loc => (loc.meals?.[m]?.length ?? 0) > 0)
-    );
-    if (availableMeals.length > 0 && !availableMeals.every(m => confirmedMeals[m])) return;
+    if (!['breakfast', 'lunch', 'dinner'].some(m => confirmedMeals[m])) return;
     incrementStreak().then(result => {
       if (!result) return;
       setStreak({ currentStreak: result.currentStreak, longestStreak: result.longestStreak, lastConfirmedDate: localDateStr() });
@@ -364,15 +369,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
     const currentItems = mealPlan?.[location]?.[meal]?.items ?? [];
     if (currentItems.some((i) => i.id === item.id)) return;
     const newItems = [...currentItems, { ...item, userAdded: true }];
-    const newTotals = newItems.reduce(
-      (acc, i) => ({
-        calories: acc.calories + (i.nutrition?.calories ?? 0),
-        protein:  acc.protein  + (i.nutrition?.protein  ?? 0),
-        carbs:    acc.carbs    + (i.nutrition?.carbs    ?? 0),
-        fat:      acc.fat      + (i.nutrition?.fat      ?? 0),
-      }),
-      { calories: 0, protein: 0, carbs: 0, fat: 0 }
-    );
+    const newTotals = sumItems(newItems);
     setMealPlan((prev) => {
       const newPlan = {
         ...prev,
@@ -402,20 +399,42 @@ export default function MealPlan({ settingsVersion = 0 }) {
     setRecommendations((prev) => ({ ...prev, [meal]: null }));
   };
 
+  // How many servings of one item a student took. Works on both plate kinds:
+  // a Bento-built plate lives in mealPlan[location][meal], a hand-built one in
+  // customMeals[meal], and each keeps its own totals.
+  const handleServingsChange = (meal, itemId, next) => {
+    const clamped = Math.max(1, Math.min(MAX_SERVINGS, next));
+
+    if (customMeals[meal]) {
+      setCustomMeals((prev) => {
+        const plan = prev[meal];
+        if (!plan) return prev;
+        const items = plan.items.map((i) => (i.id === itemId ? { ...i, servings: clamped } : i));
+        const updated = { ...prev, [meal]: { items, totals: sumItems(items) } };
+        writePlanCache(viewDate, updated);
+        return updated;
+      });
+      return;
+    }
+
+    const location = selectedLocation[meal];
+    setMealPlan((prev) => {
+      const current = prev?.[location]?.[meal];
+      if (!current) return prev;
+      const items = current.items.map((i) => (i.id === itemId ? { ...i, servings: clamped } : i));
+      return {
+        ...prev,
+        [location]: { ...prev[location], [meal]: { ...current, items, totals: sumItems(items) } },
+      };
+    });
+  };
+
   const handleRemoveItem = (meal, itemId) => {
     const location = selectedLocation[meal];
     const currentItems = mealPlan?.[location]?.[meal]?.items ?? [];
     if (!currentItems.some((i) => i.id === itemId)) return;
     const newItems = currentItems.filter((i) => i.id !== itemId);
-    const newTotals = newItems.reduce(
-      (acc, i) => ({
-        calories: acc.calories + (i.nutrition?.calories ?? 0),
-        protein:  acc.protein  + (i.nutrition?.protein  ?? 0),
-        carbs:    acc.carbs    + (i.nutrition?.carbs    ?? 0),
-        fat:      acc.fat      + (i.nutrition?.fat      ?? 0),
-      }),
-      { calories: 0, protein: 0, carbs: 0, fat: 0 }
-    );
+    const newTotals = sumItems(newItems);
     setMealPlan((prev) => {
       const newPlan = {
         ...prev,
@@ -473,15 +492,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
     const key = `${location}-${meal}-${itemIndex}`;
     const newItems = [...(mealPlan[location][meal].items)];
     newItems[itemIndex] = newItem;
-    const newTotals = newItems.reduce(
-      (acc, item) => ({
-        calories: acc.calories + item.nutrition.calories,
-        protein:  acc.protein  + item.nutrition.protein,
-        carbs:    acc.carbs    + item.nutrition.carbs,
-        fat:      acc.fat      + item.nutrition.fat,
-      }),
-      { calories: 0, protein: 0, carbs: 0, fat: 0 }
-    );
+    const newTotals = sumItems(newItems);
 
     setMealPlan((prev) => {
       const newPlan = {
@@ -535,12 +546,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const handleBrowserDone = (meal, selectedItems) => {
     const newPlan = selectedItems.length === 0 ? null : {
       items: selectedItems,
-      totals: selectedItems.reduce((acc, item) => ({
-        calories: acc.calories + (item.nutrition?.calories || 0),
-        protein:  acc.protein  + (item.nutrition?.protein  || 0),
-        carbs:    acc.carbs    + (item.nutrition?.carbs    || 0),
-        fat:      acc.fat      + (item.nutrition?.fat      || 0),
-      }), { calories: 0, protein: 0, carbs: 0, fat: 0 }),
+      totals: sumItems(selectedItems),
     };
     setCustomMeals(prev => {
       const next = { ...prev, [meal]: newPlan };
@@ -549,12 +555,20 @@ export default function MealPlan({ settingsVersion = 0 }) {
     });
   };
 
+  // A day counts once the student confirms ANY meal.
+  //
+  // This used to require every meal the dining halls served that day, which in
+  // practice meant all three. The data says that is the wrong bar: of 33 active
+  // user-days, 55% had one meal confirmed, 15% had two, and only 30% had three.
+  // So seven days in ten silently earned nothing, consecutive runs almost never
+  // formed, and every streak row in production was stuck at 1.
+  //
+  // Calling this on every confirm is safe. increment_streak returns an empty set
+  // when the date is already the last confirmed one, so the first meal of the day
+  // advances the streak and the rest are no-ops.
   const runStreakCheck = async (isViewingToday, updatedConfirmed) => {
-    const availableMeals = ['breakfast', 'lunch', 'dinner'].filter(m =>
-      Object.values(menu?.locations ?? {}).some(loc => (loc.meals?.[m]?.length ?? 0) > 0)
-    );
-    const allConfirmed = availableMeals.length === 0 || availableMeals.every(m => updatedConfirmed[m]);
-    if (allConfirmed) {
+    const anyConfirmed = ['breakfast', 'lunch', 'dinner'].some(m => updatedConfirmed[m]);
+    if (anyConfirmed) {
       const streakFn = isViewingToday ? incrementStreak : () => incrementStreakForDate(viewDate);
       const result = await streakFn();
       if (result) {
@@ -585,6 +599,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
     }
     // Show rating sheet; defer streak check until it closes
     pendingStreakRef.current = { isViewingToday, updatedConfirmed };
+    setShowConfetti(true);
     setPendingRating({ meal, items: mealItems, locationId: location });
   };
 
@@ -666,7 +681,8 @@ export default function MealPlan({ settingsVersion = 0 }) {
     <div className="meal-plan">
       <header className="meal-plan-header">
         <div className="header-top">
-          <img src="/logo-cropped.png" alt="Bento" className="header-logo-sm" />
+          <BentoLogo className="header-logo-sm" />
+          <ThemePreview />
         </div>
         <div className="date-nav">
           <button className="date-nav-btn" onClick={() => navigateDate(-1)} aria-label="Previous day">
@@ -740,12 +756,17 @@ export default function MealPlan({ settingsVersion = 0 }) {
             onLoadRecommendations={() => handleLoadRecommendations(meal)}
             onAddItem={(item) => handleAddItem(meal, item)}
             onRemoveItem={(itemId) => handleRemoveItem(meal, itemId)}
+            onServingsChange={(itemId, n) => handleServingsChange(meal, itemId, n)}
             isConfirmed={confirmedMeals[meal]}
             isConfirming={confirmingMeals[meal]}
             onConfirm={() => handleConfirmMeal(meal)}
             onUndo={() => handleUndo(meal)}
           />
         ))}
+
+        <button className="fb-trigger" onClick={() => setShowFeedback(true)}>
+          Something wrong? Tell us
+        </button>
       </div>
       )}
 
@@ -757,6 +778,10 @@ export default function MealPlan({ settingsVersion = 0 }) {
           onClose={handleRatingClose}
         />
       )}
+
+      {showFeedback && <FeedbackSheet onClose={() => setShowFeedback(false)} />}
+
+      {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}
 
       {showStreakCelebration && (
         <StreakCelebration

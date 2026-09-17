@@ -1,0 +1,314 @@
+/* ============================================================
+   Bento design tokens
+   ============================================================
+
+   Rules this file is built to, in priority order.
+
+   1. No pure white and no pure black. Anywhere. Not as a fill, not as a
+      text colour, not as the base of a shadow or a scrim. The lightest
+      value in the system is #FFFDF9 and the darkest shadow is built on
+      #0F1926.
+
+   2. One neutral ramp per theme, one temperature per theme. The light
+      ground is warm (hue 29), so light neutrals are warm. The dark ground
+      is cool (hue 212), so dark neutrals are cool. Never a cool grey on
+      the cream, never a warm grey on the navy.
+
+   3. The logo colours carry the interface. Cream is the light ground,
+      navy is the dark ground, orange is the action, fern is a full accent
+      rather than a status light.
+
+   Three theme states, not two:
+     :root                          -> light, and the default paint
+     prefers-color-scheme: dark     -> dark, unless the user chose light
+     [data-theme="dark"|"light"]    -> an explicit choice, wins either way
+
+   Dark applies through two different selectors, so its values are declared
+   ONCE as --dk-* and both selectors only remap them. Editing a dark colour
+   is a one-line change and the two states cannot drift.
+   ============================================================ */
+
+:root {
+  /* ---- Brand core. Fills and marks only, never small text. ---- */
+  --brand-orange: #FD8F2A;
+  --brand-cream:  #FEEAD7;
+  --brand-navy:   #24384F;
+  --brand-fern:   #77BE3D;
+
+  /* ================= LIGHT =================
+     These are the app's original colours, recovered from the pre-token
+     stylesheets. The token layer is the change here, not the palette: every
+     value below is what the component files hardcoded before the migration, so
+     light renders exactly as it always did. Dark is a genuinely new set. */
+
+  --bg-app:        #faf7f4;
+  --bg-ground:     #faf7f4;
+  --surface:       #ffffff;
+  --surface-sunk:  #f1f5f9;
+  --border:        #e2e8f0;
+  --divider:       #cbd5e1;
+  --text-disabled: #94a3b8;
+  --text-secondary:#64748b;
+  --text-primary:  #243b55;
+
+  /* Interactive. #f47421 was the app's real orange, used far more than the
+     brand #FD8F2A, and it is what students have been looking at. */
+  --accent-text:   #f47421;
+  --btn-bg:        #f47421;
+  --btn-bg-hover:  #d9641a;
+  --btn-fg:        #ffffff;
+  /* Reads as the old #fff8f3 hover wash over white, and doubles as the focus
+     ring, which was already rgba(244,116,33,0.12). */
+  --accent-tint:        rgba(244, 116, 33, 0.10);
+  --accent-tint-border: #fed7aa;
+
+  /* Green. The original app used #4cae70 for fills and #2e8a52 for text. */
+  --fern-text:  #2e8a52;
+  --fern-fill:  #4cae70;
+  --fern-tint:  #edfaf3;
+  --fern-border:#bbf0d0;
+
+  /* Meal identity. Same three roles the stylesheets already had. */
+  --meal-breakfast: #f47421;
+  --meal-lunch:     #4cae70;
+  --meal-dinner:    #243b55;
+
+  /* A confirmed plate was plain white with a green edge and ring. The tinted
+     card is a dark-mode idea, so light keeps its own surface. */
+  --confirmed-bg: var(--surface);
+
+  --success-text:  #2e8a52;
+  --success-fill:  #4cae70;
+  --success-bg:    #edfaf3;
+
+  --warning-text:  #92400e;
+  --warning-bg:    #fff8f3;
+  --warning-border:#fde8d4;
+  --danger-text:   #dc2626;
+  --danger-fill:   #ef4444;
+  --danger-bg:     #fef2f2;
+
+  /* Diet tags, each with the hue it always had. Vegetarian and vegan were
+     distinct greens and are kept distinct. */
+  --tag-veg-text:       #2e8a52;
+  --tag-veg-bg:         #edfaf3;
+  --tag-vegan-text:     #047857;
+  --tag-vegan-bg:       #d1fae5;
+  --tag-gf-text:        #c05a12;
+  --tag-gf-bg:          #fff8f3;
+  --tag-dairyfree-text: #4338ca;
+  --tag-dairyfree-bg:   #e0e7ff;
+  --tag-nutfree-text:   #be185d;
+  --tag-nutfree-bg:     #fce7f3;
+  --tag-faith-text:     #7c3aed;
+  --tag-faith-bg:       #f3e8ff;
+
+  --shadow-sm: 0 1px 3px rgba(36, 59, 85, 0.08);
+  --shadow-md: 0 4px 12px rgba(36, 59, 85, 0.10);
+  --shadow-lg: 0 4px 16px rgba(36, 59, 85, 0.10);
+  --scrim:     rgba(36, 59, 85, 0.30);
+
+  /* Text selection, as it was: a pale orange wash with navy text. */
+  --selection-bg: #fde8d4;
+  --selection-fg: #243b55;
+
+  color-scheme: light;
+
+  /* ================= DARK VALUES (declared, not yet applied) =============
+     Inert here. The two selectors below are what assign them. */
+
+  --dk-bg-app:        #24384F;
+  --dk-bg-ground:     #24384F;
+  --dk-surface:       #2C4360;
+  --dk-surface-sunk:  #1E2F42;
+  --dk-border:        #3C5170;
+  --dk-divider:       #495665;
+  --dk-text-disabled: #949DA8;
+  --dk-text-secondary:#C0C6CE;
+  --dk-text-primary:  #F7F8FB;   /* near-white by design, never #FFFFFF */
+
+  --dk-accent-text:   #FC7A02;
+  --dk-btn-bg:        #FD8F2A;
+  --dk-btn-bg-hover:  #FFA34D;
+  --dk-btn-fg:        #1B1208;
+  --dk-accent-tint:        rgba(253, 143, 42, 0.18);
+  --dk-accent-tint-border: rgba(253, 143, 42, 0.40);
+
+  --dk-confirmed-bg: linear-gradient(rgba(119, 190, 61, 0.18), rgba(119, 190, 61, 0.18)), #2C4360;
+
+  --dk-tag-veg-text:   #93D163;
+  --dk-tag-veg-bg:     rgba(119, 190, 61, 0.16);
+  --dk-tag-vegan-text: #6EE7B7;
+  --dk-tag-vegan-bg:   rgba(110, 231, 183, 0.14);
+  --dk-tag-gf-text:    #FCA5A5;
+  --dk-tag-gf-bg:      rgba(252, 165, 165, 0.14);
+
+  --dk-fern-text:  #77BE3D;
+  --dk-fern-fill:  #77BE3D;
+  --dk-fern-tint:  rgba(119, 190, 61, 0.18);
+  --dk-fern-border:rgba(119, 190, 61, 0.42);
+
+  /* Navy cannot mark dinner on a navy ground, so the cream takes that slot
+     and the trio stays entirely inside the logo. */
+  --dk-meal-breakfast: #FD8F2A;
+  --dk-meal-lunch:     #77BE3D;
+  --dk-meal-dinner:    #FEEAD7;
+
+  --dk-success-text:  #77BE3D;
+  --dk-success-fill:  #77BE3D;
+  --dk-success-bg:    rgba(119, 190, 61, 0.18);
+
+  --dk-warning-text:  #FBBF24;
+  --dk-warning-bg:    rgba(251, 191, 36, 0.14);
+  --dk-warning-border:rgba(251, 191, 36, 0.30);
+  --dk-danger-text:   #F98080;
+  --dk-danger-fill:   #F98080;
+  --dk-danger-bg:     rgba(249, 128, 128, 0.14);
+
+  --dk-tag-dairyfree-text: #A5B4FC;
+  --dk-tag-dairyfree-bg:   rgba(165, 180, 252, 0.16);
+  --dk-tag-nutfree-text:   #F9A8D4;
+  --dk-tag-nutfree-bg:     rgba(249, 168, 212, 0.16);
+  --dk-tag-faith-text:     #C4B5FD;
+  --dk-tag-faith-bg:       rgba(196, 181, 253, 0.16);
+
+  /* Deepest navy in the system, #0F1926. A shadow on pure black would grey
+     the navy rather than deepen it, and black is out of the palette. */
+  --dk-shadow-sm: 0 1px 3px rgba(15, 25, 38, 0.40);
+  --dk-shadow-md: 0 4px 12px rgba(15, 25, 38, 0.48);
+  --dk-shadow-lg: 0 4px 16px rgba(15, 25, 38, 0.55);
+  --dk-scrim:     rgba(15, 25, 38, 0.62);
+  --dk-selection-bg: rgba(253, 143, 42, 0.35);
+  --dk-selection-fg: #F7F8FB;
+}
+
+/* State 2: the OS asks for dark and the user has not explicitly chosen light. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg-app:        var(--dk-bg-app);
+    --bg-ground:     var(--dk-bg-ground);
+    --surface:       var(--dk-surface);
+    --surface-sunk:  var(--dk-surface-sunk);
+    --border:        var(--dk-border);
+    --divider:       var(--dk-divider);
+    --text-disabled: var(--dk-text-disabled);
+    --text-secondary:var(--dk-text-secondary);
+    --text-primary:  var(--dk-text-primary);
+
+    --accent-text:   var(--dk-accent-text);
+    --btn-bg:        var(--dk-btn-bg);
+    --btn-bg-hover:  var(--dk-btn-bg-hover);
+    --btn-fg:        var(--dk-btn-fg);
+    --accent-tint:        var(--dk-accent-tint);
+    --accent-tint-border: var(--dk-accent-tint-border);
+
+        --confirmed-bg: var(--dk-confirmed-bg);
+    --tag-veg-text:   var(--dk-tag-veg-text);
+    --tag-veg-bg:     var(--dk-tag-veg-bg);
+    --tag-vegan-text: var(--dk-tag-vegan-text);
+    --tag-vegan-bg:   var(--dk-tag-vegan-bg);
+    --tag-gf-text:    var(--dk-tag-gf-text);
+    --tag-gf-bg:      var(--dk-tag-gf-bg);
+--fern-text:  var(--dk-fern-text);
+    --fern-fill:  var(--dk-fern-fill);
+    --fern-tint:  var(--dk-fern-tint);
+    --fern-border:var(--dk-fern-border);
+
+    --meal-breakfast: var(--dk-meal-breakfast);
+    --meal-lunch:     var(--dk-meal-lunch);
+    --meal-dinner:    var(--dk-meal-dinner);
+
+    --success-text:  var(--dk-success-text);
+    --success-fill:  var(--dk-success-fill);
+    --success-bg:    var(--dk-success-bg);
+
+    --warning-text:  var(--dk-warning-text);
+    --warning-bg:    var(--dk-warning-bg);
+    --warning-border:var(--dk-warning-border);
+    --danger-text:   var(--dk-danger-text);
+    --danger-fill:   var(--dk-danger-fill);
+    --danger-bg:     var(--dk-danger-bg);
+
+    --tag-dairyfree-text: var(--dk-tag-dairyfree-text);
+    --tag-dairyfree-bg:   var(--dk-tag-dairyfree-bg);
+    --tag-nutfree-text:   var(--dk-tag-nutfree-text);
+    --tag-nutfree-bg:     var(--dk-tag-nutfree-bg);
+    --tag-faith-text:     var(--dk-tag-faith-text);
+    --tag-faith-bg:       var(--dk-tag-faith-bg);
+
+    --shadow-sm: var(--dk-shadow-sm);
+    --shadow-md: var(--dk-shadow-md);
+    --shadow-lg: var(--dk-shadow-lg);
+    --scrim:     var(--dk-scrim);
+  --selection-bg: var(--dk-selection-bg);
+  --selection-fg: var(--dk-selection-fg);
+    --selection-bg: var(--dk-selection-bg);
+    --selection-fg: var(--dk-selection-fg);
+
+    color-scheme: dark;
+  }
+}
+
+/* State 3: an explicit dark choice. Placed after the media query so it wins
+   at equal specificity, which is what makes Dark stick on a light OS. */
+:root[data-theme="dark"] {
+  --bg-app:        var(--dk-bg-app);
+  --bg-ground:     var(--dk-bg-ground);
+  --surface:       var(--dk-surface);
+  --surface-sunk:  var(--dk-surface-sunk);
+  --border:        var(--dk-border);
+  --divider:       var(--dk-divider);
+  --text-disabled: var(--dk-text-disabled);
+  --text-secondary:var(--dk-text-secondary);
+  --text-primary:  var(--dk-text-primary);
+
+  --accent-text:   var(--dk-accent-text);
+  --btn-bg:        var(--dk-btn-bg);
+  --btn-bg-hover:  var(--dk-btn-bg-hover);
+  --btn-fg:        var(--dk-btn-fg);
+  --accent-tint:        var(--dk-accent-tint);
+  --accent-tint-border: var(--dk-accent-tint-border);
+
+    --confirmed-bg: var(--dk-confirmed-bg);
+  --tag-veg-text:   var(--dk-tag-veg-text);
+  --tag-veg-bg:     var(--dk-tag-veg-bg);
+  --tag-vegan-text: var(--dk-tag-vegan-text);
+  --tag-vegan-bg:   var(--dk-tag-vegan-bg);
+  --tag-gf-text:    var(--dk-tag-gf-text);
+  --tag-gf-bg:      var(--dk-tag-gf-bg);
+--fern-text:  var(--dk-fern-text);
+  --fern-fill:  var(--dk-fern-fill);
+  --fern-tint:  var(--dk-fern-tint);
+  --fern-border:var(--dk-fern-border);
+
+  --meal-breakfast: var(--dk-meal-breakfast);
+  --meal-lunch:     var(--dk-meal-lunch);
+  --meal-dinner:    var(--dk-meal-dinner);
+
+  --success-text:  var(--dk-success-text);
+  --success-fill:  var(--dk-success-fill);
+  --success-bg:    var(--dk-success-bg);
+
+  --warning-text:  var(--dk-warning-text);
+  --warning-bg:    var(--dk-warning-bg);
+  --warning-border:var(--dk-warning-border);
+  --danger-text:   var(--dk-danger-text);
+  --danger-fill:   var(--dk-danger-fill);
+  --danger-bg:     var(--dk-danger-bg);
+
+  --tag-dairyfree-text: var(--dk-tag-dairyfree-text);
+  --tag-dairyfree-bg:   var(--dk-tag-dairyfree-bg);
+  --tag-nutfree-text:   var(--dk-tag-nutfree-text);
+  --tag-nutfree-bg:     var(--dk-tag-nutfree-bg);
+  --tag-faith-text:     var(--dk-tag-faith-text);
+  --tag-faith-bg:       var(--dk-tag-faith-bg);
+
+  --shadow-sm: var(--dk-shadow-sm);
+  --shadow-md: var(--dk-shadow-md);
+  --shadow-lg: var(--dk-shadow-lg);
+  --scrim:     var(--dk-scrim);
+  --selection-bg: var(--dk-selection-bg);
+  --selection-fg: var(--dk-selection-fg);
+
+  color-scheme: dark;
+}

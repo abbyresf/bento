@@ -21,6 +21,7 @@ import { NutritionDisplayProvider } from './context/NutritionDisplayContext';
 import NotifPrompt from './components/Notifications/NotifPrompt';
 import SplashScreen from './components/Splash/SplashScreen';
 import './App.css';
+import BentoLogo from './components/common/BentoLogo';
 
 function isStandalone() {
   return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
@@ -192,7 +193,7 @@ function App() {
     return (
       <div className="auth-screen">
         <div className="auth-card">
-          <img src="/logo-cropped.png" alt="Bento" className="auth-logo" />
+          <BentoLogo className="auth-logo" />
           <h2 className="auth-title">Set a new password</h2>
           <form onSubmit={handlePasswordReset} className="auth-form">
             <div className="auth-field">

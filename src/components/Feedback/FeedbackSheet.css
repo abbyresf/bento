@@ -1,0 +1,169 @@
+/* Tokens with literal fallbacks throughout. The token layer is still an
+   unmerged branch of work, so this has to render correctly with or without it. */
+
+.fb-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim, rgba(80, 60, 37, 0.34));
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fbFade 0.18s ease;
+}
+
+@keyframes fbFade { from { opacity: 0; } to { opacity: 1; } }
+
+.fb-sheet {
+  width: 100%;
+  max-width: 520px;
+  background: var(--surface, #FFFDF9);
+  color: var(--text-primary, #503C25);
+  border: 1px solid var(--border, #E4D3BC);
+  border-bottom: none;
+  border-radius: 18px 18px 0 0;
+  padding: 1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
+  box-shadow: var(--shadow-lg, 0 4px 16px rgba(80, 60, 37, 0.15));
+  animation: fbUp 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  max-height: 88vh;
+  overflow-y: auto;
+}
+
+@keyframes fbUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+@media (min-width: 640px) {
+  .fb-overlay { align-items: center; }
+  .fb-sheet { border-radius: 18px; border-bottom: 1px solid var(--border, #E4D3BC); }
+}
+
+.fb-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.fb-head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary, #503C25);
+}
+
+.fb-close {
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text-disabled, #ACA095);
+  padding: 0 0.25rem;
+}
+.fb-close:hover { color: var(--text-primary, #503C25); }
+
+.fb-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-secondary, #655649);
+  margin: 0 0 0.35rem;
+}
+
+.fb-optional {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  color: var(--text-disabled, #ACA095);
+}
+
+.fb-select,
+.fb-input,
+.fb-textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--text-primary, #503C25);
+  background: var(--bg-app, #FEEAD7);
+  border: 1px solid var(--border, #E4D3BC);
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+  margin-bottom: 0.9rem;
+}
+
+.fb-textarea { resize: vertical; min-height: 96px; line-height: 1.5; }
+
+.fb-select:focus,
+.fb-input:focus,
+.fb-textarea:focus {
+  outline: none;
+  border-color: var(--brand-orange, #FD8F2A);
+  box-shadow: 0 0 0 3px var(--accent-tint, rgba(253, 143, 42, 0.12));
+}
+
+.fb-note {
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--danger-text, #B91C1C);
+  margin: 0 0 0.75rem;
+}
+
+.fb-primary {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  background: var(--btn-bg, #FD8F2A);
+  color: var(--btn-fg, #1B1208);
+  border: none;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+.fb-primary:hover:not(:disabled) { background: var(--btn-bg-hover, #E97F1D); }
+.fb-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Sent state */
+.fb-done { text-align: center; padding: 0.5rem 0 0; }
+
+.fb-done-mark {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 0.75rem;
+  border-radius: 50%;
+  background: var(--fern-tint, rgba(119, 190, 61, 0.14));
+  color: var(--fern-text, #4B7726);
+  font-size: 1.4rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fb-done h3 { margin: 0 0 0.4rem; font-size: 1.05rem; color: var(--text-primary, #503C25); }
+.fb-done p  { margin: 0 0 1.1rem; font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary, #655649); }
+
+/* The entry point under the last meal card. Quiet on purpose: findable by
+   anyone who scrolls, invisible to anyone who does not. */
+.fb-trigger {
+  display: block;
+  margin: 1.5rem auto 0;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary, #655649);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+.fb-trigger:hover { color: var(--accent-text, #AB5302); }
+
+@media (prefers-reduced-motion: reduce) {
+  .fb-overlay, .fb-sheet { animation: none; }
+}
