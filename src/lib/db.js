@@ -94,6 +94,45 @@ export async function setNutritionDisplay(prefs) {
   }).eq('id', id);
 }
 
+// ── Consumption ────────────────────────────────────────────────────────────
+
+// How much of each item a student actually ate, as a fraction of what they
+// took. Written onto the meal_history row that addMealToHistory already
+// created, so this needs no table of its own and stays attached to the exact
+// plate, servings and serving sizes recorded at confirmation time.
+//
+// A fraction, not a quantity, on purpose. The denominator is already in the
+// row: servings multiplied by the serving size the dining hall published that
+// day. Storing 0.5 against "2 x 0.5 cup" is recoverable as half a cup; storing
+// "half" alone would not be.
+export async function setMealConsumption(rowId, consumedById) {
+  const id = await uid();
+  if (!id || !rowId || !consumedById || Object.keys(consumedById).length === 0) return;
+
+  const { data } = await supabase
+    .from('meal_history')
+    .select('items')
+    .eq('id', rowId)
+    .eq('user_id', id)
+    .maybeSingle();
+  if (!data?.items) return;
+
+  // Only items the student actually answered for are touched. An untouched
+  // item keeps whatever it had, which is nothing, rather than being recorded
+  // as a zero the student never chose.
+  const items = data.items.map(item =>
+    Object.prototype.hasOwnProperty.call(consumedById, item.id)
+      ? { ...item, consumed: consumedById[item.id] }
+      : item
+  );
+
+  await supabase
+    .from('meal_history')
+    .update({ items })
+    .eq('id', rowId)
+    .eq('user_id', id);
+}
+
 // ── Feedback ───────────────────────────────────────────────────────────────
 
 // Stored rather than emailed. See migration 030 for why.
@@ -790,7 +829,11 @@ const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes — matches server-side cache
 // Bump this whenever the cached menu's shape changes. v2 drops entries written
 // while the kosher location was being deleted after the Sherman merge — those
 // have no kosher location at all, so it would render as "Closed" until expiry.
-const CACHE_VERSION = 'v2';
+// Bump this whenever the cached menu's item shape changes, not just when the
+// cache format does. Adding `serving` to items changed that shape, and every
+// client holding a v2 entry kept serving up items without it. The version key
+// exists precisely so a shape change cannot be served from an old cache.
+const CACHE_VERSION = 'v3';
 
 export function getCachedMenu(university = 'brandeis') {
   try {

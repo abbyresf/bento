@@ -9,7 +9,7 @@
 }
 
 .rating-sheet {
-  background: white;
+  background: var(--surface);
   border-radius: 20px 20px 0 0;
   width: 100%;
   padding: 0.5rem 1.25rem 2.5rem;
@@ -19,7 +19,7 @@
 .rating-sheet-handle {
   width: 36px;
   height: 4px;
-  background: #e2e8f0;
+  background: var(--border);
   border-radius: 2px;
   margin: 0.5rem auto 1.25rem;
 }
@@ -31,13 +31,13 @@
 .rating-sheet-header h3 {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-primary);
   margin: 0 0 0.25rem;
 }
 
 .rating-sheet-sub {
   font-size: 0.8rem;
-  color: #94a3b8;
+  color: var(--text-disabled);
   margin: 0;
 }
 
@@ -48,17 +48,74 @@
   margin-bottom: 1.5rem;
 }
 
-.rating-sheet-item {
+.rating-sheet-item-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
+}
+
+/* Consumption. Muted until the student answers, so an untouched control never
+   looks like it has already recorded something. */
+.eaten {
+  margin-top: 0.6rem;
+  opacity: 0.55;
+  transition: opacity 0.15s;
+}
+.eaten.answered { opacity: 1; }
+
+.eaten-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.eaten-q {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+.eaten-q strong { color: var(--text-primary); font-weight: 600; }
+
+.eaten-answer {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent-text);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.eaten:not(.answered) .eaten-answer { color: var(--text-disabled); font-weight: 600; }
+
+.eaten-range {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--accent-text);
+  /* A comfortable target: this is tapped on a phone, one-handed, after eating. */
+  height: 26px;
+  cursor: pointer;
+}
+
+.eaten-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.66rem;
+  color: var(--text-disabled);
+  margin-top: -0.15rem;
+}
+
+/* The row used to be name and stars side by side. It now stacks that pair over
+   the consumption control, so the horizontal flex moved up to
+   .rating-sheet-item-top and this becomes a plain block. */
+.rating-sheet-item {
+  display: block;
 }
 
 .rating-sheet-item-name {
   font-size: 0.9rem;
   font-weight: 500;
-  color: #334155;
+  color: var(--text-secondary);
   flex: 1;
   min-width: 0;
   /* Clamp to 2 lines */
@@ -76,27 +133,27 @@
 .rating-sheet-skip {
   flex: 1;
   padding: 0.75rem;
-  background: #f1f5f9;
+  background: var(--surface-sunk);
   border: none;
   border-radius: 12px;
   font-size: 0.95rem;
   font-weight: 600;
-  color: #64748b;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: background 0.15s;
 }
-.rating-sheet-skip:hover:not(:disabled) { background: #e2e8f0; }
+.rating-sheet-skip:hover:not(:disabled) { background: var(--divider); }
 .rating-sheet-skip:disabled { opacity: 0.5; }
 
 .rating-sheet-submit {
   flex: 2;
   padding: 0.75rem;
-  background: #f47421;
+  background: var(--btn-bg);
   border: none;
   border-radius: 12px;
   font-size: 0.95rem;
   font-weight: 600;
-  color: white;
+  color: var(--btn-fg);
   cursor: pointer;
   transition: opacity 0.15s;
 }
@@ -113,11 +170,3 @@
   to   { transform: translateY(0); }
 }
 
-@media (prefers-color-scheme: dark) {
-  .rating-sheet { background: #1e2a3a; }
-  .rating-sheet-handle { background: #2d3a4d; }
-  .rating-sheet-header h3 { color: #e2e8f0; }
-  .rating-sheet-item-name { color: #cbd5e1; }
-  .rating-sheet-skip { background: #162030; color: #94a3b8; }
-  .rating-sheet-skip:hover:not(:disabled) { background: #1e2a3a; }
-}

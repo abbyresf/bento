@@ -6,7 +6,10 @@ const localDateStr = (d = new Date()) =>
 
 // Per-date meal plan cache: { [YYYY-MM-DD]: { breakfast, lunch, dinner } }
 // Stores user's planned items per meal per day so navigation doesn't wipe selections.
-const PLAN_CACHE_KEY = 'bento_meal_plans_v2';
+// Same rule as the menu cache, and this one matters more: plans are kept for
+// 30 days, so a plate built before `serving` existed would never have picked it
+// up. Bumped alongside the item shape.
+const PLAN_CACHE_KEY = 'bento_meal_plans_v3';
 function readPlanCache() {
   try { return JSON.parse(localStorage.getItem(PLAN_CACHE_KEY) || '{}'); } catch { return {}; }
 }
@@ -772,6 +775,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
         <RatingSheet
           meal={pendingRating.meal}
           items={pendingRating.items}
+          historyRowId={confirmedMealIds[pendingRating.meal]}
           diningHall={menu?.locations?.[pendingRating.locationId]?.shortName ?? null}
           onClose={handleRatingClose}
         />

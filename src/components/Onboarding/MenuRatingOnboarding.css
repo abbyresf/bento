@@ -84,10 +84,16 @@
 .mro-submit:hover:not(:disabled) { opacity: 0.9; }
 .mro-submit:disabled { opacity: 0.35; cursor: not-allowed; }
 
+/* Guarded so an explicit Light choice in Settings wins over a dark OS. Without
+   the :not(), this block applied whenever the phone was dark and these screens
+   rendered dark inside an otherwise light app.
+   These rules still predate the token layer; they want migrating to tokens so
+   dark is consistent with the rest of the app, but the guard is the part that
+   was actually broken. */
 @media (prefers-color-scheme: dark) {
-  .mro-title { color: #e2e8f0; }
-  .mro-item { border-color: #1e2a3a; }
-  .mro-item-name { color: #cbd5e1; }
-  .mro-skip { background: #162030; color: #94a3b8; }
-  .mro-skip:hover:not(:disabled) { background: #1e2a3a; }
+  :root:not([data-theme="light"]) .mro-title { color: #e2e8f0; }
+  :root:not([data-theme="light"]) .mro-item { border-color: #1e2a3a; }
+  :root:not([data-theme="light"]) .mro-item-name { color: #cbd5e1; }
+  :root:not([data-theme="light"]) .mro-skip { background: #162030; color: #94a3b8; }
+  :root:not([data-theme="light"]) .mro-skip:hover:not(:disabled) { background: #1e2a3a; }
 }

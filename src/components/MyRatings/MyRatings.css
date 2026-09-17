@@ -101,9 +101,15 @@
   color: #ef4444;
 }
 
+/* Guarded so an explicit Light choice in Settings wins over a dark OS. Without
+   the :not(), this block applied whenever the phone was dark and these screens
+   rendered dark inside an otherwise light app.
+   These rules still predate the token layer; they want migrating to tokens so
+   dark is consistent with the rest of the app, but the guard is the part that
+   was actually broken. */
 @media (prefers-color-scheme: dark) {
-  .my-ratings-header h2 { color: #e2e8f0; }
-  .my-ratings-note { color: #94a3b8; }
-  .rated-item { background: #1e2a3a; border-color: #2d3a4d; }
-  .rated-item-name { color: #e2e8f0; }
+  :root:not([data-theme="light"]) .my-ratings-header h2 { color: #e2e8f0; }
+  :root:not([data-theme="light"]) .my-ratings-note { color: #94a3b8; }
+  :root:not([data-theme="light"]) .rated-item { background: #1e2a3a; border-color: #2d3a4d; }
+  :root:not([data-theme="light"]) .rated-item-name { color: #e2e8f0; }
 }
