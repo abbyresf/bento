@@ -27,7 +27,6 @@ import { getUserProfile, getNutritionTargets, getDietaryRestrictions, getRecentI
 import { useRatings } from '../../context/RatingsContext';
 import { sumItems, MAX_SERVINGS } from '../../utils/servingSize.js';
 import BentoLogo from '../common/BentoLogo';
-import ThemePreview from '../Settings/ThemePreview';
 import { getNewBadge } from '../../data/badges';
 import { optimizeDay, findAlternatives, findRecommendedAdditions } from '../../utils/mealOptimizer';
 import MealCard from './MealCard';
@@ -682,7 +681,6 @@ export default function MealPlan({ settingsVersion = 0 }) {
       <header className="meal-plan-header">
         <div className="header-top">
           <BentoLogo className="header-logo-sm" />
-          <ThemePreview />
         </div>
         <div className="date-nav">
           <button className="date-nav-btn" onClick={() => navigateDate(-1)} aria-label="Previous day">

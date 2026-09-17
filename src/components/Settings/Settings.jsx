@@ -14,6 +14,7 @@ import { calculateNutritionTargets, ACTIVITY_LEVELS, GOALS } from '../../utils/t
 import UniversityPicker from '../common/UniversityPicker';
 import { useNutritionDisplay } from '../../context/NutritionDisplayContext';
 import { pushSupport, subscribeToPush, unsubscribeFromPush, getPushEnabled } from '../../lib/push';
+import ThemePreview from './ThemePreview';
 import './Settings.css';
 
 export default function Settings({ onClose, onReset, onSave, onGoContact, tabMode = false }) {
@@ -402,6 +403,15 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
               </>
             );
           })()}
+        </section>
+
+        <section className="settings-section">
+          <h3>Appearance</h3>
+          <p className="section-note">
+            System follows your phone, so Bento turns dark when everything else
+            does. Pick Light or Dark to override it.
+          </p>
+          <ThemePreview />
         </section>
 
         <section className="settings-section">
