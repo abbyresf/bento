@@ -87,6 +87,13 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const universityRef = useRef('brandeis');
   const [viewDate, setViewDate] = useState(() => localDateStr());
   const [dateLoading, setDateLoading] = useState(false);
+  // The date whose menu failed to load, or null. Held as a date rather than a
+  // boolean so a stale failure cannot leak onto a day that loaded fine.
+  const [dateError, setDateError] = useState(null);
+  // Bumped by the retry button. Re-running the date effect needs a dependency
+  // that actually changes; setting viewDate to the value already held is a
+  // no-op React bails out of, so the retry would do nothing.
+  const [dateRetry, setDateRetry] = useState(0);
   const [, setTick] = useState(0);
   const initialMountRef = useRef(true);
 
@@ -204,6 +211,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
 
     // Past or future date — debounce so rapid ← → clicks don't each fire a fetch
     setDateLoading(true);
+    setDateError(null);
     const capturedDate = viewDate;
     const timer = setTimeout(async () => {
       try {
@@ -229,15 +237,25 @@ export default function MealPlan({ settingsVersion = 0 }) {
         if (targets) {
           const optimized = optimizeDay(menuData, targets, fetchedRestrictions, recentItems, undefined, ratingsByIdRef.current);
           setMealPlan(optimized);
+        } else {
+          // Menu loaded, but there is nothing to build a plate against. Second
+          // route to the same blank screen, and worth saying out loud rather
+          // than showing a network error for a setup problem.
+          setDateError({ date: capturedDate, kind: 'setup' });
         }
       } catch {
-        // Date fetch failed — mealPlan stays null
+        // A failure here used to be swallowed in silence. mealPlan stayed null,
+        // and the only error banner in this component is gated on "is this
+        // today", so tomorrow rendered as a header, a date, and nothing else,
+        // with no message and no way to retry. Record the failure against the
+        // date requested so the banner shows on whichever day actually failed.
+        setDateError({ date: capturedDate, kind: 'fetch' });
       } finally {
         setDateLoading(false);
       }
     }, 300);
     return () => { clearTimeout(timer); setDateLoading(false); };
-  }, [viewDate, loadMenuAndOptimize]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [viewDate, dateRetry, loadMenuAndOptimize]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Retroactive streak check: if today's menu loads and a meal is already
   // confirmed (in a prior session, or before this rule changed), fire the streak
@@ -710,6 +728,19 @@ export default function MealPlan({ settingsVersion = 0 }) {
         <div className="cache-warning cache-warning-error">
           Couldn't reach dining servers · <button onClick={() => loadMenuAndOptimize(true)}>Retry</button>
         </div>
+      )}
+      {/* Same failure, on a day other than today. Without this the screen is
+          blank and gives no reason and no way out. */}
+      {!isViewingToday && dateError?.date === viewDate && !dateLoading && (
+        dateError.kind === 'setup' ? (
+          <div className="cache-warning">
+            Set your nutrition targets to see a plate for this day.
+          </div>
+        ) : (
+          <div className="cache-warning cache-warning-error">
+            Couldn't load this day's menu · <button onClick={() => setDateRetry(n => n + 1)}>Retry</button>
+          </div>
+        )
       )}
 
       {dateLoading && (

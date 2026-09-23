@@ -231,7 +231,14 @@ export async function fetchDiningMenu(config, dateStr = null) {
     Object.entries(config.locations).map(async ([locationId, locationConfig]) => {
       try {
         const url = config.getDiningUrl(locationConfig.slug, dateStr);
-        const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        // 25s, not 10s. Each location page is 700-950 KB gzipped and the three
+        // are fetched in parallel, so a day view pulls roughly 2.5 MB and needs
+        // about 2 Mbps sustained to finish inside 10 seconds. Campus wifi at
+        // lunchtime does not reliably provide that. When all three time out
+        // together the whole fetch is treated as a hard failure, which is the
+        // "Couldn't reach dining servers" students were seeing against dining
+        // servers that were in fact responding in under half a second.
+        const res = await fetch(url, { signal: AbortSignal.timeout(25000) });
         if (!res.ok) throw new Error(`HTTP ${res.status} for ${locationConfig.slug}`);
         const html = await res.text();
         const { meals: parsedMeals, isOpen } = config.parseLocationPage(html);

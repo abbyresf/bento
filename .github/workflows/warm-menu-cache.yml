@@ -1,0 +1,81 @@
+# Keeps the menu edge cache warm.
+#
+# Students kept seeing "Couldn't reach dining servers" against dining servers
+# responding in under half a second. The cause was a cold cache, not an outage.
+#
+# Measured on 2026-09-23, first request for an uncached date:
+#   lower-usdan                   1.80s
+#   the-farm-table-at-sherman      4.66s
+#   the-farm-table-at-sherman-2   12.19s   <- over the client's abort
+# The same three requests once warm: 0.12s, 0.21s, 0.36s.
+#
+# The client aborts a location fetch after 25 seconds, and when every location
+# aborts the whole day is treated as a hard failure. Sherman alone took 12
+# seconds from a desktop on a good connection, so a phone on campus wifi had
+# little margin. Tomorrow was worst hit: far fewer students open it, so its
+# cache was almost always cold, and until this week the failure rendered as a
+# blank page with no message.
+#
+# /api/dining sets s-maxage=3600, so the edge copy expires every hour. This runs
+# more often than that, which means a student is never the one paying for the
+# refill. Requests are cheap for us: the response is served from or written to
+# the same cache the app uses, and nothing here parses or stores anything extra.
+name: Warm menu cache
+
+on:
+  schedule:
+    - cron: '20 * * * *'   # every hour at :20, just after s-maxage expiry
+  workflow_dispatch:
+
+concurrency:
+  group: warm-menu-cache
+  cancel-in-progress: true
+
+jobs:
+  warm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Request today and tomorrow for every hall
+        run: |
+          BASE="https://www.bentodining.com"
+
+          # Dates are computed in Eastern time, because that is the day a
+          # student in Waltham or Medford is actually looking at. UTC rolls over
+          # at 8pm local and would warm the wrong pair all evening.
+          TODAY=$(TZ=America/New_York date +%F)
+          TOMORROW=$(TZ=America/New_York date -d '+1 day' +%F)
+
+          BRANDEIS="lower-usdan the-farm-table-at-sherman the-farm-table-at-sherman-2"
+          TUFTS="carmichael-dining-hall dewick-dining"
+
+          slow=0
+
+          # An explicit if, rather than `awk ... && slow=$((slow+1))`. Actions
+          # runs each step under `bash -e`, where whether a failing command in
+          # an AND list aborts the step depends on where in the list it sits.
+          # This leaves nothing to that rule.
+          warm () {
+            url="$1"; label="$2"; date="$3"
+            t=$(curl -s --compressed -o /dev/null -w '%{time_total}' --max-time 90 \
+                  -H 'User-Agent: Bento-CacheWarmer/1.0' "$url" || echo "999")
+            printf '%-32s %s  %ss\n' "$label" "$date" "$t"
+            if awk -v v="$t" 'BEGIN{exit !(v>20)}'; then
+              slow=$((slow + 1))
+            fi
+          }
+
+          for DATE in "$TODAY" "$TOMORROW"; do
+            for SLUG in $BRANDEIS; do
+              warm "$BASE/api/dining/locations/$SLUG/?date=$DATE" "$SLUG" "$DATE"
+            done
+            for SLUG in $TUFTS; do
+              warm "$BASE/api/tufts?slug=$SLUG&date=$DATE" "$SLUG" "$DATE"
+            done
+          done
+
+          # A warm request is a fraction of a second. Anything over 20s means
+          # the upstream is degrading and students are about to feel it, so say
+          # so rather than passing quietly.
+          if [ "$slow" -gt 0 ]; then
+            echo "::warning title=Dining feed is slow::$slow request(s) took over 20s. Students on slow connections may see load failures."
+          fi

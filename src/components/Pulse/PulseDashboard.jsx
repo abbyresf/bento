@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useId } from 'react';
 import emailjs from '@emailjs/browser';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -70,7 +70,6 @@ function exportAll({ university, days, overview, engagement, mealSplit, topItems
     lines.push(`Meals Confirmed,${overview.mealsThisPeriod},${overview.changeMeals != null ? overview.changeMeals + '%' : ''}`);
     lines.push(`Active Students,${overview.activeThisPeriod},${overview.changeActive != null ? overview.changeActive + '%' : ''}`);
     lines.push(`Registered Students,${overview.totalStudents},`);
-    lines.push(`Installed to Home Screen,${overview.installedStudents ?? 0},${overview.installRate ?? ''}%`);
   }
   if (waste?.eatenPct != null) {
     lines.push(`Plate Eaten,${waste.eatenPct}%,`);
@@ -165,17 +164,108 @@ function ChangeTag({ pct }) {
   if (pct == null) return null;
   const up = pct >= 0;
   return (
-    <span className={`pulse-kpi-change ${up ? 'up' : 'down'}`}>
-      {up ? '↑' : '↓'} {Math.abs(pct)}% vs prior period
+    // "vs prior period" spelled out here took most of a narrow tile and pushed
+    // the tooltip marker onto a line of its own. The comparison is stated in
+    // the tile's own tooltip and in the hover title, so the tag carries the
+    // number alone.
+    <span
+      className={`pulse-kpi-change ${up ? 'up' : 'down'}`}
+      title={`${up ? 'Up' : 'Down'} ${Math.abs(pct)}% against the previous period of the same length`}
+    >
+      {up ? '↑' : '↓'} {Math.abs(pct)}%
     </span>
   );
 }
 
-function KPICard({ label, value, change, note, sparkValues, sparkColor }) {
+/**
+ * The "what does this actually mean" marker next to a metric.
+ *
+ * Positioned against the viewport rather than its own parent. The KPI row
+ * clips its children to get rounded corners on the grid, and a card can sit
+ * inside a scrolling column, so a normally positioned popover would be cut in
+ * half by whichever ancestor happens to clip first. Fixed coordinates taken at
+ * open time avoid every one of those cases, and closing on scroll or resize
+ * keeps the popover from drifting away from the marker it belongs to.
+ *
+ * Opens on hover, on keyboard focus, and on tap, because a dining director
+ * reading this on a phone has no hover state.
+ */
+function InfoTip({ label, text }) {
+  const [pos, setPos] = useState(null);
+  const btnRef = useRef(null);
+  const id = useId();
+
+  const show = () => {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const width = Math.min(260, window.innerWidth - 24);
+    setPos({
+      width,
+      // Centre on the marker, then pull back inside whichever edge it crosses.
+      left: Math.min(Math.max(12, r.left + r.width / 2 - width / 2), window.innerWidth - width - 12),
+      top: r.bottom + 8,
+    });
+  };
+
+  const hide = () => setPos(null);
+
+  useEffect(() => {
+    if (!pos) return;
+    const onKey = e => { if (e.key === 'Escape') hide(); };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('resize', hide);
+    // Capture phase, so scrolling any ancestor closes it, not only the page.
+    window.addEventListener('scroll', hide, true);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('resize', hide);
+      window.removeEventListener('scroll', hide, true);
+    };
+  }, [pos]);
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        className="pulse-infotip-btn"
+        aria-label={`What does ${label} mean?`}
+        aria-expanded={pos != null}
+        aria-describedby={pos ? id : undefined}
+        onMouseEnter={show}
+        onMouseLeave={hide}
+        onFocus={show}
+        onBlur={hide}
+        onClick={() => (pos ? hide() : show())}
+      >
+        <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+          <circle cx="6" cy="6" r="5.25" fill="none" stroke="currentColor" strokeWidth="1.2" />
+          <path d="M6 5.2v3.1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          <circle cx="6" cy="3.5" r="0.75" fill="currentColor" />
+        </svg>
+      </button>
+      {pos && (
+        <span
+          id={id}
+          role="tooltip"
+          className="pulse-infotip-pop"
+          style={{ left: pos.left, top: pos.top, width: pos.width }}
+        >
+          {text}
+        </span>
+      )}
+    </>
+  );
+}
+
+function KPICard({ label, tip, value, change, note, sparkValues, sparkColor }) {
   return (
     <div className="pulse-kpi">
       <div className="pulse-kpi-top">
-        <p className="pulse-kpi-label">{label}</p>
+        <p className="pulse-kpi-label">
+          {label}
+          {tip && <InfoTip label={label} text={tip} />}
+        </p>
         {change != null && <ChangeTag pct={change} />}
       </div>
       <p className="pulse-kpi-value">{value ?? '—'}</p>
@@ -189,11 +279,14 @@ function KPICard({ label, value, change, note, sparkValues, sparkColor }) {
   );
 }
 
-function Card({ title, children, onExport, className = '' }) {
+function Card({ title, tip, children, onExport, className = '' }) {
   return (
     <div className={`pulse-card ${className}`}>
       <div className="pulse-card-header">
-        <h2 className="pulse-card-title">{title}</h2>
+        <h2 className="pulse-card-title">
+          {title}
+          {tip && <InfoTip label={title} text={tip} />}
+        </h2>
         {onExport && (
           <button className="pulse-export-btn" onClick={onExport}>
             <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
@@ -528,13 +621,18 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
             )}
 
             {/* ── KPI row ──
-                Ordered for a dining director, not for us. What was served, who
-                turned up, how much of it got eaten, and what that costs. The
-                adoption numbers matter to Bento and are pushed below into a
-                smaller strip rather than competing with these. */}
+                Ordered for a dining director, not for us: what was served, who
+                turned up, how much of it got eaten, and what that leaves in the
+                bin. Home-screen installs and the registered head count used to
+                sit here and then sat underneath in smaller type, which is the
+                same clutter one size down. Installs are a Bento adoption number
+                and are gone. The registered count survives only as the
+                denominator under Active Students, because a waste figure drawn
+                from 14 of 57 students needs that context to be read honestly. */}
             <div className="pulse-kpi-row">
               <KPICard
                 label="Meals Confirmed"
+                tip="Plates students confirmed in this window. One confirmation per student per meal."
                 value={overview?.mealsThisPeriod?.toLocaleString()}
                 change={overview?.changeMeals}
                 sparkValues={mealsSparkValues}
@@ -542,13 +640,18 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
               />
               <KPICard
                 label="Active Students"
+                tip="Students who confirmed at least one meal in this window. The share shown below is out of every student registered at your university."
                 value={overview?.activeThisPeriod?.toLocaleString()}
+                note={participation != null
+                  ? `${participation}% of ${overview.totalStudents.toLocaleString()} registered`
+                  : null}
                 change={overview?.changeActive}
                 sparkValues={usersSparkValues}
                 sparkColor="#1a2b3c"
               />
               <KPICard
                 label="Plate Eaten"
+                tip="Share of what students served themselves and then finished. Weighted by servings, so a half-eaten double portion counts twice as heavily as a half-eaten single."
                 value={waste?.eatenPct != null ? `${waste.eatenPct}%` : '—'}
                 note={waste?.platesMeasured
                   ? `${waste.platesMeasured.toLocaleString()} plates measured`
@@ -556,19 +659,12 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
               />
               <KPICard
                 label="Servings Left"
+                tip="Food students took and then left uneaten, counted in servings. One serving is one standard portion as published on your menu. 10 servings left means the equivalent of 10 full portions went in the bin."
                 value={waste?.wastedServings != null ? waste.wastedServings.toLocaleString() : '—'}
                 note={waste?.wastedCalories ? `${waste.wastedCalories.toLocaleString()} kcal` : null}
               />
             </div>
 
-            {/* Adoption. Real, but not what a dining director opens this for. */}
-            <div className="pulse-substrip">
-              <span><strong>{overview?.totalStudents?.toLocaleString() ?? '—'}</strong> registered</span>
-              <span><strong>{participation != null ? `${participation}%` : '—'}</strong> active this period</span>
-              <span>
-                <strong>{overview?.installRate != null ? `${overview.installRate}%` : '—'}</strong> installed to home screen
-              </span>
-            </div>
 
             {/* ── Insights banner ── */}
             <InsightBanner insights={insights} />
@@ -577,6 +673,7 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
             <div className="pulse-row pulse-row--wide-left">
               <Card
                 title={`Meal Confirmations — Last ${days} Days`}
+                tip="Plates confirmed each day, with the number of students behind them. A gap means nobody confirmed a meal on that date."
                 onExport={() => downloadCSV(
                   `pulse-engagement-${university}.csv`,
                   (engagement ?? []).map(r => ({ Date: r.date, 'Meals Confirmed': r.meals, 'Students Active': r.users }))
@@ -622,6 +719,7 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
 
               <Card
                 title="Meal Type Split"
+                tip="How confirmed plates divide across breakfast, lunch and dinner."
                 onExport={() => downloadCSV(
                   `pulse-meal-split-${university}.csv`,
                   (mealSplit ?? []).map(r => ({ 'Meal Type': r.name, Count: r.value }))
@@ -653,6 +751,7 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
             <div className="pulse-row pulse-row--wide-left">
               <Card
                 title={`Top Items — Last ${days} Days`}
+                tip="Dishes students put on a plate most often, counted in servings taken. Taking two scoops counts as two."
                 onExport={() => downloadCSV(
                   `pulse-top-items-${university}.csv`,
                   (topItems ?? []).map(r => ({ Item: r.name, 'Times Selected': r.count }))
@@ -681,6 +780,7 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
 
               <Card
                 title="Dietary Needs"
+                tip="Share of students with each restriction set in their Bento profile. A student with two restrictions appears under both."
                 onExport={() => downloadCSV(
                   `pulse-dietary-${university}.csv`,
                   (dietary ?? []).map(r => ({ Restriction: r.name, 'Student Count': r.count, Percentage: `${r.pct}%` }))
@@ -714,6 +814,7 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
                 the things worth changing on Monday. */}
             <Card
               title={`Plate Waste — Last ${days} Days`}
+                tip="Per dish, how much students finished and how much they left behind. Ranked by servings left rather than by percentage, so a dish wasted across hundreds of servings outranks one wasted across four."
               onExport={() => downloadCSV(
                 `pulse-waste-${university}.csv`,
                 (waste?.items ?? []).map(r => ({
@@ -733,7 +834,22 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
                     report are excluded rather than counted as finished.
                   </p>
                   <div className="pulse-items-head pulse-waste-head">
-                    <span>#</span><span>Item</span><span>Eaten</span><span>Left</span>
+                    <span>#</span>
+                    <span>Item</span>
+                    <span>
+                      Eaten
+                      <InfoTip
+                        label="Eaten"
+                        text="Average share of the dish students finished after taking it. 41% means students left nearly six tenths of every portion served."
+                      />
+                    </span>
+                    <span>
+                      Left
+                      <InfoTip
+                        label="Left"
+                        text="Servings taken and then left uneaten. Counted in standard portions, so 40.1 means the equivalent of roughly 40 full portions went in the bin."
+                      />
+                    </span>
                   </div>
                   {waste.items.map((item, i) => (
                     <div key={item.name} className="pulse-item-row pulse-waste-row">
@@ -769,6 +885,7 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
             <div className="pulse-row pulse-row--wide-left">
               <Card
                 title="Demand by Day of Week"
+                tip="Average plates confirmed on each weekday, divided by how many of that weekday fall inside this window. Use for staffing and production planning."
                 onExport={() => downloadCSV(
                   `pulse-day-of-week-${university}.csv`,
                   (dayOfWeek ?? []).map(r => ({ Day: r.day, 'Total Meals': r.meals, 'Average per Day': r.avgMeals }))
@@ -801,6 +918,7 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
 
               <Card
                 title="By Dining Hall"
+                tip="Where confirmed plates were built. Plates confirmed before hall tracking was added show as unattributed."
                 onExport={() => downloadCSV(
                   `pulse-halls-${university}.csv`,
                   (halls ?? []).map(r => ({
@@ -841,7 +959,8 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
 
             {/* ── Suggestions + Ratings ── */}
             <div className="pulse-row">
-              <Card title={`Student Suggestions — Last ${days} Days`}>
+              <Card title={`Student Suggestions — Last ${days} Days`}
+                tip="Written requests from students, ranked by how many others agreed with them.">
                 {suggestions.length === 0 ? (
                   <p className="pulse-empty">No suggestions yet.</p>
                 ) : (
@@ -865,7 +984,8 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
               {/* Ratings are gated on a minimum sample. A dish rated once is
                   not the best dish on campus, and ranking it as though it were
                   invites a menu decision made on one student's Tuesday. */}
-              <Card title="Food Ratings">
+              <Card title="Food Ratings"
+                tip="Average star rating per dish. A dish needs 5 ratings before ranking, so one student cannot decide the best or worst dish on campus.">
                 {!ratings?.top?.length ? (
                   <p className="pulse-empty">
                     No dish has reached {ratings?.minCount ?? 5} ratings yet.
