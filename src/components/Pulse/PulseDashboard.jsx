@@ -1,15 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import emailjs from '@emailjs/browser';
 import {
-  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-  PieChart, Pie, Cell, Legend,
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  CartesianGrid, PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import {
-  getPulseOverview, getDailyEngagement, getMealTypeSplit,
-  getTopItems, getDietaryBreakdown, getNutritionAverages,
-  sendInvite, getInvites, getAdminSuggestions,
+  getPulseOverview, getMealAnalytics, getDietaryBreakdown,
+  getPulseRatings, sendInvite, getInvites, getAdminSuggestions,
 } from '../../lib/pulseDb';
-import { getRatingAggregates } from '../../lib/db';
 import './PulseDashboard.css';
 
 const MEAL_COLORS  = ['#f47421', '#1a2b3c', '#64a8d1'];
@@ -21,6 +19,9 @@ const DIETARY_COLORS = {
   'Kosher':      '#f59e0b',
   'Halal':       '#ec4899',
 };
+const IS_DEMO = typeof window !== 'undefined'
+  && new URLSearchParams(window.location.search).get('mock') === 'true';
+
 const RANGES = [
   { label: '7d',  value: 7  },
   { label: '30d', value: 30 },
@@ -60,24 +61,37 @@ function downloadCSV(filename, rows) {
   URL.revokeObjectURL(url);
 }
 
-function exportAll({ university, days, overview, engagement, mealSplit, topItems, dietary, nutrition }) {
+function exportAll({ university, days, overview, engagement, mealSplit, topItems, dietary, waste, dayOfWeek, halls }) {
   const date  = asOfLabel();
   const lines = [];
   lines.push(`Bento Pulse Export — ${university} — as of ${date} — Last ${days} days`, '');
   lines.push('=== AT A GLANCE ===', 'Metric,Value,Change vs Prior Period');
   if (overview) {
+    lines.push(`Meals Confirmed,${overview.mealsThisPeriod},${overview.changeMeals != null ? overview.changeMeals + '%' : ''}`);
+    lines.push(`Active Students,${overview.activeThisPeriod},${overview.changeActive != null ? overview.changeActive + '%' : ''}`);
     lines.push(`Registered Students,${overview.totalStudents},`);
     lines.push(`Installed to Home Screen,${overview.installedStudents ?? 0},${overview.installRate ?? ''}%`);
-    lines.push(`Active Students,${overview.activeThisPeriod},${overview.changeActive != null ? overview.changeActive + '%' : ''}`);
-    lines.push(`Meals Confirmed,${overview.mealsThisPeriod},${overview.changeMeals != null ? overview.changeMeals + '%' : ''}`);
+  }
+  if (waste?.eatenPct != null) {
+    lines.push(`Plate Eaten,${waste.eatenPct}%,`);
+    lines.push(`Servings Left Uneaten,${waste.wastedServings},`);
+    lines.push(`Calories Left Uneaten,${waste.wastedCalories},`);
+    lines.push(`Plates Measured,${waste.platesMeasured} of ${waste.platesTotal},${waste.responseRate}%`);
   }
   lines.push('');
-  if (nutrition) {
-    lines.push('=== NUTRITION AVERAGES ===', 'Nutrient,Average per Item,Change vs Prior Period');
-    lines.push(`Calories,${nutrition.calories} kcal,${nutrition.changeCalories != null ? nutrition.changeCalories + '%' : ''}`);
-    lines.push(`Protein,${nutrition.protein}g,${nutrition.changeProtein != null ? nutrition.changeProtein + '%' : ''}`);
-    lines.push(`Carbs,${nutrition.carbs}g,${nutrition.changeCarbs != null ? nutrition.changeCarbs + '%' : ''}`);
-    lines.push(`Fat,${nutrition.fat}g,${nutrition.changeFat != null ? nutrition.changeFat + '%' : ''}`);
+  if (waste?.items?.length) {
+    lines.push('=== PLATE WASTE BY DISH ===', 'Item,Servings Taken,Avg Eaten,Servings Left,Calories Left');
+    waste.items.forEach(r => lines.push(`"${r.name}",${r.servings},${Math.round(r.avgEaten * 100)}%,${r.wastedServings},${r.wastedCalories}`));
+    lines.push('');
+  }
+  if (halls?.length) {
+    lines.push('=== BY DINING HALL ===', 'Hall,Meals Confirmed,Students,Plate Eaten');
+    halls.forEach(r => lines.push(`${r.hall},${r.meals},${r.students},${r.eatenPct != null ? r.eatenPct + '%' : ''}`));
+    lines.push('');
+  }
+  if (dayOfWeek?.length) {
+    lines.push('=== BY DAY OF WEEK ===', 'Day,Total Meals,Average per Day');
+    dayOfWeek.forEach(r => lines.push(`${r.day},${r.meals},${r.avgMeals}`));
     lines.push('');
   }
   if (engagement?.length) {
@@ -157,7 +171,7 @@ function ChangeTag({ pct }) {
   );
 }
 
-function KPICard({ label, value, change, sparkValues, sparkColor }) {
+function KPICard({ label, value, change, note, sparkValues, sparkColor }) {
   return (
     <div className="pulse-kpi">
       <div className="pulse-kpi-top">
@@ -165,6 +179,7 @@ function KPICard({ label, value, change, sparkValues, sparkColor }) {
         {change != null && <ChangeTag pct={change} />}
       </div>
       <p className="pulse-kpi-value">{value ?? '—'}</p>
+      {note && <p className="pulse-kpi-note">{note}</p>}
       {sparkValues && (
         <div className="pulse-kpi-spark-wrap">
           <Sparkline values={sparkValues} color={sparkColor ?? '#f47421'} />
@@ -215,8 +230,41 @@ function InsightBanner({ insights }) {
   );
 }
 
-function generateInsights(overview, engagement, topItems, dietary) {
+function generateInsights(overview, engagement, topItems, dietary, waste, dayOfWeek, halls) {
   const insights = [];
+
+  // Waste leads, because it is the only line here attached to a dollar figure.
+  if (waste?.items?.length && waste.platesMeasured >= 10) {
+    const worst = waste.items[0];
+    insights.push(
+      `"${worst.name}" is the most-left dish: students finished ${Math.round(worst.avgEaten * 100)}% ` +
+      `of what they took, leaving about ${worst.wastedServings} servings.`
+    );
+    if (waste.eatenPct != null && waste.eatenPct < 80) {
+      insights.push(`Students ate ${waste.eatenPct}% of what they served themselves. Roughly ${waste.wastedServings.toLocaleString()} servings went uneaten.`);
+    }
+  }
+
+  if (dayOfWeek?.length) {
+    const ranked = [...dayOfWeek].sort((a, b) => b.avgMeals - a.avgMeals);
+    const [busiest] = ranked;
+    const quietest  = ranked[ranked.length - 1];
+    if (busiest.avgMeals > 0 && quietest.avgMeals > 0 && busiest.avgMeals >= quietest.avgMeals * 1.5) {
+      insights.push(`${busiest.day} runs ${Math.round((busiest.avgMeals / quietest.avgMeals - 1) * 100)}% busier than ${quietest.day} on average.`);
+    }
+  }
+
+  if (halls?.length >= 2) {
+    const withWaste = halls.filter(h => h.eatenPct != null && h.hall !== 'Unattributed');
+    if (withWaste.length >= 2) {
+      const best  = withWaste.reduce((a, b) => (b.eatenPct > a.eatenPct ? b : a));
+      const worst = withWaste.reduce((a, b) => (b.eatenPct < a.eatenPct ? b : a));
+      if (best.eatenPct - worst.eatenPct >= 8) {
+        insights.push(`Plates are finished more often at ${best.hall} (${best.eatenPct}%) than at ${worst.hall} (${worst.eatenPct}%).`);
+      }
+    }
+  }
+
   if (overview?.changeActive != null) {
     const p = overview.changeActive;
     if (p <= -10) insights.push(`Active students dropped ${Math.abs(p)}% compared to the prior period.`);
@@ -239,7 +287,10 @@ function generateInsights(overview, engagement, topItems, dietary) {
     }
   }
   if (!insights.length) insights.push('Engagement looks steady. No significant changes to flag this period.');
-  return insights;
+
+  // Capped because a banner of nine bullets is a wall of text, and the ones
+  // worth reading are the waste and demand lines pushed on first.
+  return insights.slice(0, 5);
 }
 
 const CHART_TOOLTIP = {
@@ -378,50 +429,47 @@ function InviteModal({ defaultUniversity, onClose }) {
 export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) {
   const [days, setDays]               = useState(30);
   const [overview, setOverview]       = useState(null);
-  const [engagement, setEngagement]   = useState(null);
-  const [mealSplit, setMealSplit]     = useState(null);
-  const [topItems, setTopItems]       = useState(null);
+  const [analytics, setAnalytics]     = useState(null);
   const [dietary, setDietary]         = useState(null);
-  const [nutrition, setNutrition]     = useState(null);
   const [loading, setLoading]         = useState(true);
   const [showInvite, setShowInvite]   = useState(false);
   const [suggestions, setSuggestions] = useState([]);
-  const [ratingAggs, setRatingAggs]   = useState({});
+  const [ratings, setRatings]         = useState(null);
 
-  useEffect(() => { getRatingAggregates().then(setRatingAggs); }, []);
+  useEffect(() => { getPulseRatings(university).then(setRatings); }, [university]);
 
   useEffect(() => {
     setLoading(true);
     Promise.all([
       getPulseOverview(university, days),
-      getDailyEngagement(university, days),
-      getMealTypeSplit(university, days),
-      getTopItems(university, days),
+      getMealAnalytics(university, days),
       getDietaryBreakdown(university),
-      getNutritionAverages(university, days),
       getAdminSuggestions(university, days),
-    ]).then(([ov, eng, ms, ti, diet, nutr, suggs]) => {
-      setOverview(ov); setEngagement(eng); setMealSplit(ms);
-      setTopItems(ti); setDietary(diet); setNutrition(nutr);
+    ]).then(([ov, an, diet, suggs]) => {
+      setOverview(ov); setAnalytics(an); setDietary(diet);
       setSuggestions(suggs); setLoading(false);
     });
   }, [university, days]);
 
-  const insights = useMemo(
-    () => (!loading && overview) ? generateInsights(overview, engagement, topItems, dietary) : [],
-    [loading, overview, engagement, topItems, dietary]
-  );
+  const { engagement, mealSplit, topItems, waste, dayOfWeek, halls } = analytics ?? {};
+
+  const insights = (!loading && overview)
+    ? generateInsights(overview, engagement, topItems, dietary, waste, dayOfWeek, halls)
+    : [];
 
   const mealsSparkValues  = engagement?.map(d => d.meals);
   const usersSparkValues  = engagement?.map(d => d.users);
   const totalMeals        = mealSplit?.reduce((s, d) => s + d.value, 0) ?? 0;
   const universityLabel   = university.charAt(0).toUpperCase() + university.slice(1);
-  const exportData        = { university, days, overview, engagement, mealSplit, topItems, dietary, nutrition };
+  const exportData        = { university, days, overview, engagement, mealSplit, topItems, dietary, waste, dayOfWeek, halls };
   const topMax            = topItems?.[0]?.count ?? 1;
+  const wasteMax          = waste?.items?.[0]?.wastedServings || 1;
 
-  const ratingsSorted = Object.values(ratingAggs).filter(a => a.count >= 1).sort((a, b) => b.avg - a.avg);
-  const topRatings    = ratingsSorted.slice(0, 5);
-  const bottomRatings = ratingsSorted.slice(-5).reverse();
+  // Share of registered students who confirmed at least one meal this period.
+  // A raw active count means nothing without the denominator next to it.
+  const participation = overview?.totalStudents > 0
+    ? Math.round((overview.activeThisPeriod / overview.totalStudents) * 100)
+    : null;
 
   return (
     <div className="pulse-dashboard">
@@ -472,19 +520,25 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
           </div>
         ) : (
           <>
-            {/* ── KPI row ── */}
+            {IS_DEMO && (
+              <div className="pulse-demo-banner" role="status">
+                <strong>Demo data.</strong> Figures on this screen are generated
+                for demonstration and are not real students.
+              </div>
+            )}
+
+            {/* ── KPI row ──
+                Ordered for a dining director, not for us. What was served, who
+                turned up, how much of it got eaten, and what that costs. The
+                adoption numbers matter to Bento and are pushed below into a
+                smaller strip rather than competing with these. */}
             <div className="pulse-kpi-row">
               <KPICard
-                label="Registered Students"
-                value={overview?.totalStudents?.toLocaleString()}
-              />
-              {/* Installed to the home screen. On iOS this is the ceiling on
-                  push reach — a browser tab can never receive a notification. */}
-              <KPICard
-                label="Installed to Home Screen"
-                value={overview?.installRate != null
-                  ? `${overview.installedStudents} (${overview.installRate}%)`
-                  : '—'}
+                label="Meals Confirmed"
+                value={overview?.mealsThisPeriod?.toLocaleString()}
+                change={overview?.changeMeals}
+                sparkValues={mealsSparkValues}
+                sparkColor="#f47421"
               />
               <KPICard
                 label="Active Students"
@@ -494,17 +548,26 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
                 sparkColor="#1a2b3c"
               />
               <KPICard
-                label="Meals Confirmed"
-                value={overview?.mealsThisPeriod?.toLocaleString()}
-                change={overview?.changeMeals}
-                sparkValues={mealsSparkValues}
-                sparkColor="#f47421"
+                label="Plate Eaten"
+                value={waste?.eatenPct != null ? `${waste.eatenPct}%` : '—'}
+                note={waste?.platesMeasured
+                  ? `${waste.platesMeasured.toLocaleString()} plates measured`
+                  : 'no consumption data yet'}
               />
               <KPICard
-                label="Avg Calories / Item"
-                value={nutrition ? `${nutrition.calories} kcal` : null}
-                change={nutrition?.changeCalories}
+                label="Servings Left"
+                value={waste?.wastedServings != null ? waste.wastedServings.toLocaleString() : '—'}
+                note={waste?.wastedCalories ? `${waste.wastedCalories.toLocaleString()} kcal` : null}
               />
+            </div>
+
+            {/* Adoption. Real, but not what a dining director opens this for. */}
+            <div className="pulse-substrip">
+              <span><strong>{overview?.totalStudents?.toLocaleString() ?? '—'}</strong> registered</span>
+              <span><strong>{participation != null ? `${participation}%` : '—'}</strong> active this period</span>
+              <span>
+                <strong>{overview?.installRate != null ? `${overview.installRate}%` : '—'}</strong> installed to home screen
+              </span>
             </div>
 
             {/* ── Insights banner ── */}
@@ -644,37 +707,137 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
               </Card>
             </div>
 
-            {/* ── Nutrition strip ── */}
-            {nutrition && (
-              <Card
-                title={`Nutrition Averages — Last ${days} Days`}
-                onExport={() => downloadCSV(
-                  `pulse-nutrition-${university}.csv`,
-                  [
-                    { Nutrient: 'Calories', 'Avg per Item': `${nutrition.calories} kcal`, 'Change vs Prior Period': nutrition.changeCalories != null ? `${nutrition.changeCalories}%` : '' },
-                    { Nutrient: 'Protein',  'Avg per Item': `${nutrition.protein}g`,       'Change vs Prior Period': nutrition.changeProtein  != null ? `${nutrition.changeProtein}%`  : '' },
-                    { Nutrient: 'Carbs',    'Avg per Item': `${nutrition.carbs}g`,          'Change vs Prior Period': nutrition.changeCarbs    != null ? `${nutrition.changeCarbs}%`    : '' },
-                    { Nutrient: 'Fat',      'Avg per Item': `${nutrition.fat}g`,            'Change vs Prior Period': nutrition.changeFat      != null ? `${nutrition.changeFat}%`      : '' },
-                  ]
-                )}
-              >
-                <div className="pulse-nutrition-strip">
-                  {[
-                    { label: 'Calories', value: `${nutrition.calories} kcal`, change: nutrition.changeCalories },
-                    { label: 'Protein',  value: `${nutrition.protein}g`,      change: nutrition.changeProtein  },
-                    { label: 'Carbs',    value: `${nutrition.carbs}g`,        change: nutrition.changeCarbs    },
-                    { label: 'Fat',      value: `${nutrition.fat}g`,          change: nutrition.changeFat      },
-                  ].map(n => (
-                    <div key={n.label} className="pulse-nutrition-item">
-                      <p className="pulse-nutrition-label">{n.label}</p>
-                      <p className="pulse-nutrition-value">{n.value}</p>
-                      <ChangeTag pct={n.change} />
-                      <p className="pulse-nutrition-sub">avg per item</p>
+            {/* ── Plate waste ──
+                The reason Pulse exists. Students report how much of each dish
+                they actually finished; this is that, per dish, ranked by
+                servings left rather than by percentage, so the list opens with
+                the things worth changing on Monday. */}
+            <Card
+              title={`Plate Waste — Last ${days} Days`}
+              onExport={() => downloadCSV(
+                `pulse-waste-${university}.csv`,
+                (waste?.items ?? []).map(r => ({
+                  Item: r.name,
+                  'Servings Taken': r.servings,
+                  'Avg Eaten': `${Math.round(r.avgEaten * 100)}%`,
+                  'Servings Left': r.wastedServings,
+                  'Calories Left': r.wastedCalories,
+                }))
+              )}
+            >
+              {waste?.items?.length ? (
+                <>
+                  <p className="pulse-card-sub">
+                    Based on {waste.platesMeasured.toLocaleString()} of {waste.platesTotal.toLocaleString()} confirmed
+                    plates ({waste.responseRate}%) where students reported how much they finished. Dishes with no
+                    report are excluded rather than counted as finished.
+                  </p>
+                  <div className="pulse-items-head pulse-waste-head">
+                    <span>#</span><span>Item</span><span>Eaten</span><span>Left</span>
+                  </div>
+                  {waste.items.map((item, i) => (
+                    <div key={item.name} className="pulse-item-row pulse-waste-row">
+                      <span className="pulse-item-rank">{i + 1}</span>
+                      <span className="pulse-item-name">
+                        {item.name}
+                        <span className="pulse-waste-takes">{item.servings} served</span>
+                      </span>
+                      <div className="pulse-waste-track" title={`${Math.round(item.avgEaten * 100)}% eaten`}>
+                        <div
+                          className="pulse-waste-bar"
+                          style={{ width: `${Math.round(item.avgEaten * 100)}%` }}
+                        />
+                        <span className="pulse-waste-pct">{Math.round(item.avgEaten * 100)}%</span>
+                      </div>
+                      <span
+                        className={`pulse-waste-left${item.wastedServings >= wasteMax * 0.6 ? ' hot' : ''}`}
+                      >
+                        {item.wastedServings}
+                      </span>
                     </div>
                   ))}
-                </div>
+                </>
+              ) : (
+                <p className="pulse-empty">
+                  No consumption reports yet. Students are asked how much they finished
+                  after confirming a meal; this fills in as they answer.
+                </p>
+              )}
+            </Card>
+
+            {/* ── Day of week + Dining halls ── */}
+            <div className="pulse-row pulse-row--wide-left">
+              <Card
+                title="Demand by Day of Week"
+                onExport={() => downloadCSV(
+                  `pulse-day-of-week-${university}.csv`,
+                  (dayOfWeek ?? []).map(r => ({ Day: r.day, 'Total Meals': r.meals, 'Average per Day': r.avgMeals }))
+                )}
+              >
+                {dayOfWeek?.some(d => d.meals > 0) ? (
+                  <>
+                    <p className="pulse-card-sub">
+                      Averaged across every occurrence of each weekday in this window, so a
+                      month with five Tuesdays does not read as a Tuesday spike.
+                    </p>
+                    <ResponsiveContainer width="100%" height={190}>
+                      <BarChart data={dayOfWeek} margin={{ top: 4, right: 4, bottom: 0, left: -12 }}>
+                        <CartesianGrid strokeDasharray="3 0" vertical={false} stroke="#f0ece8" />
+                        <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                        <Tooltip
+                          {...CHART_TOOLTIP}
+                          cursor={{ fill: 'rgba(244,116,33,0.06)' }}
+                          formatter={(v) => [v, 'Avg meals confirmed']}
+                        />
+                        <Bar dataKey="avgMeals" fill="#f47421" radius={[3, 3, 0, 0]} maxBarSize={38} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </>
+                ) : (
+                  <p className="pulse-empty">No meal data for this period.</p>
+                )}
               </Card>
-            )}
+
+              <Card
+                title="By Dining Hall"
+                onExport={() => downloadCSV(
+                  `pulse-halls-${university}.csv`,
+                  (halls ?? []).map(r => ({
+                    Hall: r.hall,
+                    'Meals Confirmed': r.meals,
+                    Students: r.students,
+                    'Plate Eaten': r.eatenPct != null ? `${r.eatenPct}%` : '',
+                  }))
+                )}
+              >
+                {halls?.length ? (
+                  <div className="pulse-hall-list">
+                    {halls.map(h => (
+                      <div key={h.hall} className="pulse-hall-row">
+                        <div className="pulse-hall-main">
+                          <span className="pulse-hall-name">{h.hall}</span>
+                          <span className="pulse-hall-meals">{h.meals.toLocaleString()} meals</span>
+                        </div>
+                        <div className="pulse-hall-stats">
+                          <span>{h.students.toLocaleString()} students</span>
+                          <span className="pulse-hall-eaten">
+                            {h.eatenPct != null ? `${h.eatenPct}% eaten` : 'no waste data'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                    {halls.some(h => h.hall === 'Unattributed') && (
+                      <p className="pulse-card-sub pulse-hall-note">
+                        Plates confirmed before hall tracking was added are listed as unattributed.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="pulse-empty">No hall data for this period.</p>
+                )}
+              </Card>
+            </div>
 
             {/* ── Suggestions + Ratings ── */}
             <div className="pulse-row">
@@ -699,30 +862,42 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
                 )}
               </Card>
 
+              {/* Ratings are gated on a minimum sample. A dish rated once is
+                  not the best dish on campus, and ranking it as though it were
+                  invites a menu decision made on one student's Tuesday. */}
               <Card title="Food Ratings">
-                {Object.keys(ratingAggs).length === 0 ? (
-                  <p className="pulse-empty">No ratings yet.</p>
+                {!ratings?.top?.length ? (
+                  <p className="pulse-empty">
+                    No dish has reached {ratings?.minCount ?? 5} ratings yet.
+                    {ratings?.withheld > 0 && ` ${ratings.withheld} dishes have some ratings but not enough to rank.`}
+                  </p>
                 ) : (
-                  <div className="pulse-ratings-panels">
-                    <div>
-                      <p className="pulse-ratings-label">Highest rated</p>
-                      {topRatings.map(a => (
-                        <div key={a.name} className="pulse-rating-row">
-                          <span className="pulse-rating-name">{a.name}</span>
-                          <span className="pulse-rating-score">{a.avg.toFixed(1)} ★ <span className="pulse-rating-count">({a.count})</span></span>
-                        </div>
-                      ))}
+                  <>
+                    <div className="pulse-ratings-panels">
+                      <div>
+                        <p className="pulse-ratings-label">Highest rated</p>
+                        {ratings.top.map(a => (
+                          <div key={a.name} className="pulse-rating-row">
+                            <span className="pulse-rating-name">{a.name}</span>
+                            <span className="pulse-rating-score">{a.avg.toFixed(1)} ★ <span className="pulse-rating-count">({a.count})</span></span>
+                          </div>
+                        ))}
+                      </div>
+                      <div hidden={!ratings.bottom.length}>
+                        <p className="pulse-ratings-label">Lowest rated</p>
+                        {ratings.bottom.map(a => (
+                          <div key={a.name} className="pulse-rating-row">
+                            <span className="pulse-rating-name">{a.name}</span>
+                            <span className="pulse-rating-score">{a.avg.toFixed(1)} ★ <span className="pulse-rating-count">({a.count})</span></span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div>
-                      <p className="pulse-ratings-label">Lowest rated</p>
-                      {bottomRatings.map(a => (
-                        <div key={a.name} className="pulse-rating-row">
-                          <span className="pulse-rating-name">{a.name}</span>
-                          <span className="pulse-rating-score">{a.avg.toFixed(1)} ★ <span className="pulse-rating-count">({a.count})</span></span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                    <p className="pulse-card-sub pulse-ratings-note">
+                      Dishes with fewer than {ratings.minCount} ratings are not ranked
+                      {ratings.withheld > 0 && ` (${ratings.withheld} excluded)`}.
+                    </p>
+                  </>
                 )}
               </Card>
             </div>

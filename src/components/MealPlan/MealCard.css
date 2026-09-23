@@ -697,3 +697,28 @@
     font-size: 0.8rem;
   }
 }
+
+/* Build My Plate rows now carry the same servings control as a Bento plate. */
+.manual-item-row .manual-item-name {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.manual-item-serving {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-disabled);
+  white-space: nowrap;
+}
+
+.manual-item-right {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-shrink: 0;
+}

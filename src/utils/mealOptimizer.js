@@ -125,7 +125,19 @@ function categorizeItems(items) {
 }
 
 // Keywords used to identify the dominant protein in a dish
-const PROTEIN_KEYWORDS = ['chicken', 'turkey', 'beef', 'pork', 'tuna', 'salmon', 'fish', 'shrimp', 'tofu', 'egg', 'ham', 'bacon', 'lamb', 'crab', 'lobster'];
+// Longest first, so "cottage cheese" and "greek yogurt" win over "cheese" and
+// "yogurt", and two different Greek yogurts resolve to the same family.
+//
+// Dairy and plant proteins were missing entirely, which is why breakfast could
+// recommend plain yogurt and vanilla yogurt as two separate items: neither
+// matched a keyword, so the same-protein penalty never fired and the protein
+// top-up was free to pick a near-duplicate.
+const PROTEIN_KEYWORDS = [
+  'cottage cheese', 'greek yogurt', 'chickpea', 'garbanzo', 'edamame',
+  'chicken', 'turkey', 'salmon', 'shrimp', 'lobster', 'yogurt', 'lentil',
+  'seitan', 'tempeh', 'quinoa', 'skyr', 'beef', 'pork', 'tuna', 'fish',
+  'tofu', 'bean', 'egg', 'ham', 'bacon', 'lamb', 'crab', 'cheese',
+];
 
 // Extract the dominant protein from an item's name + ingredients
 function extractMainProtein(item) {
@@ -304,6 +316,43 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
     usedIds.add(item.id);
   }
 
+  // Take another serving of something already on the plate.
+  //
+  // Every slot used to require a distinct item, so when breakfast needed more
+  // protein and yogurt was already the anchor, the only legal move was a
+  // second, different yogurt. Two servings of one thing is what a person would
+  // actually do, and it is now expressible.
+  const MAX_AUTO_SERVINGS = 2;
+
+  function addServing(entry) {
+    entry.servings = (entry.servings ?? 1) + 1;
+    currentTotals.calories += entry.nutrition.calories;
+    currentTotals.protein += entry.nutrition.protein;
+    currentTotals.carbs += entry.nutrition.carbs;
+    currentTotals.fat += entry.nutrition.fat;
+  }
+
+  // An already-selected item that could take one more serving inside the
+  // calorie budget, preferring whichever adds the most protein.
+  //
+  // `reserve` holds back budget for the slots that still have to be filled
+  // after this one. Without it a second serving can eat the space the grain and
+  // the fruit were going to need, and the plate lands over its target: doubling
+  // a 200 cal scramble left 50 cal for a bagel and a melon.
+  function bestExtraServing(roles, { reserve = 0 } = {}) {
+    const remaining = mealTarget.calories - currentTotals.calories - reserve;
+    let best = null;
+    for (const entry of selected) {
+      if ((entry.servings ?? 1) >= MAX_AUTO_SERVINGS) continue;
+      if (roles && !roles.includes(getRole(entry))) continue;
+      if (!hasUsableNutrition(entry)) continue;
+      if ((ratingsById?.get?.(entry.id) ?? 5) <= DISLIKED_THRESHOLD) continue;
+      if (entry.nutrition.calories > remaining) continue;
+      if (!best || entry.nutrition.protein > best.nutrition.protein) best = entry;
+    }
+    return best;
+  }
+
   // Condiments and garnishes are never plate components. They are the reason a
   // balsamic vinaigrette used to win a slot: with a small calorie gap left,
   // a dressing scores better than any real food.
@@ -360,8 +409,17 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
     // Protein is brought to a floor before any calories go to carbohydrate.
     // Filling the grain slot first lets a large pastry take the whole budget.
     if (currentTotals.protein < mealTarget.protein * 0.6) {
+      // Prefer a second helping of what is already there over a near-duplicate.
+      // pickProteinTopUp() rejects same-protein items, so now that the keyword
+      // list recognises dairy it correctly returns nothing for a second yogurt,
+      // and this fills the gap instead.
       const more = pickProteinTopUp();
-      if (more) addItem(more);
+      if (more) {
+        addItem(more);
+      } else {
+        const extra = bestExtraServing([ROLE.PROTEIN, ROLE.COMPOSED], { reserve: 150 });
+        if (extra) addServing(extra);
+      }
     }
 
     const grain = pickRole([ROLE.GRAIN], { reserve: 80 });
@@ -383,8 +441,17 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
 
     // Protein floor before carbohydrate, for the same reason as breakfast.
     if (currentTotals.protein < mealTarget.protein * 0.7) {
+      // Prefer a second helping of what is already there over a near-duplicate.
+      // pickProteinTopUp() rejects same-protein items, so now that the keyword
+      // list recognises dairy it correctly returns nothing for a second yogurt,
+      // and this fills the gap instead.
       const more = pickProteinTopUp();
-      if (more) addItem(more);
+      if (more) {
+        addItem(more);
+      } else {
+        const extra = bestExtraServing([ROLE.PROTEIN, ROLE.COMPOSED]);
+        if (extra) addServing(extra);
+      }
     }
 
     // A composed dish already carries its carbohydrate, so only add a grain
@@ -422,6 +489,22 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
     const dessert = selectBestItem(dessertPool, mealTarget, currentTotals, restrictions, recentItemIds, usedIds, mealType, selected, ratingsById);
     if (dessert && currentTotals.calories + dessert.nutrition.calories <= mealTarget.calories * 1.05) {
       addItem(dessert, 'Fits your remaining calories');
+    }
+  }
+
+  // Final pass: a second helping, once the plate is otherwise complete.
+  //
+  // Every slot above adds a distinct item, which is why a plate could finish
+  // well short of its protein target while a perfectly good protein already sat
+  // on it. Doubling is decided last, when the real remaining budget is known
+  // rather than guessed at with a reserve, so it can never squeeze out a slot.
+  //
+  // Only for a genuine shortfall, only one item, and never past the target,
+  // because a plate of two of everything is not a meal.
+  if (selected.length > 0 && currentTotals.protein < mealTarget.protein * 0.85) {
+    const extra = bestExtraServing([ROLE.PROTEIN, ROLE.COMPOSED]);
+    if (extra && currentTotals.protein + extra.nutrition.protein <= mealTarget.protein * 1.25) {
+      addServing(extra);
     }
   }
 

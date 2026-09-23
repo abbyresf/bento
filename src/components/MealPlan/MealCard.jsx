@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import FoodItem from './FoodItem';
+import { servingsOf, formatServing, MAX_SERVINGS } from '../../utils/servingSize.js';
 import MenuBrowser from './MenuBrowser';
 import { STATIONS } from '../../data/mockMenu';
 import { useNutritionDisplay } from '../../context/NutritionDisplayContext';
@@ -331,14 +332,43 @@ export default function MealCard({
         customPlan ? (
           <div className="manual-plate">
             <div className="manual-items-list">
-              {customPlan.items.map(item => (
-                <div key={item.id} className="manual-item-row">
-                  <span className="manual-item-name">{item.name}</span>
-                  {display.calories && (
-                    <span className="manual-item-cal">{item.nutrition?.calories ?? 0} cal</span>
-                  )}
-                </div>
-              ))}
+              {customPlan.items.map(item => {
+                // A hand-built plate gets the same servings control as a
+                // Bento-built one. It was missing here, so "two yogurts" was
+                // only expressible on a plate you did not build yourself.
+                const n = servingsOf(item);
+                const label = formatServing(item.serving, n);
+                return (
+                  <div key={item.id} className="manual-item-row">
+                    <span className="manual-item-name">
+                      {item.name}
+                      {label && <span className="manual-item-serving">{label}</span>}
+                    </span>
+                    <span className="manual-item-right">
+                      {display.calories && (
+                        <span className="manual-item-cal">
+                          {(item.nutrition?.calories ?? 0) * n} cal
+                        </span>
+                      )}
+                      <span className="servings-stepper" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          className="servings-btn"
+                          onClick={() => onServingsChange?.(item.id, n - 1)}
+                          disabled={n <= 1}
+                          aria-label={`Fewer servings of ${item.name}`}
+                        >&minus;</button>
+                        <span className="servings-count">{n}</span>
+                        <button
+                          className="servings-btn"
+                          onClick={() => onServingsChange?.(item.id, n + 1)}
+                          disabled={n >= MAX_SERVINGS}
+                          aria-label={`More servings of ${item.name}`}
+                        >+</button>
+                      </span>
+                    </span>
+                  </div>
+                );
+              })}
             </div>
             <button className="edit-plate-btn" onClick={() => setShowBrowser(true)}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

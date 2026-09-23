@@ -4,6 +4,19 @@ import { getAdminRecord } from '../../lib/pulseDb';
 import PulseLogin from './PulseLogin';
 import PulseDashboard from './PulseDashboard';
 
+// Demo mode. ?mock=true renders the dashboard with generated data and no login.
+//
+// Two reasons. A live pitch should not hinge on typing a password into a
+// projector, and a beta-sized dataset ("3 active students") undersells a
+// product whose value is what it does at scale.
+//
+// It is labelled on screen and unmistakably so, because showing invented
+// numbers to a prospective customer without saying they are invented is the
+// one thing that would actually cost the deal. No real data is read in this
+// mode, so there is nothing to leak.
+const DEMO = typeof window !== 'undefined'
+  && new URLSearchParams(window.location.search).get('mock') === 'true';
+
 export default function PulseApp() {
   const [session, setSession] = useState(undefined);
   const [admin, setAdmin] = useState(null);
@@ -39,6 +52,16 @@ export default function PulseApp() {
     setAdmin(null);
     setDenied(false);
   };
+
+  if (DEMO) {
+    return (
+      <PulseDashboard
+        university="brandeis"
+        isSuperAdmin={false}
+        onSignOut={() => { window.location.href = '/admin'; }}
+      />
+    );
+  }
 
   if (session === undefined || checking) {
     return (

@@ -589,7 +589,8 @@ export default function MealPlan({ settingsVersion = 0 }) {
     const mealItems = customMeals[meal]?.items ?? mealPlan[location][meal].items;
     const today = localDateStr();
     const isViewingToday = viewDate === today;
-    const rowId = await addMealToHistory(mealItems, meal, isViewingToday ? null : viewDate);
+    const hall = menu?.locations?.[location]?.shortName ?? null;
+    const rowId = await addMealToHistory(mealItems, meal, isViewingToday ? null : viewDate, hall);
     setConfirmingMeals(prev => ({ ...prev, [meal]: false }));
     const updatedConfirmed = { ...confirmedMeals, [meal]: true };
     setConfirmedMeals(updatedConfirmed);

@@ -380,7 +380,7 @@ export async function getMealHistory() {
   return data ?? [];
 }
 
-export async function addMealToHistory(mealItems, mealType, date = null) {
+export async function addMealToHistory(mealItems, mealType, date = null, diningHall = null) {
   const id = await uid();
   if (!id) return null;
   const { data } = await supabase.from('meal_history').upsert({
@@ -389,6 +389,9 @@ export async function addMealToHistory(mealItems, mealType, date = null) {
     confirmed_at: new Date().toISOString(),
     meal_type:    mealType ?? null,
     meal_date:    date ?? localDateStr(),
+    // Short name, matching item_rating_aggregates.dining_hall so Pulse can put
+    // waste and ratings for the same hall side by side. See migration 033.
+    dining_hall:  diningHall ?? null,
   }, {
     onConflict: 'user_id,meal_date,meal_type',
   }).select('id').single();
