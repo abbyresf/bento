@@ -14,6 +14,10 @@
 #   500  a dining feed is degraded. Annoying, can wait until morning.
 # Only 503 fails this job.
 #
+# Uses ?probe=db, which checks the database only. The full check fetches five
+# dining pages from Brandeis and Nutrislice, which is far too heavy to run on a
+# polling loop against servers we do not own.
+#
 # Cadence is every 30 minutes rather than every 5, because GitHub bills Actions
 # minutes rounded up to the minute on private repos. Every 5 minutes would be
 # roughly 8,600 minutes a month against a 2,000 minute allowance. For faster
@@ -37,7 +41,7 @@ jobs:
         run: |
           code=$(curl -sS -o /tmp/health.json -w '%{http_code}' --max-time 45 \
             -H 'User-Agent: Bento-Uptime/1.0' \
-            "https://www.bentodining.com/api/health" || echo "000")
+            "https://www.bentodining.com/api/health?probe=db" || echo "000")
 
           echo "HTTP $code"
           cat /tmp/health.json 2>/dev/null || true

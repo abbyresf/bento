@@ -119,6 +119,22 @@ export default async function handler(req, res) {
   const bust = parsedUrl.searchParams.get('bust') === 'true';
   const dateStr = todayET();
 
+  // Liveness mode, for uptime monitors. Checks the database and nothing else.
+  //
+  // The full check fetches five dining pages from Brandeis and Nutrislice. At a
+  // five minute polling interval that is 864 requests a day aimed at someone
+  // else's servers, which is rude, slow, and a good way to get the scraper
+  // blocked. A monitor only needs to know whether Bento is usable, and that is
+  // entirely determined by whether the database answers.
+  //
+  // Same status contract as the full check: 200 up, 503 down.
+  if (parsedUrl.searchParams.get('probe') === 'db') {
+    const db = await checkDatabase(getSupabaseAdmin());
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(db.status === 'ok' ? 200 : 503)
+      .json({ status: db.status === 'ok' ? 'ok' : 'down', database: db });
+  }
+
   const [brandeisResults, tuftsResults] = await Promise.all([
     Promise.all(BRANDEIS_LOCATIONS.map(l => checkBrandeis(l.slug, l.name, dateStr))),
     Promise.all(TUFTS_LOCATIONS.map(l => checkTufts(l.slug, l.name, dateStr))),

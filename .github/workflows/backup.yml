@@ -1,0 +1,102 @@
+# Weekly database backup.
+#
+# Supabase's free tier takes no automated backups. When the database went
+# unhealthy the entire production dataset existed in exactly one place, and that
+# place was the thing that had broken. This makes a second copy every week until
+# the project moves to Pro, which does back up on its own.
+#
+# It exports through PostgREST with the service role rather than pg_dump,
+# because that needs only the keys the project already has in GitHub secrets and
+# no direct Postgres connection string. Schema lives in supabase/migrations, so
+# migrations plus these JSON files is a complete restore.
+#
+# menu_cache is deliberately excluded. It is regenerable scraped HTML and was
+# the thing that filled the disk in the first place.
+#
+# Requires two repository secrets, the same ones the reminder workflow uses:
+#   VITE_SUPABASE_URL
+#   SUPABASE_SERVICE_ROLE_KEY
+name: Weekly backup
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'   # Mondays, 09:00 UTC
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Export every table
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request, urllib.error, pathlib, datetime
+
+          base = os.environ['SUPABASE_URL'].rstrip('/')
+          key  = os.environ['SERVICE_KEY']
+          out  = pathlib.Path('backup'); out.mkdir(exist_ok=True)
+
+          tables = ['profiles','dietary_restrictions','nutrition_targets','meal_history',
+                    'item_ratings','item_rating_aggregates','streaks','weekly_summaries',
+                    'suggestions','suggestion_emphasizes','suggestion_flags',
+                    'university_requests','admin_users','pulse_invites','feedback',
+                    'push_subscriptions','dining_availability','menu_health_log',
+                    'reminder_sends']
+
+          summary, total, failed = {}, 0, []
+          for t in tables:
+              rows, offset = [], 0
+              while True:
+                  req = urllib.request.Request(
+                      f'{base}/rest/v1/{t}?select=*&limit=1000&offset={offset}',
+                      headers={'apikey': key, 'Authorization': f'Bearer {key}'})
+                  try:
+                      page = json.loads(urllib.request.urlopen(req, timeout=90).read())
+                  except urllib.error.HTTPError as e:
+                      # 404 just means the table was never created. Anything else
+                      # is a real problem and should fail the run.
+                      if e.code != 404:
+                          failed.append(f'{t}: HTTP {e.code}')
+                      rows = None
+                      break
+                  rows += page
+                  if len(page) < 1000:
+                      break
+                  offset += 1000
+              if rows is None:
+                  continue
+              (out / f'{t}.json').write_text(json.dumps(rows, indent=1, default=str))
+              summary[t] = len(rows)
+              total += len(rows)
+
+          (out / 'MANIFEST.json').write_text(json.dumps({
+              'taken_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              'total_rows': total,
+              'tables': summary,
+              'note': 'Schema lives in supabase/migrations. menu_cache excluded on purpose.',
+          }, indent=2))
+
+          print(f'{total} rows across {len(summary)} tables')
+          for t, n in sorted(summary.items()):
+              print(f'  {t:<26} {n:>6}')
+
+          if failed:
+              raise SystemExit('FAILED: ' + '; '.join(failed))
+
+          # An empty export means something is wrong, and a silent empty backup
+          # is worse than no backup because it looks like it worked.
+          if total == 0:
+              raise SystemExit('FAILED: backup contained zero rows')
+          PY
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: bento-backup-${{ github.run_id }}
+          path: backup/
+          retention-days: 90
