@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ServiceDown from '../common/ServiceDown';
 import { supabase } from '../../lib/supabase';
 import './PulseLogin.css';
 
@@ -6,6 +7,7 @@ export default function PulseLogin({ onAuth, denied }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
+  const [serviceDown, setServiceDown] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -17,11 +19,20 @@ export default function PulseLogin({ onAuth, denied }) {
       if (authError) throw authError;
       onAuth();
     } catch (err) {
-      setError(err.message ?? 'Sign in failed.');
+      const m = (err.message ?? '').toLowerCase();
+      // "Failed to fetch" means the request never landed. If the browser is
+      // online, that is our backend, not their connection.
+      if (navigator.onLine && (m.includes('failed to fetch') || m.includes('load failed') || m.includes('networkerror'))) {
+        setServiceDown(true);
+      } else {
+        setError(err.message ?? 'Sign in failed.');
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  if (serviceDown) return <ServiceDown onRetry={() => setServiceDown(false)} />;
 
   return (
     <div className="pulse-login">

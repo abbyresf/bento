@@ -23,6 +23,23 @@ const ALLOWED_SLUGS = new Set([
   'the-farm-table-at-sherman',
 ]);
 
+
+// Keep the cache to a couple of days. Nothing ever deleted from this table, so
+// it grew to 312 MB of dining-hall HTML against a 500 MB free-tier cap at
+// 11.5 MB a day. A full disk is a very good way to make Postgres unhealthy.
+// Runs on a cache miss only, which is a few dozen times a day, not per request.
+async function pruneOldCache(admin, university) {
+  const cutoff = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
+  try {
+    await admin
+      .from('menu_cache')
+      .delete()
+      .eq('university', university)
+      .lt('date', cutoff)
+      .abortSignal(AbortSignal.timeout(5000));
+  } catch { /* pruning is housekeeping; never fail a menu request for it */ }
+}
+
 export default async function handler(req, res) {
   const upstreamPath = req.url.replace(/^\/api\/dining/, '');
   const upstreamUrl = `https://www.brandeishospitality.com${upstreamPath}`;
@@ -99,6 +116,8 @@ export default async function handler(req, res) {
           { onConflict: 'university,slug,date' }
         );
       if (cacheError) console.error('menu_cache write failed:', cacheError.message);
+
+      await pruneOldCache(admin, 'brandeis');
     }
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');

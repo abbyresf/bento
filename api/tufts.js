@@ -31,6 +31,23 @@ function extractDayItems(weeklyData, dateStr) {
     .filter(food => food?.name);
 }
 
+
+// Keep the cache to a couple of days. Nothing ever deleted from this table, so
+// it grew to 312 MB of dining-hall HTML against a 500 MB free-tier cap at
+// 11.5 MB a day. A full disk is a very good way to make Postgres unhealthy.
+// Runs on a cache miss only, which is a few dozen times a day, not per request.
+async function pruneOldCache(admin, university) {
+  const cutoff = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
+  try {
+    await admin
+      .from('menu_cache')
+      .delete()
+      .eq('university', university)
+      .lt('date', cutoff)
+      .abortSignal(AbortSignal.timeout(5000));
+  } catch { /* pruning is housekeeping; never fail a menu request for it */ }
+}
+
 export default async function handler(req, res) {
   const parsedUrl = new URL(req.url, 'http://localhost');
   const slug = parsedUrl.searchParams.get('slug');
@@ -45,13 +62,21 @@ export default async function handler(req, res) {
   const bust = parsedUrl.searchParams.get('bust') === 'true';
 
   if (admin && !bust) {
-    const { data: cached } = await admin
-      .from('menu_cache')
-      .select('html_content, fetched_at')
-      .eq('university', 'tufts')
-      .eq('slug', slug)
-      .eq('date', dateParam)
-      .single();
+    // Bounded. Same failure dining.js had: an unguarded read against a hung
+    // Postgres hangs the whole request until the function times out, so Tufts
+    // students got no menu during an outage even though Nutrislice was fine.
+    let cached = null;
+    try {
+      const { data } = await admin
+        .from('menu_cache')
+        .select('html_content, fetched_at')
+        .eq('university', 'tufts')
+        .eq('slug', slug)
+        .eq('date', dateParam)
+        .abortSignal(AbortSignal.timeout(3000))
+        .single();
+      cached = data;
+    } catch { /* unreachable or slow: fall through and fetch upstream */ }
 
     if (cached) {
       const ageSeconds = (Date.now() - new Date(cached.fetched_at).getTime()) / 1000;
@@ -104,6 +129,7 @@ export default async function handler(req, res) {
           { onConflict: 'university,slug,date' }
         );
       if (cacheError) console.error('menu_cache write failed:', cacheError.message);
+      await pruneOldCache(admin, 'tufts');
     }
 
     res.setHeader('Content-Type', 'application/json');
