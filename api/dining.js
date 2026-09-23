@@ -8,7 +8,22 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const CACHE_TTL_SECONDS = 1800; // 30 minutes
+// How long a cached copy counts as fresh, and how long it stays servable.
+//
+// This was 30 minutes, which meant the first student to open each hall every
+// half hour triggered a fresh scrape of 7-8 MB of HTML and waited out the whole
+// round trip. Measured cold, that round trip runs 10-15 seconds, so the app
+// announced "Couldn't reach dining servers" twice an hour against a source that
+// was working perfectly.
+//
+// A dining hall menu for a given date is published ahead of time and barely
+// changes. Six hours is a fair reading of fresh. Past that, a stale copy is
+// still served rather than making a student wait, up to a hard limit, because
+// yesterday's lunch listing beats a spinner and beats an error. The hourly
+// warm-menu-cache workflow calls with ?bust=true and is what actually refreshes
+// the row, so a student never pays for a scrape at all.
+const CACHE_FRESH_SECONDS = 6 * 3600;   // serve without question
+const CACHE_STALE_SECONDS = 36 * 3600;  // serve, but re-scrape once past this
 
 function getSupabaseAdmin() {
   const url = process.env.VITE_SUPABASE_URL;
@@ -78,17 +93,20 @@ export default async function handler(req, res) {
     } catch { /* database unreachable or slow: fall through and scrape */ }
   }
 
-  {
-    if (cached) {
-      const ageSeconds = (Date.now() - new Date(cached.fetched_at).getTime()) / 1000;
-      if (ageSeconds < CACHE_TTL_SECONDS) {
-        res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
-        res.setHeader('X-Cache', 'HIT');
-        return res.status(200).send(cached.html_content);
-      }
-    }
+  const cachedAge = cached
+    ? (Date.now() - new Date(cached.fetched_at).getTime()) / 1000
+    : null;
+
+  function sendCached(state) {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
+    res.setHeader('X-Cache', state);
+    res.setHeader('X-Cache-Age', String(Math.round(cachedAge)));
+    return res.status(200).send(cached.html_content);
   }
+
+  if (cached && cachedAge < CACHE_FRESH_SECONDS) return sendCached('HIT');
+  if (cached && cachedAge < CACHE_STALE_SECONDS) return sendCached('STALE');
 
   // Cache miss — fetch from Brandeis
   try {
@@ -98,7 +116,10 @@ export default async function handler(req, res) {
         'Accept': 'text/html,application/xhtml+xml',
         'Accept-Language': 'en-US,en;q=0.9',
       },
-      signal: AbortSignal.timeout(10000),
+      // 18s, not 10s. A cold scrape of the Sherman page has been measured at
+      // over 12 seconds end to end, so a 10 second abort was giving up on
+      // requests that were about to succeed and turning them into a 502.
+      signal: AbortSignal.timeout(18000),
     });
 
     const body = await upstream.text();
@@ -125,6 +146,11 @@ export default async function handler(req, res) {
     res.setHeader('X-Cache', 'MISS');
     res.status(upstream.status).send(body);
   } catch (err) {
+    // Brandeis is unreachable or too slow. If any cached copy exists, serve it
+    // however old it is: a student looking at a day-old menu is in a far better
+    // position than one looking at an error, and this endpoint returning 502 is
+    // what the app reports as "Couldn't reach dining servers".
+    if (cached) return sendCached('STALE-FALLBACK');
     res.status(502).json({ error: 'Failed to fetch dining data', detail: err.message });
   }
 }

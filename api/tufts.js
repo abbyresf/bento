@@ -6,7 +6,12 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const CACHE_TTL_SECONDS = 1800; // 30 minutes
+// See api/dining.js for the reasoning. Same defect, same fix: a 30 minute TTL
+// meant students paid for a live upstream fetch twice an hour and saw an error
+// whenever it was slow. Fresh for six hours, servable well past that, and
+// refreshed by the hourly warm-menu-cache workflow rather than by a student.
+const CACHE_FRESH_SECONDS = 6 * 3600;
+const CACHE_STALE_SECONDS = 36 * 3600;
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner'];
 const ALLOWED_SLUGS = new Set(['carmichael-dining-hall', 'dewick-dining']);
 
@@ -61,11 +66,14 @@ export default async function handler(req, res) {
 
   const bust = parsedUrl.searchParams.get('bust') === 'true';
 
+  // Declared out here on purpose: the stale-fallback path in the catch block
+  // below needs to reach it.
+  let cached = null;
+
   if (admin && !bust) {
     // Bounded. Same failure dining.js had: an unguarded read against a hung
     // Postgres hangs the whole request until the function times out, so Tufts
     // students got no menu during an outage even though Nutrislice was fine.
-    let cached = null;
     try {
       const { data } = await admin
         .from('menu_cache')
@@ -78,16 +86,22 @@ export default async function handler(req, res) {
       cached = data;
     } catch { /* unreachable or slow: fall through and fetch upstream */ }
 
-    if (cached) {
-      const ageSeconds = (Date.now() - new Date(cached.fetched_at).getTime()) / 1000;
-      if (ageSeconds < CACHE_TTL_SECONDS) {
-        res.setHeader('Content-Type', 'application/json');
-        res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
-        res.setHeader('X-Cache', 'HIT');
-        return res.status(200).send(cached.html_content);
-      }
-    }
   }
+
+  const cachedAge = cached
+    ? (Date.now() - new Date(cached.fetched_at).getTime()) / 1000
+    : null;
+
+  function sendCached(state) {
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
+    res.setHeader('X-Cache', state);
+    res.setHeader('X-Cache-Age', String(Math.round(cachedAge)));
+    return res.status(200).send(cached.html_content);
+  }
+
+  if (cached && cachedAge < CACHE_FRESH_SECONDS) return sendCached('HIT');
+  if (cached && cachedAge < CACHE_STALE_SECONDS) return sendCached('STALE');
 
   try {
     const weeklyResponses = await Promise.all(
@@ -97,7 +111,7 @@ export default async function handler(req, res) {
             'User-Agent': 'Mozilla/5.0 (compatible; Bento/1.0)',
             'Accept': 'application/json',
           },
-          signal: AbortSignal.timeout(10000),
+          signal: AbortSignal.timeout(18000),
         })
           .then(r => r.ok ? r.json() : null)
           .catch(() => null)
@@ -137,6 +151,8 @@ export default async function handler(req, res) {
     res.setHeader('X-Cache', 'MISS');
     return res.status(200).send(body);
   } catch (err) {
+    // Nutrislice unreachable or slow. Any cached copy beats an error screen.
+    if (cached) return sendCached('STALE-FALLBACK');
     res.status(502).json({ error: 'Failed to fetch Tufts dining data', detail: err.message });
   }
 }

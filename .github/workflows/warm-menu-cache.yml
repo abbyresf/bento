@@ -56,8 +56,13 @@ jobs:
           # This leaves nothing to that rule.
           warm () {
             url="$1"; label="$2"; date="$3"
+            # bust=true skips the cached read and re-scrapes upstream, which is
+            # the point: a plain request would be served from cache and the row
+            # would quietly age out until a student paid to refresh it. This
+            # job is what pays instead, so a slow scrape costs CI time and
+            # never costs a student a loading screen.
             t=$(curl -s --compressed -o /dev/null -w '%{time_total}' --max-time 90 \
-                  -H 'User-Agent: Bento-CacheWarmer/1.0' "$url" || echo "999")
+                  -H 'User-Agent: Bento-CacheWarmer/1.0' "${url}&bust=true" || echo "999")
             printf '%-32s %s  %ss\n' "$label" "$date" "$t"
             if awk -v v="$t" 'BEGIN{exit !(v>20)}'; then
               slow=$((slow + 1))
