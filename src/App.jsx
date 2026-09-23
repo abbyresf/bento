@@ -47,6 +47,9 @@ function App() {
   const [showLanding, setShowLanding] = useState(false);
   const [landingInitialTab, setLandingInitialTab] = useState('home');
   const [activeTab, setActiveTab] = useState('today');
+  // Which tabs have ever been opened. A tab enters this set on first visit and
+  // stays mounted afterwards, so only the first visit pays to build it.
+  const [visitedTabs, setVisitedTabs] = useState(() => new Set(['today']));
   const [settingsVersion, setSettingsVersion] = useState(0);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -235,23 +238,48 @@ function App() {
       <NutritionDisplayProvider>
       <div className="app">
         {hasCompletedOnboarding && hasAcceptedTerms && !showTutorial && !showInstallPrompt && <NotifPrompt />}
+        {/* Tabs are hidden when inactive, not unmounted.
+
+            Switching away used to destroy the whole screen, so coming back
+            re-ran everything: the profile read, the targets, the restrictions,
+            the recent-items query, and a full optimizeDay over several hundred
+            dishes. Every tap of the nav bar paid for that again, which is why
+            moving between Today and Insights felt like a cold start.
+
+            A tab is mounted the first time it is opened and kept from then on,
+            so the first visit costs what it always did and later visits cost
+            nothing. Settings changes still reach the plate through
+            settingsVersion, which re-optimizes in place and never needed the
+            remount to work. */}
         <div className="tab-content">
-          {activeTab === 'today' && (
-            <MealPlan settingsVersion={settingsVersion} />
+          {visitedTabs.has('today') && (
+            <div hidden={activeTab !== 'today'}>
+              <MealPlan settingsVersion={settingsVersion} />
+            </div>
           )}
-          {activeTab === 'ratings' && (
-            <MyRatings tabMode />
+          {visitedTabs.has('ratings') && (
+            <div hidden={activeTab !== 'ratings'}>
+              <MyRatings tabMode />
+            </div>
           )}
-          {activeTab === 'community' && (
-            <CommunityTab />
+          {visitedTabs.has('community') && (
+            <div hidden={activeTab !== 'community'}>
+              <CommunityTab />
+            </div>
           )}
-          {activeTab === 'insights' && (
-            <InsightsPanel tabMode onClose={() => setActiveTab('today')} />
+          {visitedTabs.has('insights') && (
+            <div hidden={activeTab !== 'insights'}>
+              <InsightsPanel tabMode onClose={() => setActiveTab('today')} />
+            </div>
           )}
         </div>
         <BottomNav
           activeTab={activeTab}
-          onTabChange={(tab) => setActiveTab(tab === activeTab && tab !== 'today' ? 'today' : tab)}
+          onTabChange={(tab) => {
+            const next = tab === activeTab && tab !== 'today' ? 'today' : tab;
+            setVisitedTabs(prev => (prev.has(next) ? prev : new Set(prev).add(next)));
+            setActiveTab(next);
+          }}
         />
 
         {activeTab === 'today' && showHelpBtn && !showTutorial && !showInstallPrompt && (

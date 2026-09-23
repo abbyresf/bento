@@ -11,6 +11,13 @@
   padding-bottom: 60px;
 }
 
+/* Inactive tabs stay mounted and are hidden rather than destroyed. Stated with
+   !important because a later `display: flex` or `display: block` on any tab's
+   own wrapper would otherwise win on specificity and render two tabs at once. */
+.tab-content > [hidden] {
+  display: none !important;
+}
+
 .app-loading {
   display: flex;
   align-items: center;
