@@ -39,16 +39,29 @@ export default async function handler(req, res) {
 
   const bust = parsedUrl.searchParams.get('bust') === 'true';
 
-  // Check shared DB cache before hitting Brandeis
+  // Check shared DB cache before hitting Brandeis.
+  //
+  // Bounded and swallowed on purpose. This read used to be unguarded, so when
+  // Postgres stopped answering the whole request hung until the function timed
+  // out and students got no menu at all, even though Brandeis was up the whole
+  // time. The cache is an optimisation. Losing it should cost a scrape, not the
+  // feature.
+  let cached = null;
   if (admin && slug && !bust) {
-    const { data: cached } = await admin
-      .from('menu_cache')
-      .select('html_content, fetched_at')
-      .eq('university', 'brandeis')
-      .eq('slug', slug)
-      .eq('date', dateParam)
-      .single();
+    try {
+      const { data } = await admin
+        .from('menu_cache')
+        .select('html_content, fetched_at')
+        .eq('university', 'brandeis')
+        .eq('slug', slug)
+        .eq('date', dateParam)
+        .abortSignal(AbortSignal.timeout(3000))
+        .single();
+      cached = data;
+    } catch { /* database unreachable or slow: fall through and scrape */ }
+  }
 
+  {
     if (cached) {
       const ageSeconds = (Date.now() - new Date(cached.fetched_at).getTime()) / 1000;
       if (ageSeconds < CACHE_TTL_SECONDS) {

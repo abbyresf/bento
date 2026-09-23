@@ -1,0 +1,57 @@
+/* Tokens with literal fallbacks. This screen has to render correctly even if
+   something upstream of the theme layer is what broke. */
+.svc-down {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: var(--bg-app, #faf7f4);
+  color: var(--text-primary, #243b55);
+  font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+  z-index: 10000;
+}
+
+.svc-down-inner { max-width: 26rem; text-align: center; }
+
+.svc-down-mark {
+  width: 64px;
+  height: 64px;
+  color: var(--text-primary, #243b55);
+  margin-bottom: 1.25rem;
+}
+
+.svc-down h1 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0 0 0.6rem;
+  color: var(--text-primary, #243b55);
+}
+
+.svc-down p {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--text-secondary, #64748b);
+  margin: 0 0 1.5rem;
+}
+
+.svc-down-btn {
+  padding: 0.8rem 1.75rem;
+  background: var(--btn-bg, #f47421);
+  color: var(--btn-fg, #ffffff);
+  border: none;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.svc-down-btn:hover { background: var(--btn-bg-hover, #d9641a); }
+
+.svc-down-foot {
+  font-size: 0.82rem;
+  margin: 1.5rem 0 0;
+  color: var(--text-disabled, #94a3b8);
+}
+.svc-down-foot a { color: var(--accent-text, #f47421); }

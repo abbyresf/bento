@@ -1,0 +1,62 @@
+# Uptime monitor.
+#
+# The database went down and the first anyone knew was a text saying the app was
+# broken. Nothing was watching, and the one thing that could have watched
+# (/api/health) had been crashing on every invocation for months because of a
+# .catch() chained onto a Supabase query builder.
+#
+# This checks /api/health and FAILS the job when Bento is unusable. A failed
+# scheduled workflow emails the repo owner, which is the alert. No extra service
+# to sign up for and nothing to pay.
+#
+# /api/health distinguishes two cases deliberately:
+#   503  the database is unreachable. Bento is unusable. Wake someone.
+#   500  a dining feed is degraded. Annoying, can wait until morning.
+# Only 503 fails this job.
+#
+# Cadence is every 30 minutes rather than every 5, because GitHub bills Actions
+# minutes rounded up to the minute on private repos. Every 5 minutes would be
+# roughly 8,600 minutes a month against a 2,000 minute allowance. For faster
+# detection, point a free external monitor at the same endpoint.
+name: Uptime
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: uptime
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Bento health
+        run: |
+          code=$(curl -sS -o /tmp/health.json -w '%{http_code}' --max-time 45 \
+            -H 'User-Agent: Bento-Uptime/1.0' \
+            "https://www.bentodining.com/api/health" || echo "000")
+
+          echo "HTTP $code"
+          cat /tmp/health.json 2>/dev/null || true
+          echo
+
+          # 000 means curl never got a response at all, which is as bad as 503.
+          if [ "$code" = "503" ] || [ "$code" = "000" ]; then
+            echo "::error title=Bento is DOWN::/api/health returned $code. Students cannot log in or load a plate."
+            exit 1
+          fi
+
+          if [ "$code" = "500" ]; then
+            echo "::warning title=Dining feed degraded::A menu source is failing. Bento still works."
+            exit 0
+          fi
+
+          if [ "$code" != "200" ]; then
+            echo "::error title=Unexpected health response::/api/health returned $code."
+            exit 1
+          fi
+
+          echo "Bento is healthy."

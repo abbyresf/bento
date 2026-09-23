@@ -79,13 +79,39 @@ async function checkTufts(slug, name, dateStr) {
 
 async function bustCache(admin, result, dateStr) {
   if (!admin || result.status !== 'degraded') return;
-  // Delete stale cache entry so the next real request re-fetches fresh
-  await admin
-    .from('menu_cache')
-    .delete()
-    .eq('slug', result.slug)
-    .eq('date', dateStr)
-    .catch(() => {});
+  // Delete stale cache entry so the next real request re-fetches fresh.
+  //
+  // try/catch, not .catch(). A Supabase query builder is thenable but does not
+  // implement .catch, so chaining one throws TypeError and takes the whole
+  // function down. That bug is why /api/health returned
+  // FUNCTION_INVOCATION_FAILED on every invocation, and why nothing alerted
+  // when the database went down.
+  try {
+    await admin
+      .from('menu_cache')
+      .delete()
+      .eq('slug', result.slug)
+      .eq('date', dateStr);
+  } catch { /* cache busting is best effort */ }
+}
+
+// The database was never actually checked here. This endpoint only ever probed
+// the dining feeds, so a dead Postgres looked perfectly healthy right up until
+// students could not log in.
+async function checkDatabase(admin) {
+  if (!admin) return { status: 'error', error: 'Supabase not configured' };
+  const started = Date.now();
+  try {
+    const { error } = await admin
+      .from('profiles')
+      .select('id', { head: true, count: 'exact' })
+      .limit(1)
+      .abortSignal(AbortSignal.timeout(8000));
+    if (error) return { status: 'error', error: error.message, ms: Date.now() - started };
+    return { status: 'ok', ms: Date.now() - started };
+  } catch (err) {
+    return { status: 'error', error: err.message, ms: Date.now() - started };
+  }
 }
 
 export default async function handler(req, res) {
@@ -114,25 +140,34 @@ export default async function handler(req, res) {
   }
 
   const admin = getSupabaseAdmin();
+  const database = await checkDatabase(admin);
 
-  if (bust && admin) {
+  if (bust && admin && database.status === 'ok') {
     await Promise.all(results.map(r => bustCache(admin, r, dateStr)));
   }
 
   const checkedAt = new Date().toISOString();
-  if (admin) {
-    await admin
-      .from('menu_health_log')
-      .insert(results.map(r => ({ ...r, date: dateStr, checked_at: checkedAt })))
-      .catch(() => {});
+  // Only log when the database answered. Writing to a dead database is what
+  // turned a degraded report into a crashed function.
+  if (admin && database.status === 'ok') {
+    try {
+      await admin
+        .from('menu_health_log')
+        .insert(results.map(r => ({ ...r, date: dateStr, checked_at: checkedAt })));
+    } catch { /* logging must never fail the check */ }
   }
 
-  const overallStatus = results.some(r => r.status === 'error' || r.status === 'degraded')
-    ? 'degraded'
-    : 'ok';
+  const menusDegraded = results.some(r => r.status === 'error' || r.status === 'degraded');
+  const overallStatus = database.status !== 'ok' ? 'down' : menusDegraded ? 'degraded' : 'ok';
 
-  res.status(overallStatus === 'ok' ? 200 : 500).json({
+  // 503 means Bento is unusable and someone should be woken up. 500 means a
+  // dining feed is off and it can wait until morning. A monitor keys on this.
+  const code = overallStatus === 'down' ? 503 : overallStatus === 'degraded' ? 500 : 200;
+
+  res.setHeader('Cache-Control', 'no-store');
+  res.status(code).json({
     status: overallStatus,
+    database,
     checked_at: checkedAt,
     date: dateStr,
     bust_applied: bust,

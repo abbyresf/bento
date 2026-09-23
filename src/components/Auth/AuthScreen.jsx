@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { signIn, signUp, signInWithGoogle, resetPasswordForEmail } from '../../lib/db';
 import './AuthScreen.css';
 import BentoLogo from '../common/BentoLogo';
+import ServiceDown from '../common/ServiceDown';
 
 function passwordStrength(pw) {
   if (!pw) return null;
@@ -29,6 +30,17 @@ function friendlyAuthError(msg) {
   return 'Something went wrong. Please try again.';
 }
 
+// "Failed to fetch" means the request never completed. That is either the
+// student's connection or our backend, and the two need opposite messages:
+// telling someone to check their wifi while Bento's database is down sends them
+// to fix a thing that is not broken. navigator.onLine settles it.
+function isOurFault(msg) {
+  const m = (msg ?? '').toLowerCase();
+  const networkish = m.includes('failed to fetch') || m.includes('networkerror')
+    || m.includes('load failed') || m.includes('fetch');
+  return networkish && navigator.onLine;
+}
+
 export default function AuthScreen({ onAuth, initialMode = 'login' }) {
   const navigate = useNavigate();
   const [mode, setMode] = useState(initialMode); // 'login' | 'signup' | 'forgot'
@@ -38,6 +50,7 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [serviceDown, setServiceDown] = useState(false);
   const [confirmSent, setConfirmSent] = useState(false);
   const [resetSent, setResetSent] = useState(false);
 
@@ -60,7 +73,8 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
         onAuth();
       }
     } catch (err) {
-      setError(friendlyAuthError(err.message));
+      if (isOurFault(err.message)) setServiceDown(true);
+      else setError(friendlyAuthError(err.message));
     } finally {
       setLoading(false);
     }
@@ -74,7 +88,8 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
       await resetPasswordForEmail(email);
       setResetSent(true);
     } catch (err) {
-      setError(friendlyAuthError(err.message));
+      if (isOurFault(err.message)) setServiceDown(true);
+      else setError(friendlyAuthError(err.message));
     } finally {
       setLoading(false);
     }
@@ -87,10 +102,13 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
       await signInWithGoogle();
       // OAuth redirects away — no further action needed here
     } catch (err) {
-      setError(friendlyAuthError(err.message));
+      if (isOurFault(err.message)) setServiceDown(true);
+      else setError(friendlyAuthError(err.message));
       setGoogleLoading(false);
     }
   };
+
+  if (serviceDown) return <ServiceDown onRetry={() => setServiceDown(false)} />;
 
   return (
     <div className="auth-screen">
