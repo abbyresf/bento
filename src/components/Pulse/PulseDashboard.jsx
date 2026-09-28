@@ -8,6 +8,7 @@ import {
   getPulseOverview, getMealAnalytics, getDietaryBreakdown,
   getPulseRatings, sendInvite, getInvites, getAdminSuggestions,
 } from '../../lib/pulseDb';
+import SurveysCard from './SurveysCard';
 import './PulseDashboard.css';
 
 const MEAL_COLORS  = ['#f47421', '#1a2b3c', '#64a8d1'];
@@ -1021,6 +1022,10 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
                 )}
               </Card>
             </div>
+
+            {/* Asking is the other half of listening. Suggestions are what
+                students volunteer; this is what dining services wants to know. */}
+            <SurveysCard university={university} />
           </>
         )}
       </main>

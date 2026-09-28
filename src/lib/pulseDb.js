@@ -601,3 +601,91 @@ export async function getAdminSuggestions(university, days = null) {
   });
   return data ?? [];
 }
+
+// ── Surveys ────────────────────────────────────────────────────────────────
+//
+// All three go through SECURITY DEFINER functions that check the caller is an
+// active admin for the university being asked about. There is deliberately no
+// direct table access: survey_responses holds the answering student's id to
+// stop double answers, and get_survey_results is what guarantees that id never
+// reaches a dashboard. See migration 034.
+
+export const SURVEY_FORMATS = [
+  { value: 'multiple_choice', label: 'Multiple choice', hint: 'Two to six options, one tap to answer.' },
+  { value: 'rating',          label: 'Rating, 1 to 5',  hint: 'Good for satisfaction over time.' },
+  { value: 'yes_no',          label: 'Yes or no',       hint: 'Highest response rate. Use for a single decision.' },
+  { value: 'short_answer',    label: 'Short answer',    hint: 'Richest replies, lowest response rate.' },
+];
+
+// Mirrors the boolean columns on dietary_restrictions. A student matches when
+// ANY selected restriction is set on their profile.
+export const SURVEY_TARGETS = [
+  { value: 'vegetarian',  label: 'Vegetarian'  },
+  { value: 'vegan',       label: 'Vegan'       },
+  { value: 'kosher',      label: 'Kosher'      },
+  { value: 'halal',       label: 'Halal'       },
+  { value: 'gluten_free', label: 'Gluten-free' },
+  { value: 'dairy_free',  label: 'Dairy-free'  },
+  { value: 'nut_free',    label: 'Nut-free'    },
+];
+
+function generateMockSurveys() {
+  const ago = d => new Date(Date.now() - d * 86400000).toISOString();
+  return [
+    {
+      id: 'ms1',
+      question: 'How satisfied are you with dinner options this week?',
+      format: 'rating', options: [], targets: [],
+      published_at: ago(2), closes_at: new Date(Date.now() + 5 * 86400000).toISOString(),
+      is_active: true, answered: 128, dismissed: 24,
+      tally: [
+        { choice: '4', count: 47 }, { choice: '3', count: 38 },
+        { choice: '5', count: 21 }, { choice: '2', count: 14 }, { choice: '1', count: 8 },
+      ],
+      text_answers: [],
+    },
+    {
+      id: 'ms2',
+      question: 'Would more hot vegetarian entrees at dinner be useful?',
+      format: 'yes_no', options: [], targets: ['vegetarian', 'vegan'],
+      published_at: ago(9), closes_at: ago(2),
+      is_active: false, answered: 54, dismissed: 6,
+      tally: [{ choice: 'Yes', count: 49 }, { choice: 'No', count: 5 }],
+      text_answers: [],
+    },
+  ];
+}
+
+export async function getSurveys(university) {
+  if (isMockMode()) return generateMockSurveys();
+  const { data, error } = await supabase.rpc('get_survey_results', { p_university: university });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/**
+ * Publish a survey. Throws with a readable message when the weekly cap blocks
+ * it, because the raw error is a unique index name.
+ */
+export async function createSurvey(university, { question, format, options = [], targets = [], days = 7 }) {
+  const { data, error } = await supabase.rpc('create_survey', {
+    p_university: university,
+    p_question: question,
+    p_format: format,
+    p_options: format === 'multiple_choice' ? options : [],
+    p_targets: targets,
+    p_days: days,
+  });
+  if (error) {
+    if (/weekly limit reached/i.test(error.message)) {
+      throw new Error('One survey per week. The next one can go out at the start of next week.');
+    }
+    throw new Error(error.message ?? 'Could not publish the survey.');
+  }
+  return data;
+}
+
+export async function closeSurvey(surveyId) {
+  const { error } = await supabase.rpc('close_survey', { p_survey_id: surveyId });
+  if (error) throw new Error(error.message ?? 'Could not close the survey.');
+}

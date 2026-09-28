@@ -868,3 +868,34 @@ export function setCachedMenu(menu, university = 'brandeis') {
     localStorage.setItem(key, JSON.stringify({ date: localDateStr(), fetchedAt: Date.now(), menu }));
   } catch { /* localStorage unavailable */ }
 }
+
+// ── Surveys ────────────────────────────────────────────────────────────────
+//
+// Both calls are RPCs rather than table reads. Deciding which survey a student
+// should see means checking their university, their dietary profile against the
+// survey's targeting, and whether they have already responded, which is not
+// something to express as an RLS policy. See migration 034.
+
+/** The one survey this student should be shown, or null. */
+export async function getActiveSurvey() {
+  const { data, error } = await supabase.rpc('get_active_survey');
+  if (error) return null;
+  return data?.[0] ?? null;
+}
+
+/**
+ * Record an answer, or a dismissal.
+ *
+ * Returns true when the response is stored. A student who dismisses is not
+ * asked again, so a silent failure here would mean the popup returns on every
+ * app open, which is worse than the survey never being seen.
+ */
+export async function submitSurveyResponse(surveyId, { status = 'answered', choice = null, text = null } = {}) {
+  const { error } = await supabase.rpc('submit_survey_response', {
+    p_survey_id: surveyId,
+    p_status: status,
+    p_choice: choice,
+    p_text: text,
+  });
+  return !error;
+}

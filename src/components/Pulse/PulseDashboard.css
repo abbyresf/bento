@@ -1092,3 +1092,314 @@
   font-size: 0.82rem;
 }
 .pulse-demo-banner strong { color: #b4470c; }
+
+/* ── Surveys ─────────────────────────────────────────────────────────────────*/
+
+.pulse-survey-compose {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e8e3dd;
+  border-radius: 10px;
+  padding: 1.1rem 1.2rem;
+  margin-bottom: 1.25rem;
+  background: #faf7f4;
+}
+
+.pulse-survey-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0.9rem 0 0.35rem;
+}
+
+.pulse-survey-label:first-child { margin-top: 0; }
+
+.pulse-survey-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 0.82rem;
+  color: #1a2b3c;
+  background: white;
+  border: 1px solid #e8e3dd;
+  border-radius: 7px;
+  padding: 0.5rem 0.65rem;
+}
+
+.pulse-survey-input:focus {
+  outline: none;
+  border-color: #f47421;
+}
+
+.pulse-survey-select { cursor: pointer; }
+
+/* ── Format picker ───────────────────────────────────────────────────────────*/
+
+.pulse-survey-formats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+.pulse-survey-format {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  text-align: left;
+  font-family: inherit;
+  background: white;
+  border: 1.5px solid #e8e3dd;
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+  cursor: pointer;
+  transition: border-color 0.14s, background 0.14s;
+}
+
+.pulse-survey-format:hover { border-color: #c8c2bc; }
+
+.pulse-survey-format.selected {
+  border-color: #f47421;
+  background: rgba(244, 116, 33, 0.06);
+}
+
+.pulse-survey-format-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #1a2b3c;
+}
+
+.pulse-survey-format-hint {
+  font-size: 0.65rem;
+  line-height: 1.35;
+  color: #94a3b8;
+}
+
+/* ── Options ─────────────────────────────────────────────────────────────────*/
+
+.pulse-survey-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.pulse-survey-option-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.pulse-survey-option-remove {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 5px;
+}
+
+.pulse-survey-option-remove:hover { color: #dc2626; }
+
+.pulse-survey-add {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: #f47421;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.2rem 0;
+}
+
+/* ── Targeting ───────────────────────────────────────────────────────────────*/
+
+.pulse-survey-targets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.pulse-survey-target {
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #475569;
+  background: white;
+  border: 1.5px solid #e8e3dd;
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  transition: border-color 0.14s, background 0.14s, color 0.14s;
+}
+
+.pulse-survey-target:hover { border-color: #c8c2bc; }
+
+.pulse-survey-target.selected {
+  border-color: #f47421;
+  background: #f47421;
+  color: white;
+}
+
+.pulse-survey-note {
+  font-size: 0.66rem;
+  line-height: 1.45;
+  color: #94a3b8;
+  margin: 0.45rem 0 0;
+}
+
+.pulse-survey-error {
+  font-size: 0.72rem;
+  color: #dc2626;
+  margin: 0.7rem 0 0;
+}
+
+.pulse-survey-publish {
+  margin-top: 1rem;
+  padding: 0.6rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: white;
+  background: #f47421;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.pulse-survey-publish:hover:not(:disabled) { background: #d9641a; }
+.pulse-survey-publish:disabled { opacity: 0.45; cursor: default; }
+
+/* ── Results ─────────────────────────────────────────────────────────────────*/
+
+.pulse-survey-result {
+  padding: 0.9rem 0;
+  border-bottom: 1px solid #f0ece8;
+}
+
+.pulse-survey-result:last-child { border-bottom: none; }
+
+.pulse-survey-result-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.pulse-survey-result-q {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #1a2b3c;
+  margin: 0 0 0.25rem;
+}
+
+.pulse-survey-result-meta {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.pulse-survey-status {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0.1rem 0.38rem;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.pulse-survey-status.live {
+  background: rgba(119, 190, 61, 0.14);
+  color: #4a8a22;
+}
+
+.pulse-survey-close-btn {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid #e8e3dd;
+  border-radius: 5px;
+  color: #94a3b8;
+  font-family: inherit;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+}
+
+.pulse-survey-close-btn:hover { color: #dc2626; border-color: #dc2626; }
+
+.pulse-survey-tally {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.8rem;
+}
+
+.pulse-survey-tally-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 36px;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.pulse-survey-tally-label {
+  font-size: 0.74rem;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pulse-survey-tally-track {
+  height: 8px;
+  border-radius: 4px;
+  background: #f4efe9;
+  overflow: hidden;
+}
+
+.pulse-survey-tally-bar {
+  height: 100%;
+  border-radius: 4px;
+  background: #f47421;
+}
+
+.pulse-survey-tally-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.pulse-survey-texts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.8rem;
+}
+
+.pulse-survey-text {
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: #334155;
+  background: #faf7f4;
+  border-left: 2px solid #e8e3dd;
+  border-radius: 0 6px 6px 0;
+  padding: 0.45rem 0.65rem;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .pulse-survey-formats   { grid-template-columns: 1fr; }
+  .pulse-survey-tally-row { grid-template-columns: 70px 1fr 32px; }
+}

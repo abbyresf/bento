@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
-import { isOnboardingComplete, isTermsAccepted, setTermsAccepted, signOut, updatePassword, recordInstallState } from './lib/db';
+import { isOnboardingComplete, isTermsAccepted, setTermsAccepted, signOut, updatePassword, recordInstallState, getActiveSurvey } from './lib/db';
 import AuthScreen from './components/Auth/AuthScreen';
 import LandingPage from './components/Landing/LandingPage';
 import OnboardingWizard from './components/Onboarding/OnboardingWizard';
@@ -19,6 +19,7 @@ import CommunityTab from './components/Community/CommunityTab';
 import { RatingsProvider } from './context/RatingsContext';
 import { NutritionDisplayProvider } from './context/NutritionDisplayContext';
 import NotifPrompt from './components/Notifications/NotifPrompt';
+import SurveyPopup from './components/Survey/SurveyPopup';
 import SplashScreen from './components/Splash/SplashScreen';
 import './App.css';
 import BentoLogo from './components/common/BentoLogo';
@@ -50,6 +51,10 @@ function App() {
   // Which tabs have ever been opened. A tab enters this set on first visit and
   // stays mounted afterwards, so only the first visit pays to build it.
   const [visitedTabs, setVisitedTabs] = useState(() => new Set(['today']));
+  // The survey a student should be shown, or null. Fetched once per app open
+  // rather than on a timer: a question that appears while someone is mid-plate
+  // is an interruption, not a prompt.
+  const [survey, setSurvey] = useState(null);
   const [settingsVersion, setSettingsVersion] = useState(0);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -112,6 +117,36 @@ function App() {
     recordInstallState({ installed: isStandalone(), platform: devicePlatform() })
       .catch(() => {});
   }, [session]);
+
+  // Ask the server whether there is a question for this student. Runs once a
+  // session, only for an account that has finished onboarding and accepted
+  // terms, and never on the admin or landing routes. Failure is silent: a
+  // survey is the least important thing on the screen and must never be the
+  // reason the app looks broken.
+  useEffect(() => {
+    if (!session || !hasCompletedOnboarding || !hasAcceptedTerms) return;
+
+    // ?preview_survey=<format> renders the popup without publishing anything,
+    // following the same convention as preview_install above. Otherwise the
+    // only way to look at the student side is to spend a university's one
+    // survey for the week on a screenshot.
+    const preview = new URLSearchParams(location.search).get('preview_survey');
+    if (preview) {
+      setSurvey({
+        id: 'preview',
+        question: 'How satisfied are you with dinner options this week?',
+        format: preview === 'true' ? 'multiple_choice' : preview,
+        options: ['Very satisfied', 'Satisfied', 'Neither', 'Unsatisfied'],
+      });
+      return;
+    }
+
+    let cancelled = false;
+    getActiveSurvey()
+      .then(s => { if (!cancelled && s) setSurvey(s); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [session, hasCompletedOnboarding, hasAcceptedTerms, location.search]);
 
   // ── Computed values & handlers ────────────────────────────────────────────────
 
@@ -238,6 +273,14 @@ function App() {
       <NutritionDisplayProvider>
       <div className="app">
         {hasCompletedOnboarding && hasAcceptedTerms && !showTutorial && !showInstallPrompt && <NotifPrompt />}
+
+        {/* Queued behind every other prompt on purpose. A student meeting the
+            tutorial, the install prompt, the notification prompt and a survey
+            in one session has been asked for four things before seeing a
+            menu. This is the one that waits. */}
+        {survey && !showTutorial && !showInstallPrompt && (
+          <SurveyPopup survey={survey} onDone={() => setSurvey(null)} />
+        )}
         {/* Tabs are hidden when inactive, not unmounted.
 
             Switching away used to destroy the whole screen, so coming back
