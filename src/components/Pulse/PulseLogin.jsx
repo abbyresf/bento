@@ -38,18 +38,10 @@ export default function PulseLogin({ onAuth, denied }) {
     <div className="pulse-login">
       <div className="pulse-login-card">
 
-        <div className="pulse-login-pill">
-          <img src="/bentopulse.png" alt="Bento Pulse" className="pulse-login-pill-logo" />
-        </div>
-
-        <h1 className="pulse-login-headline">
-          Your system knows what's served.{' '}
-          <span className="pulse-login-accent">Bento knows what's eaten.</span>
-        </h1>
-
-        <p className="pulse-login-sub">
-          Real-time dining intelligence for your university.
-        </p>
+        {/* The logo sits on the card with nothing behind it. It was previously
+            wrapped in a tinted pill, which read as a white box around a
+            transparent PNG. The file was always transparent; the box was CSS. */}
+        <img src="/bentopulse.png" alt="Bento Pulse" className="pulse-login-logo" />
 
         {denied && (
           <p className="pulse-login-error">Your account doesn't have admin access.</p>

@@ -10,9 +10,40 @@
 
 import { parseServingSize, servingSizeFromParts } from '../utils/servingSize.js';
 
+// Between the three real meal services Brandeis runs a rolling snack counter:
+// "Continental (10am-11am)" on weekdays, "Mid-Day Dining (2:30pm-5pm)", and
+// "Light Lunch (2:30pm-5pm)" at weekends. They are fruit, yogurt and cottage
+// cheese rather than a meal, and they do not belong on a breakfast or lunch
+// plate. Matched before anything else, because "Light Lunch" contains the word
+// "lunch" and was being counted as lunch, and "Continental" was explicitly
+// mapped to breakfast.
+const BRANDEIS_SNACK_SERVICE = /continental|mid-?day|light lunch/;
+
+// "Brunch (9:30am-11am)" and "Brunch (11am-2:30pm)" both run on a Saturday and
+// they are not the same meal. The label carries the start time, so use it:
+// before 11am is the breakfast sitting, 11am onwards is the lunch sitting.
+// Mapping both to breakfast, as this did, left Saturday with no lunch at all.
+function labelStartHour(label) {
+  const m = label.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i);
+  if (!m) return null;
+  let hour = parseInt(m[1], 10);
+  const meridiem = m[3].toLowerCase();
+  if (meridiem === 'pm' && hour !== 12) hour += 12;
+  if (meridiem === 'am' && hour === 12) hour = 0;
+  return hour + (m[2] ? parseInt(m[2], 10) / 60 : 0);
+}
+
 function brandeisTabLabelToMealPeriod(label) {
   const l = label.toLowerCase();
-  if (l.includes('breakfast') || l.includes('brunch') || l.includes('continental')) return 'breakfast';
+
+  if (BRANDEIS_SNACK_SERVICE.test(l)) return null;
+
+  if (l.includes('brunch')) {
+    const start = labelStartHour(l);
+    return start !== null && start >= 11 ? 'lunch' : 'breakfast';
+  }
+
+  if (l.includes('breakfast')) return 'breakfast';
   if (l.includes('lunch')) return 'lunch';
   if (l.includes('dinner') || l.includes('supper')) return 'dinner';
   return null;
@@ -229,6 +260,20 @@ export async function fetchDiningMenu(config, dateStr = null) {
 
   const locationResults = await Promise.all(
     Object.entries(config.locations).map(async ([locationId, locationConfig]) => {
+      // Two attempts, not one.
+      //
+      // A location whose fetch fails comes back with an empty menu, and the UI
+      // reads an empty menu as "Closed today", padlock and all. So a single
+      // transient timeout took a dining hall off the menu for the rest of the
+      // day, and the student had no way to tell that apart from a hall that was
+      // genuinely shut. Usdan is the largest page of the three and timed out
+      // most often, which is why it was the one that kept disappearing.
+      //
+      // The retry is immediate rather than backed off: the common failure is a
+      // cold cache on the first request, which the first attempt has just
+      // warmed, so the second usually lands quickly.
+      let lastError = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
       try {
         const url = config.getDiningUrl(locationConfig.slug, dateStr);
         // 25s, not 10s. Each location page is 700-950 KB gzipped and the three
@@ -259,9 +304,19 @@ export async function fetchDiningMenu(config, dateStr = null) {
         }
         return [locationId, { ...locationConfig, meals, isOpen }];
       } catch (err) {
-        console.warn(`Failed to fetch ${locationConfig.name}:`, err.message);
-        return [locationId, { ...locationConfig, meals: { breakfast: [], lunch: [], dinner: [] }, isOpen: true }];
+        lastError = err;
       }
+      }
+
+      // Both attempts failed. `fetchFailed` is what lets the UI say "menu did
+      // not load, retry" instead of lying about the hall being closed.
+      console.warn(`Failed to fetch ${locationConfig.name}:`, lastError?.message);
+      return [locationId, {
+        ...locationConfig,
+        meals: { breakfast: [], lunch: [], dinner: [] },
+        isOpen: true,
+        fetchFailed: true,
+      }];
     })
   );
 
@@ -282,6 +337,11 @@ export async function fetchDiningMenu(config, dateStr = null) {
       ];
     }
     locations[target].isOpen = locations[target].isOpen || locations[locationId].isOpen;
+    // The merged hall counts as failed only when nothing arrived from either
+    // table. Sherman with a working Farm Table and a broken Kosher Table is a
+    // hall with a menu, not a hall that failed to load.
+    locations[target].fetchFailed =
+      (locations[target].fetchFailed ?? false) && (locations[locationId].fetchFailed ?? false);
     dedupeMeals(locations[target].meals);
     delete locations[locationId];
   }
@@ -291,14 +351,12 @@ export async function fetchDiningMenu(config, dateStr = null) {
     locations,
   };
 
-  // Only treat as a hard failure if every location came back from the catch block
-  // (isOpen: true with empty meals = fetch error). If at least one location returned
-  // isOpen: false, the server responded normally — halls are just closed.
+  // Only a hard failure when EVERY location failed to fetch. This used to be
+  // inferred from "isOpen true and no items", which also matched a hall that
+  // answered normally and had nothing published, so `fetchFailed` now says it
+  // outright instead of being guessed at.
   const allFailed = Object.values(result.locations).every(
-    loc => loc.isOpen === true &&
-      loc.meals.breakfast.length === 0 &&
-      loc.meals.lunch.length === 0 &&
-      loc.meals.dinner.length === 0
+    loc => loc.fetchFailed === true
   );
 
   if (allFailed) {

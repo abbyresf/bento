@@ -773,9 +773,11 @@ export default function MealPlan({ settingsVersion = 0 }) {
                   isOpen: menu?.locations?.[locId]?.isOpen ?? true,
                   rawCount: menu?.locations?.[locId]?.meals?.[meal]?.length ?? 0,
                   rawItems: menu?.locations?.[locId]?.meals?.[meal] ?? [],
+                  fetchFailed: menu?.locations?.[locId]?.fetchFailed === true,
                 },
               ])
             )}
+            onRetryMenu={() => loadMenuAndOptimize(true)}
             customPlan={customMeals[meal]}
             onBrowserDone={(items) => handleBrowserDone(meal, items)}
             isKosherUser={restrictions?.kosher ?? false}

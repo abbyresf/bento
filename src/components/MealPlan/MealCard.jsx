@@ -22,7 +22,7 @@ function groupItemsByStation(items) {
   });
 }
 
-function LocationPicker({ locationOptions, selectedLocation, onLocationChange, openByLocation, hasMenuByLocation }) {
+function LocationPicker({ locationOptions, selectedLocation, onLocationChange, openByLocation, hasMenuByLocation, failedByLocation }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -33,7 +33,13 @@ function LocationPicker({ locationOptions, selectedLocation, onLocationChange, o
   }, []);
 
   const current = locationOptions.find(l => l.id === selectedLocation);
-  const isClosed = openByLocation[selectedLocation] === false || hasMenuByLocation[selectedLocation] === false;
+  // A hall whose menu failed to download is NOT closed. Conflating the two put
+  // a padlock and "Closed today" on halls that were open and serving, and
+  // disabled the option so nobody could select it and try again.
+  const failedFor = (id) => failedByLocation?.[id] === true;
+  const closedFor = (id) => !failedFor(id)
+    && (openByLocation[id] === false || hasMenuByLocation[id] === false);
+  const isClosed = closedFor(selectedLocation);
 
   return (
     <div className="location-picker" ref={ref} onClick={e => e.stopPropagation()}>
@@ -51,7 +57,8 @@ function LocationPicker({ locationOptions, selectedLocation, onLocationChange, o
       {open && (
         <div className="location-picker-menu">
           {locationOptions.map(loc => {
-            const closed = openByLocation[loc.id] === false || hasMenuByLocation[loc.id] === false;
+            const closed = closedFor(loc.id);
+            const failed = failedFor(loc.id);
             return (
               <button
                 key={loc.id}
@@ -60,6 +67,7 @@ function LocationPicker({ locationOptions, selectedLocation, onLocationChange, o
               >
                 <span className="option-label">{loc.label}</span>
                 {closed && <span className="option-closed">Closed</span>}
+                {failed && <span className="option-failed">Didn't load</span>}
                 {selectedLocation === loc.id && (
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <polyline points="20 6 9 17 4 12" />
@@ -80,6 +88,7 @@ export default function MealCard({
   isPast,
   locationOptions,
   locationData,
+  onRetryMenu,
   customPlan,
   onBrowserDone,
   selectedLocation,
@@ -124,6 +133,8 @@ export default function MealCard({
   const openByLocation      = Object.fromEntries((locationOptions ?? []).map(l => [l.id, locationData?.[l.id]?.isOpen ?? true]));
   const rawItemsByLocation  = Object.fromEntries((locationOptions ?? []).map(l => [l.id, locationData?.[l.id]?.rawItems ?? []]));
   const hasMenuByLocation   = Object.fromEntries((locationOptions ?? []).map(l => [l.id, (locationData?.[l.id]?.rawCount ?? 0) > 0]));
+  const failedByLocation    = Object.fromEntries((locationOptions ?? []).map(l => [l.id, locationData?.[l.id]?.fetchFailed === true]));
+  const currentLocationFailed = failedByLocation[selectedLocation] === true;
   const currentRawCount     = locationData?.[selectedLocation]?.rawCount ?? 0;
   const firstLocId          = locationOptions?.[0]?.id;
   const bentoPlan           = plansByLocation[selectedLocation] ?? (firstLocId ? plansByLocation[firstLocId] : undefined);
@@ -199,6 +210,7 @@ export default function MealCard({
             onLocationChange={onLocationChange}
             openByLocation={openByLocation}
             hasMenuByLocation={hasMenuByLocation}
+            failedByLocation={failedByLocation}
           />
           {!isConfirmed && (
             <svg className={`collapse-chevron ${collapsed ? '' : 'open'}`} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -217,10 +229,22 @@ export default function MealCard({
         </div>
       )}
       {!collapsed && isCurrentLocationOpen && currentRawCount === 0 && (
-        <div className="location-closed">
-          <p>No {meal} menu posted at this location today.</p>
-          <p className="closed-sub">Try switching to another dining hall above.</p>
-        </div>
+        currentLocationFailed ? (
+          <div className="location-closed">
+            <p>This menu didn't load.</p>
+            <p className="closed-sub">
+              {locationLabel} may well be open. Something went wrong fetching the menu.
+            </p>
+            {onRetryMenu && (
+              <button className="location-retry-btn" onClick={onRetryMenu}>Retry</button>
+            )}
+          </div>
+        ) : (
+          <div className="location-closed">
+            <p>No {meal} menu posted at this location today.</p>
+            <p className="closed-sub">Try switching to another dining hall above.</p>
+          </div>
+        )
       )}
 
       {/* ── Mode selector ────────────────────────────────────── */}

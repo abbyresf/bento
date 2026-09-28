@@ -722,3 +722,29 @@
   gap: 0.55rem;
   flex-shrink: 0;
 }
+
+/* A hall whose menu failed to download is not a closed hall. It gets its own
+   label in the picker and its own way out of the dead end. */
+.option-failed {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #d9641a;
+  margin-left: auto;
+  padding-right: 0.4rem;
+  white-space: nowrap;
+}
+
+.location-retry-btn {
+  margin-top: 0.75rem;
+  padding: 0.45rem 1.1rem;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--btn-fg, #ffffff);
+  background: var(--btn-bg, #f47421);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.location-retry-btn:hover { background: var(--btn-bg-hover, #d9641a); }
