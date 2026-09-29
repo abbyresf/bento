@@ -13,14 +13,37 @@
 # menu_cache is deliberately excluded. It is regenerable scraped HTML and was
 # the thing that filled the disk in the first place.
 #
-# Requires two repository secrets, the same ones the reminder workflow uses:
+# ENCRYPTED, and that is not optional. THIS REPOSITORY IS PUBLIC, and GitHub
+# Actions artifacts on a public repository can be downloaded by anyone who can
+# read the repo, which is everyone. An unencrypted export here would publish
+# every student's email, dietary restrictions (kosher and halal included), meal
+# history and feedback to the open internet. The export is symmetrically
+# encrypted with AES-256 before it is ever uploaded, so the artifact being
+# public is harmless.
+#
+# Runs every 6 hours rather than weekly. Actions minutes are free on public
+# repositories and a full export is under a megabyte, so frequency costs
+# nothing. This matters more now that the research study will hold data that
+# cannot be regenerated.
+#
+# Requires three repository secrets:
 #   VITE_SUPABASE_URL
 #   SUPABASE_SERVICE_ROLE_KEY
+#   BACKUP_PASSPHRASE          <- new. Store it somewhere OTHER than this repo.
+#
+# openssl rather than gpg, deliberately: openssl ships with macOS, so a restore
+# needs nothing installed at the moment you need it most. Verified end to end.
+#
+# To restore:
+#   openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
+#     -pass pass:'<BACKUP_PASSPHRASE>' -in backup.tar.gz.enc | tar xz
+# Schema comes from supabase/migrations, so migrations plus these JSON files
+# are a complete restore.
 name: Weekly backup
 
 on:
   schedule:
-    - cron: '0 9 * * 1'   # Mondays, 09:00 UTC
+    - cron: '0 */6 * * *'   # every 6 hours
   workflow_dispatch:
 
 jobs:
@@ -46,7 +69,10 @@ jobs:
                     'suggestions','suggestion_emphasizes','suggestion_flags',
                     'university_requests','admin_users','pulse_invites','feedback',
                     'push_subscriptions','dining_availability','menu_health_log',
-                    'reminder_sends']
+                    'reminder_sends','surveys','survey_responses',
+                    # Research study. Absent until the migration lands, and a
+                    # 404 is skipped rather than failing the run.
+                    'study_participants']
 
           summary, total, failed = {}, 0, []
           for t in tables:
@@ -94,9 +120,36 @@ jobs:
               raise SystemExit('FAILED: backup contained zero rows')
           PY
 
+      - name: Encrypt the export
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::error title=BACKUP_PASSPHRASE is not set::Refusing to upload an unencrypted export from a PUBLIC repository. Add the secret first."
+            exit 1
+          fi
+
+          tar czf backup.tar.gz backup/
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt \
+            -pass env:BACKUP_PASSPHRASE \
+            -in backup.tar.gz -out backup.tar.gz.enc
+
+          # Leave nothing in plaintext for the upload step to find.
+          rm -rf backup backup.tar.gz
+
+          # Prove the ciphertext is actually opaque before publishing it to a
+          # public artifact. A silent encryption failure here would expose every
+          # student record, so this fails the run rather than trusting openssl.
+          if grep -qa '"email"' backup.tar.gz.enc; then
+            echo "::error title=Encryption failed::Plaintext found in the output. Not uploading."
+            rm -f backup.tar.gz.enc
+            exit 1
+          fi
+          ls -lh backup.tar.gz.enc
+
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: bento-backup-${{ github.run_id }}
-          path: backup/
-          retention-days: 90
+          path: backup.tar.gz.enc
+          retention-days: 35
