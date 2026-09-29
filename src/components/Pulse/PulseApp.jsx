@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { getAdminRecord } from '../../lib/pulseDb';
+import { getAdminRecord, updatePulsePassword } from '../../lib/pulseDb';
 import PulseLogin from './PulseLogin';
 import PulseDashboard from './PulseDashboard';
+import PulseSetPassword from './PulseSetPassword';
 
 // Demo mode. ?mock=true renders the dashboard with generated data and no login.
 //
@@ -22,10 +23,15 @@ export default function PulseApp() {
   const [admin, setAdmin] = useState(null);
   const [checking, setChecking] = useState(false);
   const [denied, setDenied] = useState(false);
+  // Supabase fires PASSWORD_RECOVERY when someone opens a reset link. The
+  // session that arrives is a recovery session: it can change the password and
+  // little else, so the dashboard must not render until a new one is set.
+  const [recovering, setRecovering] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, s) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
+      if (event === 'PASSWORD_RECOVERY') setRecovering(true);
       setSession(s ?? null);
     });
     return () => subscription.unsubscribe();
@@ -52,6 +58,20 @@ export default function PulseApp() {
     setAdmin(null);
     setDenied(false);
   };
+
+  if (recovering) {
+    return (
+      <PulseSetPassword
+        onDone={async () => {
+          setRecovering(false);
+          // Sign out so the new password is used deliberately rather than
+          // riding the recovery session straight into the dashboard.
+          await supabase.auth.signOut();
+        }}
+        onSubmit={updatePulsePassword}
+      />
+    );
+  }
 
   if (DEMO) {
     return (

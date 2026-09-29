@@ -14,6 +14,8 @@
   position: sticky;
   top: 0;
   z-index: 100;
+  /* Sticky to the very top, so it owns the status bar strip under cover mode. */
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 .pulse-header-inner {
@@ -1403,3 +1405,61 @@
   .pulse-survey-formats   { grid-template-columns: 1fr; }
   .pulse-survey-tally-row { grid-template-columns: 70px 1fr 32px; }
 }
+
+/* ── Team access modal ──────────────────────────────────────────────────────*/
+
+.pulse-modal-tabs {
+  display: flex;
+  gap: 2px;
+  background: #f7f4f0;
+  border: 1px solid #e8e3dd;
+  border-radius: 8px;
+  padding: 3px;
+  margin-bottom: 1.1rem;
+}
+
+.pulse-modal-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #94a3b8;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+}
+
+.pulse-modal-tab.active {
+  background: white;
+  color: #1a2b3c;
+  box-shadow: 0 1px 3px rgba(26, 43, 60, 0.1);
+}
+
+.pulse-invite-hint {
+  font-size: 0.68rem;
+  line-height: 1.5;
+  color: #94a3b8;
+  margin: 0.6rem 0 0;
+}
+
+.pulse-invite-revoke-btn {
+  background: none;
+  border: 1px solid #e8e3dd;
+  border-radius: 5px;
+  color: #94a3b8;
+  font-family: inherit;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+}
+
+.pulse-invite-revoke-btn:hover { color: #dc2626; border-color: #dc2626; }
+
+/* Statuses. Revoked and expired read as inert rather than alarming: neither is
+   an error, they are just invites that can no longer be used. */
+.pulse-invite-status.accepted { background: #f0fdf4; color: #16a34a; }
+.pulse-invite-status.revoked  { background: #f1f5f9; color: #94a3b8; }
+.pulse-invite-status.expired  { background: #f1f5f9; color: #94a3b8; }

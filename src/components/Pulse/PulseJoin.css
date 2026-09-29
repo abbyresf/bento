@@ -143,3 +143,25 @@
   color: #64748b;
   margin: 0 0 0.5rem;
 }
+
+.pulse-join-alt {
+  font-size: 0.74rem;
+  line-height: 1.5;
+  color: #94a3b8;
+  text-align: center;
+  margin: 1rem 0 0;
+}
+
+.pulse-join-linkbtn {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #f47421;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.pulse-join-linkbtn:disabled { opacity: 0.5; cursor: default; }

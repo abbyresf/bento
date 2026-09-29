@@ -239,12 +239,71 @@ export async function getAdminRecord() {
   return data ?? null;
 }
 
-export async function sendInvite(email, university) {
+/**
+ * Create and send an invite, or resend an existing one.
+ *
+ * All the work happens in the send-invite Edge Function: it mints the token,
+ * stores only its hash, and sends the single email. The browser used to send a
+ * second copy through EmailJS after this call, so invitees got two emails and
+ * the UI reported success from the wrong one. That path is gone.
+ */
+export async function sendInvite({ email, university, inviteId } = {}) {
   const { data, error } = await supabase.functions.invoke('send-invite', {
-    body: { email, university },
+    body: inviteId ? { inviteId } : { email, university },
   });
-  if (error || data?.error) throw new Error(data?.error ?? error?.message ?? 'Failed to send invite.');
-  return data; // { id, emailSent, link }
+  if (error) {
+    let msg = 'Could not send the invite.';
+    try {
+      const body = await error.context?.json?.();
+      if (body?.error) msg = body.error;
+    } catch { /* non-JSON error body */ }
+    throw new Error(msg);
+  }
+  if (data?.error) throw new Error(data.error);
+  return data; // { id, emailSent, emailError, link }
+}
+
+/** Cancel a pending invite. The emailed link stops working immediately. */
+export async function revokeInvite(inviteId) {
+  const { error } = await supabase
+    .from('pulse_invites')
+    .update({ revoked_at: new Date().toISOString() })
+    .eq('id', inviteId)
+    .is('used_at', null)
+    .is('revoked_at', null);
+  if (error) throw new Error('Could not revoke that invite.');
+}
+
+/** pending | accepted | revoked | expired */
+export function inviteStatus(inv) {
+  if (inv.used_at) return 'accepted';
+  if (inv.revoked_at) return 'revoked';
+  if (new Date(inv.expires_at) <= new Date()) return 'expired';
+  return 'pending';
+}
+
+/** Admins at this university, so access can be removed when someone leaves. */
+export async function getAdmins(university) {
+  const { data, error } = await supabase
+    .from('admin_users')
+    .select('id, user_id, university, is_active, is_super_admin, created_at')
+    .eq('university', university)
+    .order('created_at', { ascending: true });
+  if (error) return [];
+  return data ?? [];
+}
+
+/**
+ * Turn an admin's access on or off. Guarded in the database too: migration 035
+ * forbids a super admin changing their own row, so the last administrator
+ * cannot lock everyone out.
+ */
+export async function setAdminActive(adminRowId, isActive) {
+  const { error } = await supabase
+    .from('admin_users')
+    .update({ is_active: isActive })
+    .eq('id', adminRowId);
+  if (error) throw new Error('Could not update that admin.');
 }
 
 async function getUserIdsForUniversity(university) {
@@ -256,14 +315,39 @@ async function getUserIdsForUniversity(university) {
 }
 
 export async function getInvites() {
-  const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const { data, error } = await supabase
     .from('pulse_invites')
-    .select('id, email, university, used_at, expires_at, created_at')
-    .or(`used_at.not.is.null,expires_at.gte.${cutoff}`)
-    .order('created_at', { ascending: false });
+    .select('id, email, university, used_at, revoked_at, expires_at, created_at, last_sent_at')
+    .order('created_at', { ascending: false })
+    .limit(50);
   if (error) throw error;
   return data ?? [];
+}
+
+// ── Password reset ─────────────────────────────────────────────────────────
+//
+// Pulse had no reset at all: an admin who forgot their password had no way
+// back in, and the only thing that ever changed a password was redeeming an
+// invite, which is exactly the behaviour that has now been removed.
+//
+// Separate from the student helper in lib/db.js because the recovery link has
+// to return to /admin. Sending an admin to /app would drop them into the
+// student experience holding a recovery session.
+
+export async function sendPulsePasswordReset(email) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+    redirectTo: `${window.location.origin}/admin`,
+  });
+  // Deliberately not surfaced to the caller as a failure for an unknown
+  // address: "no such account" tells an attacker which emails are admins.
+  if (error && !/user not found/i.test(error.message ?? '')) {
+    throw new Error('Could not send the reset email. Try again shortly.');
+  }
+}
+
+export async function updatePulsePassword(newPassword) {
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw new Error(error.message ?? 'Could not update your password.');
 }
 
 // ── Data queries ──────────────────────────────────────────────────────────────

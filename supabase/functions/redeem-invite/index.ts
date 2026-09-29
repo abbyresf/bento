@@ -1,6 +1,26 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+/* Accept a Pulse admin invite.
+ *
+ * The previous version did something no product should: if the invited address
+ * already had a Bento account, it called updateUserById with whatever password
+ * the redeemer typed. Granting a role silently reset the account's credentials,
+ * so inviting a student's address handed whoever opened the link control of
+ * that student's account. Combined with the old anon-readable invites table,
+ * an attacker did not even need to be invited.
+ *
+ * Now the two cases are separate and neither touches an existing password:
+ *
+ *   new address       -> create the account with the password they chose
+ *   existing account  -> grant the admin role only, and tell them to sign in
+ *                        with the password they already have
+ *
+ * Someone who has forgotten that password uses the ordinary reset flow on the
+ * login screen, which sends a link to the address they control. That is the
+ * only path by which a password changes.
+ */
+
 const cors = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -13,128 +33,117 @@ function json(body: unknown, status = 200) {
   })
 }
 
+async function sha256Hex(input: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input))
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
 
   try {
     const { token, password } = await req.json()
-
-    if (!token || !password || password.length < 8) {
-      return json({ error: 'Password must be at least 8 characters.' }, 400)
-    }
+    if (!token) return json({ error: 'Invite link is invalid.' }, 400)
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-      { auth: { autoRefreshToken: false, persistSession: false } }
+      { auth: { autoRefreshToken: false, persistSession: false } },
     )
 
-    // Validate invite
-    const { data: invite, error: inviteErr } = await supabase
+    const { data: invite } = await supabase
       .from('pulse_invites')
-      .select('*')
-      .eq('id', token)
-      .is('used_at', null)
-      .gt('expires_at', new Date().toISOString())
-      .single()
+      .select('id, email, university, used_at, revoked_at, expires_at')
+      .eq('token_hash', await sha256Hex(token))
+      .maybeSingle()
 
-    if (inviteErr || !invite) {
-      console.error('Invite lookup failed:', inviteErr?.message)
-      return json({ error: 'Invite link is invalid or has already been used.' }, 400)
+    if (!invite || invite.used_at || invite.revoked_at ||
+        new Date(invite.expires_at) <= new Date()) {
+      return json({ error: 'This invite is invalid, expired, or has already been used.' }, 400)
     }
 
-    // Try to create a new auth user with the invited email
-    const { data: authData, error: authErr } = await supabase.auth.admin.createUser({
-      email: invite.email,
-      password,
-      email_confirm: true,
-    })
+    // Does an account already exist for this address? Asked directly rather
+    // than by paging listUsers, which only ever scanned the first 1000 accounts
+    // and would have started failing silently as the user base grew.
+    const { data: existingList } = await supabase.auth.admin.listUsers({
+      page: 1, perPage: 1, filter: `email.eq.${invite.email}`,
+    } as unknown as { page: number; perPage: number })
+
+    let existing = existingList?.users?.find(
+      (u) => u.email?.toLowerCase() === invite.email.toLowerCase(),
+    )
+
+    // Older gotrue builds ignore `filter`. Fall back to a bounded scan rather
+    // than trusting a possibly unfiltered first page.
+    if (!existing) {
+      for (let page = 1; page <= 20 && !existing; page++) {
+        const { data } = await supabase.auth.admin.listUsers({ page, perPage: 1000 })
+        if (!data?.users?.length) break
+        existing = data.users.find((u) => u.email?.toLowerCase() === invite.email.toLowerCase())
+      }
+    }
 
     let userId: string
+    let accountExisted = false
 
-    if (authErr) {
-      // If an account with this email already exists (e.g. a student account),
-      // find that user and update their password so they can log in as admin.
-      const alreadyExists =
-        authErr.message?.toLowerCase().includes('already') ||
-        authErr.message?.toLowerCase().includes('exists') ||
-        authErr.status === 422
-
-      if (!alreadyExists) {
-        console.error('createUser failed:', authErr.message)
-        return json({ error: authErr.message }, 400)
-      }
-
-      // Look up the existing user by email
-      const { data: usersData, error: listErr } = await supabase.auth.admin.listUsers({
-        page: 1,
-        perPage: 1000,
-      })
-
-      if (listErr) {
-        console.error('listUsers failed:', listErr.message)
-        return json({ error: 'Failed to locate existing account. Please contact support.' }, 500)
-      }
-
-      const existing = usersData.users.find(
-        (u) => u.email?.toLowerCase() === invite.email.toLowerCase()
-      )
-
-      if (!existing) {
-        console.error('User not found after alreadyExists error for:', invite.email)
-        return json({ error: 'Account lookup failed. Please contact support.' }, 500)
-      }
-
-      // Update their password to what they entered on the invite form
-      const { error: updateErr } = await supabase.auth.admin.updateUserById(existing.id, {
-        password,
-      })
-
-      if (updateErr) {
-        console.error('updateUserById failed:', updateErr.message)
-        return json({ error: 'Failed to update account. Please contact support.' }, 500)
-      }
-
+    if (existing) {
+      accountExisted = true
       userId = existing.id
+      // Deliberately no password write here. See the header.
     } else {
-      userId = authData.user.id
+      if (!password || String(password).length < 8) {
+        return json({ error: 'Password must be at least 8 characters.' }, 400)
+      }
+      const { data: created, error: createErr } = await supabase.auth.admin.createUser({
+        email: invite.email,
+        password,
+        email_confirm: true,
+      })
+      if (createErr || !created?.user) {
+        return json({ error: createErr?.message ?? 'Could not create the account.' }, 400)
+      }
+      userId = created.user.id
     }
 
-    // Check if admin record already exists for this user + university
-    const { data: existingAdmin } = await supabase
+    const { data: alreadyAdmin } = await supabase
       .from('admin_users')
-      .select('id')
+      .select('id, is_active')
       .eq('user_id', userId)
       .eq('university', invite.university)
-      .single()
+      .maybeSingle()
 
-    if (!existingAdmin) {
+    if (alreadyAdmin) {
+      // Reactivate rather than duplicate, so re-inviting someone who was
+      // removed restores their access.
+      if (!alreadyAdmin.is_active) {
+        await supabase.from('admin_users').update({ is_active: true }).eq('id', alreadyAdmin.id)
+      }
+    } else {
       const { error: adminErr } = await supabase.from('admin_users').insert({
         user_id: userId,
         university: invite.university,
         is_active: true,
         is_super_admin: false,
       })
-
       if (adminErr) {
-        console.error('admin_users insert failed:', adminErr.message)
-        // Only roll back if we created a brand-new auth user
-        if (!authErr) {
-          await supabase.auth.admin.deleteUser(userId)
-        }
-        return json({ error: 'Failed to create admin record.' }, 500)
+        // Only undo an account this request created. Never delete one that
+        // already existed.
+        if (!accountExisted) await supabase.auth.admin.deleteUser(userId)
+        return json({ error: 'Could not grant admin access.' }, 500)
       }
     }
 
-    // Mark invite used
+    // Marked used last, so a failure above leaves the invite usable rather than
+    // burning it.
     await supabase
       .from('pulse_invites')
       .update({ used_at: new Date().toISOString() })
       .eq('id', invite.id)
 
-    return json({ success: true })
-  } catch (err) {
-    console.error('Unhandled error in redeem-invite:', err)
+    return json({ success: true, accountExisted, email: invite.email })
+  } catch {
     return json({ error: 'Internal error.' }, 500)
   }
 })

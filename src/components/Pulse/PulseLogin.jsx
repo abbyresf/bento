@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import ServiceDown from '../common/ServiceDown';
 import { supabase } from '../../lib/supabase';
+import { sendPulsePasswordReset } from '../../lib/pulseDb';
 import './PulseLogin.css';
 
 export default function PulseLogin({ onAuth, denied }) {
@@ -9,6 +10,11 @@ export default function PulseLogin({ onAuth, denied }) {
   const [error, setError] = useState(null);
   const [serviceDown, setServiceDown] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Pulse had no password recovery at all. An admin who forgot theirs had no
+  // route back in, because the only thing that ever set a password was
+  // redeeming an invite.
+  const [mode, setMode] = useState('signin');   // 'signin' | 'reset'
+  const [resetSent, setResetSent] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,6 +38,22 @@ export default function PulseLogin({ onAuth, denied }) {
     }
   };
 
+  const handleReset = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      await sendPulsePasswordReset(email);
+      // Shown whether or not the address exists. Confirming which emails are
+      // admins would hand an attacker a target list.
+      setResetSent(true);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (serviceDown) return <ServiceDown onRetry={() => setServiceDown(false)} />;
 
   return (
@@ -47,6 +69,48 @@ export default function PulseLogin({ onAuth, denied }) {
           <p className="pulse-login-error">Your account doesn't have admin access.</p>
         )}
 
+        {mode === 'reset' && (
+          resetSent ? (
+            <div className="pulse-login-sent">
+              <p className="pulse-login-sent-title">Check your email</p>
+              <p className="pulse-login-sent-body">
+                If an admin account exists for {email}, a reset link is on its way.
+                The link expires shortly, so use it soon.
+              </p>
+              <button
+                type="button"
+                className="pulse-login-linkbtn"
+                onClick={() => { setMode('signin'); setResetSent(false); }}
+              >
+                Back to sign in
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleReset} className="pulse-login-form">
+              <div className="pulse-login-field">
+                <label htmlFor="reset-email">Email</label>
+                <input
+                  id="reset-email"
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="admin@university.edu"
+                  required
+                  autoComplete="email"
+                />
+              </div>
+              {error && <p className="pulse-login-error">{error}</p>}
+              <button type="submit" className="pulse-login-btn" disabled={loading || !email.trim()}>
+                {loading ? 'Sending…' : 'Send reset link'}
+              </button>
+              <button type="button" className="pulse-login-linkbtn" onClick={() => setMode('signin')}>
+                Back to sign in
+              </button>
+            </form>
+          )
+        )}
+
+        {mode === 'signin' && (
         <form onSubmit={handleSubmit} className="pulse-login-form">
           <div className="pulse-login-field">
             <label>Email</label>
@@ -74,7 +138,15 @@ export default function PulseLogin({ onAuth, denied }) {
           <button type="submit" className="pulse-login-btn" disabled={loading}>
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
+          <button
+            type="button"
+            className="pulse-login-linkbtn"
+            onClick={() => { setMode('reset'); setError(null); }}
+          >
+            Forgot your password?
+          </button>
         </form>
+        )}
       </div>
     </div>
   );

@@ -1,12 +1,12 @@
-import { useState, useEffect, useMemo, useRef, useId } from 'react';
-import emailjs from '@emailjs/browser';
+import { useState, useEffect, useMemo, useRef, useId, useCallback } from 'react';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import {
   getPulseOverview, getMealAnalytics, getDietaryBreakdown,
-  getPulseRatings, sendInvite, getInvites, getAdminSuggestions,
+  getPulseRatings, sendInvite, getInvites, revokeInvite, inviteStatus,
+  getAdmins, setAdminActive, getAdminSuggestions,
 } from '../../lib/pulseDb';
 import SurveysCard from './SurveysCard';
 import './PulseDashboard.css';
@@ -394,125 +394,226 @@ const CHART_TOOLTIP = {
 
 // ── Invite modal ──────────────────────────────────────────────────────────────
 
+/* Invite and manage admins.
+ *
+ * Rewritten because the old version sent two emails for every invite: this
+ * modal called the Edge Function, which sent via Resend, and then sent a second
+ * copy through EmailJS from the browser, reporting success from the EmailJS
+ * result and ignoring the function's. One sender now, and the function says
+ * why if it could not send rather than failing silently.
+ *
+ * Also adds what an invite list is expected to have: a real status per row,
+ * resend, revoke, and a way to remove an admin who has left.
+ */
+
+const STATUS_LABEL = {
+  pending:  'Pending',
+  accepted: 'Accepted',
+  revoked:  'Revoked',
+  expired:  'Expired',
+};
+
 function InviteModal({ defaultUniversity, onClose }) {
-  const [email, setEmail] = useState('');
-  const [invites, setInvites]       = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError]           = useState(null);
-  const [sentTo, setSentTo]         = useState(null);
-  const [copied, setCopied]         = useState(false);
+  const [tab, setTab]           = useState('invites');
+  const [email, setEmail]       = useState('');
+  const [invites, setInvites]   = useState(null);
+  const [admins, setAdmins]     = useState(null);
+  const [busy, setBusy]         = useState(false);
+  const [error, setError]       = useState(null);
+  const [notice, setNotice]     = useState(null);
+  const [copied, setCopied]     = useState(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     getInvites().then(setInvites).catch(() => setInvites([]));
-  }, []);
+    getAdmins(defaultUniversity).then(setAdmins).catch(() => setAdmins([]));
+  }, [defaultUniversity]);
 
-  const handleCreate = async (e) => {
-    e.preventDefault();
-    setError(null); setSentTo(null); setSubmitting(true);
+  useEffect(() => { load(); }, [load]);
+
+  const copy = (link) => {
+    navigator.clipboard.writeText(link).then(() => {
+      setCopied(link);
+      setTimeout(() => setCopied(null), 2000);
+    });
+  };
+
+  // Shared by create and resend, because the only difference is the payload.
+  const send = async (payload, successText) => {
+    setBusy(true); setError(null); setNotice(null);
     try {
-      const result = await sendInvite(email, defaultUniversity);
-      let emailSent = false;
-      try {
-        await emailjs.send(
-          'service_0fhib6k',
-          'template_g9i3vw6',
-          {
-            email,
-            university: defaultUniversity,
-            invite_link: result.link,
-          },
-          { publicKey: 'urTn8G5d8khZF0NfZ' },
-        );
-        emailSent = true;
-      } catch {}
-      setSentTo({ email, emailSent, link: result.link });
+      const result = await sendInvite(payload);
+      setNotice({
+        text: result.emailSent
+          ? successText
+          : `Invite ready, but the email did not send${result.emailError ? ` (${result.emailError})` : ''}. Copy the link below.`,
+        link: result.emailSent ? null : result.link,
+      });
       setEmail('');
-      getInvites().then(setInvites).catch(() => {});
+      load();
     } catch (err) {
-      setError(err.message ?? 'Failed to send invite.');
+      setError(err.message);
     } finally {
-      setSubmitting(false);
+      setBusy(false);
     }
   };
 
-  const copyLink = (link) => {
-    navigator.clipboard.writeText(link).then(() => {
-      setCopied(link);
-      setTimeout(() => setCopied(false), 2000);
-    });
+  const handleCreate = (e) => {
+    e.preventDefault();
+    send({ email: email.trim(), university: defaultUniversity }, `Invite sent to ${email.trim()}.`);
+  };
+
+  const handleRevoke = async (id) => {
+    try { await revokeInvite(id); load(); }
+    catch (err) { setError(err.message); }
+  };
+
+  const handleToggleAdmin = async (row) => {
+    try { await setAdminActive(row.id, !row.is_active); load(); }
+    catch (err) { setError(err.message); }
   };
 
   return (
     <div className="pulse-modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="pulse-modal">
         <div className="pulse-modal-header">
-          <h2 className="pulse-modal-title">Invite an admin</h2>
+          <h2 className="pulse-modal-title">Team access</h2>
           <button className="pulse-modal-close" onClick={onClose} aria-label="Close">✕</button>
         </div>
-        <form onSubmit={handleCreate} className="pulse-invite-form">
-          <div className="pulse-invite-row">
-            <div className="pulse-invite-field">
-              <label>Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@university.edu" required />
-            </div>
-            <div className="pulse-invite-field pulse-invite-field-sm">
-              <label>University</label>
-              <input type="text" value={defaultUniversity} readOnly className="pulse-invite-readonly" />
-            </div>
-            <button type="submit" className="pulse-invite-submit" disabled={submitting}>
-              {submitting ? '…' : 'Send'}
-            </button>
-          </div>
-          {error && <p className="pulse-invite-err">{error}</p>}
-        </form>
 
-        {sentTo && (
+        <div className="pulse-modal-tabs">
+          {['invites', 'admins'].map(k => (
+            <button
+              key={k}
+              className={`pulse-modal-tab${tab === k ? ' active' : ''}`}
+              onClick={() => setTab(k)}
+            >
+              {k === 'invites' ? 'Invites' : 'Admins'}
+            </button>
+          ))}
+        </div>
+
+        {error && <p className="pulse-invite-err">{error}</p>}
+        {notice && (
           <div className="pulse-invite-newlink">
-            {sentTo.emailSent ? (
-              <p className="pulse-invite-newlink-label">✓ Invite sent to <strong>{sentTo.email}</strong></p>
-            ) : (
-              <>
-                <p className="pulse-invite-newlink-label">Email unavailable — share this link manually:</p>
-                <div className="pulse-invite-link-row">
-                  <span className="pulse-invite-link-text">{sentTo.link}</span>
-                  <button className="pulse-invite-copy-btn" onClick={() => copyLink(sentTo.link)}>
-                    {copied === sentTo.link ? 'Copied!' : 'Copy'}
-                  </button>
-                </div>
-              </>
+            <p className="pulse-invite-newlink-label">{notice.text}</p>
+            {notice.link && (
+              <div className="pulse-invite-link-row">
+                <span className="pulse-invite-link-text">{notice.link}</span>
+                <button className="pulse-invite-copy-btn" onClick={() => copy(notice.link)}>
+                  {copied === notice.link ? 'Copied' : 'Copy'}
+                </button>
+              </div>
             )}
           </div>
         )}
 
-        <div className="pulse-invite-list">
-          <p className="pulse-invite-list-label">All invites</p>
-          {invites === null && <p className="pulse-empty">Loading…</p>}
-          {invites?.length === 0 && <p className="pulse-empty">No invites yet.</p>}
-          {invites?.map(inv => {
-            const used    = !!inv.used_at;
-            const expired = !used && new Date(inv.expires_at) < new Date();
-            const pending = !used && !expired;
-            const link    = `${window.location.origin}/admin/join/${inv.id}`;
-            return (
-              <div key={inv.id} className="pulse-invite-row-item">
+        {tab === 'invites' && (
+          <>
+            <form onSubmit={handleCreate} className="pulse-invite-form">
+              <div className="pulse-invite-row">
+                <div className="pulse-invite-field">
+                  <label htmlFor="invite-email">Email</label>
+                  <input
+                    id="invite-email"
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="admin@university.edu"
+                    required
+                  />
+                </div>
+                <div className="pulse-invite-field pulse-invite-field-sm">
+                  <label htmlFor="invite-uni">University</label>
+                  <input id="invite-uni" type="text" value={defaultUniversity} readOnly className="pulse-invite-readonly" />
+                </div>
+                <button type="submit" className="pulse-invite-submit" disabled={busy || !email.trim()}>
+                  {busy ? '…' : 'Send'}
+                </button>
+              </div>
+              <p className="pulse-invite-hint">
+                The link expires in 7 days and works once. Someone who already has a
+                Bento account keeps their existing password.
+              </p>
+            </form>
+
+            <div className="pulse-invite-list">
+              {invites === null && <p className="pulse-empty">Loading…</p>}
+              {invites?.length === 0 && <p className="pulse-empty">No invites yet.</p>}
+              {invites?.map(inv => {
+                const status = inviteStatus(inv);
+                return (
+                  <div key={inv.id} className="pulse-invite-row-item">
+                    <div className="pulse-invite-row-info">
+                      <span className="pulse-invite-email">{inv.email}</span>
+                      <span className="pulse-invite-uni">
+                        {status === 'pending'
+                          ? `expires ${new Date(inv.expires_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                          : inv.university}
+                      </span>
+                    </div>
+                    <div className="pulse-invite-row-right">
+                      <span className={`pulse-invite-status ${status}`}>{STATUS_LABEL[status]}</span>
+                      {status === 'pending' && (
+                        <>
+                          <button
+                            className="pulse-invite-copy-btn"
+                            disabled={busy}
+                            onClick={() => send({ inviteId: inv.id }, `Invite resent to ${inv.email}.`)}
+                          >
+                            Resend
+                          </button>
+                          <button className="pulse-invite-revoke-btn" onClick={() => handleRevoke(inv.id)}>
+                            Revoke
+                          </button>
+                        </>
+                      )}
+                      {status === 'expired' && (
+                        <button
+                          className="pulse-invite-copy-btn"
+                          disabled={busy}
+                          onClick={() => send({ inviteId: inv.id }, `Invite resent to ${inv.email}.`)}
+                        >
+                          Resend
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {tab === 'admins' && (
+          <div className="pulse-invite-list">
+            {admins === null && <p className="pulse-empty">Loading…</p>}
+            {admins?.length === 0 && <p className="pulse-empty">No admins yet.</p>}
+            {admins?.map(row => (
+              <div key={row.id} className="pulse-invite-row-item">
                 <div className="pulse-invite-row-info">
-                  <span className="pulse-invite-email">{inv.email}</span>
-                  <span className="pulse-invite-uni">{inv.university}</span>
+                  <span className="pulse-invite-email">
+                    {row.is_super_admin ? 'Super admin' : 'Admin'}
+                  </span>
+                  <span className="pulse-invite-uni">
+                    added {new Date(row.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </span>
                 </div>
                 <div className="pulse-invite-row-right">
-                  <span className={`pulse-invite-status ${used ? 'used' : expired ? 'expired' : 'pending'}`}>
-                    {used ? 'Used' : expired ? 'Expired' : 'Pending'}
+                  <span className={`pulse-invite-status ${row.is_active ? 'pending' : 'revoked'}`}>
+                    {row.is_active ? 'Active' : 'Disabled'}
                   </span>
-                  {pending && (
-                    <button className="pulse-invite-copy-btn" onClick={() => copyLink(link)}>
-                      {copied === link ? 'Copied!' : 'Copy link'}
-                    </button>
-                  )}
+                  <button className="pulse-invite-revoke-btn" onClick={() => handleToggleAdmin(row)}>
+                    {row.is_active ? 'Disable' : 'Enable'}
+                  </button>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+            <p className="pulse-invite-hint">
+              Disabling removes dashboard access immediately. You cannot disable
+              your own account, so the last super admin cannot lock everyone out.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
