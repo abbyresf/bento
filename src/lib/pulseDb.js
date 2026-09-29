@@ -314,10 +314,22 @@ async function getUserIdsForUniversity(university) {
   return (data ?? []).map(p => p.id);
 }
 
+/**
+ * Invites that still need attention: pending, or expired and therefore
+ * resendable.
+ *
+ * Accepted and revoked invites are deliberately excluded. Someone who accepted
+ * is an admin now and belongs on the Admins tab, not in a queue of outstanding
+ * invitations, and a revoked invite is one you have already decided against.
+ * Showing everything turned this into a long wall of REVOKED rows, most of them
+ * created by migration 035 retiring every pre-existing invite at once.
+ */
 export async function getInvites() {
   const { data, error } = await supabase
     .from('pulse_invites')
     .select('id, email, university, used_at, revoked_at, expires_at, created_at, last_sent_at')
+    .is('used_at', null)
+    .is('revoked_at', null)
     .order('created_at', { ascending: false })
     .limit(50);
   if (error) throw error;

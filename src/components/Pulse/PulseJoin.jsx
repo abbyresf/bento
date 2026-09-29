@@ -21,6 +21,7 @@ import './PulseJoin.css';
 export default function PulseJoin({ token }) {
   const [invite, setInvite]   = useState(null);
   const [invalid, setInvalid] = useState(false);
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm]   = useState('');
   const [error, setError]     = useState(null);
@@ -43,13 +44,14 @@ export default function PulseJoin({ token }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    if (!email.trim()) { setError('Enter the email this invite was sent to.'); return; }
     if (password !== confirm) { setError('Passwords do not match.'); return; }
     if (password.length < 8)  { setError('Password must be at least 8 characters.'); return; }
 
     setLoading(true);
     try {
       const { data, error: fnErr } = await supabase.functions.invoke('redeem-invite', {
-        body: { token, password },
+        body: { token, password, email: email.trim() },
       });
       if (fnErr) {
         // supabase-js wraps a non-2xx response as FunctionsHttpError and puts
@@ -76,8 +78,9 @@ export default function PulseJoin({ token }) {
     setError(null);
     setLoading(true);
     try {
+      if (!email.trim()) { setError('Enter the email this invite was sent to.'); setLoading(false); return; }
       const { data, error: fnErr } = await supabase.functions.invoke('redeem-invite', {
-        body: { token },
+        body: { token, email: email.trim() },
       });
       if (fnErr || data?.error) throw new Error(data?.error ?? 'Could not accept the invite.');
       setDone({ accountExisted: true });
@@ -108,23 +111,33 @@ export default function PulseJoin({ token }) {
 
         {invite && !done && (
           <>
+            <p className="pulse-join-eyebrow">Set up your account</p>
             <p className="pulse-join-sub">
               You've been invited to manage dining analytics for{' '}
-              <strong>{invite.university}</strong>.
+              <strong>{invite.university}</strong>. Choose a password to finish
+              creating your Bento Pulse account.
             </p>
 
             <form onSubmit={handleSubmit} className="pulse-join-form">
               <div className="pulse-join-field">
-                <label htmlFor="join-email">Email</label>
-                {/* Masked. The invitee knows their own address, and anyone else
-                    holding the link should not learn whose invite it is. */}
+                <label htmlFor="join-email">Your email</label>
+                {/* Typed rather than pre-filled. The server checks it against
+                    the invite, so holding the link is not enough on its own:
+                    you also have to know who it was for. The masked hint below
+                    is there so a legitimate invitee is never left guessing. */}
                 <input
                   id="join-email"
-                  type="text"
-                  value={invite.emailMasked}
-                  readOnly
-                  className="pulse-join-readonly"
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="you@university.edu"
+                  required
+                  autoComplete="email"
+                  autoFocus
                 />
+                <p className="pulse-join-hint">
+                  This invite was sent to <strong>{invite.emailMasked}</strong>
+                </p>
               </div>
               <div className="pulse-join-field">
                 <label htmlFor="join-pw">Password</label>

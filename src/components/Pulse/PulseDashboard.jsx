@@ -538,7 +538,11 @@ function InviteModal({ defaultUniversity, onClose }) {
 
             <div className="pulse-invite-list">
               {invites === null && <p className="pulse-empty">Loading…</p>}
-              {invites?.length === 0 && <p className="pulse-empty">No invites yet.</p>}
+              {invites?.length === 0 && (
+                <p className="pulse-empty">
+                  No invites outstanding. Accepted invites appear under Admins.
+                </p>
+              )}
               {invites?.map(inv => {
                 const status = inviteStatus(inv);
                 return (

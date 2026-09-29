@@ -150,7 +150,11 @@ function App() {
 
   // ── Computed values & handlers ────────────────────────────────────────────────
 
-  const joinMatch = location.pathname.match(/^\/admin\/join\/([0-9a-f-]+)$/i);
+  // [0-9a-f-]+ was written when the invite token was the row's UUID. Tokens are
+  // now 32 random bytes in base64url, which contains upper case, underscore and
+  // characters outside hex, so this matched none of them and every invite link
+  // fell through to the sign-in page instead of the join page.
+  const joinMatch = location.pathname.match(/^\/admin\/join\/([A-Za-z0-9_-]+)$/);
   const isAuthRoute = location.pathname === '/login' || location.pathname === '/signup';
   const isAppRoute  = location.pathname.startsWith('/app');
 

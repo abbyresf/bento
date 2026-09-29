@@ -165,3 +165,20 @@
 }
 
 .pulse-join-linkbtn:disabled { opacity: 0.5; cursor: default; }
+
+.pulse-join-eyebrow {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #f47421;
+  margin: 0 0 0.4rem;
+}
+
+.pulse-join-hint {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  margin: 0.3rem 0 0;
+}
+
+.pulse-join-hint strong { color: #64748b; font-weight: 600; }

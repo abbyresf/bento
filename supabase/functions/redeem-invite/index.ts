@@ -44,7 +44,7 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
 
   try {
-    const { token, password } = await req.json()
+    const { token, password, email } = await req.json()
     if (!token) return json({ error: 'Invite link is invalid.' }, 400)
 
     const supabase = createClient(
@@ -62,6 +62,15 @@ serve(async (req) => {
     if (!invite || invite.used_at || invite.revoked_at ||
         new Date(invite.expires_at) <= new Date()) {
       return json({ error: 'This invite is invalid, expired, or has already been used.' }, 400)
+    }
+
+    // The invite is for one address and only that address. The link alone used
+    // to be enough, so a forwarded link let anyone claim it. Requiring the
+    // invited address means holding the link is not sufficient: you also have
+    // to know who it was for. The account is still created from invite.email
+    // rather than from this input, so a mismatch cannot redirect the invite.
+    if (String(email ?? '').trim().toLowerCase() !== invite.email.toLowerCase()) {
+      return json({ error: "That email doesn't match this invitation." }, 400)
     }
 
     // Does an account already exist for this address? Asked directly rather
