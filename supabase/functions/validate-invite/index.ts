@@ -69,11 +69,31 @@ serve(async (req) => {
       return json({ valid: false }, 200)
     }
 
+    // Does the invited address already have a Bento account? The join page
+    // needs to know BEFORE it renders. Asking for a password and then silently
+    // discarding it — which is what happens for an existing account, since
+    // granting a role must never touch credentials — reads as a broken sign-up:
+    // you set a password, then it does not work.
+    //
+    // This tells a link holder whether the invited address has an account.
+    // Judged acceptable: they already hold an invite addressed to that person,
+    // and account existence is not sensitive for a consumer dining app. The
+    // alternative is a two-step form for no real gain.
+    let accountExists = false
+    for (let page = 1; page <= 20 && !accountExists; page++) {
+      const { data } = await supabase.auth.admin.listUsers({ page, perPage: 1000 })
+      if (!data?.users?.length) break
+      accountExists = data.users.some(
+        (u) => u.email?.toLowerCase() === invite.email.toLowerCase(),
+      )
+    }
+
     return json({
       valid: true,
       university: invite.university,
       emailMasked: maskEmail(invite.email),
       expiresAt: invite.expires_at,
+      accountExists,
     })
   } catch {
     return json({ error: 'Internal error.' }, 500)

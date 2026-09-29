@@ -282,13 +282,18 @@ export function inviteStatus(inv) {
   return 'pending';
 }
 
-/** Admins at this university, so access can be removed when someone leaves. */
+/**
+ * Admin roster for this university, with emails.
+ *
+ * Goes through an RPC rather than selecting admin_users directly, because the
+ * email lives in auth.users which no client role can read. Without it the panel
+ * could only render "Admin" and a date, which does not answer the one question
+ * it exists to answer: who actually joined. See migration 037.
+ */
 export async function getAdmins(university) {
-  const { data, error } = await supabase
-    .from('admin_users')
-    .select('id, user_id, university, is_active, is_super_admin, created_at')
-    .eq('university', university)
-    .order('created_at', { ascending: true });
+  const { data, error } = await supabase.rpc('get_university_admins', {
+    p_university: university,
+  });
   if (error) return [];
   return data ?? [];
 }

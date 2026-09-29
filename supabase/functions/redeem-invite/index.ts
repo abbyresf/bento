@@ -10,15 +10,22 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
  * that student's account. Combined with the old anon-readable invites table,
  * an attacker did not even need to be invited.
  *
- * Now the two cases are separate and neither touches an existing password:
+ * What made that a takeover was the enumerable invites table: anyone could
+ * obtain a link without access to the mailbox. That is closed — the token is
+ * 256 random bits, stored only as a hash, single use, and the redeemer must
+ * type the invited address. So reaching this page proves control of that
+ * mailbox, which is the same proof a password reset link provides.
  *
- *   new address       -> create the account with the password they chose
- *   existing account  -> grant the admin role only, and tell them to sign in
- *                        with the password they already have
+ * On that basis an existing account MAY set a password here, but only when the
+ * person explicitly supplies one. The rule kept is that granting a role must
+ * never SILENTLY change credentials:
  *
- * Someone who has forgotten that password uses the ordinary reset flow on the
- * login screen, which sends a link to the address they control. That is the
- * only path by which a password changes.
+ *   new address, password given      -> create the account with it
+ *   existing account, password given -> they asked; set it
+ *   existing account, no password    -> grant the role, touch nothing
+ *
+ * Forcing a password reset on someone who just proved mailbox control was
+ * redundant friction, not security.
  */
 
 const cors = {
@@ -96,11 +103,24 @@ serve(async (req) => {
 
     let userId: string
     let accountExisted = false
+    let passwordSet = false
 
     if (existing) {
       accountExisted = true
       userId = existing.id
-      // Deliberately no password write here. See the header.
+
+      // Only when they actually supplied one. A blank password means "keep
+      // what I have", and must never be treated as "set it to empty".
+      if (password) {
+        if (String(password).length < 8) {
+          return json({ error: 'Password must be at least 8 characters.' }, 400)
+        }
+        const { error: pwErr } = await supabase.auth.admin.updateUserById(userId, {
+          password: String(password),
+        })
+        if (pwErr) return json({ error: 'Could not set that password.' }, 400)
+        passwordSet = true
+      }
     } else {
       if (!password || String(password).length < 8) {
         return json({ error: 'Password must be at least 8 characters.' }, 400)
@@ -114,6 +134,7 @@ serve(async (req) => {
         return json({ error: createErr?.message ?? 'Could not create the account.' }, 400)
       }
       userId = created.user.id
+      passwordSet = true
     }
 
     const { data: alreadyAdmin } = await supabase
@@ -151,7 +172,7 @@ serve(async (req) => {
       .update({ used_at: new Date().toISOString() })
       .eq('id', invite.id)
 
-    return json({ success: true, accountExisted, email: invite.email })
+    return json({ success: true, accountExisted, passwordSet, email: invite.email })
   } catch {
     return json({ error: 'Internal error.' }, 500)
   }

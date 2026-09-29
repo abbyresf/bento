@@ -596,19 +596,29 @@ function InviteModal({ defaultUniversity, onClose }) {
               <div key={row.id} className="pulse-invite-row-item">
                 <div className="pulse-invite-row-info">
                   <span className="pulse-invite-email">
-                    {row.is_super_admin ? 'Super admin' : 'Admin'}
+                    {row.email}
+                    {row.is_super_admin && <span className="pulse-admin-badge">Super admin</span>}
+                    {row.is_self && <span className="pulse-admin-badge self">You</span>}
                   </span>
                   <span className="pulse-invite-uni">
-                    added {new Date(row.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    joined {new Date(row.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {' · '}
+                    {row.last_sign_in_at
+                      ? `last seen ${new Date(row.last_sign_in_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                      : 'never signed in'}
                   </span>
                 </div>
                 <div className="pulse-invite-row-right">
-                  <span className={`pulse-invite-status ${row.is_active ? 'pending' : 'revoked'}`}>
+                  <span className={`pulse-invite-status ${row.is_active ? 'accepted' : 'revoked'}`}>
                     {row.is_active ? 'Active' : 'Disabled'}
                   </span>
-                  <button className="pulse-invite-revoke-btn" onClick={() => handleToggleAdmin(row)}>
-                    {row.is_active ? 'Disable' : 'Enable'}
-                  </button>
+                  {/* Own row has no control: the database refuses it anyway, so
+                      offering a button that always fails would be a lie. */}
+                  {!row.is_self && (
+                    <button className="pulse-invite-revoke-btn" onClick={() => handleToggleAdmin(row)}>
+                      {row.is_active ? 'Disable' : 'Enable'}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

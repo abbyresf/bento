@@ -45,13 +45,23 @@ export default function PulseJoin({ token }) {
     e.preventDefault();
     setError(null);
     if (!email.trim()) { setError('Enter the email this invite was sent to.'); return; }
-    if (password !== confirm) { setError('Passwords do not match.'); return; }
-    if (password.length < 8)  { setError('Password must be at least 8 characters.'); return; }
+    // Required when creating an account. Optional for an existing one, but
+    // validated the moment anything is typed.
+    if (!invite.accountExists || password || confirm) {
+      if (password !== confirm) { setError('Passwords do not match.'); return; }
+      if (password.length < 8)  { setError('Password must be at least 8 characters.'); return; }
+    }
 
     setLoading(true);
     try {
       const { data, error: fnErr } = await supabase.functions.invoke('redeem-invite', {
-        body: { token, password, email: email.trim() },
+        body: {
+          token,
+          email: email.trim(),
+          // Omitted entirely when an existing user leaves it blank, which the
+          // server reads as "keep my current password".
+          ...(password ? { password } : {}),
+        },
       });
       if (fnErr) {
         // supabase-js wraps a non-2xx response as FunctionsHttpError and puts
@@ -64,26 +74,10 @@ export default function PulseJoin({ token }) {
         throw new Error(msg);
       }
       if (data?.error) throw new Error(data.error);
-      setDone({ accountExisted: data?.accountExisted === true });
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // An invite for an address that already has a Bento account needs no password
-  // at all, so accept it in one tap rather than asking for one we will not use.
-  const acceptExisting = async () => {
-    setError(null);
-    setLoading(true);
-    try {
-      if (!email.trim()) { setError('Enter the email this invite was sent to.'); setLoading(false); return; }
-      const { data, error: fnErr } = await supabase.functions.invoke('redeem-invite', {
-        body: { token, email: email.trim() },
+      setDone({
+        accountExisted: data?.accountExisted === true,
+        passwordSet: data?.passwordSet === true,
       });
-      if (fnErr || data?.error) throw new Error(data?.error ?? 'Could not accept the invite.');
-      setDone({ accountExisted: true });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -111,11 +105,15 @@ export default function PulseJoin({ token }) {
 
         {invite && !done && (
           <>
-            <p className="pulse-join-eyebrow">Set up your account</p>
+            <p className="pulse-join-eyebrow">
+              {invite.accountExists ? 'Accept invitation' : 'Set up your account'}
+            </p>
             <p className="pulse-join-sub">
               You've been invited to manage dining analytics for{' '}
-              <strong>{invite.university}</strong>. Choose a password to finish
-              creating your Bento Pulse account.
+              <strong>{invite.university}</strong>.{' '}
+              {invite.accountExists
+                ? 'You already have a Bento account with this address. Set a password below and use it from now on, or keep the one you have.'
+                : 'Choose a password to finish creating your Bento Pulse account.'}
             </p>
 
             <form onSubmit={handleSubmit} className="pulse-join-form">
@@ -139,8 +137,9 @@ export default function PulseJoin({ token }) {
                   This invite was sent to <strong>{invite.emailMasked}</strong>
                 </p>
               </div>
+              {(<>
               <div className="pulse-join-field">
-                <label htmlFor="join-pw">Password</label>
+                <label htmlFor="join-pw">{invite.accountExists ? 'New password' : 'Password'}</label>
                 <input
                   id="join-pw"
                   type="password"
@@ -163,18 +162,27 @@ export default function PulseJoin({ token }) {
                   autoComplete="new-password"
                 />
               </div>
+              </>)}
+
               {error && <p className="pulse-join-err">{error}</p>}
               <button type="submit" className="pulse-join-btn" disabled={loading}>
-                {loading ? 'Setting up…' : 'Create account'}
+                {loading
+                  ? 'Working…'
+                  : invite.accountExists ? 'Set password and accept' : 'Create account'}
               </button>
+
+              {invite.accountExists && (
+                <button
+                  type="button"
+                  className="pulse-join-linkbtn"
+                  disabled={loading}
+                  onClick={() => { setPassword(''); setConfirm(''); setTimeout(() => document.querySelector('.pulse-join-form')?.requestSubmit(), 0); }}
+                >
+                  Keep my current password
+                </button>
+              )}
             </form>
 
-            <p className="pulse-join-alt">
-              Already have a Bento account with this address?{' '}
-              <button type="button" className="pulse-join-linkbtn" onClick={acceptExisting} disabled={loading}>
-                Accept without changing your password
-              </button>
-            </p>
           </>
         )}
 
@@ -184,9 +192,9 @@ export default function PulseJoin({ token }) {
               {done.accountExisted ? 'Access granted' : 'Account created'}
             </p>
             <p className="pulse-join-success-body">
-              {done.accountExisted
-                ? 'Sign in with the password you already use for Bento. It has not been changed.'
-                : 'You can now sign in to Bento Pulse.'}
+              {done.passwordSet
+                ? 'Sign in with the password you just set.'
+                : 'Admin access added. Sign in with the password you already use for Bento, which has not been changed.'}
             </p>
             <a href="/admin" className="pulse-join-btn pulse-join-btn-link">Go to sign in</a>
           </div>

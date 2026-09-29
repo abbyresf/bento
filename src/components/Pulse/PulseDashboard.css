@@ -1463,3 +1463,19 @@
 .pulse-invite-status.accepted { background: #f0fdf4; color: #16a34a; }
 .pulse-invite-status.revoked  { background: #f1f5f9; color: #94a3b8; }
 .pulse-invite-status.expired  { background: #f1f5f9; color: #94a3b8; }
+
+.pulse-admin-badge {
+  display: inline-block;
+  margin-left: 0.45rem;
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0.1rem 0.38rem;
+  border-radius: 4px;
+  background: rgba(244, 116, 33, 0.12);
+  color: #b4470c;
+  vertical-align: middle;
+}
+
+.pulse-admin-badge.self { background: #f1f5f9; color: #64748b; }
