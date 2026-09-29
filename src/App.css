@@ -3,6 +3,12 @@
   flex-direction: column;
   min-height: 100vh;
   background: var(--bg-app);
+  /* viewport-fit=cover lets the page extend under the notch and the home
+     indicator, which is what makes env(safe-area-inset-*) report real values
+     at all. Every safe-area rule in this codebase was bottom-only, so the top
+     needs claiming here or the header sits under the status bar.
+     Zero on every device without a notch, so this is a no-op on the web. */
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 .tab-content {

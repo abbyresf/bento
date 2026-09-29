@@ -32,12 +32,12 @@ const PRIVACY_SECTIONS = [
   {
     id: 'retention',
     heading: 'Data Retention',
-    body: 'We retain your account data for as long as your account is active. If you wish to delete your account and all associated data, contact us at bentodining@gmail.com and we will process your request within 30 days. Some anonymized, aggregated records may be retained after deletion as they cannot be linked back to any individual.',
+    body: 'We retain your account data for as long as your account is active. You can delete your account and all associated data yourself at any time from Settings, and the deletion takes effect immediately. You may also email bentodining@gmail.com and we will process the request within 30 days. Some anonymized, aggregated records may be retained after deletion as they cannot be linked back to any individual.',
   },
   {
     id: 'your-rights',
     heading: 'Your Rights',
-    body: 'You have the right to access the personal information we hold about you, request corrections to inaccurate data, request deletion of your account and personal data, and withdraw consent to any processing based on consent. To exercise any of these rights, contact us at bentodining@gmail.com. If you are located in the European Economic Area, you also have the right to lodge a complaint with your local data protection authority.',
+    body: 'You have the right to access the personal information we hold about you, request corrections to inaccurate data, delete your account and personal data, and withdraw consent to any processing based on consent. Account deletion is available directly in Settings. To exercise any other right, contact us at bentodining@gmail.com. If you are located in the European Economic Area, you also have the right to lodge a complaint with your local data protection authority.',
   },
   {
     id: 'security',
