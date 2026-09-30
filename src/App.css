@@ -13,8 +13,10 @@
 
 .tab-content {
   flex: 1;
-  min-height: calc(100vh - 60px);
-  padding-bottom: 60px;
+  /* Must clear the nav INCLUDING its safe-area strip, or the last card sits
+     under the home indicator. */
+  min-height: calc(100vh - 60px - env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
 }
 
 /* Inactive tabs stay mounted and are hidden rather than destroyed. Stated with

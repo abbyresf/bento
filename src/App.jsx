@@ -21,6 +21,7 @@ import { NutritionDisplayProvider } from './context/NutritionDisplayContext';
 import NotifPrompt from './components/Notifications/NotifPrompt';
 import SurveyPopup from './components/Survey/SurveyPopup';
 import SplashScreen from './components/Splash/SplashScreen';
+import UpdatePrompt from './components/common/UpdatePrompt';
 import './App.css';
 import BentoLogo from './components/common/BentoLogo';
 
@@ -284,6 +285,9 @@ function App() {
     <RatingsProvider>
       <NutritionDisplayProvider>
       <div className="app">
+        {/* Outside every gate on purpose: a stale build is worth flagging
+            whatever screen someone is on. */}
+        <UpdatePrompt />
         {hasCompletedOnboarding && hasAcceptedTerms && !showTutorial && !showInstallPrompt && <NotifPrompt />}
 
         {/* Queued behind every other prompt on purpose. A student meeting the
