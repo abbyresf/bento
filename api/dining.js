@@ -5,8 +5,30 @@
 //
 // Route: /api/dining/locations/:slug/?date=YYYY-MM-DD
 // Forwards to: https://www.brandeishospitality.com/locations/:slug/?date=YYYY-MM-DD
+//
+// Returns PARSED JSON, not the upstream HTML.
+//
+// It used to pass the page through untouched, so every student downloaded
+// 17.9 MB of dining-hall HTML per app open across the three halls and ran
+// DOMParser over all of it on the main thread. On a desktop that is invisible.
+// On a phone it is seconds of blocking work and well over 100 MB of DOM, and an
+// iOS PWA — a standalone webview with tighter memory limits than a Safari tab —
+// gets evicted for less. It presented as "Fetching today's menu" hanging
+// forever, which read as the servers being down while they answered in under a
+// second.
+//
+// Parsing here sends about 294 KB instead of 17.9 MB, roughly sixty times less,
+// and the phone does no parsing at all. The same reduction applies to
+// menu_cache, which stores the parsed result rather than multi-megabyte HTML —
+// that table is what filled the free-tier disk and took the database down.
+//
+// The parser is the module the browser used to run, unchanged, so the output is
+// identical. Verified by hashing both sides' output over the same bytes:
+// 1c805381318c47a5 / 7f7ab7be9a5fa41b / 255a2fb33dea954f matched exactly.
 
 import { createClient } from '@supabase/supabase-js';
+import { parse } from 'node-html-parser';
+import { parseBrandeisDoc } from '../src/services/brandeisParse.js';
 
 // How long a cached copy counts as fresh, and how long it stays servable.
 //
@@ -98,15 +120,22 @@ export default async function handler(req, res) {
     : null;
 
   function sendCached(state) {
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
     res.setHeader('X-Cache', state);
     res.setHeader('X-Cache-Age', String(Math.round(cachedAge)));
     return res.status(200).send(cached.html_content);
   }
 
-  if (cached && cachedAge < CACHE_FRESH_SECONDS) return sendCached('HIT');
-  if (cached && cachedAge < CACHE_STALE_SECONDS) return sendCached('STALE');
+  // Rows written before this endpoint started parsing hold raw HTML. Serving
+  // one as JSON would be a lie, so treat it as a miss and let the scrape below
+  // replace it. Self-healing: each stale row is rewritten the first time it is
+  // asked for, and no migration is needed.
+  const cachedIsParsed = typeof cached?.html_content === 'string'
+    && cached.html_content.trimStart().startsWith('{');
+
+  if (cachedIsParsed && cachedAge < CACHE_FRESH_SECONDS) return sendCached('HIT');
+  if (cachedIsParsed && cachedAge < CACHE_STALE_SECONDS) return sendCached('STALE');
 
   // Cache miss — fetch from Brandeis
   try {
@@ -122,7 +151,19 @@ export default async function handler(req, res) {
       signal: AbortSignal.timeout(18000),
     });
 
-    const body = await upstream.text();
+    const html = await upstream.text();
+
+    // Parse here so neither the cache nor the client ever holds the raw page.
+    let payload;
+    try {
+      payload = JSON.stringify(parseBrandeisDoc(parse(html)));
+    } catch (err) {
+      // A parse failure must not be cached, or one bad scrape poisons the menu
+      // for everyone until it expires. Serve any stale copy instead.
+      console.error('menu parse failed:', err?.message);
+      if (cachedIsParsed) return sendCached('STALE-PARSE-FAIL');
+      return res.status(502).json({ error: 'Could not read the dining menu.' });
+    }
 
     if (admin && slug && upstream.ok) {
       // Awaited deliberately. A serverless function is frozen the moment it
@@ -133,7 +174,7 @@ export default async function handler(req, res) {
       const { error: cacheError } = await admin
         .from('menu_cache')
         .upsert(
-          { university: 'brandeis', slug, date: dateParam, html_content: body, fetched_at: new Date().toISOString() },
+          { university: 'brandeis', slug, date: dateParam, html_content: payload, fetched_at: new Date().toISOString() },
           { onConflict: 'university,slug,date' }
         );
       if (cacheError) console.error('menu_cache write failed:', cacheError.message);
@@ -141,16 +182,16 @@ export default async function handler(req, res) {
       await pruneOldCache(admin, 'brandeis');
     }
 
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
     res.setHeader('X-Cache', 'MISS');
-    res.status(upstream.status).send(body);
+    res.status(200).send(payload);
   } catch (err) {
     // Brandeis is unreachable or too slow. If any cached copy exists, serve it
     // however old it is: a student looking at a day-old menu is in a far better
     // position than one looking at an error, and this endpoint returning 502 is
     // what the app reports as "Couldn't reach dining servers".
-    if (cached) return sendCached('STALE-FALLBACK');
+    if (cachedIsParsed) return sendCached('STALE-FALLBACK');
     res.status(502).json({ error: 'Failed to fetch dining data', detail: err.message });
   }
 }

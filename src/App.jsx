@@ -225,7 +225,12 @@ function App() {
     }} />;
   }
 
-  if (session === undefined || (session && hasCompletedOnboarding === null)) {
+  // Wait for BOTH gates. Terms was missing here, so between the session
+  // resolving and the terms read landing, hasAcceptedTerms was null, which the
+  // check below read as "not accepted" and flashed the terms screen at someone
+  // who had already signed it.
+  if (session === undefined ||
+      (session && (hasCompletedOnboarding === null || hasAcceptedTerms === null))) {
     return <div className="app-loading"><div className="spinner"></div></div>;
   }
 
@@ -264,11 +269,14 @@ function App() {
     return <LandingPage onGetStarted={() => setShowLanding(false)} initialTab={landingInitialTab} />;
   }
 
-  if (!hasCompletedOnboarding) {
+  // Explicitly false, never merely falsy. null means the read failed, and
+  // making someone redo onboarding because of a network blip is worse than
+  // showing them the app and letting the next read settle it.
+  if (hasCompletedOnboarding === false) {
     return <OnboardingWizard onComplete={handleOnboardingComplete} onGoContact={handleGoContact} onRequestSchool={handleGoRequestSchool} />;
   }
 
-  if (!hasAcceptedTerms) {
+  if (hasAcceptedTerms === false) {
     return <TermsGate onAccept={handleAcceptTerms} />;
   }
 

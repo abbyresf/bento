@@ -753,19 +753,34 @@ export async function incrementStreakForDate(date) {
 
 // ── Onboarding / Terms ─────────────────────────────────────────────────────
 
+// Both of these gate the whole app, so they return THREE states, not two:
+// true, false, or null meaning "could not find out". They used to collapse a
+// failed read into false, which is how a momentary database hiccup sent a
+// signed-up student back through onboarding, or made them accept the terms
+// again. A read failing is not the same as a student not having agreed, and
+// the caller must be able to tell the difference.
+
 export async function isOnboardingComplete() {
-  const profile = await getUserProfile();
-  return !!(profile?.weight && profile?.age);
+  const id = await uid();
+  if (!id) return false;
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('weight, age')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) return null;               // unknown, not "incomplete"
+  return !!(data?.weight && data?.age);
 }
 
 export async function isTermsAccepted() {
   const id = await uid();
   if (!id) return false;
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .select('terms_accepted')
     .eq('id', id)
-    .single();
+    .maybeSingle();
+  if (error) return null;               // unknown, not "declined"
   return data?.terms_accepted === true;
 }
 
