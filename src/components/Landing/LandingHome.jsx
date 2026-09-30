@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { submitWaitlistEntry } from '../../lib/db';
+import { UNIVERSITIES } from '../../data/universities';
 import './LandingHome.css';
 
 /* ── SVG Icon Library ── */
@@ -95,34 +96,37 @@ const TAGS = [
   { label: 'Low Sugar',    color: '#FD8F2A', pos: 'bl' },
 ];
 
+/* Three steps, each one showing the screen it describes.
+ *
+ * This was four steps of prose with an `img` on every one that the component
+ * never rendered, so menu.png and bentos-pick.png existed in the repo and
+ * appeared nowhere on the site. The page asked students to read four
+ * paragraphs about an app it would not show them. Showing the real screens
+ * says more than the paragraphs did, so the copy shrank to fit under them. */
 const STEPS = [
   {
     num: '01',
-    icon: 'school',
-    title: 'Pick your school',
-    desc: 'Bento connects to your campus dining system and pulls the actual menu every morning. Not a recipe database. Not yesterday\'s data. What is actually being served right now.',
-    img: '/screenshots/today.png',
+    icon: 'menu',
+    title: 'See today’s menu',
+    desc: 'Every station and every special at your dining hall, pulled live each morning. Know what is there before you leave your dorm.',
+    img: '/screenshots/menu.png',
+    alt: 'The Bento menu screen listing today’s dishes by dining station.',
   },
   {
     num: '02',
-    icon: 'menu',
-    title: "See the full menu before you go",
-    desc: "Every station, every special, every option available today. You know exactly what you are walking into before you even leave your dorm.",
-    img: '/screenshots/menu.png',
+    icon: 'target',
+    title: 'Find your fit',
+    desc: 'Set your goals and restrictions once. Bento matches them against what is being served today and shows you what works.',
+    img: '/screenshots/bentos-pick.png',
+    alt: 'A suggested meal in Bento, with its calories and macros against the day’s targets.',
   },
   {
     num: '03',
-    icon: 'sparkle',
-    title: 'We figure out your targets',
-    desc: "Bento calculates your daily calorie and macro goals based on your height, weight, age, and activity level. Not a rough estimate. Then it matches those numbers to what is on the menu today.",
-    img: '/screenshots/bentos-pick.png',
-  },
-  {
-    num: '04',
-    icon: 'target',
-    title: 'Walk in, grab your plate',
-    desc: 'Bento tells you what to get. You get it. Come back tomorrow and do it again without thinking about it once.',
+    icon: 'people',
+    title: 'Eat, then weigh in',
+    desc: 'Confirm your meal and rate the dishes. Ratings and dietary gaps reach your dining team as anonymous totals.',
     img: '/screenshots/today.png',
+    alt: 'The Bento home screen showing confirmed meals and daily progress.',
   },
 ];
 
@@ -182,6 +186,80 @@ function ShieldIcon() {
       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
       <polyline points="9 12 11 14 15 10"/>
     </svg>
+  );
+}
+
+/* ── School availability ──
+ *
+ * The page used to ask "Don't see your school?" without ever showing which
+ * schools there were, so a student had to start onboarding to find out. This
+ * reads the same UNIVERSITIES list onboarding uses, so what it reports is
+ * always what the app actually supports.
+ *
+ * Matching mirrors UniversityPicker: name or alias, case-insensitive. A school
+ * in the list but not live yet is a real answer, not a miss, so it is stated
+ * plainly rather than being dropped into the waitlist as if unknown.
+ */
+function SchoolCheck({ onGetStarted }) {
+  const [query, setQuery] = useState('');
+  const q = query.trim().toLowerCase();
+
+  const matches = q
+    ? UNIVERSITIES.filter(u =>
+        u.name.toLowerCase().includes(q) || u.aliases?.some(a => a.includes(q)))
+    : [];
+  const live = matches.filter(u => u.available);
+  const listed = matches.filter(u => !u.available);
+
+  return (
+    <div className="lh-school-check">
+      <label className="lh-school-label" htmlFor="lh-school-input">
+        Search for your university
+      </label>
+      <input
+        id="lh-school-input"
+        className="lh-school-input"
+        type="text"
+        autoComplete="off"
+        placeholder="Start typing your school"
+        value={query}
+        onChange={e => setQuery(e.target.value)}
+      />
+
+      {/* Announced politely so a screen reader hears the answer without having
+          the focus pulled out of the field mid-word. */}
+      <div className="lh-school-results" role="status" aria-live="polite">
+        {live.map(u => (
+          <div key={u.id} className="lh-school-hit lh-school-hit--live">
+            <span className="lh-school-dot" aria-hidden="true" />
+            <div>
+              <p className="lh-school-hit-name">{u.name}</p>
+              <p className="lh-school-hit-note">Bento is live here. {u.location}</p>
+            </div>
+            <button className="lh-school-hit-btn" onClick={onGetStarted}>
+              Get started {Icon.arrow}
+            </button>
+          </div>
+        ))}
+
+        {listed.map(u => (
+          <div key={u.id} className="lh-school-hit">
+            <span className="lh-school-dot lh-school-dot--soon" aria-hidden="true" />
+            <div>
+              <p className="lh-school-hit-name">{u.name}</p>
+              <p className="lh-school-hit-note">Not live yet. Join the waitlist below.</p>
+            </div>
+          </div>
+        ))}
+
+        {q && matches.length === 0 && (
+          <p className="lh-school-none">
+            No match for &ldquo;{query}&rdquo;. Join the waitlist below and we will reach out
+            when Bento comes to your dining hall.
+          </p>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -349,24 +427,24 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
       {/* HOW IT WORKS */}
       <section className="lh-how">
         <div className="lh-how-inner">
-          <div className="lh-how-steps-col">
-            <p className="lh-eyebrow">How it works</p>
-            <h2 className="lh-section-heading">Four steps.<br />Zero thinking.</h2>
+          <p className="lh-eyebrow">How it works</p>
+          <h2 className="lh-section-heading lh-how-heading">Three steps.<br />Zero thinking.</h2>
 
-            {STEPS.map((step, i) => (
-              <div key={step.num} className="lh-step">
-                <div className="lh-step-left">
-                  <div className="lh-step-icon">{Icon[step.icon]}</div>
-                  {i < STEPS.length - 1 && <div className="lh-step-line" aria-hidden="true" />}
-                </div>
+          <ol className="lh-how-steps">
+            {STEPS.map(step => (
+              <li key={step.num} className="lh-step">
+                <Phone className="lh-phone--step" src={step.img} alt={step.alt} />
                 <div className="lh-step-body">
-                  <div className="lh-step-num-label">{step.num}</div>
+                  <div className="lh-step-num-row">
+                    <span className="lh-step-icon">{Icon[step.icon]}</span>
+                    <span className="lh-step-num-label">{step.num}</span>
+                  </div>
                   <h3 className="lh-step-title">{step.title}</h3>
                   <p className="lh-step-desc">{step.desc}</p>
                 </div>
-              </div>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
       </section>
 
@@ -392,6 +470,23 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
               );
             })}
           </div>
+
+          {/* Sits with the dietary claim, not only in the footer. Bento reads
+              the labels the dining hall publishes; it cannot see the kitchen,
+              so it cannot speak to cross-contact. */}
+          <p className="lh-allergen-note">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FD8F2A"
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="13" />
+              <line x1="12" y1="16.5" x2="12.01" y2="16.5" />
+            </svg>
+            <span>
+              Bento filters on the dietary labels your dining hall publishes. It
+              cannot account for cross-contact in the kitchen. If you have a food
+              allergy, confirm ingredients and preparation with dining staff
+              before you eat.
+            </span>
+          </p>
         </div>
       </section>
 
@@ -418,13 +513,15 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
       </section>
 
       {/* WAITLIST */}
-      <section className="lh-waitlist">
+      <section className="lh-waitlist" id="lh-availability">
         <div className="lh-waitlist-inner">
-          <p className="lh-waitlist-eyebrow">Don't see your school?</p>
-          <h2 className="lh-waitlist-hed">Get early access.</h2>
+          <p className="lh-waitlist-eyebrow">Campus availability</p>
+          <h2 className="lh-waitlist-hed">Is Bento at your school?</h2>
           <p className="lh-waitlist-sub">
-            We're expanding to new campuses. Drop your email and we'll reach out when Bento comes to your dining hall.
+            Bento is live at Brandeis and Tufts, and we're adding campuses. Check
+            yours, then join the waitlist if it isn't there yet.
           </p>
+          <SchoolCheck onGetStarted={onGetStarted} />
           <WaitlistForm />
         </div>
       </section>
@@ -465,6 +562,9 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
               <button className="lh-btn-primary lh-btn-primary--inv" onClick={onGetStarted}>
                 Get Started {Icon.arrow}
               </button>
+              <a className="lh-cta-secondary" href="#lh-availability">
+                See if my school is supported
+              </a>
             </div>
             <p className="lh-cta-note">Save to your home screen &bull; Works on any phone</p>
           </div>

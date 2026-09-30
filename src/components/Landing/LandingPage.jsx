@@ -9,7 +9,7 @@ import PrivacyPage from '../Terms/PrivacyPage';
 import './LandingPage.css';
 
 const NAV_TABS = [
-  { id: 'home',         label: 'Home' },
+  { id: 'home',         label: 'For Students' },
   { id: 'universities', label: 'For Universities' },
   { id: 'about',        label: 'About' },
   { id: 'contact',      label: 'Contact' },

@@ -408,54 +408,59 @@
 }
 
 .lh-how-inner {
-  max-width: 900px;
+  /* Wider than the old 900px: this holds three phones side by side now, not a
+     single column of prose. */
+  max-width: 1080px;
   margin: 0 auto;
+}
+
+.lh-how-heading { text-align: center; }
+
+/* An ordered list, because the steps are a sequence and a screen reader should
+   say so. list-style is dropped since the visible 01/02/03 labels carry it. */
+.lh-how-steps {
+  list-style: none;
+  margin: 2.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 2.5rem 1.75rem;
+  grid-template-columns: repeat(3, 1fr);
 }
 
 .lh-step {
   display: flex;
-  gap: 1rem;
-  padding: 1.25rem 0;
-  border-bottom: 1px solid var(--lh-border);
-}
-
-.lh-step:last-child { border-bottom: none; }
-
-.lh-step-left {
-  display: flex;
   flex-direction: column;
   align-items: center;
-  flex-shrink: 0;
+  text-align: center;
+  gap: 1.25rem;
+}
+
+.lh-phone--step {
+  width: 100%;
+  max-width: 240px;
+}
+
+.lh-step-body { width: 100%; }
+
+.lh-step-num-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
 }
 
 .lh-step-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
   background: rgba(253,143,42,0.10);
-  color: var(--muted);
+  color: var(--orange);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background 0.3s, color 0.3s;
 }
-
-.lh-step--active .lh-step-icon {
-  background: var(--orange);
-  color: white;
-}
-
-.lh-step-line {
-  width: 2px;
-  flex: 1;
-  min-height: 1rem;
-  background: var(--lh-border);
-  margin-top: 8px;
-  border-radius: 1px;
-}
-
-.lh-step-body { flex: 1; min-width: 0; }
 
 .lh-step-num-label {
   font-size: 0.62rem;
@@ -463,14 +468,11 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
-  margin-bottom: 4px;
 }
-
-.lh-step--active .lh-step-num-label { color: var(--orange); }
 
 .lh-step-title {
   font-family: var(--ff-disp);
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 800;
   color: var(--navy);
   margin: 0 0 0.4rem;
@@ -481,7 +483,16 @@
   font-size: 0.85rem;
   line-height: 1.6;
   color: var(--muted);
-  margin: 0 0 1rem;
+  margin: 0;
+  max-width: 30ch;
+  margin-inline: auto;
+}
+
+/* One column below the tablet breakpoint. Three phones side by side at phone
+   width would each be about 100px wide, which shows nothing. */
+@media (max-width: 800px) {
+  .lh-how-steps { grid-template-columns: 1fr; gap: 2.75rem; }
+  .lh-phone--step { max-width: 210px; }
 }
 
 /* ═══════════════════════════════════════════
@@ -1301,4 +1312,156 @@
 .lh-faq-item.open .lh-faq-answer {
   max-height: 300px;
   padding-bottom: 20px;
+}
+
+/* ═══════════════════════════════════════════
+   SCHOOL AVAILABILITY
+   Reads src/data/universities.js, the same list onboarding uses, so what it
+   reports is always what the app supports.
+═══════════════════════════════════════════ */
+.lh-school-check {
+  max-width: 460px;
+  margin: 0 auto 1.5rem;
+  text-align: left;
+}
+
+.lh-school-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.45rem;
+}
+
+.lh-school-input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--navy);
+  background: #fff;
+  border: 1.5px solid var(--lh-border);
+  border-radius: 12px;
+}
+
+.lh-school-input:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+  border-color: var(--orange);
+}
+
+.lh-school-results:not(:empty) { margin-top: 0.75rem; }
+
+.lh-school-hit {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.8rem 0.9rem;
+  background: #fff;
+  border: 1.5px solid var(--lh-border);
+  border-radius: 12px;
+}
+
+.lh-school-hit + .lh-school-hit { margin-top: 0.5rem; }
+.lh-school-hit--live { border-color: rgba(119,190,61,0.55); }
+
+.lh-school-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #77BE3D;
+  flex-shrink: 0;
+}
+
+.lh-school-dot--soon { background: var(--muted); }
+
+.lh-school-hit-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--navy);
+  margin: 0;
+}
+
+.lh-school-hit-note {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 2px 0 0;
+}
+
+.lh-school-hit-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.85rem;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--orange);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.lh-school-hit-btn:hover { filter: brightness(0.95); }
+
+.lh-school-none {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 0;
+  padding: 0.8rem 0.9rem;
+  background: #fff;
+  border: 1.5px dashed var(--lh-border);
+  border-radius: 12px;
+}
+
+/* On a narrow phone the button below the text beats a squeezed row. */
+@media (max-width: 460px) {
+  .lh-school-hit { flex-wrap: wrap; }
+  .lh-school-hit-btn { margin-left: 0; width: 100%; justify-content: center; }
+}
+
+/* ═══════════════════════════════════════════
+   ALLERGEN NOTE
+   Bento filters on the dietary labels the dining hall publishes. It cannot see
+   a kitchen, so it cannot speak to cross-contact. Stated next to the dietary
+   claim rather than only in the footer.
+═══════════════════════════════════════════ */
+.lh-allergen-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  max-width: 760px;
+  margin: 1.75rem auto 0;
+  padding: 0.9rem 1rem;
+  background: rgba(253,143,42,0.07);
+  border: 1px solid rgba(253,143,42,0.28);
+  border-radius: 12px;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--navy);
+  text-align: left;
+}
+
+.lh-allergen-note svg { flex-shrink: 0; margin-top: 1px; }
+
+.lh-cta-secondary {
+  display: inline-block;
+  margin-left: 1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.82);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.lh-cta-secondary:hover { color: #fff; }
+
+@media (max-width: 560px) {
+  .lh-cta-secondary { display: block; margin: 1rem 0 0; }
 }
