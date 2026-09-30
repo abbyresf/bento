@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "prebuild": "rm -rf node_modules/.vite",
-    "build": "vite build && npm run build:ssr && node scripts/prerender.mjs",
+    "build": "vite build && npm run build:ssr && node scripts/prerender.mjs && node scripts/check-csp.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test:meals": "node test/mealPlan.test.mjs",
