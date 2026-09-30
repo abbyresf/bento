@@ -150,7 +150,17 @@ function Phone({ src, alt = '', className = '' }) {
   return (
     <div className={`lh-phone ${className}`}>
       <div className="lh-phone-screen">
-        <img src={src} alt={alt} className="lh-phone-img" loading="lazy" />
+        {/* Real pixel size of every screenshot. Present so the browser can
+            reserve the box before the file arrives, or before the stylesheet
+            does. */}
+        <img
+          src={src}
+          alt={alt}
+          className="lh-phone-img"
+          width="1170"
+          height="2532"
+          loading="lazy"
+        />
       </div>
     </div>
   );

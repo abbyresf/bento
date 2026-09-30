@@ -897,3 +897,26 @@
 
   .landing-universities .lpu-form-row { grid-template-columns: 1fr; }
 }
+
+/* Marks the dashboard figures as illustrative. Bento is live at two campuses,
+   so the numbers in the mockup are a layout demonstration, not results. */
+.lpu-db-sample {
+  margin-left: 0.5rem;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(100, 116, 139, 0.12);
+  color: #64748b;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.lpu-s-note {
+  margin: 0.6rem auto 0;
+  max-width: 54ch;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.55);
+}

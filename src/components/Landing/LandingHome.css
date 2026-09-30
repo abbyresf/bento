@@ -75,6 +75,13 @@
   display: block;
   width: 100%;
   height: auto;
+  /* Every screenshot is 1170x2532. Without this an image that has not loaded
+     yet has no intrinsic height, so height:auto resolves to 0, and a
+     zero-height loading="lazy" image never satisfies the viewport check that
+     would load it. The three How it works phones deadlocked exactly that way
+     in production: correct width, zero height, never requested. Reserving the
+     ratio breaks the cycle and removes the layout shift on load. */
+  aspect-ratio: 1170 / 2532;
 }
 
 
@@ -189,7 +196,11 @@
 /* Headline */
 .lh-hero-headline {
   font-family: var(--ff-disp);
-  font-size: clamp(2.6rem, 10.5vw, 5rem);
+  /* Capped well below 5rem here. The two-column hero starts at 960px, and
+     until then the headline shares one narrow column with everything else;
+     at 768px the old 5rem cap made it four lines and pushed the CTA below
+     the fold. The full size is restored with the two-column layout. */
+  font-size: clamp(2.6rem, 10.5vw, 3.4rem);
   font-weight: 900;
   line-height: 1.02;
   letter-spacing: -0.03em;
@@ -490,7 +501,7 @@
 
 /* One column below the tablet breakpoint. Three phones side by side at phone
    width would each be about 100px wide, which shows nothing. */
-@media (max-width: 800px) {
+@media (max-width: 699px) {
   .lh-how-steps { grid-template-columns: 1fr; gap: 2.75rem; }
   .lh-phone--step { max-width: 210px; }
 }
@@ -1115,6 +1126,9 @@
    DESKTOP (min-width: 960px)
 ═══════════════════════════════════════════ */
 @media (min-width: 960px) {
+  /* Two-column hero: the headline has its own column, so it can be big. */
+  .lh-hero-headline { font-size: clamp(3rem, 5.6vw, 5rem); }
+
   .lh-hero {
     padding: 8rem 4rem 6rem;
     min-height: 100vh;
@@ -1168,7 +1182,10 @@
   .lh-how { padding: 5rem 4rem 6rem; }
 
   .lh-how-inner {
-    max-width: 640px;
+    /* Was 640px, from when this section was one narrow column of prose. It now
+       holds three phones side by side, and 640px squeezed each to 195px on a
+       1920px screen while the hero beside it ran to 1140px. */
+    max-width: 1080px;
   }
 
   /* Features */
