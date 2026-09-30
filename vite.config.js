@@ -54,8 +54,38 @@ function tuftsDevPlugin() {
   };
 }
 
-export default defineConfig({
+// Swaps the Supabase client for a stub, in the prerender build only.
+//
+// The real module assumes a browser. Without VITE_SUPABASE_* it builds a DOM
+// node to show an error, and Node has no document, so the prerender died on
+// Vercel (which has no .env.local) while passing locally. Nothing rendered
+// statically touches the database, so the prerender needs the import to
+// resolve and nothing more.
+//
+// A resolveId hook rather than resolve.alias: aliases match the import
+// specifier, and db.js imports the bare './supabase'. This matches the file it
+// resolves to, so it cannot catch anything else by accident.
+function stubSupabaseForPrerender() {
+  return {
+    name: 'stub-supabase-for-prerender',
+    enforce: 'pre',
+    async resolveId(source, importer, options) {
+      if (!importer) return null;
+      const resolved = await this.resolve(source, importer, { ...options, skipSelf: true });
+      if (resolved && /[\\/]src[\\/]lib[\\/]supabase\.js$/.test(resolved.id)) {
+        return this.resolve('/src/lib/supabase.prerender-stub.js', importer, {
+          ...options,
+          skipSelf: true,
+        });
+      }
+      return null;
+    },
+  };
+}
+
+export default defineConfig(({ isSsrBuild }) => ({
   plugins: [
+    isSsrBuild && stubSupabaseForPrerender(),
     tuftsDevPlugin(),
     react(),
     VitePWA({
@@ -141,4 +171,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))
