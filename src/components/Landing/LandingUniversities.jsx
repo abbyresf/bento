@@ -317,10 +317,10 @@ export default function LandingUniversities({ onContact }) {
           <img src="/bentopulse.png" alt="Bento Pulse" className="lpu-hero-logo" />
           <h1 className="lpu-hero-headline">
             Your system knows what's served.{' '}
-            <em>Bento knows what's eaten.</em>
+            <em>Bento knows what students choose.</em>
           </h1>
           <p className="lpu-hero-sub">
-            Bento Pulse gives your dining team a live picture of student meal activity, dietary needs, and engagement trends. Captured as students use the app, organized into a dashboard your whole team can act on.
+            Bento Pulse shows your dining team what participating students confirm at each meal, the dietary needs they report, and the feedback they leave. Recorded as students use the app, organized into one dashboard.
           </p>
           <div className="lpu-hero-actions">
             <button className="lpu-btn-primary" onClick={scrollToForm}>Book a free consultation</button>
@@ -333,9 +333,9 @@ export default function LandingUniversities({ onContact }) {
       <div className="lpu-stats">
         <div className="lpu-stats-inner">
           {[
-            { num: '0',      label: 'additional tasks for your dining staff' },
+            { num: '0',      label: 'manual data entry for your dining staff' },
             { num: '5+',     label: 'dietary categories tracked without any configuration' },
-            { num: '<1wk',   label: 'from signed agreement to a live dashboard' },
+            { num: 'No API', label: 'integration with your dining system required' },
             { num: '1 click',label: 'to export any dataset for stakeholder reports' },
           ].map(s => (
             <div key={s.num} className="lpu-stat">
