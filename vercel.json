@@ -15,7 +15,11 @@
       "destination": "/api/dining"
     },
     {
-      "source": "/((?!api/|sitemap\\.xml|robots\\.txt).*)",
+      "source": "/",
+      "destination": "/home.html"
+    },
+    {
+      "source": "/((?!api/|sitemap\\.xml|robots\\.txt|home\\.html).*)",
       "destination": "/index.html"
     }
   ],

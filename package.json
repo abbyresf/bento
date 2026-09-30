@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "vite",
     "prebuild": "rm -rf node_modules/.vite",
-    "build": "vite build",
+    "build": "vite build && npm run build:ssr && node scripts/prerender.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:meals": "node test/mealPlan.test.mjs"
+    "test:meals": "node test/mealPlan.test.mjs",
+    "build:ssr": "vite build --ssr src/prerender-entry.jsx --outDir .ssr-build --emptyOutDir"
   },
   "dependencies": {
     "@capacitor/cli": "^8.5.2",
