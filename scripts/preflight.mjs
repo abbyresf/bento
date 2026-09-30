@@ -78,10 +78,14 @@ for (const [label, offset] of [['Today', 0], ['Tomorrow', 1]]) {
     // count comes from the same shape the client reads, not from a keyword
     // guess. Brandeis serves HTML the client parses for li.menu-item-li;
     // /api/tufts serves { date, slug, meals: { breakfast, lunch, dinner } }.
+    // Both universities now return parsed JSON shaped { meals: { breakfast,
+    // lunch, dinner } }. Brandeis used to hand back raw HTML and this counted
+    // li.menu-item-li, which silently became zero the moment the API started
+    // parsing server-side and reported six false failures on a healthy site.
+    // The HTML branch stays only until old edge copies age out.
     let items = 0;
-    if (uni === 'brandeis') {
-      items = (r.body.match(/menu-item-li/g) ?? []).length;
-    } else {
+    const looksJson = r.body.trimStart().startsWith('{');
+    if (looksJson) {
       try {
         const meals = JSON.parse(r.body)?.meals ?? {};
         items = Object.values(meals).reduce((n, list) => n + (list?.length ?? 0), 0);
@@ -89,6 +93,12 @@ for (const [label, offset] of [['Today', 0], ['Tomorrow', 1]]) {
         fail(`${name} (${uni}) — response was not valid JSON. ${note}`);
         continue;
       }
+    } else if (uni === 'brandeis') {
+      items = (r.body.match(/menu-item-li/g) ?? []).length;
+      warn(`${name} (${uni}) — served legacy HTML, not parsed JSON. ${note}`);
+    } else {
+      fail(`${name} (${uni}) — expected JSON, got something else. ${note}`);
+      continue;
     }
 
     if (items === 0) fail(`${name} (${uni}) — 200 but ZERO menu items. ${note}`);
