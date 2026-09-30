@@ -78,7 +78,7 @@ export default function LandingRequestSchool() {
             <div className="lrs-success-icon">🍱</div>
             <h2>You're on the list.</h2>
             <p>
-              We see you — and we're moving fast. The more people who rep their school,
+              We see you, and we're moving fast. The more people who rep their school,
               the faster it happens. Send this to your friends and let's get {fields.university || 'your campus'} added.
             </p>
           </div>
@@ -178,7 +178,7 @@ export default function LandingRequestSchool() {
 
           {status === 'error' && (
             <p className="lrs-error">
-              Something went wrong — please try again or email us at{' '}
+              Something went wrong. Try again, or email us at{' '}
               <a href="mailto:bentodining@gmail.com">bentodining@gmail.com</a>.
             </p>
           )}

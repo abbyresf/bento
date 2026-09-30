@@ -283,10 +283,15 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
               <span className="lh-rating-sub">Free for Brandeis &amp; Tufts students</span>
             </div>
 
+            {/* The old headline was "Healthy eating made effortless", which could
+                sit on any calorie app and made a health claim Bento should not
+                make. The ownable claim was buried in the paragraph below: Bento
+                is the only app that reads YOUR dining hall's menu today. That
+                belongs in the largest type on the page. */}
             <h1 className="lh-hero-headline">
-              Healthy eating<br />made{' '}
-              <span className="lh-hero-script" aria-label="effortless">
-                effortless.
+              Today&apos;s menu,<br />built around{' '}
+              <span className="lh-hero-script" aria-label="your goals">
+                your goals.
                 <svg className="lh-underline-svg" viewBox="0 0 220 18" fill="none" aria-hidden="true">
                   <path d="M4 12 Q110 3 216 12" stroke="#FD8F2A" strokeWidth="3.5"
                     strokeLinecap="round" className="lh-underline-path" />
@@ -312,10 +317,9 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
 
           <div className="lh-hero-copy-bottom">
             <p className="lh-hero-sub">
-              No other app knows what your dining hall is serving today. Bento does.
-              It reads your live menu every morning, matches it to your calorie and
-              macro goals, and tells you exactly what to grab. Built for campus
-              dining and nothing else.
+              No other app knows what your dining hall is serving today. Bento
+              reads your live menu every morning, matches it to your calorie and
+              macro goals, and tells you what to grab.
             </p>
             <div className="lh-hero-ctas">
               <button className="lh-btn-primary" onClick={onGetStarted}>
@@ -425,6 +429,27 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
         </div>
       </section>
 
+      {/* UNIVERSITIES
+          Above the closing CTA on purpose. This sat dead last, underneath the
+          "Get Started" that ends the student pitch, so the only section aimed at
+          the people who actually buy Bento was the one section nobody scrolled
+          to. The student CTA now closes the page, which is where a close
+          belongs. */}
+      <section className="lh-uni">
+        <div className="lh-uni-inner">
+          <p className="lh-uni-eyebrow">For dining administrators</p>
+          <h2 className="lh-uni-hed">Turn student demand<br />into dining decisions.</h2>
+          <p className="lh-uni-text">
+            Bento Pulse gives your team real-time insight into what students want.
+            Dietary needs, station feedback, and gaps in the current menu. No
+            surveys. No guesswork.
+          </p>
+          <button className="lh-uni-btn" onClick={onGoUniversities}>
+            Learn about Bento for Universities {Icon.arrow}
+          </button>
+        </div>
+      </section>
+
       {/* FINAL CTA */}
       <section className="lh-cta">
         <div className="lh-cta-blob lh-cta-blob--a" aria-hidden="true" />
@@ -443,21 +468,6 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
             </div>
             <p className="lh-cta-note">Save to your home screen &bull; Works on any phone</p>
           </div>
-        </div>
-      </section>
-
-      {/* UNIVERSITIES */}
-      <section className="lh-uni">
-        <div className="lh-uni-inner">
-          <p className="lh-uni-eyebrow">For dining administrators</p>
-          <h2 className="lh-uni-hed">Turn student demand<br />into dining decisions.</h2>
-          <p className="lh-uni-text">
-            Bento Pulse gives your team real-time insight into what students actually want —
-            dietary needs, station feedback, and gaps in the current menu. No surveys. No guesswork.
-          </p>
-          <button className="lh-uni-btn" onClick={onGoUniversities}>
-            Learn about Bento for Universities {Icon.arrow}
-          </button>
         </div>
       </section>
 

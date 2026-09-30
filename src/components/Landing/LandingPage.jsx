@@ -98,7 +98,7 @@ export default function LandingPage({ onGetStarted, initialTab = 'home' }) {
           ))}
           <div className="landing-drawer-divider" />
           <button className="landing-drawer-cta" onClick={() => { onGetStarted(); setDrawerOpen(false); }}>
-            Get started — it's free
+            Get started. It's free.
           </button>
         </div>
       </nav>

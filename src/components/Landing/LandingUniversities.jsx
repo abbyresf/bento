@@ -290,9 +290,9 @@ export default function LandingUniversities({ onContact }) {
         'service_0fhib6k',
         'template_4r7zn6c',
         {
-          from_name: `${name}${institution ? ' — ' + institution : ''}`,
+          from_name: `${name}${institution ? ', ' + institution : ''}`,
           reply_to:  email,
-          subject:   `Consultation Request${institution ? ' — ' + institution : ''}`,
+          subject:   `Consultation Request${institution ? ': ' + institution : ''}`,
           message:   `Name: ${name}\nInstitution: ${institution}\nRole: ${role}\nEmail: ${email}`,
         },
         { publicKey: 'urTn8G5d8khZF0NfZ' },
@@ -373,7 +373,7 @@ export default function LandingUniversities({ onContact }) {
                 <div className="lpu-feature-desc">{feat.desc}</div>
               </div>
             ))}
-            {/* Suggestions — full-width highlight */}
+            {/* Suggestions, full-width highlight */}
             <div className="lpu-feature lpu-feature--wide">
               <div className="lpu-feature-icon">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">

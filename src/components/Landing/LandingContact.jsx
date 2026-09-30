@@ -46,7 +46,7 @@ export default function LandingContact() {
         <p className="contact-eyebrow">Get in touch</p>
         <h1 className="contact-heading">We'd love to<br />hear from you.</h1>
         <p className="contact-sub">
-          Question, bug report, or feature idea — send it our way.
+          Question, bug report, or feature idea. Send it our way.
         </p>
 
         {status === 'success' ? (
@@ -113,7 +113,7 @@ export default function LandingContact() {
             </div>
 
             {status === 'error' && (
-              <p className="contact-error">Something went wrong — please try again or email us directly at <a href="mailto:bentodining@gmail.com">bentodining@gmail.com</a>.</p>
+              <p className="contact-error">Something went wrong. Try again, or email us directly at <a href="mailto:bentodining@gmail.com">bentodining@gmail.com</a>.</p>
             )}
 
             <div className="contact-form-footer">
