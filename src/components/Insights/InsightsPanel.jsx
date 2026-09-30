@@ -14,7 +14,7 @@ function formatWeekRange(weekStart) {
   return `${start.toLocaleDateString('en-US', opts)} – ${end.toLocaleDateString('en-US', opts)}`;
 }
 
-function Callouts({ latest, targets, goalHits }) {
+function Callouts({ targets, goalHits }) {
   if (!targets || !goalHits) {
     return (
       <div className="insights-callouts">

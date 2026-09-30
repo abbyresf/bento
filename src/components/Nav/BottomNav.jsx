@@ -5,7 +5,7 @@ export default function BottomNav({ activeTab, onTabChange }) {
     {
       id: 'today',
       label: 'Today',
-      icon: (active) => (
+      icon: () => (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
           <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
@@ -16,6 +16,8 @@ export default function BottomNav({ activeTab, onTabChange }) {
     {
       id: 'ratings',
       label: 'My Ratings',
+      // This one genuinely uses `active`: the star fills in on the current tab.
+      // The other three ignore it.
       icon: (active) => (
         <svg width="22" height="22" viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
@@ -25,7 +27,7 @@ export default function BottomNav({ activeTab, onTabChange }) {
     {
       id: 'community',
       label: 'Community',
-      icon: (active) => (
+      icon: () => (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
           <circle cx="9" cy="7" r="4"/>
@@ -37,7 +39,7 @@ export default function BottomNav({ activeTab, onTabChange }) {
     {
       id: 'insights',
       label: 'Insights',
-      icon: (active) => (
+      icon: () => (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <line x1="18" y1="20" x2="18" y2="10"/>
           <line x1="12" y1="20" x2="12" y2="4"/>

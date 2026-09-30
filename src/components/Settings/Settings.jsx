@@ -105,7 +105,7 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
     setActionError(null);
     try {
       await clearMealHistory();
-    } catch (e) {
+    } catch {
       setActionError('Failed to clear meal history. Please try again.');
     }
   };
@@ -117,7 +117,7 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
     try {
       await clearAllData();
       onReset();
-    } catch (e) {
+    } catch {
       setActionError('Failed to reset data. Please try again.');
     }
   };
@@ -129,7 +129,7 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
     try {
       await deleteAccount();
       onReset();
-    } catch (e) {
+    } catch {
       setActionError('Failed to delete account. Please try again.');
     }
   };

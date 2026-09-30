@@ -15,7 +15,7 @@ const REFERRAL_OPTIONS = [
 const SKIP = new Set(['of', 'the', 'and', 'at', 'in', 'for', 'a', 'an', 'by', 'to', 'on']);
 function toAcronym(name) {
   return name
-    .replace(/[,.()\-]/g, ' ')
+    .replace(/[,.()-]/g, ' ')
     .split(/\s+/)
     .filter(w => w.length > 1 && !SKIP.has(w.toLowerCase()))
     .map(w => w[0].toUpperCase())

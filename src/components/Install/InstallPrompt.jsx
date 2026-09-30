@@ -17,7 +17,7 @@ export default function InstallPrompt({ deferredPrompt, onInstall, onDismiss, fo
       try {
         deferredPrompt.prompt();
         await deferredPrompt.userChoice;
-      } catch (_) {}
+      } catch { /* storage unavailable in private mode; nothing to restore */ }
     }
     onInstall();
   };

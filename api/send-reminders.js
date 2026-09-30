@@ -1,4 +1,3 @@
-/* eslint-env node */
 // Sends a meal reminder.
 //
 // Route: /api/send-reminders?meal=lunch|dinner

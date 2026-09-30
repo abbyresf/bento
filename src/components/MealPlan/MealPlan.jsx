@@ -21,7 +21,7 @@ function writePlanCache(date, meals) {
     const cutoff = localDateStr(new Date(Date.now() - 30 * 86400000));
     Object.keys(updated).forEach(k => { if (k < cutoff) delete updated[k]; });
     localStorage.setItem(PLAN_CACHE_KEY, JSON.stringify(updated));
-  } catch {}
+  } catch { /* storage unavailable in private mode; fall back to defaults */ }
 }
 
 import { hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
@@ -79,7 +79,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
     try {
       const stored = JSON.parse(localStorage.getItem('bento_custom_meals_v1') || '{}');
       if (stored.date === today) return stored.meals || { breakfast: null, lunch: null, dinner: null };
-    } catch {}
+    } catch { /* storage unavailable in private mode; nothing to persist */ }
     return { breakfast: null, lunch: null, dinner: null };
   });
   const [confirmedMealIds, setConfirmedMealIds] = useState({ breakfast: null, lunch: null, dinner: null });
@@ -192,7 +192,6 @@ export default function MealPlan({ settingsVersion = 0 }) {
       return;
     }
     const today    = localDateStr();
-    const tomorrow = localDateStr(new Date(Date.now() + 86400000));
 
     const savedPlan = readPlanCache()[viewDate] || { breakfast: null, lunch: null, dinner: null };
 

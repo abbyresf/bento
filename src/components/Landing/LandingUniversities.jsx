@@ -112,6 +112,12 @@ function DashboardMockup() {
             </svg>
           </div>
           Bento Pulse
+          {/* The figures below are illustrative. Bento is live at two campuses,
+              so numbers on this scale are not results anyone has produced, and
+              a dining director reading them as real would be reading a claim
+              nobody made on purpose. Marked inside the frame so the label
+              travels with any screenshot of it. */}
+          <span className="lpu-db-sample">Sample data</span>
         </div>
         <div className="lpu-db-right">
           <div className="lpu-db-period-group">
@@ -274,7 +280,10 @@ const FEATURES = [
   },
 ];
 
-export default function LandingUniversities({ onContact }) {
+// No onContact prop: the consultation form lives on this page, and the CTAs
+// scroll to it. A prop routing to the generic contact tab was passed in and
+// never read, which read as a wired-up path that did not exist.
+export default function LandingUniversities() {
   const [consultStatus, setConsultStatus] = useState('idle'); // idle | sending | success | error
 
   const handleConsultSubmit = async (e) => {
@@ -353,6 +362,7 @@ export default function LandingUniversities({ onContact }) {
             <p className="lpu-s-label">Live dashboard</p>
             <h2 className="lpu-s-head">One view of your entire dining program.</h2>
             <p className="lpu-s-sub">Every metric your team tracks and every export for the next board meeting. Always current.</p>
+            <p className="lpu-s-note">The dashboard below is filled with sample data to show the layout. Your view would show your own campus.</p>
           </div>
           <div className="lpu-mockup-wrap">
             <DashboardMockup />

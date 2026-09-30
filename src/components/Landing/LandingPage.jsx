@@ -109,7 +109,7 @@ export default function LandingPage({ onGetStarted, initialTab = 'home' }) {
           <LandingHome onGetStarted={onGetStarted} onGoUniversities={() => handleTabChange('universities')} />
         )}
         {activeTab === 'universities' && (
-          <LandingUniversities onContact={() => handleTabChange('contact')} />
+          <LandingUniversities />
         )}
         {activeTab === 'about'   && <LandingAbout />}
         {activeTab === 'terms'   && <div className="landing-terms-wrap"><TermsPage /></div>}

@@ -1,4 +1,3 @@
-/* eslint-env node */
 // Copy for the daily meal reminders.
 //
 // One line each, sent as the notification title. iOS adds its own "from Bento"

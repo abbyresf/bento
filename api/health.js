@@ -1,4 +1,3 @@
-/* eslint-env node */
 // Health check for all dining locations — fetches directly from upstream sources
 // and logs results to menu_health_log in Supabase.
 //

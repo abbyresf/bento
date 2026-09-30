@@ -1,4 +1,3 @@
-/* eslint-env serviceworker */
 // Push handlers, layered onto the generated Workbox service worker via
 // workbox.importScripts. Kept in its own file so the PWA build strategy does
 // not have to change: generateSW keeps owning caching, this only adds push.

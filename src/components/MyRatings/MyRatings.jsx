@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useRatings } from '../../context/RatingsContext';
 import StarRating from '../Community/StarRating';
 import './MyRatings.css';
@@ -7,7 +6,6 @@ const STATION_ORDER = ['breakfast', 'entree', 'grill', 'deli', 'pizza', 'allgood
 
 export default function MyRatings({ tabMode = false }) {
   const { myRatings, rateItem } = useRatings();
-  const [pendingDelete, setPendingDelete] = useState(null);
 
   const items = Object.entries(myRatings)
     .map(([id, { rating, name }]) => ({ id, name, rating }))
@@ -16,7 +14,6 @@ export default function MyRatings({ tabMode = false }) {
   const handleRate = async (item, newRating) => {
     const next = newRating === item.rating ? null : newRating;
     await rateItem({ id: item.id, name: item.name }, next);
-    if (next === null) setPendingDelete(null);
   };
 
   return (

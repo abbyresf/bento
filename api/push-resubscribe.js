@@ -1,4 +1,3 @@
-/* eslint-env node */
 // Replaces a subscription the push service rotated on its own.
 //
 // The service worker calls this from a `pushsubscriptionchange` event, where

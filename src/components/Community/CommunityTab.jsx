@@ -127,7 +127,7 @@ function SuggestionCard({ suggestion, emphasized, onEmphasize, onFlag, flagged }
 
 // ── Compose Sheet ────────────────────────────────────────────────────────────
 
-function ComposeSheet({ onClose, onSubmitted, university }) {
+function ComposeSheet({ onClose, onSubmitted }) {
   const [text, setText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
