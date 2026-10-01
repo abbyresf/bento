@@ -89,13 +89,6 @@ const Icon = {
 };
 
 /* ── Data ── */
-const TAGS = [
-  { label: 'High Protein', color: '#FD8F2A', pos: 'tl' },
-  { label: 'Gluten Free',  color: '#77BE3D', pos: 'tr' },
-  { label: 'Vegetarian',   color: '#2B97FD', pos: 'br' },
-  { label: 'Low Sugar',    color: '#FD8F2A', pos: 'bl' },
-];
-
 /* Three steps, each one showing the screen it describes.
  *
  * This was four steps of prose with an `img` on every one that the component
@@ -131,18 +124,23 @@ const STEPS = [
 ];
 
 
+/* Four claims, but not four equal claims. The live menu is the one nobody else
+   can make, so it takes the wide compartment and the action hue; the other
+   three are reassurances and share the positive hue. The old list gave each a
+   different colour by position, which is what made the palette read as
+   decoration. */
 const STATS = [
-  { icon: 'calendar', label: 'Live menu every morning', sublabel: 'Your actual dining hall, not a recipe database', color: 'orange' },
-  { icon: 'phone',    label: 'Save to your home screen', sublabel: 'Works like a native app. No App Store needed.', color: 'green' },
-  { icon: 'free',     label: 'Free, always', sublabel: 'No subscription, no paywall, no catch', color: 'blue' },
-  { icon: 'lock',     label: 'Your data stays private', sublabel: 'Goals and restrictions belong to you alone', color: 'dark' },
+  { icon: 'calendar', label: 'Live menu every morning', sublabel: 'Your actual dining hall, not a recipe database', tone: 'action', wide: true },
+  { icon: 'phone',    label: 'Save to your home screen', sublabel: 'Works like a native app. No App Store needed.', tone: 'positive' },
+  { icon: 'free',     label: 'Free, always', sublabel: 'No subscription, no paywall, no catch', tone: 'positive' },
+  { icon: 'lock',     label: 'Your data stays private', sublabel: 'Goals and restrictions belong to you alone', tone: 'positive' },
 ];
 
 const FEATURES = [
-  { num: '01', icon: 'menu',    title: "Your actual dining hall, every day.", desc: "Every morning, Bento pulls your campus menu live. Rotating stations, daily specials, all of it. No recipe database has ever done this.", color: 'orange' },
-  { num: '02', icon: 'target',  title: "Your targets, hit at every meal.", desc: "Set your calorie and macro goals once. Bento maps every suggestion to those exact numbers using what is available today.", color: 'green' },
-  { num: '03', icon: 'shield2', title: "Your restrictions, always enforced.", desc: "Vegan, nut-free, kosher, gluten-free. Set it once and Bento filters everything automatically. No label checking required.", color: 'blue' },
-  { num: '04', icon: 'people',  title: "Your feedback actually changes things.", desc: "Rate dishes, flag dietary gaps, and submit suggestions anonymously. Dining staff sees it. It actually influences what gets served.", color: 'orange' },
+  { num: '01', icon: 'menu',    title: "Your actual dining hall, every day.", desc: "Every morning, Bento pulls your campus menu live. Rotating stations, daily specials, all of it. No recipe database has ever done this.", tone: 'action' },
+  { num: '02', icon: 'target',  title: "Your targets, hit at every meal.", desc: "Set your calorie and macro goals once. Bento maps every suggestion to those exact numbers using what is available today.", tone: 'action' },
+  { num: '03', icon: 'shield2', title: "Your restrictions, always enforced.", desc: "Vegan, nut-free, kosher, gluten-free. Set it once and Bento filters everything automatically. No label checking required.", tone: 'positive' },
+  { num: '04', icon: 'people',  title: "Your feedback actually changes things.", desc: "Rate dishes, flag dietary gaps, and submit suggestions anonymously. Dining staff sees it. It actually influences what gets served.", tone: 'action' },
 ];
 
 /* ── Phone frame ── */
@@ -337,33 +335,59 @@ function WaitlistForm() {
   );
 }
 
+/* ── Settle-in ──
+ *
+ * A bento box is compartments that lock together, so things on this page
+ * settle into place: a short rise, a hair of scale, one easing, one duration.
+ * It is the only motion on the page now that the drifting blobs and the
+ * cursor-chasing glow are gone, and it reads as one gesture rather than
+ * ambient decoration.
+ *
+ * Two rules it has to obey.
+ *
+ * Nothing is hidden in the stylesheet. The homepage is prerendered so that
+ * readers without JavaScript get the whole page, and a CSS-only hidden state
+ * would blank it for exactly those readers. The hidden class is added here, by
+ * script, so no-JS sees everything.
+ *
+ * Only elements below the fold are touched. The prerendered markup paints
+ * before React mounts, so hiding something already on screen would flash it
+ * away and back. Anything visible at mount is left exactly as it is.
+ */
+function useSettleIn(rootRef) {
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const io = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        entry.target.classList.add('is-settled');
+        io.unobserve(entry.target);
+      }
+    }, { threshold: 0.1, rootMargin: '0px 0px -6% 0px' });
+
+    for (const node of root.querySelectorAll('[data-settle]')) {
+      if (node.getBoundingClientRect().top < window.innerHeight) continue;
+      node.classList.add('lh-settle');
+      io.observe(node);
+    }
+    return () => io.disconnect();
+  }, [rootRef]);
+}
+
 /* ── Main component ── */
 export default function LandingHome({ onGetStarted, onGoUniversities }) {
-  const glowRef = useRef(null);
   const heroRef = useRef(null);
-
-  useEffect(() => {
-    const hero = heroRef.current;
-    const glow = glowRef.current;
-    if (!hero || !glow) return;
-    const move = (e) => {
-      const r = hero.getBoundingClientRect();
-      glow.style.left = (e.clientX - r.left) + 'px';
-      glow.style.top  = (e.clientY - r.top)  + 'px';
-    };
-    hero.addEventListener('mousemove', move);
-    return () => hero.removeEventListener('mousemove', move);
-  }, []);
+  const pageRef = useRef(null);
+  useSettleIn(pageRef);
 
   return (
-    <div className="landing-home">
+    <div className="landing-home" ref={pageRef}>
 
       {/* HERO */}
       <section className="lh-hero" ref={heroRef}>
-        <div className="lh-mouse-glow" ref={glowRef} aria-hidden="true" />
-        <div className="lh-blob lh-blob--a" aria-hidden="true" />
-        <div className="lh-blob lh-blob--b" aria-hidden="true" />
-        <div className="lh-blob lh-blob--c" aria-hidden="true" />
 
         <div className="lh-hero-inner">
           <div className="lh-hero-copy-top">
@@ -378,7 +402,7 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
                 belongs in the largest type on the page. */}
             <h1 className="lh-hero-headline">
               Today&apos;s menu,<br />built around{' '}
-              <span className="lh-hero-script" aria-label="your goals">
+              <span className="lh-hero-accent" aria-label="your goals">
                 your goals.
                 <svg className="lh-underline-svg" viewBox="0 0 220 18" fill="none" aria-hidden="true">
                   <path d="M4 12 Q110 3 216 12" stroke="#FD8F2A" strokeWidth="3.5"
@@ -391,13 +415,6 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
           <div className="lh-hero-phone-col" aria-hidden="true">
             <div className="lh-hero-phone-wrap">
               <div className="lh-phone-anchor">
-                {TAGS.map(tag => (
-                  <div key={tag.label} className={`lh-tag lh-tag--${tag.pos}`}
-                    style={{ '--tc': tag.color }}>
-                    <span className="lh-tag-dot" />
-                    {tag.label}
-                  </div>
-                ))}
                 <Phone className="lh-phone--hero" src="/screenshots/today.png" alt="Bento Today tab" />
               </div>
             </div>
@@ -422,9 +439,14 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
       {/* STATS */}
       <section className="lh-stats">
         <div className="lh-stats-inner">
-          {STATS.map(stat => (
-            <div key={stat.label} className={`lh-stat-card lh-stat-card--${stat.color}`}>
-              <div className={`lh-stat-icon lh-stat-icon--${stat.color}`}>
+          {STATS.map((stat, i) => (
+            <div
+              key={stat.label}
+              data-settle
+              style={{ transitionDelay: `${i * 70}ms` }}
+              className={`lh-stat-card lh-stat-card--${stat.tone}${stat.wide ? ' lh-stat-card--wide' : ''}`}
+            >
+              <div className={`lh-stat-icon lh-stat-icon--${stat.tone}`}>
                 {Icon[stat.icon]}
               </div>
               <p className="lh-stat-label">{stat.label}</p>
@@ -441,8 +463,8 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
           <h2 className="lh-section-heading lh-how-heading">Three steps.<br />Zero thinking.</h2>
 
           <ol className="lh-how-steps">
-            {STEPS.map(step => (
-              <li key={step.num} className="lh-step">
+            {STEPS.map((step, i) => (
+              <li key={step.num} className="lh-step" data-settle style={{ transitionDelay: `${i * 90}ms` }}>
                 <Phone className="lh-phone--step" src={step.img} alt={step.alt} />
                 <div className="lh-step-body">
                   <div className="lh-step-num-row">
@@ -464,12 +486,12 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
           <p className="lh-eyebrow">Why Bento</p>
           <h2 className="lh-section-heading">The only app built<br />for your dining hall.</h2>
           <div className="lh-features-grid">
-            {FEATURES.map(f => {
+            {FEATURES.map((f, i) => {
               const iconEl = f.icon === 'shield2'
                 ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
                 : Icon[f.icon];
               return (
-                <div key={f.num} className={`lh-feat-card lh-feat-card--${f.color}`}>
+                <div key={f.num} data-settle style={{ transitionDelay: `${i * 70}ms` }} className={`lh-feat-card lh-feat-card--${f.tone}`}>
                   <div className="lh-feat-card-top">
                     <span className={`lh-feat-icon lh-feat-icon--${f.color}`}>{iconEl}</span>
                     <span className="lh-feat-num">{f.num}</span>
@@ -559,8 +581,6 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
 
       {/* FINAL CTA */}
       <section className="lh-cta">
-        <div className="lh-cta-blob lh-cta-blob--a" aria-hidden="true" />
-        <div className="lh-cta-blob lh-cta-blob--b" aria-hidden="true" />
         <div className="lh-cta-inner">
           <div className="lh-cta-copy">
             <h2 className="lh-cta-hed">

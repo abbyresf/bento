@@ -2,6 +2,9 @@
    DESIGN TOKENS
 ═══════════════════════════════════════════ */
 :root {
+  /* ── Palette ───────────────────────────────────────────────────────────
+     Three hue families, which was already true and is the one part of this
+     page that did not need fixing. */
   --cream:   #FFFDF9;
   --navy:    #1A2B3C;
   --navy-d:  #111C28;
@@ -9,11 +12,61 @@
   --green:   #77BE3D;
   --blue:    #2B97FD;
   --muted:   #7A8EA0;
-  --lh-border:  rgba(26,43,60,0.09);
+  --lh-border: rgba(26,43,60,0.09);
+
+  /* ── Semantic colour ───────────────────────────────────────────────────
+     The palette was fine; the application was not. Accents were assigned by
+     position, so card one was orange, two green, three blue, four navy, and
+     the same again on the next grid. Colour that cycles by index is
+     decoration. Below, each hue means one thing, and a tile is green because
+     it says something is available, never because it is third. */
+  --action:   var(--orange);  /* anything you can click, and nothing else */
+  --positive: var(--green);   /* available, confirmed, private, free */
+  --info:     var(--blue);    /* neutral fact, no action implied */
+
+  /* ── Type ──────────────────────────────────────────────────────────────
+     Two families here. Nunito is the app's body font, set in index.css, but
+     it renders nowhere on this page, so the landing font request no longer
+     asks for it. Dancing Script existed for one word in the hero, and a
+     script accent over a swooshed underline is the most borrowed gesture on
+     the page. Fraunces carries its own italic, so the emphasis survives
+     without a third voice. */
   --ff-disp: 'Fraunces', Georgia, serif;
-  --ff-scr:  'Dancing Script', cursive;
-  --ff-body: 'Instrument Sans', 'Nunito', system-ui, sans-serif;
-  --r-lg:    1.5rem;
+  --ff-body: 'Instrument Sans', system-ui, sans-serif;
+
+  /* ── Radius ────────────────────────────────────────────────────────────
+     Four steps. There were fourteen distinct radii on this page, because
+     this block held exactly one token and every component picked its own.
+     Nothing shared a value with anything else, so nothing read as part of a
+     system, which is most of what "looks generated" actually means. */
+  --r-sm:   10px;   /* inputs, chips, small controls */
+  --r-md:   16px;   /* tiles and cards */
+  --r-lg:   28px;   /* large compartments */
+  --r-pill: 999px;  /* buttons, tags */
+
+  /* The phone is a drawing of hardware, not a UI surface, so it keeps the
+     radii a phone actually has. Named rather than inline so it reads as a
+     deliberate exception to the scale above. */
+  --r-device:        44px;
+  --r-device-screen: 22px;
+
+  /* ── Spacing ───────────────────────────────────────────────────────────
+     One scale, used for section padding and the gaps inside them. */
+  --s-1: 0.5rem;
+  --s-2: 0.75rem;
+  --s-3: 1rem;
+  --s-4: 1.5rem;
+  --s-5: 2rem;
+  --s-6: 3rem;
+  --s-7: 4.5rem;
+  --s-8: 6rem;
+
+  /* ── Motion ────────────────────────────────────────────────────────────
+     A bento box is compartments that lock together, so things on this page
+     settle into place rather than drifting or floating. One duration and one
+     easing, so every reveal reads as the same gesture. */
+  --ease-settle: cubic-bezier(0.22, 0.9, 0.3, 1);
+  --dur-settle:  520ms;
 }
 
 /* ═══════════════════════════════════════════
@@ -54,7 +107,7 @@
 ═══════════════════════════════════════════ */
 .lh-phone {
   background: #18182a;
-  border-radius: 44px;
+  border-radius: var(--r-device);
   padding: 9px;
   box-shadow:
     0 0 0 1px rgba(255,255,255,0.07),
@@ -65,7 +118,7 @@
 }
 
 .lh-phone-screen {
-  border-radius: 22px;
+  border-radius: var(--r-device-screen);
   overflow: hidden;
   position: relative;
   line-height: 0;
@@ -93,49 +146,15 @@
   padding: 5.5rem 1.5rem 1.5rem;
 }
 
-.lh-mouse-glow {
-  pointer-events: none;
-  position: absolute;
-  width: 500px;
-  height: 500px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(253,143,42,0.08) 0%, transparent 70%);
-  transform: translate(-50%, -50%);
-  top: 40%;
-  left: 50%;
-  transition: left 0.12s, top 0.12s;
-  z-index: 0;
-}
 
-.lh-blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(60px);
-  pointer-events: none;
-  z-index: 0;
-  animation: blob-morph 10s ease-in-out infinite, blob-drift 18s ease-in-out infinite;
-}
 
-.lh-blob--a {
-  width: 280px; height: 280px;
-  background: rgba(253,143,42,0.14);
-  top: -80px; left: -80px;
-  animation-delay: 0s, 0s;
-}
 
-.lh-blob--b {
-  width: 240px; height: 240px;
-  background: rgba(43,151,253,0.10);
-  bottom: -60px; right: -60px;
-  animation-delay: -4s, -7s;
-}
 
-.lh-blob--c {
-  width: 200px; height: 200px;
-  background: rgba(119,190,61,0.09);
-  top: 40%; left: 50%;
-  animation-delay: -8s, -3s;
-}
+
+
+
+
+
 
 .lh-hero-inner {
   position: relative;
@@ -208,8 +227,11 @@
   margin: 0;
 }
 
-.lh-hero-script {
-  font-family: var(--ff-scr);
+.lh-hero-accent {
+  /* Fraunces italic, not a script family. Same emphasis, one less voice. */
+  font-family: var(--ff-disp);
+  font-style: italic;
+  font-weight: 700;
   font-size: 1.08em;
   color: var(--orange);
   position: relative;
@@ -259,7 +281,7 @@
   position: absolute;
   background: white;
   border: 1.5px solid color-mix(in srgb, var(--tc) 30%, transparent);
-  border-radius: 20px;
+  border-radius: var(--r-md);
   padding: 4px 9px 4px 6px;
   font-size: 0.65rem;
   font-weight: 700;
@@ -310,7 +332,7 @@
   color: white;
   border: none;
   padding: 1rem 1.5rem;
-  border-radius: 50px;
+  border-radius: var(--r-pill);
   font-family: var(--ff-body);
   font-size: 0.95rem;
   font-weight: 700;
@@ -336,7 +358,7 @@
   color: var(--navy);
   border: 1.5px solid var(--lh-border);
   padding: 1rem 1.5rem;
-  border-radius: 50px;
+  border-radius: var(--r-pill);
   font-family: var(--ff-body);
   font-size: 0.95rem;
   font-weight: 600;
@@ -367,10 +389,8 @@
 
 .lh-stats-inner {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  max-width: 900px;
-  margin: 0 auto;
+  gap: var(--s-3);
+  grid-template-columns: 1fr;
 }
 
 .lh-stat-card {
@@ -386,14 +406,12 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: var(--r-sm);
   margin-bottom: 0.7rem;
 }
 
-.lh-stat-icon--orange { background: rgba(253,143,42,0.12); color: var(--orange); }
-.lh-stat-icon--green  { background: rgba(119,190,61,0.12);  color: var(--green); }
-.lh-stat-icon--blue   { background: rgba(43,151,253,0.12);  color: var(--blue); }
-.lh-stat-icon--dark   { background: rgba(26,43,60,0.08);    color: var(--navy); }
+.lh-stat-icon--action   { background: rgba(253,143,42,0.12); color: var(--action); }
+.lh-stat-icon--positive { background: rgba(119,190,61,0.12); color: var(--positive); }
 
 .lh-stat-label {
   font-size: 0.8rem;
@@ -464,7 +482,7 @@
 .lh-step-icon {
   width: 34px;
   height: 34px;
-  border-radius: 11px;
+  border-radius: var(--r-sm);
   background: rgba(253,143,42,0.10);
   color: var(--orange);
   display: flex;
@@ -541,9 +559,8 @@
   border-radius: 0 2px 2px 0;
 }
 
-.lh-feat-card--orange::before { background: var(--orange); }
-.lh-feat-card--green::before  { background: var(--green); }
-.lh-feat-card--blue::before   { background: var(--blue); }
+.lh-feat-card--action::before   { background: var(--action); }
+.lh-feat-card--positive::before { background: var(--positive); }
 
 .lh-feat-card-top {
   display: flex;
@@ -558,12 +575,11 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: var(--r-sm);
 }
 
-.lh-feat-icon--orange { background: rgba(253,143,42,0.12); color: var(--orange); }
-.lh-feat-icon--green  { background: rgba(119,190,61,0.12);  color: var(--green); }
-.lh-feat-icon--blue   { background: rgba(43,151,253,0.12);  color: var(--blue); }
+.lh-feat-icon--action   { background: rgba(253,143,42,0.12); color: var(--action); }
+.lh-feat-icon--positive { background: rgba(119,190,61,0.12); color: var(--positive); }
 
 .lh-feat-num {
   font-size: 0.65rem;
@@ -713,7 +729,7 @@
   font-size: 0.68rem;
   font-weight: 600;
   padding: 4px 10px;
-  border-radius: 20px;
+  border-radius: var(--r-md);
 }
 
 /* ═══════════════════════════════════════════
@@ -730,26 +746,11 @@
   border-top: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-.lh-cta-blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(70px);
-  pointer-events: none;
-  animation: blob-morph 12s ease-in-out infinite, blob-drift 22s ease-in-out infinite;
-}
 
-.lh-cta-blob--a {
-  width: 300px; height: 300px;
-  background: rgba(253,143,42,0.12);
-  top: -80px; left: -80px;
-}
 
-.lh-cta-blob--b {
-  width: 260px; height: 260px;
-  background: rgba(43,151,253,0.10);
-  bottom: -60px; right: -60px;
-  animation-delay: -6s, -9s;
-}
+
+
+
 
 .lh-cta-inner {
   position: relative;
@@ -803,7 +804,7 @@
   color: rgba(255,255,255,0.8);
   border: 1.5px solid rgba(255,255,255,0.15);
   padding: 1rem 1.5rem;
-  border-radius: 50px;
+  border-radius: var(--r-pill);
   font-family: var(--ff-body);
   font-size: 0.95rem;
   font-weight: 600;
@@ -882,7 +883,7 @@
   padding: 0.875rem 1rem;
   background: white;
   border: 1px solid var(--lh-border);
-  border-radius: 12px;
+  border-radius: var(--r-sm);
   font-family: var(--ff-body);
   font-size: 0.92rem;
   color: var(--navy);
@@ -907,7 +908,7 @@
   background: var(--orange);
   color: white;
   border: none;
-  border-radius: 50px;
+  border-radius: var(--r-pill);
   font-family: var(--ff-body);
   font-size: 0.92rem;
   font-weight: 700;
@@ -1033,7 +1034,7 @@
   border: none;
   color: white;
   padding: 1rem 1.75rem;
-  border-radius: 50px;
+  border-radius: var(--r-pill);
   font-family: var(--ff-body);
   font-size: 0.92rem;
   font-weight: 700;
@@ -1062,18 +1063,7 @@
   50%       { transform: translateY(-12px) rotate(8deg); }
 }
 
-@keyframes blob-morph {
-  0%, 100% { border-radius: 60% 40% 70% 30% / 50% 60% 40% 70%; }
-  25%       { border-radius: 40% 70% 30% 60% / 70% 30% 60% 40%; }
-  50%       { border-radius: 70% 30% 50% 50% / 30% 70% 40% 60%; }
-  75%       { border-radius: 30% 60% 40% 70% / 60% 40% 70% 30%; }
-}
 
-@keyframes blob-drift {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33%       { transform: translate(20px, -15px) scale(1.05); }
-  66%       { transform: translate(-15px, 10px) scale(0.95); }
-}
 
 @keyframes marquee {
   from { transform: translateX(0); }
@@ -1106,6 +1096,12 @@
    TABLET+ (min-width: 600px)
 ═══════════════════════════════════════════ */
 @media (min-width: 600px) {
+  /* Compartments two across from large phones through tablets, with the
+     differentiating claim spanning both. Below 960px the grid was a single
+     column, so four full-width bars read as a list rather than a box. */
+  .lh-stats-inner { grid-template-columns: 1fr 1fr; }
+  .lh-stat-card--wide { grid-column: span 2; }
+
   .lh-hero-ctas,
   .lh-cta-btns {
     flex-direction: row;
@@ -1175,7 +1171,14 @@
 
   /* Stats */
   .lh-stats { padding: 4.5rem 4rem; }
-  .lh-stats-inner { grid-template-columns: repeat(4, 1fr); gap: 1.25rem; }
+  /* Two columns of compartments, with the first claim spanning both. Four
+     identical cards in a row was the most generic shape on the page, and this
+     one is at least the shape the product is named after. */
+  .lh-stats-inner {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--s-3);
+  }
+  .lh-stat-card--wide { grid-column: span 3; }
   .lh-stat-card { padding: 1.5rem; }
 
   /* How It Works */
@@ -1249,8 +1252,6 @@
 ═══════════════════════════════════════════ */
 @media (prefers-reduced-motion: reduce) {
   .lh-phone--hero,
-  .lh-blob,
-  .lh-cta-blob,
   .lh-tag,
   .lh-marquee { animation: none; }
 
@@ -1360,7 +1361,7 @@
   color: var(--navy);
   background: #fff;
   border: 1.5px solid var(--lh-border);
-  border-radius: 12px;
+  border-radius: var(--r-sm);
 }
 
 .lh-school-input:focus-visible {
@@ -1378,7 +1379,7 @@
   padding: 0.8rem 0.9rem;
   background: #fff;
   border: 1.5px solid var(--lh-border);
-  border-radius: 12px;
+  border-radius: var(--r-sm);
 }
 
 .lh-school-hit + .lh-school-hit { margin-top: 0.5rem; }
@@ -1420,7 +1421,7 @@
   color: #fff;
   background: var(--orange);
   border: none;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   cursor: pointer;
 }
 
@@ -1434,7 +1435,7 @@
   padding: 0.8rem 0.9rem;
   background: #fff;
   border: 1.5px dashed var(--lh-border);
-  border-radius: 12px;
+  border-radius: var(--r-sm);
 }
 
 /* On a narrow phone the button below the text beats a squeezed row. */
@@ -1458,7 +1459,7 @@
   padding: 0.9rem 1rem;
   background: rgba(253,143,42,0.07);
   border: 1px solid rgba(253,143,42,0.28);
-  border-radius: 12px;
+  border-radius: var(--r-sm);
   font-size: 0.82rem;
   line-height: 1.6;
   color: var(--navy);
@@ -1481,4 +1482,42 @@
 
 @media (max-width: 560px) {
   .lh-cta-secondary { display: block; margin: 1rem 0 0; }
+}
+
+
+/* ═══════════════════════════════════════════
+   SETTLE-IN
+   The page's only motion. Compartments rise a little and lock into place, one
+   easing and one duration everywhere, staggered by an inline transition-delay.
+   The hidden state is applied by script (see useSettleIn) and never from this
+   stylesheet, because the homepage is prerendered and a CSS-only hidden state
+   would blank it for readers without JavaScript.
+═══════════════════════════════════════════ */
+.lh-settle {
+  opacity: 0;
+  transform: translateY(14px) scale(0.992);
+  will-change: opacity, transform;
+}
+
+.lh-settle.is-settled {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity   var(--dur-settle) var(--ease-settle),
+    transform var(--dur-settle) var(--ease-settle);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* useSettleIn returns before touching anything under this preference, so
+     nothing is ever hidden. This is belt and braces for a preference that
+     changes after load. */
+  .lh-settle { opacity: 1; transform: none; }
+  .lh-settle.is-settled { transition: none; }
+}
+
+/* The wide compartment carries the claim nobody else can make, so it gets
+   room to breathe and a tint rather than another outlined box. */
+.lh-stat-card--wide {
+  background: linear-gradient(135deg, rgba(253,143,42,0.07), rgba(253,143,42,0.02));
+  border-color: rgba(253,143,42,0.22);
 }
