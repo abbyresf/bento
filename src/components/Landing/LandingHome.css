@@ -1503,3 +1503,66 @@
   }
   .lh-stat-card--wide .lh-stat-label { font-size: var(--t-base); }
 }
+
+/* ═══════════════════════════════════════════
+   CONTAINER
+   One width and one left edge for the whole page.
+
+   Measured at 1440px before this block, the content in each section started
+   at x = 146, 64, 176, 266, 376, 356, 476, 266, 266, across seven different
+   container widths (none, none, 1080, 900, 680, 720, 480, 900, 900). Each
+   section had been given a width that suited it alone, so nothing lined up
+   with anything above or below it and the page read as a stack of unrelated
+   blocks. Every comparable site runs one container: content either sits on a
+   single left edge or is centred, and it does not alternate.
+
+   So: one max-width, one gutter, and one alignment. Sections that need a
+   narrower measure constrain the text or the form inside the container rather
+   than moving the container itself, which keeps the left edge fixed.
+═══════════════════════════════════════════ */
+.lh-hero,
+.lh-stats,
+.lh-how,
+.lh-features,
+.lh-trust,
+.lh-faq-section,
+.lh-waitlist,
+.lh-uni,
+.lh-cta {
+  padding-inline: var(--gutter);
+}
+
+.lh-hero-inner,
+.lh-stats-inner,
+.lh-how-inner,
+.lh-features-inner,
+.lh-trust-inner,
+.lh-faq-inner,
+.lh-waitlist-inner,
+.lh-uni-inner,
+.lh-cta-inner {
+  max-width: var(--container);
+  margin-inline: auto;
+}
+
+/* Everything reads from the same edge. The waitlist was the one centred
+   section left on the page, which made it the odd block in the stack. */
+.lh-waitlist-inner,
+.lh-waitlist-inner .lh-waitlist-hed,
+.lh-waitlist-inner .lh-waitlist-sub {
+  text-align: left;
+}
+
+.lh-waitlist-sub,
+.lh-school-check,
+.lh-waitlist-form,
+.lh-waitlist-success {
+  margin-inline: 0;
+}
+
+/* The form and the trust copy keep a comfortable measure, set on the content
+   rather than on the container so the left edge does not move. */
+.lh-waitlist-sub { max-width: 54ch; }
+.lh-school-check,
+.lh-waitlist-form { max-width: 460px; }
+.lh-trust-bod { max-width: 70ch; }

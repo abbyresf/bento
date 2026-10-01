@@ -976,3 +976,38 @@
   color: var(--lpu-orange);
   margin-left: 0.28em;
 }
+
+/* ═══════════════════════════════════════════
+   CONTAINER
+   The same width and the same edges as the student page, from the shared
+   token. Pulse sized its own containers (980px and several one-offs), so the
+   two pages did not line up with each other even where they showed the same
+   kind of content.
+═══════════════════════════════════════════ */
+.landing-universities .lpu-section-inner,
+.landing-universities .lpu-hero-inner,
+.landing-universities .lpu-stats-inner,
+.landing-universities .lpu-how-inner,
+.landing-universities .lpu-trust-inner,
+.landing-universities .lpu-consult-inner {
+  max-width: var(--container);
+  margin-inline: auto;
+}
+
+/* Restores the lockup to the height the wordmark image had. The image was
+   52px tall; swapping it for mark-plus-text dropped the whole thing to about
+   34px, which is a third smaller and reads as an afterthought at the top of
+   the page. */
+.landing-universities .lpu-wordmark-mark {
+  width: 52px;
+  height: 52px;
+}
+
+.landing-universities .lpu-wordmark-text {
+  font-size: var(--t-2xl);
+}
+
+.landing-universities .lpu-wordmark {
+  gap: 0.75rem;
+  margin-bottom: 2.25rem;
+}

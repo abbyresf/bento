@@ -66,6 +66,14 @@
   --t-4xl:  3.5rem;     /* 56px */
   --t-5xl:  4.5rem;     /* 72px, hero */
 
+
+  /* ── Layout ────────────────────────────────────────────────────────────
+     One container width and one gutter for every section on both pages.
+     Sections used to size their own containers, so content started at a
+     different x in almost every one. */
+  --container: 1080px;
+  --gutter:    1.5rem;
+
   /* ── Radius ────────────────────────────────────────────────────────────
      Four steps. There were fourteen distinct radii on this page, because
      this block held exactly one token and every component picked its own.
