@@ -8,12 +8,28 @@
 
 .landing-universities .pc-frame {
   position: relative;
-  /* No frame colour, no fixed ratio. The four screenshots run from 1.12 to
-     1.58 wide-to-tall, so any single ratio leaves one of them letterboxed: a
-     fixed frame with object-fit: contain left a visible block of light frame
-     under the wider screens. Instead each image keeps its own height and the
-     track takes the height of the tallest, so the only leftover space is the
-     page's own dark ground, which cannot be seen. */
+  /* One fixed frame, so every screen is presented at exactly the same size and
+     nothing resizes as the carousel moves.
+
+     The height cap is the point. Filling the 1080px container, the tallest
+     screen rendered 963px tall against a 900px viewport, so it could not be
+     seen at once and pushed its own caption and controls off the bottom. Sized
+     from vh instead, the whole thing (frame, caption, controls) fits one
+     screen together. max-width is expressed in vh so the 4/3 ratio decides the
+     width and the height stays capped near 55vh.
+
+     The screenshots themselves run 1.12 to 1.58 wide-to-tall, so a single
+     frame has to letterbox some of them. The frame is painted in the
+     screenshots' own page colour, sampled at #F6F4F0, so the margin reads as
+     part of the screen rather than as a bar. */
+  width: 100%;
+  max-width: 73vh;
+  aspect-ratio: 4 / 3;
+  margin-inline: auto;
+  background: #f6f4f0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--r-md);
+  overflow: hidden;
 }
 
 .landing-universities .pc-demo-tag {
@@ -32,9 +48,7 @@
 
 .landing-universities .pc-track {
   display: flex;
-  /* Centred rather than stretched, so a shorter screen sits in the middle of
-     the track instead of being pulled to the tallest one's height. */
-  align-items: center;
+  height: 100%;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
@@ -51,23 +65,20 @@
 
 .landing-universities .pc-slide {
   flex: 0 0 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  height: 100%;
   scroll-snap-align: start;
   scroll-snap-stop: always;
 }
 
 .landing-universities .pc-img {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
   user-select: none;
-  /* The border and radius live on the image now that there is no frame behind
-     it. Each screenshot carries its own light background, so this reads as a
-     screen sitting on the dark page. */
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--r-md);
+  /* Contained, so every screen is shown whole at the same frame size and none
+     of them is cropped. The frame carries the border and the radius. */
+  object-fit: contain;
+  object-position: center;
 }
 
 .landing-universities .pc-caption {
