@@ -1,3 +1,5 @@
+@import './landingTokens.css';
+
 /* ── Bento Pulse landing section ─────────────────────────────────────────────
    All rules scoped under .landing-universities to avoid conflicts.
    Token variables defined locally on .landing-universities.
@@ -19,7 +21,7 @@
   background-size: 26px 26px;
   color: var(--lpu-text);
   font-family: var(--lpu-font);
-  font-size: 15px;
+  font-size: var(--t-base);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
@@ -32,7 +34,7 @@
 }
 
 .landing-universities .lpu-s-label {
-  font-size: 0.78rem;
+  font-size: var(--t-xs);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   /* Was --lpu-faint, which composites to 1.9:1 on the dark ground: not a
@@ -43,7 +45,7 @@
 }
 
 .landing-universities .lpu-s-head {
-  font-size: clamp(1.3rem, 3.5vw, 1.9rem);
+  font-size: clamp(var(--t-lg), 3.5vw, var(--t-2xl));
   font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--lpu-text);
@@ -52,7 +54,7 @@
 }
 
 .landing-universities .lpu-s-sub {
-  font-size: 1.02rem;
+  font-size: var(--t-base);
   color: var(--lpu-muted);
   line-height: 1.75;
 }
@@ -63,9 +65,11 @@
   position: relative;
   padding: 5rem 1.5rem 5rem;
   text-align: center;
-  /* Lands on a faint tint rather than pure white, so the eye steps white, then
-     off-white, then into the dark band below, instead of jumping. */
-  background: linear-gradient(180deg, #ffffff 0%, #ffffff 68%, #F4F6FA 100%);
+  /* Flat white. This was a fade into an off-white, added to soften the jump
+     into the dark band below. With six grounds on the page no edge read as
+     intentional, so softening seemed like the fix; with two, the hard edge is
+     the structure. Amplitude alternates black and white exactly this way. */
+  background: #ffffff;
   overflow: hidden;
 }
 
@@ -85,7 +89,7 @@
 }
 
 .landing-universities .lpu-hero-headline {
-  font-size: clamp(2.2rem, 5.5vw, 3.5rem);
+  font-size: clamp(var(--t-2xl), 5.5vw, var(--t-4xl));
   font-weight: 600;
   line-height: 1.1;
   letter-spacing: -0.025em;
@@ -109,7 +113,7 @@
 }
 
 .landing-universities .lpu-hero-sub {
-  font-size: 1.2rem;
+  font-size: var(--t-md);
   color: rgba(12, 21, 35, 0.55);
   font-weight: 300;
   line-height: 1.7;
@@ -131,7 +135,7 @@
   border: none;
   border-radius: 6px;
   padding: 0.72rem 1.6rem;
-  font-size: 0.88rem;
+  font-size: var(--t-sm);
   font-weight: 600;
   cursor: pointer;
   font-family: var(--lpu-font);
@@ -146,7 +150,7 @@
   border: 1px solid rgba(12, 21, 35, 0.18);
   border-radius: 6px;
   padding: 0.72rem 1.4rem;
-  font-size: 0.88rem;
+  font-size: var(--t-sm);
   font-weight: 500;
   cursor: pointer;
   font-family: var(--lpu-font);
@@ -163,10 +167,7 @@
 .landing-universities .lpu-stats {
   border-top: 1px solid var(--lpu-border);
   border-bottom: 1px solid var(--lpu-border);
-  /* The hero above is pure white and this band is near black, so the page cut
-     straight from one to the other. Starting the band a few steps lighter and
-     settling to the page colour reads as a transition rather than a seam. */
-  background: linear-gradient(180deg, #1b2b42 0%, #111c2b 100%);
+  background: var(--lpu-bg);
 }
 
 .landing-universities .lpu-stats-inner {
@@ -187,7 +188,7 @@
 .landing-universities .lpu-stat:last-child { border-right: none; }
 
 .landing-universities .lpu-stat-num {
-  font-size: 2rem;
+  font-size: var(--t-2xl);
   font-weight: 600;
   letter-spacing: -0.04em;
   color: var(--lpu-text);
@@ -196,7 +197,7 @@
 }
 
 .landing-universities .lpu-stat-label {
-  font-size: 0.84rem;
+  font-size: var(--t-sm);
   color: var(--lpu-muted);
   line-height: 1.5;
 }
@@ -251,7 +252,7 @@
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  font-size: 0.8rem;
+  font-size: var(--t-sm);
   font-weight: 700;
   color: #1a2b3c;
   letter-spacing: -0.01em;
@@ -283,7 +284,7 @@
 }
 
 .landing-universities .lpu-db-period {
-  font-size: 0.62rem;
+  font-size: var(--t-xs);
   font-weight: 600;
   color: #94a3b8;
   padding: 0.22rem 0.55rem;
@@ -299,7 +300,7 @@
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  font-size: 0.62rem;
+  font-size: var(--t-xs);
   font-weight: 600;
   color: #64748b;
   border: 1px solid #e8e3dd;
@@ -340,7 +341,7 @@
 }
 
 .landing-universities .lpu-db-kpi-lbl {
-  font-size: 0.58rem;
+  font-size: var(--t-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -348,7 +349,7 @@
 }
 
 .landing-universities .lpu-db-kpi-chg {
-  font-size: 0.58rem;
+  font-size: var(--t-xs);
   font-weight: 700;
   padding: 0.1rem 0.35rem;
   border-radius: 3px;
@@ -358,7 +359,7 @@
 .landing-universities .lpu-db-kpi-chg.down  { background: rgba(239,68,68,0.1);   color: #dc2626; }
 
 .landing-universities .lpu-db-kpi-val {
-  font-size: 1.55rem;
+  font-size: var(--t-xl);
   font-weight: 700;
   color: #1a2b3c;
   letter-spacing: -0.03em;
@@ -396,13 +397,13 @@
 }
 
 .landing-universities .lpu-db-card-ttl {
-  font-size: 0.68rem;
+  font-size: var(--t-xs);
   font-weight: 700;
   color: #1a2b3c;
 }
 
 .landing-universities .lpu-db-card-meta {
-  font-size: 0.58rem;
+  font-size: var(--t-xs);
   color: #94a3b8;
 }
 
@@ -419,7 +420,7 @@
   align-items: center;
   gap: 0.3rem;
   margin-top: 0.6rem;
-  font-size: 0.58rem;
+  font-size: var(--t-xs);
   color: #94a3b8;
 }
 
@@ -448,7 +449,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.62rem;
+  font-size: var(--t-xs);
 }
 
 .landing-universities .lpu-diet-name { font-weight: 600; color: #334155; }
@@ -475,7 +476,7 @@
   gap: 0.5rem;
   padding: 0 0.4rem 0.5rem;
   border-bottom: 1px solid #f0ece8;
-  font-size: 0.56rem;
+  font-size: var(--t-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -493,10 +494,10 @@
 
 .landing-universities .lpu-item:last-child { border-bottom: none; }
 
-.landing-universities .lpu-item-rank  { font-size: 0.62rem; font-weight: 700; color: #cbd5e1; }
-.landing-universities .lpu-item-name  { font-size: 0.65rem; color: #334155; font-weight: 500; }
-.landing-universities .lpu-item-count { font-size: 0.65rem; font-weight: 700; color: #1a2b3c; font-variant-numeric: tabular-nums; }
-.landing-universities .lpu-item-pct   { font-size: 0.62rem; color: #94a3b8; font-variant-numeric: tabular-nums; }
+.landing-universities .lpu-item-rank  { font-size: var(--t-xs); font-weight: 700; color: #cbd5e1; }
+.landing-universities .lpu-item-name  { font-size: var(--t-xs); color: #334155; font-weight: 500; }
+.landing-universities .lpu-item-count { font-size: var(--t-xs); font-weight: 700; color: #1a2b3c; font-variant-numeric: tabular-nums; }
+.landing-universities .lpu-item-pct   { font-size: var(--t-xs); color: #94a3b8; font-variant-numeric: tabular-nums; }
 
 .landing-universities .lpu-item-track {
   height: 4px;
@@ -570,14 +571,14 @@
 }
 
 .landing-universities .lpu-feature-title {
-  font-size: 1.05rem;
+  font-size: var(--t-base);
   font-weight: 600;
   color: var(--lpu-text);
   line-height: 1.3;
 }
 
 .landing-universities .lpu-feature-desc {
-  font-size: 0.95rem;
+  font-size: var(--t-base);
   color: var(--lpu-muted);
   line-height: 1.75;
 }
@@ -626,7 +627,7 @@
   border-radius: 50%;
   border: 1px solid var(--lpu-orange);
   color: var(--lpu-orange);
-  font-size: 0.72rem;
+  font-size: var(--t-xs);
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -640,14 +641,14 @@
 .landing-universities .lpu-step-content { padding-top: 0.2rem; }
 
 .landing-universities .lpu-step-title {
-  font-size: 0.95rem;
+  font-size: var(--t-base);
   font-weight: 600;
   color: var(--lpu-text);
   margin-bottom: 0.35rem;
 }
 
 .landing-universities .lpu-step-desc {
-  font-size: 0.84rem;
+  font-size: var(--t-sm);
   color: var(--lpu-muted);
   line-height: 1.75;
 }
@@ -680,14 +681,14 @@
 }
 
 .landing-universities .lpu-trust-heading {
-  font-size: 0.88rem;
+  font-size: var(--t-sm);
   font-weight: 600;
   color: var(--lpu-text);
   margin-bottom: 0.4rem;
 }
 
 .landing-universities .lpu-trust-body {
-  font-size: 0.8rem;
+  font-size: var(--t-sm);
   color: var(--lpu-muted);
   line-height: 1.7;
 }
@@ -717,7 +718,7 @@
 }
 
 .landing-universities .lpu-consult-heading {
-  font-size: clamp(1.5rem, 3.5vw, 2.1rem);
+  font-size: clamp(var(--t-lg), 3.5vw, var(--t-2xl));
   font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--lpu-text);
@@ -727,7 +728,7 @@
 }
 
 .landing-universities .lpu-consult-sub {
-  font-size: 0.9rem;
+  font-size: var(--t-sm);
   color: var(--lpu-muted);
   line-height: 1.75;
   margin-bottom: 1.5rem;
@@ -739,7 +740,7 @@
   justify-content: center;
   gap: 0.5rem;
   flex-wrap: wrap;
-  font-size: 0.7rem;
+  font-size: var(--t-xs);
   color: var(--lpu-faint);
   margin-bottom: 2.25rem;
 }
@@ -772,7 +773,7 @@
 }
 
 .landing-universities .lpu-form-label {
-  font-size: 0.78rem;
+  font-size: var(--t-xs);
   font-weight: 600;
   color: var(--lpu-muted);
   letter-spacing: 0.06em;
@@ -784,7 +785,7 @@
   border: 1px solid var(--lpu-border);
   border-radius: 5px;
   padding: 0.65rem 0.85rem;
-  font-size: 0.85rem;
+  font-size: var(--t-sm);
   color: var(--lpu-text);
   font-family: var(--lpu-font);
   outline: none;
@@ -801,7 +802,7 @@
   border: none;
   border-radius: 5px;
   padding: 0.78rem;
-  font-size: 0.88rem;
+  font-size: var(--t-sm);
   font-weight: 600;
   cursor: pointer;
   font-family: var(--lpu-font);
@@ -814,7 +815,7 @@
 .landing-universities .lpu-form-submit:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .landing-universities .lpu-consult-error {
-  font-size: 0.8rem;
+  font-size: var(--t-sm);
   color: #ff8888;
   background: rgba(255,100,100,0.08);
   border: 1px solid rgba(255,100,100,0.2);
@@ -839,19 +840,19 @@
 }
 
 .landing-universities .lpu-consult-check {
-  font-size: 2.25rem;
+  font-size: var(--t-2xl);
   color: var(--lpu-green);
 }
 
 .landing-universities .lpu-consult-success-hed {
-  font-size: 1.2rem;
+  font-size: var(--t-md);
   font-weight: 800;
   color: var(--lpu-text);
   margin: 0;
 }
 
 .landing-universities .lpu-consult-success-sub {
-  font-size: 0.85rem;
+  font-size: var(--t-sm);
   color: var(--lpu-muted);
   margin: 0;
   max-width: 320px;
@@ -860,7 +861,7 @@
 
 .landing-universities .lpu-consult-note {
   margin-top: 1rem;
-  font-size: 0.72rem;
+  font-size: var(--t-xs);
   color: var(--lpu-faint);
   line-height: 1.6;
 }
@@ -932,7 +933,7 @@
   border-radius: 999px;
   background: rgba(100, 116, 139, 0.12);
   color: #64748b;
-  font-size: 0.58rem;
+  font-size: var(--t-xs);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -942,7 +943,7 @@
 .lpu-s-note {
   margin: 0.6rem auto 0;
   max-width: 54ch;
-  font-size: 0.92rem;
+  font-size: var(--t-sm);
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.55);
 }

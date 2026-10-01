@@ -1,0 +1,102 @@
+/* ── Bento landing design tokens ──────────────────────────────────────────────
+   One source for both landing pages. The student page and the Bento Pulse page
+   each carried their own scales, which is how the two drifted: twenty font
+   sizes on one and twenty-three on the other, almost none of them shared.
+   Anything that should look the same on both pages belongs here.
+────────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* ── Palette ───────────────────────────────────────────────────────────
+     Three hue families, which was already true and is the one part of this
+     page that did not need fixing. */
+  --cream:   #FFFDF9;
+  --navy:    #1A2B3C;
+  --navy-d:  #111C28;
+  --orange:  #FD8F2A;
+  --green:   #77BE3D;
+  --blue:    #2B97FD;
+  /* Was #7A8EA0, which measured 3.33:1 on the cream ground. AA wants 4.5:1
+     for text this size, and this token colours most of the body copy on the
+     page. #5C6F80 measures 5.12:1 and keeps the same cool cast. */
+  --muted:   #5C6F80;
+  --lh-border: rgba(26,43,60,0.09);
+
+  /* Orange on cream measures 2.26:1, which is unreadable at eyebrow size.
+     This is the same hue darkened until it passes AA (4.69:1), for orange
+     text on a light ground. The bright orange stays for fills, where it sits
+     under white text and the contrast runs the other way. */
+  --orange-text: #B45A06;
+
+  /* ── Semantic colour ───────────────────────────────────────────────────
+     The palette was fine; the application was not. Accents were assigned by
+     position, so card one was orange, two green, three blue, four navy, and
+     the same again on the next grid. Colour that cycles by index is
+     decoration. Below, each hue means one thing, and a tile is green because
+     it says something is available, never because it is third. */
+  --action:   var(--orange);  /* anything you can click, and nothing else */
+  --positive: var(--green);   /* available, confirmed, private, free */
+  --info:     var(--blue);    /* neutral fact, no action implied */
+
+  /* ── Type ──────────────────────────────────────────────────────────────
+     Two families here. Nunito is the app's body font, set in index.css, but
+     it renders nowhere on this page, so the landing font request no longer
+     asks for it. Dancing Script existed for one word in the hero, and a
+     script accent over a swooshed underline is the most borrowed gesture on
+     the page. Fraunces carries its own italic, so the emphasis survives
+     without a third voice. */
+  --ff-disp: 'Fraunces', Georgia, serif;
+  --ff-body: 'Instrument Sans', system-ui, sans-serif;
+
+
+  /* ── Type scale ────────────────────────────────────────────────────────
+     Ten steps, every one a round pixel value on a 16px base. This page had
+     twenty sizes (0.62, 0.65, 0.68, 0.72, 0.75, 0.78, 0.8, 0.82, 0.83, 0.85,
+     0.88, 0.9, 0.92, 0.95, 1, 1.05, 1.15, 1.25, 1.3, 2rem), most of them a
+     hair apart, which reads as inconsistency rather than hierarchy. For
+     reference, Duolingo ships 8 sizes, Handshake 12, Amplitude 13, and none
+     of the three uses a fractional one. */
+  --t-xs:   0.75rem;    /* 12px, eyebrows and micro labels */
+  --t-sm:   0.875rem;   /* 14px, supporting text */
+  --t-base: 1rem;       /* 16px, body */
+  --t-md:   1.125rem;   /* 18px, lead paragraphs */
+  --t-lg:   1.25rem;    /* 20px */
+  --t-xl:   1.5rem;     /* 24px, card titles */
+  --t-2xl:  2rem;       /* 32px */
+  --t-3xl:  2.5rem;     /* 40px */
+  --t-4xl:  3.5rem;     /* 56px */
+  --t-5xl:  4.5rem;     /* 72px, hero */
+
+  /* ── Radius ────────────────────────────────────────────────────────────
+     Four steps. There were fourteen distinct radii on this page, because
+     this block held exactly one token and every component picked its own.
+     Nothing shared a value with anything else, so nothing read as part of a
+     system, which is most of what "looks generated" actually means. */
+  --r-sm:   10px;   /* inputs, chips, small controls */
+  --r-md:   16px;   /* tiles and cards */
+  --r-lg:   28px;   /* large compartments */
+  --r-pill: 999px;  /* buttons, tags */
+
+  /* The phone is a drawing of hardware, not a UI surface, so it keeps the
+     radii a phone actually has. Named rather than inline so it reads as a
+     deliberate exception to the scale above. */
+  --r-device:        44px;
+  --r-device-screen: 22px;
+
+  /* ── Spacing ───────────────────────────────────────────────────────────
+     One scale, used for section padding and the gaps inside them. */
+  --s-1: 0.5rem;
+  --s-2: 0.75rem;
+  --s-3: 1rem;
+  --s-4: 1.5rem;
+  --s-5: 2rem;
+  --s-6: 3rem;
+  --s-7: 4.5rem;
+  --s-8: 6rem;
+
+  /* ── Motion ────────────────────────────────────────────────────────────
+     A bento box is compartments that lock together, so things on this page
+     settle into place rather than drifting or floating. One duration and one
+     easing, so every reveal reads as the same gesture. */
+  --ease-settle: cubic-bezier(0.22, 0.9, 0.3, 1);
+  --dur-settle:  520ms;
+}

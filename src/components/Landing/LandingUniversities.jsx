@@ -174,12 +174,12 @@ function DashboardMockup() {
               <path d={CHART.line} fill="none" stroke="#fd8f2a" strokeWidth="1.8" strokeLinejoin="round" />
               <circle cx={CHART.peak.x} cy={CHART.peak.y} r="3.5" fill="#fd8f2a" />
               <circle cx={CHART.peak.x} cy={CHART.peak.y} r="6" fill="#fd8f2a" fillOpacity="0.15" />
-              <text x="4" y={CHART.pT - 3}                         fontSize="7" fill="#94a3b8">0</text>
-              <text x="4" y={CHART.pT + CHART.plotH * 0.25 + 3}   fontSize="7" fill="#94a3b8">750</text>
-              <text x="4" y={CHART.pT + CHART.plotH * 0.5  + 3}   fontSize="7" fill="#94a3b8">500</text>
-              <text x="4" y={CHART.pT + CHART.plotH * 0.75 + 3}   fontSize="7" fill="#94a3b8">250</text>
+              <text x="4" y={CHART.pT - 3}                         fontSize="10" fill="#94a3b8">0</text>
+              <text x="4" y={CHART.pT + CHART.plotH * 0.25 + 3}   fontSize="10" fill="#94a3b8">750</text>
+              <text x="4" y={CHART.pT + CHART.plotH * 0.5  + 3}   fontSize="10" fill="#94a3b8">500</text>
+              <text x="4" y={CHART.pT + CHART.plotH * 0.75 + 3}   fontSize="10" fill="#94a3b8">250</text>
               {['Wk 1','Wk 2','Wk 3','Wk 4'].map((lbl, i) => (
-                <text key={lbl} x={2 + (CHART.W - 4) * i / 3} y={CHART.H - 3} fontSize="7" fill="#94a3b8">{lbl}</text>
+                <text key={lbl} x={2 + (CHART.W - 4) * i / 3} y={CHART.H - 3} fontSize="10" fill="#94a3b8">{lbl}</text>
               ))}
             </svg>
             <div className="lpu-area-legend">
