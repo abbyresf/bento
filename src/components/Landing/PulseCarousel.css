@@ -1,0 +1,162 @@
+/* Carousel of Bento Pulse screens. Scoped under .landing-universities so it
+   inherits the Pulse palette, and it draws its scale and radii from the shared
+   landing tokens like everything else on both pages. */
+
+.landing-universities .pc {
+  width: 100%;
+}
+
+.landing-universities .pc-frame {
+  position: relative;
+  /* No frame colour, no fixed ratio. The four screenshots run from 1.12 to
+     1.58 wide-to-tall, so any single ratio leaves one of them letterboxed: a
+     fixed frame with object-fit: contain left a visible block of light frame
+     under the wider screens. Instead each image keeps its own height and the
+     track takes the height of the tallest, so the only leftover space is the
+     page's own dark ground, which cannot be seen. */
+}
+
+.landing-universities .pc-demo-tag {
+  display: inline-block;
+  margin-left: 0.6rem;
+  vertical-align: middle;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: var(--lpu-muted);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.landing-universities .pc-track {
+  display: flex;
+  /* Centred rather than stretched, so a shorter screen sits in the middle of
+     the track instead of being pulled to the tallest one's height. */
+  align-items: center;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.landing-universities .pc-track::-webkit-scrollbar { display: none; }
+
+.landing-universities .pc-track:focus-visible {
+  outline: 2px solid var(--lpu-orange);
+  outline-offset: 2px;
+}
+
+.landing-universities .pc-slide {
+  flex: 0 0 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.landing-universities .pc-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  user-select: none;
+  /* The border and radius live on the image now that there is no frame behind
+     it. Each screenshot carries its own light background, so this reads as a
+     screen sitting on the dark page. */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--r-md);
+}
+
+.landing-universities .pc-caption {
+  margin-top: 1.25rem;
+  min-height: 5.5rem;
+}
+
+.landing-universities .pc-caption-title {
+  font-size: var(--t-md);
+  font-weight: 600;
+  color: var(--lpu-text);
+  margin: 0 0 0.3rem;
+}
+
+.landing-universities .pc-caption-body {
+  font-size: var(--t-sm);
+  line-height: 1.6;
+  color: var(--lpu-muted);
+  margin: 0;
+  max-width: 64ch;
+}
+
+.landing-universities .pc-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.landing-universities .pc-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: transparent;
+  color: var(--lpu-text);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.landing-universities .pc-arrow:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.landing-universities .pc-arrow:focus-visible {
+  outline: 2px solid var(--lpu-orange);
+  outline-offset: 2px;
+}
+
+.landing-universities .pc-dots {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.landing-universities .pc-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.28);
+  cursor: pointer;
+  transition: background 0.2s, width 0.2s;
+}
+
+.landing-universities .pc-dot.is-current {
+  width: 22px;
+  border-radius: var(--r-pill);
+  background: var(--lpu-orange);
+}
+
+.landing-universities .pc-dot:focus-visible {
+  outline: 2px solid var(--lpu-orange);
+  outline-offset: 3px;
+}
+
+@media (max-width: 700px) {
+  /* Captions wrap to more lines on a phone, and a box that grows and shrinks
+     under the screens would shift the controls on every slide. */
+  .landing-universities .pc-caption { min-height: 7rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-universities .pc-track { scroll-behavior: auto; }
+  .landing-universities .pc-dot { transition: none; }
+}

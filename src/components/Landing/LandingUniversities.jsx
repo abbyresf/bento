@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import emailjs from '@emailjs/browser';
+import PulseCarousel from './PulseCarousel';
 import './LandingUniversities.css';
 
 // ── Static chart data ─────────────────────────────────────────────────────────
@@ -98,143 +99,6 @@ const TOP_ITEMS = [
   { name: 'Caesar Salad',           count: '1,243', pct: '12.6%', w: '67%'  },
 ];
 
-function DashboardMockup() {
-  return (
-    <div className="lpu-mockup">
-      {/* top bar */}
-      <div className="lpu-db-bar">
-        <div className="lpu-db-logo">
-          <div className="lpu-db-logo-mark">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <rect x="1.5" y="5.5" width="9" height="5" rx="1.5" fill="white" fillOpacity=".9" />
-              <rect x="1.5" y="1.5" width="4" height="4" rx="1.5" fill="white" fillOpacity=".9" />
-              <rect x="6.5" y="1.5" width="4" height="4" rx="1.5" fill="white" fillOpacity=".6" />
-            </svg>
-          </div>
-          Bento Pulse
-          {/* The figures below are illustrative. Bento is live at two campuses,
-              so numbers on this scale are not results anyone has produced, and
-              a dining director reading them as real would be reading a claim
-              nobody made on purpose. Marked inside the frame so the label
-              travels with any screenshot of it. */}
-          <span className="lpu-db-sample">Sample data</span>
-        </div>
-        <div className="lpu-db-right">
-          <div className="lpu-db-period-group">
-            <span className="lpu-db-period">7d</span>
-            <span className="lpu-db-period on">30d</span>
-            <span className="lpu-db-period">90d</span>
-          </div>
-          <div className="lpu-db-export">
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-              <path d="M5 1v6M2.5 4.5L5 7l2.5-2.5M1.5 9h7" stroke="#64748b" strokeWidth="1.2" strokeLinecap="round" />
-            </svg>
-            Export
-          </div>
-        </div>
-      </div>
-
-      <div className="lpu-db-body">
-        {/* KPI row */}
-        <div className="lpu-db-kpi-row">
-          {KPI_CARDS.map((k, i) => (
-            <div key={k.label} className="lpu-db-kpi">
-              <div className="lpu-db-kpi-top">
-                <span className="lpu-db-kpi-lbl">{k.label}</span>
-                {k.chg && <span className={`lpu-db-kpi-chg ${k.chgUp ? 'up' : 'down'}`}>{k.chg}</span>}
-              </div>
-              <div className="lpu-db-kpi-val">{k.value}</div>
-              <Sparkline idx={i} />
-            </div>
-          ))}
-        </div>
-
-        {/* Charts row */}
-        <div className="lpu-db-charts">
-          {/* area chart */}
-          <div className="lpu-db-card">
-            <div className="lpu-db-card-head">
-              <span className="lpu-db-card-ttl">Daily Meal Confirmations</span>
-              <span className="lpu-db-card-meta">Last 30 days</span>
-            </div>
-            <svg className="lpu-area-svg" viewBox={`0 0 ${CHART.W} ${CHART.H}`} preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="lpu-area-grad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor="#fd8f2a" stopOpacity="0.18" />
-                  <stop offset="100%" stopColor="#fd8f2a" stopOpacity="0"    />
-                </linearGradient>
-              </defs>
-              {CHART.weekends.map(r => (
-                <rect key={r.key} x={r.x} y={CHART.pT} width={r.w} height={CHART.plotH} fill="#f7f4f0" />
-              ))}
-              {[0.25, 0.5, 0.75, 1].map(t => (
-                <line key={t} x1="2" y1={CHART.pT + (1 - t) * CHART.plotH} x2={CHART.W - 2} y2={CHART.pT + (1 - t) * CHART.plotH} stroke="#f0ece8" strokeWidth="1" />
-              ))}
-              <path d={CHART.area} fill="url(#lpu-area-grad)" />
-              <path d={CHART.line} fill="none" stroke="#fd8f2a" strokeWidth="1.8" strokeLinejoin="round" />
-              <circle cx={CHART.peak.x} cy={CHART.peak.y} r="3.5" fill="#fd8f2a" />
-              <circle cx={CHART.peak.x} cy={CHART.peak.y} r="6" fill="#fd8f2a" fillOpacity="0.15" />
-              <text x="4" y={CHART.pT - 3}                         fontSize="10" fill="#94a3b8">0</text>
-              <text x="4" y={CHART.pT + CHART.plotH * 0.25 + 3}   fontSize="10" fill="#94a3b8">750</text>
-              <text x="4" y={CHART.pT + CHART.plotH * 0.5  + 3}   fontSize="10" fill="#94a3b8">500</text>
-              <text x="4" y={CHART.pT + CHART.plotH * 0.75 + 3}   fontSize="10" fill="#94a3b8">250</text>
-              {['Wk 1','Wk 2','Wk 3','Wk 4'].map((lbl, i) => (
-                <text key={lbl} x={2 + (CHART.W - 4) * i / 3} y={CHART.H - 3} fontSize="10" fill="#94a3b8">{lbl}</text>
-              ))}
-            </svg>
-            <div className="lpu-area-legend">
-              <span className="lpu-legend-swatch" style={{ background: '#fd8f2a' }} />Meals confirmed
-              <span className="lpu-legend-swatch" style={{ background: '#ddd9d4', marginLeft: '0.75rem' }} />Weekend
-            </div>
-          </div>
-
-          {/* dietary breakdown */}
-          <div className="lpu-db-card">
-            <div className="lpu-db-card-head">
-              <span className="lpu-db-card-ttl">Dietary Accommodation</span>
-              <span className="lpu-db-card-meta">% of active students</span>
-            </div>
-            <div className="lpu-dietary">
-              {DIETARY.map(d => (
-                <div key={d.name} className="lpu-diet-row">
-                  <div className="lpu-diet-top">
-                    <span className="lpu-diet-name">{d.name}</span>
-                    <span className="lpu-diet-val">{d.pct}% · {d.val}</span>
-                  </div>
-                  <div className="lpu-diet-track">
-                    <div className="lpu-diet-bar" style={{ width: d.barW, background: d.color }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Top items table */}
-        <div className="lpu-db-card">
-          <div className="lpu-db-card-head">
-            <span className="lpu-db-card-ttl">Top Items This Period</span>
-            <span className="lpu-db-card-meta">By student selections</span>
-          </div>
-          <div className="lpu-items">
-            <div className="lpu-items-head">
-              <span>#</span><span>Item</span><span>Selections</span><span>Count</span><span>% active</span>
-            </div>
-            {TOP_ITEMS.map((item, i) => (
-              <div key={item.name} className="lpu-item">
-                <span className="lpu-item-rank">{i + 1}</span>
-                <span className="lpu-item-name">{item.name}</span>
-                <div className="lpu-item-track"><div className="lpu-item-bar" style={{ width: item.w }} /></div>
-                <span className="lpu-item-count">{item.count}</span>
-                <span className="lpu-item-pct">{item.pct}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ── Main component ────────────────────────────────────────────────────────────
 
@@ -363,18 +227,24 @@ export default function LandingUniversities() {
         </div>
       </div>
 
-      {/* ── Mockup ── */}
+      {/* ── Dashboard carousel ── */}
       <section className="lpu-mockup-section" id="lpu-mockup-section">
         <div className="lpu-section-inner">
           <div className="lpu-mockup-head">
-            <p className="lpu-s-label">Live dashboard</p>
-            <h2 className="lpu-s-head">One view of your entire dining program.</h2>
-            <p className="lpu-s-sub">Every metric your team tracks and every export for the next board meeting. Always current.</p>
-            <p className="lpu-s-note">The dashboard below is filled with sample data to show the layout. Your view would show your own campus.</p>
+            <p className="lpu-s-label">The dashboard</p>
+            <h2 className="lpu-s-head">Built around what your campus needs to know.</h2>
+            <p className="lpu-s-sub">
+              Every dining program measures something different. We set Pulse up
+              around the questions your team is already asking, so the screens you
+              open each morning are the ones that answer them. Tell us what matters
+              on your campus and we will track it.
+            </p>
+            <p className="lpu-s-note">
+              These are screens from a demo account. The figures are generated, and
+              your view would show your own campus.
+            </p>
           </div>
-          <div className="lpu-mockup-wrap">
-            <DashboardMockup />
-          </div>
+          <PulseCarousel />
         </div>
       </section>
 
