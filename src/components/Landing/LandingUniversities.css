@@ -35,7 +35,10 @@
   font-size: 0.68rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--lpu-faint);
+  /* Was --lpu-faint, which composites to 1.9:1 on the dark ground: not a
+     quiet label, an unreadable one. Orange is already the label colour on the
+     student page and measures around 8:1 here. */
+  color: var(--lpu-orange);
   margin-bottom: 0.75rem;
 }
 
@@ -92,6 +95,15 @@
 .landing-universities .lpu-hero-headline em {
   font-style: normal;
   color: var(--lpu-orange);
+}
+
+/* Two sentences, two lines. Left to wrap on its own the headline broke as
+   "Your system knows what's / served. Bento knows / what students choose.",
+   which orphans "served." and starts the orange clause mid-line. Only above
+   700px, because forcing the break on a phone would make each line wrap
+   again anyway. */
+@media (min-width: 700px) {
+  .landing-universities .lpu-hero-headline em { display: block; }
 }
 
 .landing-universities .lpu-hero-sub {
@@ -519,17 +531,25 @@
 
 .landing-universities .lpu-feature:nth-child(odd)        { padding-right: 3rem; border-right: 1px solid var(--lpu-border); }
 .landing-universities .lpu-feature:nth-child(even)       { padding-left: 3rem; }
-.landing-universities .lpu-feature:nth-last-child(-n+2)  { border-bottom: none; }
+/* Clears the bottom rule from the final row of the two-column grid.
+   nth-last-child(-n+2) was meant to do that, but the full-width suggestions
+   card is the fifth child, so it matched cells 4 and 5 and left cell 3 with a
+   rule its neighbour did not have: a line that stopped halfway across. Three
+   from the end covers both cells of the last row plus the wide card. */
+.landing-universities .lpu-feature:nth-last-child(-n+3)  { border-bottom: none; }
 
 /* Suggestions card spans full width */
-.landing-universities .lpu-feature--wide {
+/* Doubled class so this outranks :nth-child(odd) above, which is one level
+   more specific and otherwise decides this card's right-hand edge.
+   The border-right/border-bottom resets that used to sit here were dead: the
+   `border` shorthand two lines down reset all four edges anyway, which is
+   what gives this card its outline. */
+.landing-universities .lpu-feature.lpu-feature--wide {
   grid-column: 1 / -1;
   padding: 2.25rem 2rem;
-  border-right: none;
-  border-bottom: none;
   background: rgba(253,143,42,0.05);
   border: 1px solid rgba(253,143,42,0.15);
-  border-radius: 8px;
+  border-radius: var(--r-sm, 10px);
   margin-top: 1.5rem;
 }
 

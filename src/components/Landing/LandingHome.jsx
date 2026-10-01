@@ -492,9 +492,19 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
                 : Icon[f.icon];
               return (
                 <div key={f.num} data-settle style={{ transitionDelay: `${i * 70}ms` }} className={`lh-feat-card lh-feat-card--${f.tone}`}>
+                  {/* No 01-04 here. These are four parallel benefits, not an
+                      order of events, so numbering them labelled a sequence
+                      that does not exist, and they rendered at 1.17:1 against
+                      the card, which is invisible rather than subtle. How it
+                      works keeps its numbers, because those steps are a
+                      sequence.
+
+                      The icon read f.color, a field renamed to f.tone in the
+                      same change that introduced tones, so every feature icon
+                      has been rendering lh-feat-icon--undefined and losing its
+                      tint. */}
                   <div className="lh-feat-card-top">
-                    <span className={`lh-feat-icon lh-feat-icon--${f.color}`}>{iconEl}</span>
-                    <span className="lh-feat-num">{f.num}</span>
+                    <span className={`lh-feat-icon lh-feat-icon--${f.tone}`}>{iconEl}</span>
                   </div>
                   <h3 className="lh-feat-title">{f.title}</h3>
                   <p className="lh-feat-desc">{f.desc}</p>

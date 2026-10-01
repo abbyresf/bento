@@ -11,8 +11,17 @@
   --orange:  #FD8F2A;
   --green:   #77BE3D;
   --blue:    #2B97FD;
-  --muted:   #7A8EA0;
+  /* Was #7A8EA0, which measured 3.33:1 on the cream ground. AA wants 4.5:1
+     for text this size, and this token colours most of the body copy on the
+     page. #5C6F80 measures 5.12:1 and keeps the same cool cast. */
+  --muted:   #5C6F80;
   --lh-border: rgba(26,43,60,0.09);
+
+  /* Orange on cream measures 2.26:1, which is unreadable at eyebrow size.
+     This is the same hue darkened until it passes AA (4.69:1), for orange
+     text on a light ground. The bright orange stays for fills, where it sits
+     under white text and the contrast runs the other way. */
+  --orange-text: #B45A06;
 
   /* ── Semantic colour ───────────────────────────────────────────────────
      The palette was fine; the application was not. Accents were assigned by
@@ -87,7 +96,7 @@
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--orange);
+  color: var(--orange-text);
   margin: 0 0 0.75rem;
 }
 
@@ -443,6 +452,10 @@
   margin: 0 auto;
 }
 
+/* Eyebrow and heading belong to each other, so they share an alignment. The
+   eyebrow was inheriting left while the heading centred, which read as a
+   layout fault rather than a choice. */
+.lh-how .lh-eyebrow,
 .lh-how-heading { text-align: center; }
 
 /* An ordered list, because the steps are a sequence and a screen reader should
@@ -581,12 +594,7 @@
 .lh-feat-icon--action   { background: rgba(253,143,42,0.12); color: var(--action); }
 .lh-feat-icon--positive { background: rgba(119,190,61,0.12); color: var(--positive); }
 
-.lh-feat-num {
-  font-size: 0.65rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  color: var(--lh-border);
-}
+
 
 .lh-feat-title {
   font-family: var(--ff-disp);
@@ -685,8 +693,11 @@
    TRUST
 ═══════════════════════════════════════════ */
 .lh-trust {
-  background: linear-gradient(180deg, var(--cream) 0%, #eaf5d8 80px, #eaf5d8 100%);
-  padding: 2.5rem 1.25rem;
+  /* Was an 80px cream-to-green fade over a band that is mostly padding, which
+     left a washed empty stripe between the allergen note and the one sentence
+     this section exists to say. Solid tint, tighter padding. */
+  background: #eaf5d8;
+  padding: var(--s-5) 1.25rem;
 }
 
 .lh-trust-inner {
@@ -1520,4 +1531,23 @@
 .lh-stat-card--wide {
   background: linear-gradient(135deg, rgba(253,143,42,0.07), rgba(253,143,42,0.02));
   border-color: rgba(253,143,42,0.22);
+}
+
+/* The wide compartment stacked its icon above its text, so a 1294px box held
+   about 300px of content hugging the top left and read as an empty banner.
+   Across the width it reads as the one claim that earned the extra room. */
+@media (min-width: 600px) {
+  .lh-stat-card--wide {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+    padding: var(--s-4) var(--s-5);
+  }
+  .lh-stat-card--wide .lh-stat-icon {
+    margin-bottom: 0;
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+  }
+  .lh-stat-card--wide .lh-stat-label { font-size: 1.05rem; }
 }
