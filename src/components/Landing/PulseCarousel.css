@@ -23,7 +23,7 @@
      screenshots' own page colour, sampled at #F6F4F0, so the margin reads as
      part of the screen rather than as a bar. */
   width: 100%;
-  max-width: 73vh;
+  max-width: 83vh;
   aspect-ratio: 4 / 3;
   margin-inline: auto;
   background: #f6f4f0;
@@ -84,6 +84,7 @@
 .landing-universities .pc-caption {
   margin-top: 1.25rem;
   min-height: 5.5rem;
+  text-align: center;
 }
 
 .landing-universities .pc-caption-title {
@@ -97,13 +98,16 @@
   font-size: var(--t-sm);
   line-height: 1.6;
   color: var(--lpu-muted);
-  margin: 0;
+  /* Centred under the frame, with the measure still capped so a long caption
+     does not run the full width of the container. */
+  margin: 0 auto;
   max-width: 64ch;
 }
 
 .landing-universities .pc-controls {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 1rem;
   margin-top: 0.75rem;
 }
