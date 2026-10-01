@@ -491,7 +491,7 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
                 ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
                 : Icon[f.icon];
               return (
-                <div key={f.num} data-settle style={{ transitionDelay: `${i * 70}ms` }} className={`lh-feat-card lh-feat-card--${f.tone}`}>
+                <div key={f.num} data-settle style={{ transitionDelay: `${i * 70}ms` }} className="lh-feat-card">
                   {/* No 01-04 here. These are four parallel benefits, not an
                       order of events, so numbering them labelled a sequence
                       that does not exist, and they rendered at 1.17:1 against
@@ -499,12 +499,12 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
                       works keeps its numbers, because those steps are a
                       sequence.
 
-                      The icon read f.color, a field renamed to f.tone in the
-                      same change that introduced tones, so every feature icon
-                      has been rendering lh-feat-icon--undefined and losing its
-                      tint. */}
+                      All four share one tone: they are parallel
+                      capabilities with identical structure, so a single
+                      odd-coloured one among them reads as a mistake rather
+                      than as meaning. */}
                   <div className="lh-feat-card-top">
-                    <span className={`lh-feat-icon lh-feat-icon--${f.tone}`}>{iconEl}</span>
+                    <span className="lh-feat-icon">{iconEl}</span>
                   </div>
                   <h3 className="lh-feat-title">{f.title}</h3>
                   <p className="lh-feat-desc">{f.desc}</p>

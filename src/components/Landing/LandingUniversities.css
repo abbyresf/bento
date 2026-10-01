@@ -32,7 +32,7 @@
 }
 
 .landing-universities .lpu-s-label {
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   /* Was --lpu-faint, which composites to 1.9:1 on the dark ground: not a
@@ -52,7 +52,7 @@
 }
 
 .landing-universities .lpu-s-sub {
-  font-size: 0.92rem;
+  font-size: 1.02rem;
   color: var(--lpu-muted);
   line-height: 1.75;
 }
@@ -63,7 +63,9 @@
   position: relative;
   padding: 5rem 1.5rem 5rem;
   text-align: center;
-  background: #ffffff;
+  /* Lands on a faint tint rather than pure white, so the eye steps white, then
+     off-white, then into the dark band below, instead of jumping. */
+  background: linear-gradient(180deg, #ffffff 0%, #ffffff 68%, #F4F6FA 100%);
   overflow: hidden;
 }
 
@@ -161,6 +163,10 @@
 .landing-universities .lpu-stats {
   border-top: 1px solid var(--lpu-border);
   border-bottom: 1px solid var(--lpu-border);
+  /* The hero above is pure white and this band is near black, so the page cut
+     straight from one to the other. Starting the band a few steps lighter and
+     settling to the page colour reads as a transition rather than a seam. */
+  background: linear-gradient(180deg, #1b2b42 0%, #111c2b 100%);
 }
 
 .landing-universities .lpu-stats-inner {
@@ -190,7 +196,7 @@
 }
 
 .landing-universities .lpu-stat-label {
-  font-size: 0.72rem;
+  font-size: 0.84rem;
   color: var(--lpu-muted);
   line-height: 1.5;
 }
@@ -564,14 +570,14 @@
 }
 
 .landing-universities .lpu-feature-title {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 600;
   color: var(--lpu-text);
   line-height: 1.3;
 }
 
 .landing-universities .lpu-feature-desc {
-  font-size: 0.84rem;
+  font-size: 0.95rem;
   color: var(--lpu-muted);
   line-height: 1.75;
 }
@@ -766,7 +772,7 @@
 }
 
 .landing-universities .lpu-form-label {
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: var(--lpu-muted);
   letter-spacing: 0.06em;
@@ -936,7 +942,7 @@
 .lpu-s-note {
   margin: 0.6rem auto 0;
   max-width: 54ch;
-  font-size: 0.82rem;
+  font-size: 0.92rem;
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.55);
 }
