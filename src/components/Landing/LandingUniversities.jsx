@@ -323,7 +323,15 @@ export default function LandingUniversities() {
       {/* ── Hero ── */}
       <section className="lpu-hero">
         <div className="lpu-hero-inner">
-          <img src="/bentopulse.png" alt="Bento Pulse" className="lpu-hero-logo" />
+          {/* Set as live text rather than the bentopulse.png wordmark. That file
+              draws "Bento" in near-black, so it only ever worked on a white
+              hero, and it was the reason this page had a white band in an
+              otherwise dark design. Text takes the page's colours and works on
+              any ground. */}
+          <div className="lpu-wordmark">
+            <img src="/BentoNoWords.svg" alt="" className="lpu-wordmark-mark" />
+            <span className="lpu-wordmark-text">Bento<span>Pulse</span></span>
+          </div>
           <h1 className="lpu-hero-headline">
             Your system knows what's served.{' '}
             <em>Bento knows what students choose.</em>

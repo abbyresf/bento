@@ -1173,8 +1173,12 @@
      the button's centre, which is what made that row look off. */
   .lh-cta-btns { flex-direction: row; align-items: center; }
 
-  /* Universities */
-  .lh-uni { padding: 2.5rem 4rem; }
+  /* Universities. Left, and on the same container width as the CTA below it,
+     so the two messages in this one dark block share a left edge instead of
+     one being centred above the other. */
+  .lh-uni { padding: 6rem 4rem 3rem; text-align: left; }
+  .lh-uni-inner { max-width: 900px; }
+  .lh-uni-text { margin-inline: 0; max-width: 560px; }
 }
 
 /* ═══════════════════════════════════════════

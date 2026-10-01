@@ -65,11 +65,11 @@
   position: relative;
   padding: 5rem 1.5rem 5rem;
   text-align: center;
-  /* Flat white. This was a fade into an off-white, added to soften the jump
-     into the dark band below. With six grounds on the page no edge read as
-     intentional, so softening seemed like the fix; with two, the hard edge is
-     the structure. Amplitude alternates black and white exactly this way. */
-  background: #ffffff;
+  /* No background of its own. The hero was the one white band on an otherwise
+     dark page, so it inherits the page ground and Pulse reads as a single
+     surface: light and warm for students, dark and analytical here. The
+     earlier fades between the two were patching a seam that should not have
+     existed. */
   overflow: hidden;
 }
 
@@ -93,7 +93,7 @@
   font-weight: 600;
   line-height: 1.1;
   letter-spacing: -0.025em;
-  color: var(--lpu-bg);
+  color: var(--lpu-text);
   margin-bottom: 1.4rem;
   text-wrap: balance;
 }
@@ -114,7 +114,7 @@
 
 .landing-universities .lpu-hero-sub {
   font-size: var(--t-md);
-  color: rgba(12, 21, 35, 0.55);
+  color: var(--lpu-muted);
   font-weight: 300;
   line-height: 1.7;
   max-width: 560px;
@@ -146,8 +146,8 @@
 
 .landing-universities .lpu-btn-ghost {
   background: transparent;
-  color: rgba(12, 21, 35, 0.55);
-  border: 1px solid rgba(12, 21, 35, 0.18);
+  color: var(--lpu-muted);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 6px;
   padding: 0.72rem 1.4rem;
   font-size: var(--t-sm);
@@ -158,8 +158,8 @@
 }
 
 .landing-universities .lpu-btn-ghost:hover {
-  color: var(--lpu-bg);
-  border-color: rgba(12, 21, 35, 0.35);
+  color: var(--lpu-text);
+  border-color: rgba(255, 255, 255, 0.45);
 }
 
 /* ── STATS STRIP ─────────────────────────────────────────────────────────────*/
@@ -946,4 +946,33 @@
   font-size: var(--t-sm);
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.55);
+}
+
+
+/* ── Pulse wordmark ──
+   Mark plus live text, so it inherits the page's colours. The bentopulse.png
+   wordmark drew "Bento" in near-black and only worked on a white ground. */
+.landing-universities .lpu-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.75rem;
+}
+
+.landing-universities .lpu-wordmark-mark {
+  width: 34px;
+  height: 34px;
+  display: block;
+}
+
+.landing-universities .lpu-wordmark-text {
+  font-size: var(--t-xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--lpu-text);
+}
+
+.landing-universities .lpu-wordmark-text span {
+  color: var(--lpu-orange);
+  margin-left: 0.28em;
 }
