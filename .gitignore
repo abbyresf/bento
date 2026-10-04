@@ -33,3 +33,19 @@ dist-ssr
 # Intermediate output of the build-time prerender (scripts/prerender.mjs).
 # Removed on a successful build; left behind if one fails partway.
 .ssr-build
+
+# ── iOS / Xcode ──
+# The ios/ project itself is committed. It holds real configuration that is not
+# regenerable from capacitor.config.ts: entitlements, Info.plist, the app icon
+# set, the launch screen, and push capabilities. Running `npx cap add ios` again
+# would not reproduce them.
+#
+# Everything Xcode regenerates stays out. Decided before the directory exists,
+# because the alternative is noticing after the first commit.
+ios/App/build/
+ios/App/Pods/
+ios/App/output/
+ios/App/App/public/
+DerivedData/
+*.xcuserstate
+**/xcuserdata/
