@@ -51,63 +51,58 @@ independently sets Xcode 26.0 as its minimum.
 
 ---
 
-## 3. Over-the-air updates: decided, 4 Oct 2026
+## 3. Over-the-air updates: not for v1
 
-**Decided: the native app ships web assets over the air.**
+**Decided, 4 Oct 2026: ship binary-only. No live-update provider.**
 
-Capacitor bundles `dist/` into the binary. Bento ships to the web two or three
-times a week, so without live updates the native app freezes at whatever was
-submitted and a one-word copy fix costs an App Review round of one to three
-days. Web and native would diverge immediately and permanently.
+This reverses an earlier recommendation in this file, which argued for buying a
+live-update service. That recommendation rested on two claims that do not hold.
 
-The deciding argument was rollback. A bad web deploy is corrected in two
-minutes. A bad App Store build cannot be rolled back at all, only superseded by
-a newer build that has itself been reviewed. For a student-facing app carrying
-a research study, "wait for Apple" is not an acceptable worst case.
+**"Bento ships two or three times a week, so the native app freezes."** Most of
+that cadence is the marketing site: landing pages, the carousel, typography,
+contrast. None of it is what a native user sees, because they land in the
+logged-in app. The churn rate of app-screen code is far lower than the deploy
+rate.
 
-Apple permits this under guideline 3.3.2 for interpreted code that does not
-change the app's primary purpose. Web assets qualify. **Native** changes still
-require a submission, always.
+**"It changes the scaffold, so decide before step 3."** Also wrong. Adding a
+live-update plugin later is additive. Install it, check for a bundle at
+startup. It is not a rewrite and it does not lock the architecture.
 
-### Provider
+And the point that was under-weighted: **Bento's content is already live.**
+Menus come from the API at runtime, as do ratings, surveys and everything in
+Pulse. A frozen bundle does not mean a stale menu. The bundle is the UI shell,
+not the data.
 
-**Appflow is out, and not by preference.** Ionic announced the wind-down of its
-commercial products after joining OutSystems. Appflow stopped accepting new
-apps on **1 October 2026** and reaches end of life on **31 December 2027**, with
-Ionic warning that apps still on it may hit build failures and live-update
-whitescreens. Ionic now points customers at Capawesome. Microsoft CodePush is
-also gone, retired with App Center on 31 March 2025.
+Against that, OTA buys exactly two things: shipping web-asset changes without
+App Review, and instant rollback. Native changes need a submission regardless.
+For a project with no budget, neither is worth a subscription and a vendor
+dependency yet, and §7 of this document argues that every recurring obligation
+is a liability for a project that has to outlive its founder.
 
-That leaves two live options:
+### What to do instead when a fix is urgent
 
-| | Capgo | Capawesome Cloud |
-| --- | --- | --- |
-| Status | independent, plugin is open source | Ionic's officially recommended successor |
-| Entry price | from about $12/month | flat, higher |
-| Also covers | OTA plus a small number of native builds | OTA, native builds, store publishing |
-| Lock-in | lower: the update server can be self-hosted | normal SaaS |
+**Apple's expedited review request.** Free, built for exactly this, and
+typically answered inside 24 hours. Use it sparingly, because the goodwill is
+finite, and keep step 8's TestFlight pass so urgent fixes stay rare.
 
-**Recommendation: Capgo**, on sustainability grounds rather than price. Two
-update services have now died under this exact use case inside eighteen months,
-and this project has to outlive its founder. An open-source plugin with a
-self-hostable backend means a vendor wind-down costs a migration rather than a
-dead app. Capawesome is the reasonable alternative and would also absorb much of
-step 4, since it does native builds and store publishing too.
+### If this is revisited later
 
-Caveat on the evidence: most comparisons of these two are published by one of
-the two. The Appflow dates above are from Ionic's own announcement. The
-feature and price claims are vendor-stated and worth confirming at signup.
+The approach stays open at no architectural cost. Two paths, both cheap:
 
-**Still to choose.** The plugin SDK differs per provider, so this blocks step 3.
+- **Capgo free tier**, enough for a small user base.
+- **Self-host Capgo.** Plugin is MPL-2.0, backend AGPL-3.0, no licence cost.
+  Bundles would sit on infrastructure Bento already runs.
 
-### What this changes downstream
+What is *not* an option: **Appflow**. Ionic is winding down its commercial
+products after joining OutSystems. Appflow stopped accepting new apps on
+1 October 2026 and reaches end of life on 31 December 2027, with Ionic warning
+of build failures and live-update whitescreens for anything still on it.
+Microsoft CodePush died with App Center in March 2025. Two services in this
+exact category have now closed inside eighteen months, which is its own
+argument for not depending on one.
 
-- Step 3 installs the chosen provider's plugin and sets a channel per
-  environment.
-- Step 4 may shrink if the provider also does native builds and uploads.
-- A live update is a release. It gets the same clean-worktree discipline as a
-  web deploy, and the same tag, or the three surfaces drift.
-- Bug fixes during the research study no longer need an App Review round.
+Revisit when there is evidence of the pain: a release the team actually needed
+out in hours rather than days.
 
 ---
 
@@ -148,7 +143,7 @@ Create the App ID `com.bentodining.app`, the App Store Connect record, and
 has to be chosen and held.
 **Done when:** the app record exists and the name is reserved.
 
-### Step 3 — Decide §3, then scaffold
+### Step 3 — Scaffold
 `npx cap add ios`, then build and run on the simulator and on a real device.
 Capacitor 8 uses Swift Package Manager by default, so CocoaPods is not needed.
 
@@ -336,7 +331,7 @@ on the study's critical path**.
 | | |
 | --- | --- |
 | Apple Developer Program | $99/year |
-| Live updates (Capgo) | from about $12/month |
+| Live updates | none, not for v1 |
 | Crash monitoring | free tier is adequate at this scale |
 | Hardware | none, the M1 Air is adequate |
 | D-U-N-S | free, and only needed at organization conversion |
@@ -345,8 +340,8 @@ on the study's critical path**.
 
 ## 10. Open questions
 
-1. **Live-update provider: Capgo or Capawesome.** The approach is decided;
-   the vendor is not, and the SDK differs. Blocks step 3.
+1. ~~Live-update provider.~~ **Closed: binary-only for v1, see §3.** Nothing
+   to buy and nothing blocking step 3.
 2. **App name**, since "Bento" is likely taken. Blocks step 2.
 3. **Minimum iOS version.**
 4. **Who owns the Apple account** if Bento outlives your time at Brandeis.
