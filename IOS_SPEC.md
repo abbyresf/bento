@@ -29,7 +29,7 @@ scaffold later.
 | | State | Needed | OK |
 | --- | --- | --- | --- |
 | macOS | 27.0.1 (26A434) | 15.6.1+ | yes |
-| Free disk | 47 GB | ~45–60 GB during Xcode install | tight but yes |
+| Free disk | 39 GB after Xcode | see note | yes |
 | Node | 22.16.0 | 22+ | yes |
 | Xcode | **not installed** (Command Line Tools only) | 26.0+ | **no** |
 | iOS simulator runtimes | **0** | at least 1 | **no** |
@@ -46,8 +46,16 @@ scaffold later.
 from §5 step 3 onward is behind that and none of it is work I can do for you.
 
 Xcode 26 is required, not preferred: since 28 Apr 2026 every App Store Connect
-submission must be built with Xcode 26+ against the iOS 26 SDK, and Capacitor 8
-independently sets Xcode 26.0 as its minimum.
+submission must be built with Xcode 26+ against the current iOS SDK, and
+Capacitor 8 independently sets Xcode 26.0 as its minimum. **Installed: Xcode
+27.0 (27A266a)**, which satisfies both. Confirm which SDK a submission must
+target before step 9, since that requirement moves with each release.
+
+**Disk, corrected 4 Oct.** Earlier drafts of this plan said Xcode needs ~35 GB
+installed and 45–60 GB during install, and that drove a 57 GB cleanup.
+Measured: **Xcode.app is 3.7 GB.** Current Xcode ships slim and downloads
+platform SDKs and simulator runtimes separately, which is the multi-gigabyte
+part, so budget roughly 10–15 GB total rather than 60.
 
 ---
 
@@ -138,10 +146,52 @@ converting later from Membership Details with apps carrying over and no second
 fee. Do not open a separate organization account later: that costs another $99
 and every app transfers one at a time.
 
-Create the App ID `com.bentodining.app`, the App Store Connect record, and
-**reserve the app name early**. "Bento" is almost certainly taken, so a name
-has to be chosen and held.
-**Done when:** the app record exists and the name is reserved.
+**Name decided, 4 Oct 2026: Bento Dining.** "Bento" alone is taken several
+times over, by a focus timer, a creator tool, a design app and an Asian
+kitchen app. None of them is campus dining, so the adjacent namespace is open.
+
+Three separate fields, and only the first has to be unique:
+
+| Field | Limit | Unique | Value |
+| --- | --- | --- | --- |
+| App Store name | 30 | yes | **Bento Dining** |
+| Subtitle | 30 | no | **Today's menu, built for you** |
+| `CFBundleDisplayName` | ~12 shown | no | **Bento** |
+
+The store lists Bento Dining, the icon on a phone reads Bento, and the name
+matches bentodining.com. `appName: 'Bento'` in `capacitor.config.ts` is what
+produces the home-screen label and is correct as written. Do not change it to
+the store name.
+
+Rejected, so it is not relitigated:
+
+- *Bento - by BentoPulse* inverts the hierarchy. Pulse is the dashboard inside
+  Bento and the thing sold to universities, so making the student app "by" it
+  makes the child the parent. Apple also reads "by X" as metadata padding.
+- *Bento University* reads as a university named Bento, and contradicts the
+  disclaimer Bento already ships, that it is "not affiliated with, endorsed by,
+  or sponsored by any university".
+
+**No fallback name reserved.** Each app record needs its own bundle ID, so
+holding a second name means a throwaway identifier and a decoy record in the
+account forever. Apple's documentation states no reservation period at all, and
+the New App dialog reports a collision immediately, so picking again costs
+thirty seconds.
+
+Steps, from Apple's own documentation:
+
+1. The Account Holder signs the latest agreement in App Store Connect →
+   Business. **No app record can be created until this is done.**
+2. developer.apple.com → Certificates, Identifiers & Profiles → Identifiers →
+   **+** → App IDs → App. Explicit bundle ID `com.bentodining.app`. Tick
+   **Push Notifications** and **Sign in with Apple** now, since both are needed
+   in step 5 and enabling them later means regenerating profiles.
+3. App Store Connect → Apps → **+** → New App. Platform iOS, name
+   **Bento Dining**, primary language English (U.S.), the bundle ID above, SKU
+   `bento-dining-ios`, Full Access. Creating the record is what reserves the
+   name. There is no separate reserve button.
+
+**Done when:** the app record exists.
 
 ### Step 3 — Scaffold
 `npx cap add ios`, then build and run on the simulator and on a real device.
@@ -342,7 +392,7 @@ on the study's critical path**.
 
 1. ~~Live-update provider.~~ **Closed: binary-only for v1, see §3.** Nothing
    to buy and nothing blocking step 3.
-2. **App name**, since "Bento" is likely taken. Blocks step 2.
+2. ~~App name.~~ **Closed: Bento Dining. See step 2.**
 3. **Minimum iOS version.**
 4. **Who owns the Apple account** if Bento outlives your time at Brandeis.
 5. **Crash monitoring tool.** Default to Sentry unless there is a reason not to.
