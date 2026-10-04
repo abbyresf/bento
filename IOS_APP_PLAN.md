@@ -1,3 +1,9 @@
+> **Superseded by [IOS_SPEC.md](IOS_SPEC.md), 4 Oct 2026.**
+> That document is authoritative for scope, build order and release process.
+> This file is kept for its research trail (the Apple requirements, the
+> individual-vs-organization enrolment finding, the TestFlight decision) and is
+> no longer updated. Two living plans drift; one of them has to stop.
+
 # Bento iOS — build plan
 
 Living document. Update the status boxes as things land. Every fact with a
