@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Install JWT library
-        run: pip install --quiet pyjwt cryptography
+        run: python3 -m pip install --quiet pyjwt cryptography
 
       - name: List apps, builds and uploads
         env:

@@ -177,7 +177,7 @@ jobs:
           # with no email: runs 4 and 5 both went green and both builds were
           # rejected for a taken bundle name. So ask Apple for the verdict and
           # fail this run if the build was rejected.
-          pip install --quiet pyjwt cryptography
+          python3 -m pip install --quiet pyjwt cryptography
           python3 - <<'PY'
           import os, json, time, urllib.request, urllib.error, jwt
 
