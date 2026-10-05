@@ -1,0 +1,73 @@
+name: iOS build status
+
+# Asks App Store Connect what became of recent uploads: whether each build was
+# received, is still processing, passed, or failed, and why. Read-only. It makes
+# no build and uploads nothing. Run it from the Actions tab when a build does
+# not show up in TestFlight.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  status:
+    name: Query App Store Connect
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Install JWT library
+        run: pip install --quiet pyjwt cryptography
+
+      - name: List apps, builds and uploads
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          python3 - <<'PY'
+          import os, json, time, urllib.request, urllib.error, urllib.parse, jwt
+
+          now = int(time.time())
+          token = jwt.encode(
+              {"iss": os.environ["ASC_ISSUER_ID"], "iat": now, "exp": now + 600, "aud": "appstoreconnect-v1"},
+              os.environ["ASC_KEY_P8"], algorithm="ES256",
+              headers={"kid": os.environ["ASC_KEY_ID"], "typ": "JWT"})
+
+          def get(path):
+              req = urllib.request.Request("https://api.appstoreconnect.apple.com" + path,
+                                           headers={"Authorization": "Bearer " + token})
+              try:
+                  with urllib.request.urlopen(req, timeout=30) as r:
+                      return r.status, json.load(r)
+              except urllib.error.HTTPError as e:
+                  body = e.read().decode("utf-8", "replace")[:600]
+                  return e.code, body
+
+          code, apps = get("/v1/apps?filter[bundleId]=com.bentodining.app&fields[apps]=name,bundleId,sku")
+          print("apps lookup:", code)
+          if code != 200 or not apps["data"]:
+              print(apps); raise SystemExit("app com.bentodining.app not found for this key's team")
+          app = apps["data"][0]
+          print("app:", app["id"], app["attributes"])
+
+          q = urllib.parse.urlencode({
+              "filter[app]": app["id"], "sort": "-uploadedDate", "limit": 10,
+              "fields[builds]": "version,uploadedDate,processingState,expired,minOsVersion,usesNonExemptEncryption"})
+          code, builds = get("/v1/builds?" + q)
+          print("\nbuilds:", code)
+          if code == 200:
+              if not builds["data"]: print("  none")
+              for b in builds["data"]:
+                  print(" ", json.dumps(b["attributes"]))
+          else:
+              print(builds)
+
+          code, ups = get("/v1/apps/%s/buildUploads?limit=10" % app["id"])
+          print("\nbuild uploads:", code)
+          if code == 200:
+              if not ups["data"]: print("  none")
+              for u in ups["data"]:
+                  print(" ", json.dumps(u["attributes"]))
+          else:
+              print(ups)
+          PY

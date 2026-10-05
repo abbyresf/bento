@@ -219,6 +219,21 @@ function App() {
     return <LandingPage onGetStarted={() => navigate('/login')} />;
   }
 
+  // Public pages with their own addresses. The App Store and Play Store each
+  // require a privacy policy URL and a support URL, and both used to be tabs
+  // inside the landing page, which a link cannot point at. They work signed in
+  // or out. Web only: the app has no marketing site to open.
+  if (location.pathname === '/privacy' || location.pathname === '/support') {
+    if (isNative) return <Navigate to="/login" replace />;
+    return (
+      <LandingPage
+        key={location.pathname}
+        onGetStarted={() => navigate('/login')}
+        initialTab={location.pathname === '/privacy' ? 'privacy' : 'contact'}
+      />
+    );
+  }
+
   if (isAuthRoute) {
     if (session) return <Navigate to="/app" replace />;
     return (
