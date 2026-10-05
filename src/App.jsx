@@ -4,6 +4,9 @@ import { supabase } from './lib/supabase';
 import { isOnboardingComplete, isTermsAccepted, setTermsAccepted, signOut, updatePassword, recordInstallState, getActiveSurvey } from './lib/db';
 import AuthScreen from './components/Auth/AuthScreen';
 import LandingPage from './components/Landing/LandingPage';
+import LandingContact from './components/Landing/LandingContact';
+import LandingRequestSchool from './components/Landing/LandingRequestSchool';
+import { Capacitor } from '@capacitor/core';
 import OnboardingWizard from './components/Onboarding/OnboardingWizard';
 import MealPlan from './components/MealPlan/MealPlan';
 import Settings from './components/Settings/Settings';
@@ -47,6 +50,17 @@ function App() {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(null);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(null);
   const [showLanding, setShowLanding] = useState(false);
+
+  /* The marketing site does not ship inside the app.
+   *
+   * bentodining.com exists to explain Bento to someone who has never heard of
+   * it. Someone holding the app has already been convinced and installed it,
+   * so the pitch is dead weight, and an app that opens on a marketing page is
+   * also the clearest way to fail App Review guideline 4.2, which rejects apps
+   * that are "simply a web site bundled as an app".
+   *
+   * Native therefore opens on sign-in, then onboarding, then the app. */
+  const isNative = Capacitor.isNativePlatform();
   const [landingInitialTab, setLandingInitialTab] = useState('home');
   const [activeTab, setActiveTab] = useState('today');
   // Which tabs have ever been opened. A tab enters this set on first visit and
@@ -198,7 +212,12 @@ function App() {
 
   if (joinMatch) return <PulseJoin token={joinMatch[1]} />;
   if (location.pathname.startsWith('/admin')) return <PulseApp />;
-  if (location.pathname === '/preview') return <LandingPage onGetStarted={() => navigate('/login')} />;
+  if (location.pathname === '/preview') {
+    // Web-only: a way to see the marketing page while signed in. In the app
+    // there is no marketing page to preview.
+    if (isNative) return <Navigate to="/login" replace />;
+    return <LandingPage onGetStarted={() => navigate('/login')} />;
+  }
 
   if (isAuthRoute) {
     if (session) return <Navigate to="/app" replace />;
@@ -214,6 +233,7 @@ function App() {
   if (!isAppRoute) {
     if (session === undefined) return null;
     if (session) return <Navigate to="/app" replace />;
+    if (isNative) return <Navigate to="/login" replace />;
     return <LandingPage onGetStarted={() => navigate('/login')} />;
   }
 
@@ -267,6 +287,25 @@ function App() {
   }
 
   if (showLanding) {
+    // Support paths, not marketing: the allergen "Contact us" link in
+    // onboarding and Settings, and "request your school". On the web they
+    // arrive inside LandingPage, which brings its nav and footer with it. In
+    // the app that would put the whole marketing site one tap from Settings,
+    // so they render on their own behind a back button instead.
+    if (isNative) {
+      return (
+        <div className="native-subpage">
+          <button className="native-subpage-back" onClick={() => setShowLanding(false)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+            Back
+          </button>
+          {landingInitialTab === 'request' ? <LandingRequestSchool /> : <LandingContact />}
+        </div>
+      );
+    }
     return <LandingPage onGetStarted={() => setShowLanding(false)} initialTab={landingInitialTab} />;
   }
 

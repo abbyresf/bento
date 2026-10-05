@@ -47,10 +47,18 @@ const config: CapacitorConfig = {
   },
 
   server: {
-    // Served from the app bundle over a local scheme. No remote URL: pointing
-    // the shell at bentodining.com would make this a web viewer, which Apple
-    // rejects under 4.2, and would break offline use.
-    iosScheme: 'capacitor',
+    // Still served from the app bundle. There is no `url` here, and there must
+    // not be: pointing the shell at bentodining.com would make this a web
+    // viewer, which Apple rejects under 4.2, and would break offline use.
+    //
+    // The scheme only names the local origin. Capacitor's default, 'capacitor',
+    // gives pages an origin of capacitor://localhost, and APIs that check CORS
+    // reject a non-http(s) Origin header. Supabase does, so every auth and data
+    // call failed, getSession() rejected, and App.jsx sat on its
+    // `session === undefined` branch rendering null: a blank screen with no
+    // error, because nothing threw. 'https' makes the origin https://localhost,
+    // which servers accept, and changes nothing about where the files come from.
+    iosScheme: 'https',
   },
 };
 

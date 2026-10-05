@@ -1,22 +1,39 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
+import { BrowserRouter, HashRouter } from 'react-router-dom'
+import { Capacitor } from '@capacitor/core'
 import { Analytics } from '@vercel/analytics/react'
 import './index.css'
 import App from './App.jsx'
 import { ThemeProvider } from './context/ThemeContext.jsx'
 import ErrorBoundary from './components/common/ErrorBoundary.jsx'
 
-// Above BrowserRouter: App returns early for auth, landing and onboarding, so a
+/* HashRouter in the native shell, BrowserRouter on the web.
+ *
+ * The web keeps real paths. Switching it to hashes would turn every URL into
+ * bentodining.com/#/..., breaking existing links, the /admin/join/:token invite
+ * links, and the sitemap, canonical and structured data already indexed.
+ *
+ * The app cannot use them. Pages are served from a local scheme rather than
+ * over http, and the history API that <Navigate> relies on does not work
+ * against that origin, so the first redirect left a blank screen with nothing
+ * rendered and nothing thrown. Hash routing needs no history entries.
+ *
+ * Decided by testing in the shell rather than pre-emptively, which is what
+ * IOS_SPEC.md step 3 asked for.
+ */
+const Router = Capacitor.isNativePlatform() ? HashRouter : BrowserRouter
+
+// Above the router: App returns early for auth, landing and onboarding, so a
 // provider mounted inside it would leave those screens untethered to the theme.
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ErrorBoundary>
       <ThemeProvider>
-        <BrowserRouter>
+        <Router>
           <App />
           <Analytics />
-        </BrowserRouter>
+        </Router>
       </ThemeProvider>
     </ErrorBoundary>
   </StrictMode>,

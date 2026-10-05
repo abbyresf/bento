@@ -101,3 +101,34 @@
     opacity: 1;
   }
 }
+
+/* ═══════════════════════════════════════════
+   NATIVE SUBPAGE
+   Contact and "request your school" reached from onboarding or Settings in
+   the app. On the web these arrive inside LandingPage, which carries the
+   marketing nav and footer. In the app they stand alone, so they need their
+   own way back.
+═══════════════════════════════════════════ */
+.native-subpage {
+  min-height: 100vh;
+  background: var(--bg-app);
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.native-subpage-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.75rem 0 0 0.75rem;
+  padding: 0.5rem 0.9rem 0.5rem 0.6rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.native-subpage-back:active { background: var(--surface-sunk); }
