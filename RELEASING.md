@@ -66,3 +66,25 @@ launch. It marks where counting starts; it does not claim to be the first time
 Bento shipped. Everything before it is untagged, and Vercel no longer holds the
 record, so treat any pre-1.0.0 release count as an estimate you stand behind
 personally rather than something the repo can prove.
+
+## Shipping the iOS app
+
+A `vX.Y.Z` tag that matches `package.json` and sits on `main` starts
+`.github/workflows/ios-release.yml`. It builds on a macOS runner, signs with the
+App Store Connect API key, and uploads to TestFlight. No laptop is involved.
+
+The tag you already push for the web deploy is the same tag. `npm version`
+creates it, so the two numbers cannot drift.
+
+- **Version** comes from the tag. **Build number** is the CI run number, so it
+  rises on every upload without anyone typing it.
+- **A failed upload:** re-run from the Actions tab, or use "Run workflow" on
+  `main`. A manual run ships the version in `package.json`.
+- **Secrets** (repo Settings, Secrets and variables, Actions): `ASC_KEY_ID`,
+  `ASC_ISSUER_ID`, `ASC_KEY_P8` (the whole `.p8` text), `APPLE_TEAM_ID`,
+  `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
+- **Keep the `.p8` somewhere that is not one laptop.** Apple shows it once. A
+  lost key means a new one and an updated secret, nothing worse.
+- **App icon:** `ios/AppIcon-source.svg` is the artwork. The shipped PNG is a
+  1024px opaque square with no transparency, which App Store Connect requires.
+  iOS rounds the corners itself.

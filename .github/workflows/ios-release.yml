@@ -14,6 +14,9 @@ name: iOS release
 on:
   push:
     tags: ['v[0-9]+.[0-9]+.[0-9]+']
+  # A manual run builds whatever main is at and uploads it as the version in
+  # package.json. Use it to retry a failed release without moving the tag.
+  workflow_dispatch:
 
 concurrency:
   group: ios-release
@@ -27,6 +30,25 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check the release is what it claims to be
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          PKG=$(node -p "require('./package.json').version")
+          if [ "$REF_TYPE" = "tag" ]; then
+            # npm version creates matching tags, so a mismatch means a hand-made
+            # or mistyped tag. Better to stop than to ship a wrong version.
+            [ "${REF_NAME#v}" = "$PKG" ] || { echo "tag $REF_NAME does not match package.json $PKG"; exit 1; }
+            # Unfinished branches must not reach TestFlight.
+            git merge-base --is-ancestor "$GITHUB_SHA" origin/main || { echo "$REF_NAME is not on main"; exit 1; }
+          else
+            [ "$REF_NAME" = "main" ] || { echo "manual runs are for main only"; exit 1; }
+          fi
+          echo "VERSION=$PKG" >> "$GITHUB_ENV"
 
       - uses: actions/setup-node@v4
         with:
@@ -36,14 +58,25 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Meal planner tests
+        run: npm run test:meals
+
       - name: Build web bundle and sync into the native project
         run: npm run ios:sync
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
-      - name: Show toolchain
+      - name: Select the newest stable Xcode
         run: |
+          # Apple only accepts builds from a recent Xcode, and the runner image
+          # carries several. Take the highest non-beta one and refuse anything
+          # below 26, which is the floor in IOS_SPEC.md.
+          XC=$(ls -d /Applications/Xcode_*.app | grep -viE 'beta|rc|preview' | sort -V | tail -1)
+          [ -n "$XC" ] || { echo "no stable Xcode on this runner"; ls /Applications; exit 1; }
+          sudo xcode-select -s "$XC"
+          MAJOR=$(xcodebuild -version | head -1 | sed -E 's/Xcode ([0-9]+).*/\1/')
+          [ "$MAJOR" -ge 26 ] || { echo "Xcode $MAJOR is below 26"; exit 1; }
           xcodebuild -version
           xcrun --sdk iphoneos --show-sdk-version
 
@@ -53,17 +86,21 @@ jobs:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
         run: |
           mkdir -p "$RUNNER_TEMP/asc"
-          printf '%s\n' "$ASC_KEY_P8" > "$RUNNER_TEMP/asc/AuthKey_${ASC_KEY_ID}.p8"
-          chmod 600 "$RUNNER_TEMP/asc/AuthKey_${ASC_KEY_ID}.p8"
+          KEY="$RUNNER_TEMP/asc/AuthKey_${ASC_KEY_ID}.p8"
+          printf '%s\n' "$ASC_KEY_P8" > "$KEY"
+          chmod 600 "$KEY"
+          # Fail on a malformed secret now, with a clear message, not as an
+          # opaque auth error from Apple ten minutes into the build.
+          head -1 "$KEY" | grep -q '^-----BEGIN PRIVATE KEY-----$' || { echo "ASC_KEY_P8 must be the full .p8 text, starting with the BEGIN PRIVATE KEY line"; exit 1; }
+          openssl pkey -in "$KEY" -noout || { echo "ASC_KEY_P8 is not a readable private key"; exit 1; }
 
       - name: Archive
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          TAG: ${{ github.ref_name }}
         run: |
-          # v1.2.3 -> 1.2.3. CFBundleVersion must rise on every upload, so it
+          # The version was checked against the tag above. CFBundleVersion must rise on every upload, so it
           # comes from the run number and never from a file someone edits.
           cd ios/App
           xcodebuild archive \
@@ -75,7 +112,7 @@ jobs:
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
-            MARKETING_VERSION="${TAG#v}" \
+            MARKETING_VERSION="$VERSION" \
             CURRENT_PROJECT_VERSION="${{ github.run_number }}"
 
       - name: Export and upload to TestFlight
