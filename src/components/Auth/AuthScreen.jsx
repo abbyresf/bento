@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { useNavigate } from 'react-router-dom';
 import { signIn, signUp, signInWithGoogle, resetPasswordForEmail } from '../../lib/db';
 import './AuthScreen.css';
@@ -100,7 +101,10 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
     setGoogleLoading(true);
     try {
       await signInWithGoogle();
-      // OAuth redirects away — no further action needed here
+      // On the web OAuth redirects the whole page away, so there is nothing to
+      // reset. In the shell the call returns once the sign-in sheet closes,
+      // whether it finished or was cancelled, and the button has to come back.
+      if (Capacitor.isNativePlatform()) setGoogleLoading(false);
     } catch (err) {
       if (isOurFault(err.message)) setServiceDown(true);
       else setError(friendlyAuthError(err.message));

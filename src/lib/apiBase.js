@@ -11,3 +11,10 @@ import { Capacitor } from '@capacitor/core';
  * allow the shell's origin through the headers block in vercel.json.
  */
 export const API_BASE = Capacitor.isNativePlatform() ? 'https://www.bentodining.com' : '';
+
+/* The public web origin, for links that leave the app. A password-reset email
+ * opens in the user's mail app and browser, where https://localhost goes
+ * nowhere, so the shell points those links at the real site instead. */
+export const WEB_ORIGIN = Capacitor.isNativePlatform()
+  ? 'https://www.bentodining.com'
+  : (typeof window !== 'undefined' ? window.location.origin : '');

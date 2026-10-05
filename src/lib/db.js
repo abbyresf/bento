@@ -1,4 +1,7 @@
+import { Capacitor } from '@capacitor/core';
 import { supabase } from './supabase';
+import { signInWithGoogleNative } from './nativeAuth';
+import { WEB_ORIGIN } from './apiBase';
 
 // ── Auth helpers ───────────────────────────────────────────────────────────
 
@@ -15,6 +18,7 @@ export async function signIn(email, password) {
 }
 
 export async function signInWithGoogle() {
+  if (Capacitor.isNativePlatform()) return signInWithGoogleNative();
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: { redirectTo: `${window.location.origin}/app` },
@@ -24,7 +28,7 @@ export async function signInWithGoogle() {
 
 export async function resetPasswordForEmail(email) {
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/app`,
+    redirectTo: `${WEB_ORIGIN}/app`,
   });
   if (error) throw error;
 }

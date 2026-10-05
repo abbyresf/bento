@@ -7,6 +7,7 @@ import './index.css'
 import App from './App.jsx'
 import { ThemeProvider } from './context/ThemeContext.jsx'
 import ErrorBoundary from './components/common/ErrorBoundary.jsx'
+import { initNativeAuthLinks } from './lib/nativeAuth'
 
 /* HashRouter in the native shell, BrowserRouter on the web.
  *
@@ -23,6 +24,9 @@ import ErrorBoundary from './components/common/ErrorBoundary.jsx'
  * IOS_SPEC.md step 3 asked for.
  */
 const Router = Capacitor.isNativePlatform() ? HashRouter : BrowserRouter
+
+// Listens for the Google sign-in redirect on native. Does nothing on the web.
+initNativeAuthLinks()
 
 // Above the router: App returns early for auth, landing and onboarding, so a
 // provider mounted inside it would leave those screens untethered to the theme.
