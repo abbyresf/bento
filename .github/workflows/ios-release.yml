@@ -58,6 +58,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint
+        run: npm run lint
+
       - name: Meal planner tests
         run: npm run test:meals
 
@@ -94,14 +97,35 @@ jobs:
           head -1 "$KEY" | grep -q '^-----BEGIN PRIVATE KEY-----$' || { echo "ASC_KEY_P8 must be the full .p8 text, starting with the BEGIN PRIVATE KEY line"; exit 1; }
           openssl pkey -in "$KEY" -noout || { echo "ASC_KEY_P8 is not a readable private key"; exit 1; }
 
+      - name: Set the team on the App target
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          # Passing DEVELOPMENT_TEAM on the xcodebuild command line applies it
+          # to every target, including Capacitor's Swift packages, and that is a
+          # known cause of "requires a development team" errors on package
+          # targets. Writing it into the App target's own settings scopes it
+          # correctly. The id stays out of the repository because it is only
+          # ever written here, in the runner's throwaway checkout.
+          [ -n "$APPLE_TEAM_ID" ] || { echo "APPLE_TEAM_ID is empty"; exit 1; }
+          PBX=ios/App/App.xcodeproj/project.pbxproj
+          BEFORE=$(grep -c 'CODE_SIGN_STYLE = Automatic;' "$PBX")
+          [ "$BEFORE" -eq 2 ] || { echo "expected 2 App target configs, found $BEFORE"; exit 1; }
+          sed -i '' "s/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Automatic; DEVELOPMENT_TEAM = $APPLE_TEAM_ID;/" "$PBX"
+          [ "$(grep -c "DEVELOPMENT_TEAM = $APPLE_TEAM_ID;" "$PBX")" -eq 2 ]
+
       - name: Archive
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          # The version was checked against the tag above. CFBundleVersion must rise on every upload, so it
-          # comes from the run number and never from a file someone edits.
+          # The version was checked against the tag above. CFBundleVersion must
+          # rise on every upload, so it comes from CI and never from a file.
+          # It is run_number.run_attempt, for example 14.2. A re-run keeps the
+          # run number and bumps the attempt, so a retry after a successful
+          # upload is a new build number, not a duplicate Apple rejects. Apple
+          # compares dotted build numbers part by part, so 14.2 follows 14.1
+          # and 15.1 follows both.
           cd ios/App
           xcodebuild archive \
             -project App.xcodeproj -scheme App -configuration Release \
@@ -111,9 +135,8 @@ jobs:
             -authenticationKeyPath "$RUNNER_TEMP/asc/AuthKey_${ASC_KEY_ID}.p8" \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
             MARKETING_VERSION="$VERSION" \
-            CURRENT_PROJECT_VERSION="${{ github.run_number }}"
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}.${{ github.run_attempt }}"
 
       - name: Export and upload to TestFlight
         env:

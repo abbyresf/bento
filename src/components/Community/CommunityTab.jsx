@@ -218,31 +218,51 @@ export default function CommunityTab() {
   const [myEmphasizes, setMyEmphasizes]   = useState(new Set());
   const [myFlags, setMyFlags]             = useState(new Set());
   const [sortOrder, setSortOrder]         = useState('emphasize_count'); // or 'created_at'
-  const [loading, setLoading]             = useState(true);
+  // `loading` is derived, not stored. Setting it from the effect that starts the
+  // load meant a state update on every sort or university change, before any
+  // data had arrived. Comparing the last loaded key to the wanted one says the
+  // same thing, and a stale response can no longer clear the spinner early.
+  const [loadedKey, setLoadedKey]         = useState(null);
   const [university, setUniversity]       = useState(null);
 
   useEffect(() => {
     getUserProfile().then(p => setUniversity(p?.university ?? 'brandeis'));
   }, []);
 
+  const key = `${sortOrder}|${university}`;
+
+  // Flags are loaded, not just tracked in memory — a flag left no per-user
+  // record before, so the icon reset on every reload.
+  const fetchAll = useCallback(() => Promise.all([
+    getSuggestions({ orderBy: sortOrder, university }),
+    getMyEmphasizes(),
+    getMyFlags(),
+  ]), [sortOrder, university]);
+
+  const loading = loadedKey !== key;
+
+  // The effect fetches and applies in its own callback, so it never sets state
+  // synchronously, and a response for an older sort or university is dropped
+  // instead of overwriting the newer one.
+  useEffect(() => {
+    let cancelled = false;
+    fetchAll().then(([suggs, emph, flags]) => {
+      if (cancelled) return;
+      setSuggestions(suggs);
+      setMyEmphasizes(emph);
+      setMyFlags(flags);
+      setLoadedKey(key);
+    });
+    return () => { cancelled = true; };
+  }, [fetchAll, key]);
+
+  // After posting a suggestion, reload the current view.
   const loadSuggestions = useCallback(async () => {
-    // Flags are loaded, not just tracked in memory — a flag left no per-user
-    // record before, so the icon reset on every reload.
-    const [suggs, emph, flags] = await Promise.all([
-      getSuggestions({ orderBy: sortOrder, university }),
-      getMyEmphasizes(),
-      getMyFlags(),
-    ]);
+    const [suggs, emph, flags] = await fetchAll();
     setSuggestions(suggs);
     setMyEmphasizes(emph);
     setMyFlags(flags);
-    setLoading(false);
-  }, [sortOrder, university]);
-
-  useEffect(() => {
-    setLoading(true);
-    loadSuggestions();
-  }, [loadSuggestions]);
+  }, [fetchAll]);
 
   const handleEmphasize = async (suggestionId) => {
     const result = await toggleEmphasize(suggestionId);

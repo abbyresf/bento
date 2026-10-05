@@ -640,15 +640,18 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
   const [overview, setOverview]       = useState(null);
   const [analytics, setAnalytics]     = useState(null);
   const [dietary, setDietary]         = useState(null);
-  const [loading, setLoading]         = useState(true);
+  // Derived from what was last loaded, so the effect below needs no setState
+  // before its fetch. See the same pattern in CommunityTab.
+  const [loadedKey, setLoadedKey]     = useState(null);
   const [showInvite, setShowInvite]   = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [ratings, setRatings]         = useState(null);
 
   useEffect(() => { getPulseRatings(university).then(setRatings); }, [university]);
 
+  const loading = loadedKey !== `${university}|${days}`;
+
   useEffect(() => {
-    setLoading(true);
     Promise.all([
       getPulseOverview(university, days),
       getMealAnalytics(university, days),
@@ -656,7 +659,7 @@ export default function PulseDashboard({ university, isSuperAdmin, onSignOut }) 
       getAdminSuggestions(university, days),
     ]).then(([ov, an, diet, suggs]) => {
       setOverview(ov); setAnalytics(an); setDietary(diet);
-      setSuggestions(suggs); setLoading(false);
+      setSuggestions(suggs); setLoadedKey(`${university}|${days}`);
     });
   }, [university, days]);
 

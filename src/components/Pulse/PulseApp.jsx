@@ -20,9 +20,10 @@ const DEMO = typeof window !== 'undefined'
 
 export default function PulseApp() {
   const [session, setSession] = useState(undefined);
-  const [admin, setAdmin] = useState(null);
-  const [checking, setChecking] = useState(false);
-  const [denied, setDenied] = useState(false);
+  // The result of the admin check, stamped with the session it was for. admin,
+  // denied and checking are derived from it below, so a new or missing session
+  // resets them without an effect having to say so.
+  const [check, setCheck] = useState({ session: null, admin: null, denied: false });
   // Supabase fires PASSWORD_RECOVERY when someone opens a reset link. The
   // session that arrives is a recovery session: it can change the password and
   // little else, so the dashboard must not render until a new one is set.
@@ -38,25 +39,24 @@ export default function PulseApp() {
   }, []);
 
   useEffect(() => {
-    if (!session) { setAdmin(null); setDenied(false); return; }
-    setChecking(true);
+    if (!session) return;
     getAdminRecord().then(record => {
       if (record?.is_active) {
-        setAdmin(record);
-        setDenied(false);
+        setCheck({ session, admin: record, denied: false });
       } else {
-        setAdmin(null);
-        setDenied(true);
+        setCheck({ session, admin: null, denied: true });
         supabase.auth.signOut();
       }
-      setChecking(false);
     });
   }, [session]);
 
+  const checked  = Boolean(session) && check.session === session;
+  const admin    = checked ? check.admin : null;
+  const denied   = checked ? check.denied : false;
+  const checking = Boolean(session) && !checked;
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    setAdmin(null);
-    setDenied(false);
   };
 
   if (recovering) {

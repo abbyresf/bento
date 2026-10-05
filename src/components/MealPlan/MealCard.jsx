@@ -114,20 +114,33 @@ export default function MealCard({
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [showBrowser, setShowBrowser] = useState(false);
   const [mode, setMode] = useState(() => customPlan ? 'manual' : 'bento');
-  const prevIsPastRef = useRef(isPast);
 
-  useEffect(() => {
-    if (isPast && !prevIsPastRef.current) setCollapsed(true);
-    prevIsPastRef.current = isPast;
-  }, [isPast]);
+  /* These three used to be effects that called setState. Each only reacts to a
+   * prop changing, which React wants done during render: setting state while
+   * rendering the same component re-renders it at once, without painting the
+   * stale frame an effect would. Same triggers, one render fewer.
+   */
+  // A meal that has just become past collapses. One that starts past already is.
+  const [prevIsPast, setPrevIsPast] = useState(isPast);
+  if (isPast !== prevIsPast) {
+    setPrevIsPast(isPast);
+    if (isPast) setCollapsed(true);
+  }
 
-  useEffect(() => {
+  // Confirming a meal collapses it. `null` so the first render also counts, as
+  // the effect's mount run did.
+  const [seenConfirmed, setSeenConfirmed] = useState(null);
+  if (isConfirmed !== seenConfirmed) {
+    setSeenConfirmed(isConfirmed);
     if (isConfirmed) setCollapsed(true);
-  }, [isConfirmed]);
+  }
 
-  useEffect(() => {
+  // Switching hall closes the recommendations panel.
+  const [seenLocation, setSeenLocation] = useState(selectedLocation);
+  if (selectedLocation !== seenLocation) {
+    setSeenLocation(selectedLocation);
     setShowRecommendations(false);
-  }, [selectedLocation]);
+  }
 
   const plansByLocation     = Object.fromEntries((locationOptions ?? []).map(l => [l.id, locationData?.[l.id]?.plan]));
   const openByLocation      = Object.fromEntries((locationOptions ?? []).map(l => [l.id, locationData?.[l.id]?.isOpen ?? true]));

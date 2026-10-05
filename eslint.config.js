@@ -8,7 +8,10 @@ export default defineConfig([
   // Build output, not source. `.vercel/output` alone accounted for 206 of the
   // 240 errors a full run reported, which is how a lint run stops being worth
   // reading: the real problems were a rounding error in the noise.
-  globalIgnores(['dist', '.vercel', '.ssr-build']),
+  //
+  // `cap sync` copies dist into ios/App/App/public, the same build output.
+  // It reported 276 more errors on a machine that had synced.
+  globalIgnores(['dist', '.vercel', '.ssr-build', 'ios/App/App/public', 'ios/App/build']),
 
   // Serverless functions and build scripts run in Node, not a browser. Without
   // this they report `process`, `console` and friends as undefined.
