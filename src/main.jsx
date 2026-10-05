@@ -32,7 +32,9 @@ createRoot(document.getElementById('root')).render(
       <ThemeProvider>
         <Router>
           <App />
-          <Analytics />
+          {/* The script loads from /_vercel/insights, which does not exist in
+              the shell's local origin and 404s on every launch. */}
+          {!Capacitor.isNativePlatform() && <Analytics />}
         </Router>
       </ThemeProvider>
     </ErrorBoundary>

@@ -10,6 +10,7 @@
 
 import { servingSizeFromParts } from '../utils/servingSize.js';
 import { parseBrandeisDoc } from './brandeisParse.js';
+import { API_BASE } from '../lib/apiBase.js';
 
 /* /api/dining returns parsed JSON now, so the browser does no HTML work at all.
  *
@@ -63,7 +64,7 @@ export const BRANDEIS_CONFIG = {
     },
   },
   getDiningUrl(slug, dateStr) {
-    return `/api/dining/locations/${slug}/?date=${dateStr}`;
+    return `${API_BASE}/api/dining/locations/${slug}/?date=${dateStr}`;
   },
   parseLocationPage: brandeisParseLocationPage,
 };
@@ -346,7 +347,7 @@ export const TUFTS_CONFIG = {
     },
   },
   getDiningUrl(slug, dateStr) {
-    return `/api/tufts?slug=${slug}&date=${dateStr}`;
+    return `${API_BASE}/api/tufts?slug=${slug}&date=${dateStr}`;
   },
   parseLocationPage: tuftsParseLocationPage,
 };

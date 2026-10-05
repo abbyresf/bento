@@ -83,12 +83,18 @@ function stubSupabaseForPrerender() {
   };
 }
 
-export default defineConfig(({ isSsrBuild }) => ({
+export default defineConfig(({ isSsrBuild, mode }) => ({
   plugins: [
     isSsrBuild && stubSupabaseForPrerender(),
     tuftsDevPlugin(),
     react(),
     VitePWA({
+      // `vite build --mode native` is what feeds the iOS shell. The service
+      // worker does nothing there except serve stale assets: the app files
+      // already live inside the binary and only change with a new build.
+      // `disable` stops both the worker and the registration script that the
+      // plugin injects into index.html.
+      disable: mode === 'native',
       registerType: 'autoUpdate',
       includeAssets: ['icons/icon.svg', 'icons/apple-touch-icon.png'],
       manifest: {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import './UpdatePrompt.css';
 
 /* "New version available — Update".
@@ -30,7 +31,8 @@ export default function UpdatePrompt() {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    if (!('serviceWorker' in navigator)) return;
+    // The shell has no service worker. A new build there is a new binary.
+    if (Capacitor.isNativePlatform() || !('serviceWorker' in navigator)) return;
 
     // Whether a worker was already in charge when this page loaded. Without
     // this, the very first install on a brand new device fires controllerchange
