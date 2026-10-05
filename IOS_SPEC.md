@@ -150,18 +150,22 @@ and every app transfers one at a time.
 times over, by a focus timer, a creator tool, a design app and an Asian
 kitchen app. None of them is campus dining, so the adjacent namespace is open.
 
-Three separate fields, and only the first has to be unique:
+Three separate fields. The original plan said only the first has to be unique.
+**Apple disagreed, 5 Oct 2026.** Uploads of builds 4.1 and 5.1 both passed the
+upload step and then failed processing with error 90129, "The bundle uses a
+bundle name or display name that is already taken". The display name was
+"Bento", which several apps hold. The display name and bundle name are now the
+store name. Apple has not yet accepted a build under the new name.
 
 | Field | Limit | Unique | Value |
 | --- | --- | --- | --- |
 | App Store name | 30 | yes | **Bento Dining** |
 | Subtitle | 30 | no | **Today's menu, built for you** |
-| `CFBundleDisplayName` | ~12 shown | no | **Bento** |
+| `CFBundleDisplayName` | ~12 shown | **yes in practice** | **Bento Dining** |
+| `CFBundleName` | | **yes in practice** | **Bento Dining** |
 
-The store lists Bento Dining, the icon on a phone reads Bento, and the name
-matches bentodining.com. `appName: 'Bento'` in `capacitor.config.ts` is what
-produces the home-screen label and is correct as written. Do not change it to
-the store name.
+The home-screen label is 12 characters and may shorten on some phones. That is
+the cost of a name Apple accepts. `appName` in `capacitor.config.ts` matches.
 
 Rejected, so it is not relitigated:
 

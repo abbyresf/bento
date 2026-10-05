@@ -22,12 +22,15 @@ const config: CapacitorConfig = {
   // Notifications and Sign in with Apple enabled.
   appId: 'com.bentodining.app',
 
-  // The home-screen label, not the App Store listing. The store name is
-  // "Bento Dining", set in App Store Connect, and the two are separate fields
-  // on purpose: only the store name has to be unique, and iOS truncates a
-  // home-screen label at around twelve characters. Do not "correct" this to
-  // the store name.
-  appName: 'Bento',
+  // The name on the phone and in the store: Bento Dining.
+  //
+  // This was 'Bento' on the theory that only the store name has to be unique
+  // and the home-screen label could be shorter. Apple disagreed. Builds 4.1 and
+  // 5.1 were both rejected at processing with error 90129, "The bundle uses a
+  // bundle name or display name that is already taken", and 'Bento' is taken
+  // several times over. The real values live in ios/App/App/Info.plist
+  // (CFBundleDisplayName and CFBundleName), which cap sync does not rewrite.
+  appName: 'Bento Dining',
 
   // Vite's output. `npx cap sync` copies this build into the native project,
   // so the app always ships whatever `npm run build` produced. There is no

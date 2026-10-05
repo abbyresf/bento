@@ -165,6 +165,59 @@ jobs:
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID"
 
+      - name: Wait for Apple to process the build
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          BUILD_NUMBER: ${{ github.run_number }}.${{ github.run_attempt }}
+        run: |
+          # The export step reports "Upload succeeded" once Apple has received
+          # the file. Apple then validates it, and that can fail minutes later
+          # with no email: runs 4 and 5 both went green and both builds were
+          # rejected for a taken bundle name. So ask Apple for the verdict and
+          # fail this run if the build was rejected.
+          pip install --quiet pyjwt cryptography
+          python3 - <<'PY'
+          import os, json, time, urllib.request, urllib.error, jwt
+
+          def token():
+              now = int(time.time())
+              return jwt.encode(
+                  {"iss": os.environ["ASC_ISSUER_ID"], "iat": now, "exp": now + 1000, "aud": "appstoreconnect-v1"},
+                  os.environ["ASC_KEY_P8"], algorithm="ES256",
+                  headers={"kid": os.environ["ASC_KEY_ID"], "typ": "JWT"})
+
+          def get(path):
+              req = urllib.request.Request("https://api.appstoreconnect.apple.com" + path,
+                                           headers={"Authorization": "Bearer " + token()})
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  return json.load(r)
+
+          app = get("/v1/apps?filter[bundleId]=com.bentodining.app")["data"][0]["id"]
+          want = os.environ["BUILD_NUMBER"]
+          deadline = time.time() + 30 * 60
+          last = None
+          while time.time() < deadline:
+              ups = get("/v1/apps/%s/buildUploads?limit=20" % app)["data"]
+              mine = [u["attributes"] for u in ups if u["attributes"]["cfBundleVersion"] == want]
+              if mine:
+                  st = mine[0]["state"]
+                  if st["state"] != last:
+                      print("upload %s state: %s" % (want, st["state"])); last = st["state"]
+                  if st["errors"]:
+                      for e in st["errors"]: print("::error::Apple rejected the build: %s %s" % (e.get("code"), e.get("description")))
+                      raise SystemExit(1)
+                  builds = get("/v1/builds?filter[app]=%s&filter[version]=%s&limit=1" % (app, want))["data"]
+                  if builds:
+                      ps = builds[0]["attributes"]["processingState"]
+                      print("build processing state:", ps)
+                      if ps == "VALID": raise SystemExit(0)
+                      if ps in ("INVALID", "FAILED"): raise SystemExit("Apple marked the build " + ps)
+              time.sleep(30)
+          print("::warning::Apple was still processing build %s after 30 minutes. Check TestFlight." % want)
+          PY
+
       - name: Remove key
         if: always()
         run: rm -rf "$RUNNER_TEMP/asc"
