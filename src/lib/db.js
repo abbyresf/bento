@@ -851,6 +851,33 @@ export async function clearAllData() {
   await signOut();
 }
 
+/* Clears what this device has stored about the signed-in account, and nothing
+ * about the device itself.
+ *
+ * Today's confirmed meals, the built plans and custom meals are kept in
+ * localStorage under the day, not under an account. After signing out and
+ * signing in as someone else, the new account showed the previous account's
+ * confirmed meals, while ratings and Insights, which come from the server,
+ * were correctly empty. Found on a phone on 6 Oct 2026.
+ *
+ * Device settings stay: theme, tour and prompt flags. They belong to the phone,
+ * not to who is signed in. clearAllData() below is the full wipe. */
+const ACCOUNT_LOCAL_KEYS = [
+  'bento_confirmed_meals_v2',
+  'bento_meal_plans_v3',
+  'bento_custom_meals_v1',
+];
+
+export function clearAccountLocalData() {
+  try {
+    ACCOUNT_LOCAL_KEYS.forEach(k => localStorage.removeItem(k));
+    // Cached menus are public data, but a plan is built from them per student.
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('bento_menu') || k.startsWith('bento_cached_menu'))
+      .forEach(k => localStorage.removeItem(k));
+  } catch { /* storage unavailable */ }
+}
+
 // ── Menu cache (stays local — ephemeral per device) ────────────────────────
 
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes — matches server-side cache TTL

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
-import { isOnboardingComplete, isTermsAccepted, setTermsAccepted, signOut, updatePassword, recordInstallState, getActiveSurvey } from './lib/db';
+import { isOnboardingComplete, isTermsAccepted, setTermsAccepted, signOut, updatePassword, recordInstallState, getActiveSurvey, clearAccountLocalData } from './lib/db';
 import AuthScreen from './components/Auth/AuthScreen';
 import LandingPage from './components/Landing/LandingPage';
 import LandingContact from './components/Landing/LandingContact';
@@ -194,9 +194,15 @@ function App() {
 
   const handleReset = async () => {
     await signOut();
+    clearAccountLocalData();
     setHasCompletedOnboarding(null);
     setHasAcceptedTerms(null);
     setActiveTab('today');
+    // Signing out happens from inside Settings. Leaving this true reopened
+    // Settings on top of the next account's first screen.
+    setShowSettings(false);
+    setVisitedTabs(new Set(['today']));
+    setSurvey(null);
     setShowLanding(false);
     setSession(null);
     navigate('/');

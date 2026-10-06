@@ -106,3 +106,25 @@ html.is-native .survey-sheet {
   max-height: calc(100dvh - var(--safe-top) - 16px);
   overflow-y: auto;
 }
+
+/* Screens drawn outside the app shell. The shell pads the top for the status
+   bar, but onboarding, the terms gate and the menu rating step are returned by
+   App before it, so their first row (the logo) sat under the clock. */
+html.is-native .onboarding-wizard,
+html.is-native .onboarding-wizard-swipe {
+  padding-top: calc(var(--safe-top) + 1rem);
+}
+html.is-native .terms-screen {
+  padding-top: calc(var(--safe-top) + 1.25rem);
+}
+html.is-native .menu-rating-onboarding {
+  padding-top: calc(var(--safe-top) + 0.75rem);
+}
+
+/* Sticky action bars at the foot of those screens already add the home
+   indicator inset with max(). On a page that scrolls, a sticky bar with no
+   background gap let content show beneath it, so give them a solid cover. */
+html.is-native .wizard-actions,
+html.is-native .mro-actions {
+  background: var(--bg-app, #faf7f4);
+}

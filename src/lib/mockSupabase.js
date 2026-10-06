@@ -55,7 +55,15 @@ function query(name) {
   return q;
 }
 
-export function createMock() {
+export function createMock(mode = 'true') {
+  // 'onboarding' starts a brand-new account: no profile yet, terms not accepted.
+  if (mode === 'onboarding') {
+    FIXTURES.profiles = [{ id: USER.id, university: null, terms_accepted: false, push_enabled: false }];
+    FIXTURES.nutrition_targets = [];
+    FIXTURES.dietary_restrictions = [];
+    FIXTURES.meal_history = [];
+    FIXTURES.streaks = [];
+  }
   const session = { access_token: 'mock', refresh_token: 'mock', user: USER };
   return {
     __mock: 'BENTO_UI_MOCK_ACTIVE',

@@ -5,7 +5,8 @@ import { Capacitor } from '@capacitor/core';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-const useMock = import.meta.env.VITE_UI_MOCK === 'true';
+const mockMode = import.meta.env.VITE_UI_MOCK;
+const useMock = mockMode === 'true' || mockMode === 'onboarding';
 
 if (!useMock && (!supabaseUrl || !supabaseAnonKey)) {
   const msg = document.createElement('div');
@@ -21,7 +22,7 @@ if (!useMock && (!supabaseUrl || !supabaseAnonKey)) {
 // acquire there leaves getSession() pending, so App.jsx draws nothing. The web
 // keeps the default.
 export const supabase = useMock
-  ? createMock()
+  ? createMock(mockMode)
   : createClient(
       supabaseUrl,
       supabaseAnonKey,
