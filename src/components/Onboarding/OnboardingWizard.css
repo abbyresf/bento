@@ -645,15 +645,15 @@
    step slides in from the side you are moving toward, the title resolves out of
    a blur, and everything under it arrives in turn.
    ═══════════════════════════════════════════════════════════════════════════ */
-.step-stage.fwd  { animation: stage-fwd  620ms var(--ease-ios) both; }
-.step-stage.back { animation: stage-back 620ms var(--ease-ios) both; }
+.step-stage.fwd  { animation: stage-fwd  620ms var(--ease-ios) backwards; }
+.step-stage.back { animation: stage-back 620ms var(--ease-ios) backwards; }
 
 @keyframes stage-fwd  { from { opacity: 0; transform: translateX(44px); } to { opacity: 1; transform: none; } }
 @keyframes stage-back { from { opacity: 0; transform: translateX(-44px); } to { opacity: 1; transform: none; } }
 
 /* The title resolves out of a blur while rising. */
 .step-stage .step-content > h2 {
-  animation: ob-title 820ms var(--ease-out) 60ms both;
+  animation: ob-title 820ms var(--ease-out) 60ms backwards;
 }
 @keyframes ob-title {
   from { opacity: 0; filter: blur(14px); transform: translateY(22px) scale(0.97); }
@@ -662,7 +662,7 @@
 
 /* Everything else follows, one after another. */
 .step-stage .step-content > :not(h2) {
-  animation: ob-rise 760ms var(--ease-out) both;
+  animation: ob-rise 760ms var(--ease-out) backwards;
 }
 .step-stage .step-content > :nth-child(2) { animation-delay: 150ms; }
 .step-stage .step-content > :nth-child(3) { animation-delay: 220ms; }
@@ -699,15 +699,15 @@
 
 /* The header and the action bar arrive with the screen. */
 .wizard-header {
-  animation: ob-rise 700ms var(--ease-out) both;
+  animation: ob-rise 700ms var(--ease-out) backwards;
 }
 .wizard-actions {
-  animation: ob-rise 700ms var(--ease-out) 350ms both;
+  animation: ob-rise 700ms var(--ease-out) 350ms backwards;
 }
 
 /* The plan screen: the four targets pop in one by one as they count up. */
 .target-item {
-  animation: pop-in 720ms var(--spring-bouncy) both;
+  animation: pop-in 720ms var(--spring-bouncy) backwards;
 }
 .target-item:nth-child(1) { animation-delay: 380ms; }
 .target-item:nth-child(2) { animation-delay: 460ms; }

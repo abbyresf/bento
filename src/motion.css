@@ -10,6 +10,12 @@
  * linear() is not supported the cubic-bezier fallbacks apply, which are close.
  *
  * Every animation here is switched off by the reduced-motion block at the end.
+ *
+ * FILL MODE. Entrance animations use `backwards`, never `both` or `forwards`.
+ * Once an animation has finished, one that still fills forwards keeps the element
+ * in a stacking layer of its own. On a tab wrapper that trapped every sheet and
+ * modal inside it underneath the tab bar (found on a phone, 6 Oct 2026). With
+ * `backwards` the element returns to being an ordinary element when it ends.
  */
 :root {
   /* Decelerating curves for things entering. */
@@ -71,7 +77,7 @@ button:not(:disabled),
    the confetti, the sheets), and for the length of the animation those would
    jump to the wrong place. Opacity does not do that. */
 .tab-content > :not([hidden]) {
-  animation: tab-enter var(--dur-base) var(--ease-out) both;
+  animation: tab-enter var(--dur-base) var(--ease-out) backwards;
 }
 
 @keyframes tab-enter {
@@ -84,7 +90,7 @@ button:not(:disabled),
    to stagger them: each starts 45ms after the one before, capped so a long list
    never makes anyone wait. */
 .rise {
-  animation: rise var(--dur-slow) var(--ease-out) both;
+  animation: rise var(--dur-slow) var(--ease-out) backwards;
   animation-delay: calc(min(var(--i, 0), 8) * 45ms);
 }
 
@@ -94,7 +100,7 @@ button:not(:disabled),
 }
 
 .pop-in {
-  animation: pop-in var(--dur-slow) var(--spring-bouncy) both;
+  animation: pop-in var(--dur-slow) var(--spring-bouncy) backwards;
   animation-delay: calc(min(var(--i, 0), 8) * 45ms);
 }
 

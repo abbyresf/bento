@@ -156,10 +156,18 @@ export default function MealCard({
   const isCurrentLocationOpen = openByLocation[selectedLocation] ?? true;
   const locationLabel       = (locationOptions ?? []).find(l => l.id === selectedLocation)?.label ?? selectedLocation;
 
-  // Totals shown in footer depend on mode
-  const footerTotals = (mode === 'manual' && customPlan)
-    ? customPlan.totals
-    : bentoPlan?.totals ?? { calories: 0, protein: 0, carbs: 0, fat: 0 };
+  // Totals shown in footer depend on mode.
+  //
+  // In Build My Plate the totals are the student's own plate and nothing else.
+  // With nothing chosen yet that is zero. It used to fall through to Bento's
+  // Pick when the plate was empty, so an empty plate showed 520 cal and the
+  // pick's macros, which read as if those were already on it.
+  const EMPTY_TOTALS = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+  // Nothing on the plate yet, either no custom plate at all or one with no items.
+  const emptyCustomPlate = mode === 'manual' && !(customPlan?.items?.length > 0);
+  const footerTotals = mode === 'manual'
+    ? (customPlan?.totals ?? EMPTY_TOTALS)
+    : (bentoPlan?.totals ?? EMPTY_TOTALS);
 
   useEffect(() => {
     if (showRecommendations && recommendations === null) onLoadRecommendations?.();
@@ -474,8 +482,8 @@ export default function MealCard({
             <button
               className="confirm-btn"
               onClick={() => { haptics.medium(); onConfirm(); }}
-              disabled={isConfirming || (mode === 'manual' && !customPlan)}
-              title={mode === 'manual' && !customPlan ? 'Browse the menu to build your plate first' : undefined}
+              disabled={isConfirming || emptyCustomPlate}
+              title={emptyCustomPlate ? 'Browse the menu to build your plate first' : undefined}
             >
               {isConfirming ? 'Saving…' : 'Mark as Eaten!'}
             </button>

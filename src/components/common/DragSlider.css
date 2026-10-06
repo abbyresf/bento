@@ -1,0 +1,71 @@
+/* The touch area is 44px tall, Apple's minimum, though the rail is thin. The
+   side padding keeps the thumb inside the sheet at either end. */
+.dslider {
+  position: relative;
+  height: 44px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  /* Vertical swipes still scroll the sheet. Horizontal ones belong to the thumb. */
+  touch-action: pan-y;
+  cursor: grab;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.dslider.dragging { cursor: grabbing; }
+.dslider:focus-visible .dslider-thumb { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-text, #f47421) 35%, transparent); }
+
+.dslider-rail {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--divider, #e6dfd6);
+}
+
+.dslider-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 3px;
+  background: var(--accent-text, #f47421);
+  opacity: 0.35;
+  /* Eases to the snapped stop on release. While a finger is down the width is
+     set every frame, so the transition is switched off to keep it glued. */
+  transition: width var(--dur-base, 320ms) var(--spring-snappy, ease-out), opacity var(--dur-quick, 200ms);
+}
+.dslider.answered .dslider-fill { opacity: 1; }
+.dslider.dragging .dslider-fill,
+.dslider.dragging .dslider-thumb { transition: none; }
+
+.dslider-stop {
+  position: absolute;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--text-disabled, #94a3b8) 55%, transparent);
+  transition: background var(--dur-quick, 200ms);
+}
+.dslider-stop.passed { background: rgba(255, 255, 255, 0.85); }
+
+.dslider-thumb {
+  position: absolute;
+  top: 50%;
+  width: 30px;
+  height: 30px;
+  margin: -15px 0 0 -15px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--text-disabled, #94a3b8);
+  box-shadow: 0 2px 8px rgba(36, 59, 85, 0.22);
+  transition:
+    left var(--dur-base, 320ms) var(--spring-snappy, ease-out),
+    transform var(--dur-quick, 200ms) var(--spring-bouncy, ease-out),
+    border-color var(--dur-quick, 200ms);
+}
+.dslider.answered .dslider-thumb { border-color: var(--accent-text, #f47421); }
+.dslider.dragging .dslider-thumb {
+  transform: scale(1.18);
+  box-shadow: 0 4px 14px rgba(36, 59, 85, 0.3);
+}

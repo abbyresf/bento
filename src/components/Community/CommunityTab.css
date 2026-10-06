@@ -260,7 +260,7 @@
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.5);
-  z-index: 200;
+  z-index: 1000;
   display: flex;
   align-items: flex-end;
   animation: fadeIn 0.15s ease;

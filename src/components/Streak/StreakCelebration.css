@@ -10,7 +10,7 @@
   background: rgba(24, 14, 4, 0.52);
   -webkit-backdrop-filter: blur(22px) saturate(1.4);
   backdrop-filter: blur(22px) saturate(1.4);
-  animation: celeb-in var(--dur-base) var(--ease-out) both;
+  animation: celeb-in var(--dur-base) var(--ease-out) backwards;
   cursor: pointer;
 }
 .streak-celebration.leaving {
@@ -41,7 +41,7 @@
   border-radius: 50%;
   border: 2px solid rgba(255, 176, 96, 0.7);
   opacity: 0;
-  animation: ring-out 1500ms var(--ease-out) both;
+  animation: ring-out 1500ms var(--ease-out) backwards;
 }
 .streak-rings span:nth-child(2) { animation-delay: 160ms; }
 .streak-rings span:nth-child(3) { animation-delay: 320ms; }
@@ -52,7 +52,7 @@
   filter: drop-shadow(0 0 28px rgba(255, 140, 0, 0.75));
   /* Springs in once, then breathes. */
   animation:
-    flame-in 780ms var(--spring-bouncy) both,
+    flame-in 780ms var(--spring-bouncy) backwards,
     flame-idle 2.2s ease-in-out 780ms infinite alternate;
 }
 
@@ -64,14 +64,14 @@
   color: #fff;
   letter-spacing: -0.03em;
   text-shadow: 0 2px 22px rgba(244, 116, 33, 0.55);
-  animation: rise var(--dur-slow) var(--ease-out) 180ms both;
+  animation: rise var(--dur-slow) var(--ease-out) 180ms backwards;
 }
 .streak-day-unit {
   font-size: 1.05rem;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.92);
   letter-spacing: 0.02em;
-  animation: rise var(--dur-slow) var(--ease-out) 260ms both;
+  animation: rise var(--dur-slow) var(--ease-out) 260ms backwards;
 }
 .streak-caption {
   margin-top: 0.5rem;
@@ -80,7 +80,7 @@
   color: rgba(255, 255, 255, 0.6);
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  animation: rise var(--dur-slow) var(--ease-out) 360ms both;
+  animation: rise var(--dur-slow) var(--ease-out) 360ms backwards;
 }
 
 @keyframes celeb-in  { from { opacity: 0; } to { opacity: 1; } }

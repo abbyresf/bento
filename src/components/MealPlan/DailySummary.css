@@ -133,7 +133,7 @@
    scaling would squash the rounded end. */
 .progress-fill {
   transition: width var(--dur-slow) var(--spring-soft);
-  animation: bar-reveal 900ms var(--ease-out) both;
+  animation: bar-reveal 900ms var(--ease-out) backwards;
   animation-delay: calc(var(--i, 0) * 70ms + 120ms);
 }
 
@@ -143,6 +143,6 @@
 }
 
 .summary-item {
-  animation: rise var(--dur-slow) var(--ease-out) both;
+  animation: rise var(--dur-slow) var(--ease-out) backwards;
   animation-delay: calc(var(--i, 0) * 60ms);
 }

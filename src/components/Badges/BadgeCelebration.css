@@ -8,7 +8,7 @@
   background: rgba(24, 14, 4, 0.5);
   -webkit-backdrop-filter: blur(22px) saturate(1.4);
   backdrop-filter: blur(22px) saturate(1.4);
-  animation: badgeFadeIn var(--dur-base) var(--ease-out) both;
+  animation: badgeFadeIn var(--dur-base) var(--ease-out) backwards;
   cursor: pointer;
 }
 .badge-celebration.leaving {
@@ -28,7 +28,7 @@
   width: 90%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
   overflow: hidden;
-  animation: badgePopIn 680ms var(--spring-bouncy) both;
+  animation: badgePopIn 680ms var(--spring-bouncy) backwards;
 }
 
 .badge-celebration-glow {
@@ -52,7 +52,7 @@
   width: 45%;
   background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.75), transparent);
   transform: skewX(-18deg);
-  animation: sheen-sweep 900ms var(--ease-out) 520ms both;
+  animation: sheen-sweep 900ms var(--ease-out) 520ms backwards;
   pointer-events: none;
   z-index: 2;
 }
@@ -60,13 +60,13 @@
 .badge-celebration-emoji {
   font-size: 5rem;
   line-height: 1;
-  animation: badgeEmojiDrop 820ms var(--spring-bouncy) 160ms both;
+  animation: badgeEmojiDrop 820ms var(--spring-bouncy) 160ms backwards;
   filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
   margin-bottom: 0.25rem;
 }
 
 .badge-celebration-title {
-  animation: rise var(--dur-slow) var(--ease-out) 420ms both;
+  animation: rise var(--dur-slow) var(--ease-out) 420ms backwards;
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -75,7 +75,7 @@
 }
 
 .badge-celebration-name {
-  animation: rise var(--dur-slow) var(--ease-out) 500ms both;
+  animation: rise var(--dur-slow) var(--ease-out) 500ms backwards;
   font-size: 1.5rem;
   font-weight: 800;
   color: #243b55;
@@ -83,7 +83,7 @@
 }
 
 .badge-celebration-desc {
-  animation: rise var(--dur-slow) var(--ease-out) 580ms both;
+  animation: rise var(--dur-slow) var(--ease-out) 580ms backwards;
   font-size: 0.9rem;
   color: #64748b;
   text-align: center;
@@ -91,7 +91,7 @@
 }
 
 .badge-celebration-hint {
-  animation: rise var(--dur-slow) var(--ease-out) 900ms both;
+  animation: rise var(--dur-slow) var(--ease-out) 900ms backwards;
   margin-top: 0.75rem;
   font-size: 0.75rem;
   color: #94a3b8;

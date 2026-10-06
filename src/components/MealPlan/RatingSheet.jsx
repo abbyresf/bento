@@ -3,6 +3,7 @@ import { useRatings } from '../../context/RatingsContext';
 import { setMealConsumption } from '../../lib/db';
 import { formatServing, servingsOf } from '../../utils/servingSize.js';
 import StarRating from '../Community/StarRating';
+import DragSlider from '../common/DragSlider';
 import './RatingSheet.css';
 
 /* Post-confirmation sheet: how good was it, and how much of it did you eat.
@@ -112,19 +113,16 @@ export default function RatingSheet({ meal, items, diningHall, historyRowId, onC
                       How much did you eat{took ? <> of your <strong>{took}</strong></> : null}?
                     </span>
                     <span className="eaten-answer">
-                      {isAnswered ? STEPS[stepIndex].label : 'Tap to answer'}
+                      {isAnswered ? STEPS[stepIndex].label : 'Drag to answer'}
                     </span>
                   </div>
-                  <input
-                    type="range"
-                    className="eaten-range"
-                    min="0"
-                    max={STEPS.length - 1}
-                    step="1"
+                  <DragSlider
+                    stops={STEPS.length}
                     value={stepIndex}
-                    onChange={(e) => handleEaten(item, Number(e.target.value))}
-                    aria-label={`How much of ${item.name} did you eat`}
-                    aria-valuetext={isAnswered ? STEPS[stepIndex].label : 'Not answered'}
+                    answered={isAnswered}
+                    onChange={(i) => handleEaten(item, i)}
+                    ariaLabel={`How much of ${item.name} did you eat`}
+                    ariaValueText={isAnswered ? STEPS[stepIndex].label : 'Not answered'}
                   />
                   <div className="eaten-scale" aria-hidden="true">
                     <span>None</span><span>Half</span><span>All</span>

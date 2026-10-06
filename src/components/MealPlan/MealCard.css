@@ -753,10 +753,10 @@
    The badge that appears when a meal is confirmed pops in with a spring, and
    the totals bar slides up into place. */
 .confirmed-badge {
-  animation: pop-in var(--dur-slow) var(--spring-bouncy) both;
+  animation: pop-in var(--dur-slow) var(--spring-bouncy) backwards;
 }
 .meal-totals {
-  animation: rise var(--dur-slow) var(--ease-out) both;
+  animation: rise var(--dur-slow) var(--ease-out) backwards;
   animation-delay: 80ms;
 }
 .confirm-btn {
@@ -765,4 +765,10 @@
 }
 .confirm-btn:active:not(:disabled) {
   box-shadow: 0 0 0 6px color-mix(in srgb, var(--btn-bg) 22%, transparent);
+}
+
+/* An empty plate cannot be confirmed, and should look it. */
+.confirm-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }

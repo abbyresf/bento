@@ -91,7 +91,7 @@ html.is-native .compose-fab {
 
 /* Bottom sheets: the last row clears the home indicator, and a tall sheet stops
    below the status bar instead of sliding under it. */
-html.is-native .rating-sheet,
+/* The rating sheet is excluded: its footer is pinned and pads for the inset. */
 html.is-native .notif-prompt,
 html.is-native .tutorial-sheet,
 html.is-native .compose-sheet {
@@ -127,4 +127,29 @@ html.is-native .menu-rating-onboarding {
 html.is-native .wizard-actions,
 html.is-native .mro-actions {
   background: var(--bg-app, #faf7f4);
+}
+
+/* ── Keyboard ───────────────────────────────────────────────────────────────
+   --kb is the keyboard's height (see src/lib/keyboard.js). Sheets rise above it
+   and shorten to fit what is left, and the tab bar steps out of the way. */
+html.is-native {
+  --kb: 0px;
+}
+html.is-native.kb-open .bottom-nav {
+  display: none;
+}
+html.is-native .fb-overlay,
+html.is-native .compose-overlay,
+html.is-native .survey-overlay,
+html.is-native .rating-sheet-overlay {
+  padding-bottom: var(--kb);
+}
+html.is-native .fb-sheet,
+html.is-native .compose-sheet,
+html.is-native .survey-sheet,
+html.is-native .rating-sheet {
+  /* --vvh is the visible height (see keyboard.js). Sized to it, a sheet's header
+     stays on screen when iOS pans the page for the keyboard. */
+  max-height: calc(var(--vvh, 100dvh) - var(--safe-top) - 16px);
+  overflow-y: auto;
 }

@@ -2,7 +2,7 @@
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.45);
-  z-index: 300;
+  z-index: 1000;
   display: flex;
   align-items: flex-end;
   animation: rsOverlayIn 0.2s ease;
@@ -12,7 +12,13 @@
   background: var(--surface);
   border-radius: 20px 20px 0 0;
   width: 100%;
-  padding: 0.5rem 1.25rem 2.5rem;
+  padding: 0.5rem 1.25rem 0;
+  /* A plate with four or five items is taller than the screen. The sheet
+     scrolls, and the footer below stays pinned, so Skip and Done are always
+     reachable. */
+  max-height: 92dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   animation: rsSlideUp 0.25s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
@@ -170,3 +176,15 @@
   to   { transform: translateY(0); }
 }
 
+
+/* Pinned to the bottom of the scrolling sheet, on a solid surface so list items
+   slide underneath it cleanly. */
+.rating-sheet-footer {
+  position: sticky;
+  bottom: 0;
+  background: var(--surface);
+  padding-top: 0.75rem;
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -10px 14px -10px rgba(36, 59, 85, 0.12);
+  z-index: 2;
+}
