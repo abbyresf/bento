@@ -62,6 +62,26 @@ jobs:
           else:
               print(builds)
 
+          # Who Apple will send TestFlight invites to, and whether anyone has
+          # accepted. This is the question when a build is VALID and in a group
+          # but never shows up on a phone.
+          code, groups = get("/v1/apps/%s/betaGroups?limit=20&fields[betaGroups]=name,isInternalGroup,hasAccessToAllBuilds,publicLinkEnabled" % app["id"])
+          print("\nbeta groups:", code)
+          if code == 200:
+              if not groups["data"]: print("  none")
+              for g in groups["data"]:
+                  print(" ", json.dumps(g["attributes"]))
+              for g in groups["data"]:
+                  c2, testers = get("/v1/betaGroups/%s/betaTesters?limit=50&fields[betaTesters]=email,firstName,lastName,inviteType,state" % g["id"])
+                  print("  testers in %r: %s" % (g["attributes"]["name"], c2))
+                  if c2 == 200:
+                      for t in testers["data"]:
+                          print("   ", json.dumps(t["attributes"]))
+                  else:
+                      print("   ", testers)
+          else:
+              print(groups)
+
           code, ups = get("/v1/apps/%s/buildUploads?limit=10" % app["id"])
           print("\nbuild uploads:", code)
           if code == 200:
