@@ -42,11 +42,15 @@ const config: CapacitorConfig = {
     // launch screen and first paint reads as a broken web page rather than an
     // app. Cream matches --bg-app.
     backgroundColor: '#faf7f4',
-    // Bounce scrolling at the top of a view is the single clearest "this is a
-    // web page" tell inside a webview, and guideline 4.2 is judged on exactly
-    // that impression.
+    // Bounce scrolling is controlled in CSS (src/native.css), because iOS draws
+    // the bounce as background past the content and it reads as a web page.
     scrollEnabled: true,
-    contentInset: 'always',
+    // 'never' makes the web view edge to edge and leaves every inset to CSS
+    // env(safe-area-inset-*). This was 'always', which made iOS inset the page
+    // AND the CSS padded it again: the tab bar floated above the screen edge
+    // with a strip of background under it, and about 270px of dead space sat
+    // below the last card. Found on 6 Oct 2026 in the simulator.
+    contentInset: 'never',
   },
 
   plugins: {

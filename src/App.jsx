@@ -30,7 +30,12 @@ import './App.css';
 import BentoLogo from './components/common/BentoLogo';
 
 function isStandalone() {
-  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  // The native app is installed by definition. Without this it looked like a
+  // browser tab and offered "Add Bento to your home screen" inside the app, and
+  // reported itself as not installed.
+  return Capacitor.isNativePlatform()
+    || window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
 }
 function isIOS() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;

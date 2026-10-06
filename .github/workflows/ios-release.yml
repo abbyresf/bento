@@ -78,6 +78,16 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
+      - name: Make sure no design-only mock is in the bundle
+        run: |
+          # src/lib/mockSupabase.js replaces the database with made-up data and
+          # is switched on by VITE_UI_MOCK=true. It must never reach a build
+          # anyone installs. Nothing here sets that variable, so this proves it.
+          if grep -rl "BENTO_UI_MOCK_ACTIVE" ios/App/App/public; then
+            echo "::error::the UI mock is in the shipped bundle"; exit 1
+          fi
+          echo "no mock in bundle"
+
       - name: Select the newest stable Xcode
         run: |
           # Apple only accepts builds from a recent Xcode, and the runner image

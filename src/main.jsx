@@ -5,6 +5,7 @@ import { BrowserRouter, HashRouter } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import { Analytics } from '@vercel/analytics/react'
 import './index.css'
+import './native.css'
 import App from './App.jsx'
 import { ThemeProvider } from './context/ThemeContext.jsx'
 import ErrorBoundary from './components/common/ErrorBoundary.jsx'
@@ -25,6 +26,9 @@ import { initNativeAuthLinks } from './lib/nativeAuth'
  * IOS_SPEC.md step 3 asked for.
  */
 const Router = Capacitor.isNativePlatform() ? HashRouter : BrowserRouter
+
+// Scopes src/native.css to the app, so the website is untouched.
+if (Capacitor.isNativePlatform()) document.documentElement.classList.add('is-native')
 
 // Listens for the Google sign-in redirect on native. Does nothing on the web.
 initNativeAuthLinks()

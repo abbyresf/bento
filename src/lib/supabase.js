@@ -1,10 +1,13 @@
 import { createClient, processLock } from '@supabase/supabase-js';
+import { createMock } from './mockSupabase.js';
 import { Capacitor } from '@capacitor/core';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
+const useMock = import.meta.env.VITE_UI_MOCK === 'true';
+
+if (!useMock && (!supabaseUrl || !supabaseAnonKey)) {
   const msg = document.createElement('div');
   msg.style.cssText = 'display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#dc2626;padding:2rem;text-align:center';
   msg.textContent = 'Supabase environment variables are not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your deployment settings.';
@@ -17,8 +20,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // site. The app has a single web view and no tabs, and a lock that fails to
 // acquire there leaves getSession() pending, so App.jsx draws nothing. The web
 // keeps the default.
-export const supabase = createClient(
-  supabaseUrl,
-  supabaseAnonKey,
-  Capacitor.isNativePlatform() ? { auth: { lock: processLock } } : undefined,
-);
+export const supabase = useMock
+  ? createMock()
+  : createClient(
+      supabaseUrl,
+      supabaseAnonKey,
+      Capacitor.isNativePlatform() ? { auth: { lock: processLock } } : undefined,
+    );

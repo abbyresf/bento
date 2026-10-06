@@ -1,0 +1,108 @@
+/* Native app layout.
+ *
+ * Everything here is scoped to html.is-native, which main.jsx sets only inside
+ * the Capacitor shell, so the website is untouched. The web view is edge to edge
+ * (contentInset: 'never' in capacitor.config.ts), so the page reaches under the
+ * status bar and the home indicator and these rules claim those areas.
+ */
+
+html.is-native {
+  /* A web page rubber-bands past its content and shows the background behind
+     it. In the app that reads as a browser (App Review 4.2) and is where
+     content seemed to overlap or cut off at the very top and bottom. */
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+html.is-native body {
+  overscroll-behavior-y: none;
+  /* No long-press callouts or text selection on buttons and labels. Fields and
+     long text stay selectable below. */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+html.is-native input,
+html.is-native textarea,
+html.is-native [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* A solid band over the status bar. Without it, scrolled content slides up
+   behind the clock and the Dynamic Island and the two overlap. It sits above
+   the page (and the floating buttons) but below sheets and scrims (z 999), so a
+   sheet dims it with everything else. */
+html.is-native body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top, 0px);
+  background: var(--bg-app);
+  z-index: 150;
+  pointer-events: none;
+}
+
+/* Shared measurements. --nav-h is the tab bar: 60px of content plus the home
+   indicator strip. Anything pinned above the bar must clear all of it. */
+html.is-native {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --nav-h: calc(60px + var(--safe-bottom));
+}
+
+/* The help and settings buttons were pinned to the screen, so they stayed put
+   while cards scrolled underneath them and the two overlapped. Absolute puts
+   them in the page, level with the header, so they scroll away with it. */
+html.is-native .settings-fab,
+html.is-native .help-btn {
+  position: absolute;
+  top: calc(var(--safe-top) + 8px);
+  z-index: 100;
+}
+
+/* Full-screen panels. Their headers were padded as if the screen began at the
+   top edge, which puts the close button under the status bar and the Dynamic
+   Island. The page is edge to edge now, so each header clears the inset. */
+html.is-native .settings:not(.settings-page) .settings-header,
+html.is-native .insights-panel .insights-panel-header,
+html.is-native .badges-panel-header,
+html.is-native .browser-header {
+  padding-top: calc(var(--safe-top) + 0.75rem);
+}
+/* Insights opened as a tab sits inside the app shell, which already pads the
+   top, so it must not add the inset a second time. */
+
+/* ...and their bottom bars clear the home indicator. */
+html.is-native .settings-footer,
+html.is-native .browser-footer {
+  padding-bottom: calc(var(--safe-bottom) + 0.9rem);
+}
+
+/* The compose button was placed for a 60px bar and the bar is now taller, so
+   the tab bar covered half of it. */
+html.is-native .compose-fab {
+  bottom: calc(var(--nav-h) + 16px);
+}
+
+/* Bottom sheets: the last row clears the home indicator, and a tall sheet stops
+   below the status bar instead of sliding under it. */
+html.is-native .rating-sheet,
+html.is-native .notif-prompt,
+html.is-native .tutorial-sheet,
+html.is-native .compose-sheet {
+  padding-bottom: calc(var(--safe-bottom) + 1.25rem);
+}
+
+html.is-native .rating-sheet,
+html.is-native .notif-prompt,
+html.is-native .compose-sheet,
+html.is-native .fb-sheet,
+html.is-native .survey-sheet {
+  max-height: calc(100dvh - var(--safe-top) - 16px);
+  overflow-y: auto;
+}
