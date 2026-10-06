@@ -115,12 +115,22 @@ jobs:
           [ "$(grep -c "DEVELOPMENT_TEAM = $APPLE_TEAM_ID;" "$PBX")" -eq 2 ]
 
       - name: Archive
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
         run: |
-          # Unsigned on purpose. Archiving with automatic signing asks Apple for
-          # a development profile, which needs a registered device, and this
-          # team has none (run #2: "Your team has no devices from which to
-          # generate a provisioning profile"). An App Store build is signed
-          # with a distribution certificate at export, which needs no device.
+          # Signed with a development profile, which needs at least one device
+          # registered in the developer account. Registered 6 Oct 2026.
+          #
+          # This was archived unsigned for a while, because the team had no
+          # device and Apple would not create a development profile ("Your team
+          # has no devices from which to generate a provisioning profile").
+          # Unsigned worked for a plain app but cannot carry the push
+          # notification and Sign in with Apple entitlements: both are
+          # restricted, so they only exist in a build signed against a profile.
+          # An unsigned archive silently loses them and the app then cannot
+          # register for push. Export re-signs this archive for distribution.
+          #
           # The version was checked against the tag above. CFBundleVersion must
           # rise on every upload, so it comes from CI and never from a file.
           # It is run_number.run_attempt, for example 14.2. A re-run keeps the
@@ -133,9 +143,23 @@ jobs:
             -project App.xcodeproj -scheme App -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath "$RUNNER_TEMP/Bento.xcarchive" \
-            CODE_SIGNING_ALLOWED=NO \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/asc/AuthKey_${ASC_KEY_ID}.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             MARKETING_VERSION="$VERSION" \
             CURRENT_PROJECT_VERSION="${{ github.run_number }}.${{ github.run_attempt }}"
+
+      - name: Check the archive carries its entitlements
+        run: |
+          # Fail here, with a clear message, instead of shipping a build that
+          # cannot receive push or offer Sign in with Apple.
+          APP=$(ls -d "$RUNNER_TEMP"/Bento.xcarchive/Products/Applications/*.app)
+          codesign -d --entitlements :- "$APP" 2>/dev/null > "$RUNNER_TEMP/ents.plist"
+          for key in aps-environment com.apple.developer.applesignin; do
+            grep -q "<key>$key</key>" "$RUNNER_TEMP/ents.plist" || { echo "::error::archive is missing the $key entitlement"; exit 1; }
+          done
+          echo "entitlements present: aps-environment, applesignin"
 
       - name: Export and upload to TestFlight
         env:

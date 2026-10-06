@@ -229,6 +229,13 @@ This is the step most likely to be skipped and the most expensive to add late.
   on every single upload, so derive it from the CI run number rather than
   typing it.
 
+**Found 6 Oct 2026: the archive must be signed.** CI first archived unsigned,
+because the team had no registered device and Apple would not issue a
+development profile. That cannot carry the push and Sign in with Apple
+entitlements, which are restricted and exist only in a profile-signed build.
+Registering one iPhone fixes it. Registration happened when Xcode first ran the
+app on a phone, and the archive step now signs and verifies the entitlements.
+
 **Done when:** pushing a tag produces a TestFlight build with no laptop
 involved.
 
