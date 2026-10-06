@@ -122,7 +122,9 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
       await signInWithApple();
     } catch (err) {
       if (isOurFault(err.message)) setServiceDown(true);
-      else setError(friendlyAuthError(err.message));
+      // Not friendlyAuthError: it maps anything mentioning a "provider" to a
+      // Google message, which is what an Apple failure showed on a phone.
+      else setError('Sign in with Apple did not work. Please try again or use another way to sign in.');
     } finally {
       setAppleLoading(false);
     }

@@ -70,7 +70,9 @@ working app. Screenshot it.
 - `capacitor.config.ts` needs `typescript@5`. TS 7 removed the API the loader
   uses, and a `.js` config silently yields "Missing appId" because `require()`
   of ESM returns `{ default }`.
-- Changing `iosScheme` needs an **uninstall**, not a reinstall.
+- `server.iosScheme: 'https'` does nothing. WKWebView owns http and https, so
+  Capacitor falls back to `capacitor`, and the page origin is
+  `capacitor://localhost`. Cross-origin calls must allow that origin or `*`.
 - Native uses `HashRouter`; the web keeps `BrowserRouter`. The history API does
   not work against the shell's local scheme.
 - Vercel env vars are **Production only**, so preview deploys 503 and cannot

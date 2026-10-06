@@ -62,13 +62,18 @@ const config: CapacitorConfig = {
     // not be: pointing the shell at bentodining.com would make this a web
     // viewer, which Apple rejects under 4.2, and would break offline use.
     //
-    // The scheme only names the local origin. Capacitor's default, 'capacitor',
-    // gives pages an origin of capacitor://localhost, and APIs that check CORS
-    // reject a non-http(s) Origin header. Supabase does, so every auth and data
-    // call failed, getSession() rejected, and App.jsx sat on its
-    // `session === undefined` branch rendering null: a blank screen with no
-    // error, because nothing threw. 'https' makes the origin https://localhost,
-    // which servers accept, and changes nothing about where the files come from.
+    // THIS HAS NO EFFECT, and an earlier version of this comment claimed it did.
+    // WKWebView handles http and https itself, so Capacitor checks
+    // WKWebView.handlesURLScheme and silently falls back to its default,
+    // 'capacitor' (CAPInstanceDescriptor.swift). The page origin is therefore
+    // capacitor://localhost, which was measured in the simulator on 6 Oct 2026
+    // by printing location.origin. It was believed to be https://localhost, and a
+    // CORS rule for that origin blocked every menu request.
+    //
+    // Anything the app calls cross-origin must allow capacitor://localhost, or
+    // allow any origin as the public menu endpoints do. Supabase already does.
+    // The line below is left so the config does not appear to change, but it
+    // could be deleted.
     iosScheme: 'https',
   },
 };
