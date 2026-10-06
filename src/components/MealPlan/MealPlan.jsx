@@ -34,6 +34,9 @@ import { getNewBadge } from '../../data/badges';
 import { optimizeDay, findAlternatives, findRecommendedAdditions } from '../../utils/mealOptimizer';
 import MealCard from './MealCard';
 import DailySummary from './DailySummary';
+import Mascot from '../Mascot/Mascot';
+import '../Mascot/Mascot.css';
+import { bentoSays } from '../../utils/bentoSays';
 import StreakCelebration from '../Streak/StreakCelebration';
 import BadgeCelebration from '../Badges/BadgeCelebration';
 import RatingSheet from './RatingSheet';
@@ -796,6 +799,22 @@ export default function MealPlan({ settingsVersion = 0 }) {
           <div className="spinner spinner-sm"></div>
         </div>
       )}
+
+      {isViewingToday && !dateLoading && mealPlan && (() => {
+        const say = bentoSays({
+          hour: new Date().getHours(),
+          today: localDateStr(),
+          confirmed: confirmedMeals,
+          streak,
+        });
+        // Keyed on the line, so the bubble pops again when the line changes.
+        return (
+          <div className="bento-says" key={say.text}>
+            <Mascot mood={say.mood} size={60} />
+            <div className="bento-says-bubble">{say.text}</div>
+          </div>
+        );
+      })()}
 
       {!dateLoading && mealPlan && targets && (
         <DailySummary totals={dayTotals} targets={targets} />

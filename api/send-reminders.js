@@ -12,7 +12,8 @@
 
 import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
-import { reminderMessage } from './reminderMessages.js';
+import { reminderMessage, streakMessage } from './reminderMessages.js';
+import { streakRecipients } from './_streakNudge.js';
 import { apnsConfigFromEnv, sendApns } from './_apns.js';
 
 function getSupabaseAdmin() {
@@ -41,7 +42,12 @@ export default async function handler(req, res) {
 
   // Which meal this run is for. Defaults to lunch so an unqualified call
   // behaves as before.
-  const meal = params.get('meal') === 'dinner' ? 'dinner' : 'lunch';
+  // 'streak' is the evening nudge to students whose streak is running and who
+  // have not confirmed anything today. It has its own recipients and its own
+  // line per student, but shares everything else: the claim, the opt-in switch
+  // and both delivery paths.
+  const requested = params.get('meal');
+  const meal = requested === 'dinner' ? 'dinner' : requested === 'streak' ? 'streak' : 'lunch';
 
   // Escape hatch for testing a send by hand. Still behind CRON_SECRET.
   const force = params.get('force') === '1';
@@ -97,9 +103,27 @@ export default async function handler(req, res) {
   const { data: optedIn } = await admin
     .from('profiles').select('id, university').eq('push_enabled', true);
 
-  const ids = (optedIn ?? []).map(p => p.id);
+  let ids = (optedIn ?? []).map(p => p.id);
   if (ids.length === 0) {
     return res.status(200).json({ sent: 0, note: 'nobody opted in' });
+  }
+
+  // For the streak nudge, narrow to students whose streak is running and who
+  // have not confirmed today, and remember each one's count for their line.
+  const streakCounts = new Map();
+  if (meal === 'streak') {
+    const { data: streakRows, error: streakErr } = await admin
+      .from('streaks')
+      .select('user_id, current_streak, last_confirmed_date')
+      .in('user_id', ids);
+    if (streakErr) {
+      return res.status(500).json({ error: 'Could not read streaks', detail: streakErr.message });
+    }
+    for (const r of streakRecipients(streakRows, day)) streakCounts.set(r.user_id, r.count);
+    ids = [...streakCounts.keys()];
+    if (ids.length === 0) {
+      return res.status(200).json({ meal, date: day, sent: 0, note: 'no running streaks to nudge' });
+    }
   }
 
   const { data: subs } = await admin
@@ -109,7 +133,12 @@ export default async function handler(req, res) {
 
   // One message for everyone, rotating by day. Nothing is fetched: the copy
   // makes no claim about what is being served, so there is nothing to look up.
-  const line = reminderMessage(meal, day);
+  const line = meal === 'streak' ? null : reminderMessage(meal, day);
+  // One line for everyone on a meal reminder, a personal one per student on the
+  // streak nudge.
+  const lineFor = (sub) => meal === 'streak'
+    ? streakMessage(streakCounts.get(sub.user_id) ?? 1, day)
+    : line;
 
   // A row is a browser subscription or a native APNs token, never both.
   const nativeSubs = subs.filter(s => s.apns_token);
@@ -131,7 +160,7 @@ export default async function handler(req, res) {
         // manifest name, and there is no payload field that suppresses it.
         // Putting the name in the title as well only prints it twice, so the
         // title carries the message and iOS supplies the attribution.
-        JSON.stringify({ title: line, body: '', tag: `bento-${meal}`, url: '/app' })
+        JSON.stringify({ title: lineFor(sub), body: '', tag: `bento-${meal}`, url: '/app' })
       );
       sent++;
       await admin.from('push_subscriptions')
@@ -163,12 +192,21 @@ export default async function handler(req, res) {
       nativeNote = 'APNs not configured';
       nativeFailed = nativeSubs.length;
     } else {
-      const { fatal, results } = await sendApns({
-        tokens: nativeSubs.map(n => n.apns_token),
-        title: line,
-        collapseId: `bento-${meal}`,
-        config: apns,
-      });
+      // Devices that share a line go in one call. A meal reminder is a single
+      // group. The streak nudge has a different count per student, so a few.
+      const byTitle = new Map();
+      for (const n of nativeSubs) {
+        const t = lineFor(n);
+        if (!byTitle.has(t)) byTitle.set(t, []);
+        byTitle.get(t).push(n.apns_token);
+      }
+      let fatal = null;
+      const results = [];
+      for (const [title, tokens] of byTitle) {
+        const out = await sendApns({ tokens, title, collapseId: `bento-${meal}`, config: apns });
+        results.push(...out.results);
+        if (out.fatal) { fatal = out.fatal; break; }
+      }
       if (fatal) {
         // Apple rejected our key or team id. Every device would fail the same
         // way, so say so once instead of counting each as a dead token.

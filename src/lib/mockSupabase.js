@@ -42,7 +42,7 @@ const FIXTURES = {
 
 function query(name) {
   const rows = FIXTURES[name] ?? [];
-  const result = () => ({ data: rows, error: null });
+  const result = () => ({ data: rows, error: null, count: rows.length });
   const one = () => Promise.resolve({ data: rows[0] ?? null, error: null });
   const q = {
     select: () => q, eq: () => q, neq: () => q, gte: () => q, lte: () => q, gt: () => q,

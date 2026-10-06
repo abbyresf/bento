@@ -9,6 +9,11 @@ export const UNIVERSITIES = [
     hasKosher:    true,
     labelHalal:   false,
     itemPrefix:   'bh_',
+    // Whether the dining hall works with Bento and sees Pulse. Only then may the
+    // app say the dining team reads what students confirm and rate (see
+    // voiceMessage in src/utils/bentoSays.js). Off until it is true.
+    diningPartner: false,
+    diningTeamName: 'Brandeis Dining',
   },
   {
     id:           'tufts',
@@ -20,6 +25,8 @@ export const UNIVERSITIES = [
     hasKosher:    false,
     labelHalal:   false,
     itemPrefix:   'tu_',
+    diningPartner: false,
+    diningTeamName: 'Tufts Dining',
   },
   {
     id: 'mit',

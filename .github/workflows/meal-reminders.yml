@@ -25,6 +25,10 @@ on:
   schedule:
     - cron: '45 20 * * *'   # 16:45 EDT, and 15:45 EST
     - cron: '45 21 * * *'   # 17:45 EDT, and 16:45 EST
+    # The evening streak nudge, 19:30 Eastern. Same trick: two entries, and the
+    # gate in the streak job lets only the one that lands at 19:xx through.
+    - cron: '30 23 * * *'   # 19:30 EDT, and 18:30 EST
+    - cron: '30 0 * * *'    # 20:30 EDT, and 19:30 EST
   workflow_dispatch:        # lets you fire one by hand to test
 
 # A queued run must never overlap one already sending.
@@ -61,3 +65,29 @@ jobs:
           # Fail the run on a non-200 so a broken send is visible in Actions
           # rather than silently doing nothing every evening.
           test "$code" = "200"
+
+  streak:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip the entry that is not 19:30 Eastern
+        id: gate
+        run: |
+          hour=$(TZ=America/New_York date +%H)
+          echo "Eastern hour is $hour"
+          # Exactly one of the two streak entries lands in the 19:00 ET hour on a
+          # given date. A manual dispatch runs it regardless, so it can be tested.
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ] && [ "$hour" != "19" ]; then
+            echo "run=no" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=yes" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Send streak nudge
+        if: steps.gate.outputs.run == 'yes'
+        run: |
+          code=$(curl -sS -o /tmp/out.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://www.bentodining.com/api/send-reminders?meal=streak")
+          echo "HTTP $code"
+          cat /tmp/out.json
+          [ "$code" = "200" ]

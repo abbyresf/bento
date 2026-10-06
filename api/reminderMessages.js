@@ -77,3 +77,24 @@ export function reminderMessage(meal, dateStr) {
 }
 
 export const POOLS = { lunch: LUNCH, dinner: DINNER };
+
+/* The evening nudge for a student whose streak is still going.
+ *
+ * It names the streak and says one tap keeps it. It never says the streak is at
+ * risk, never mentions a meal that was not eaten, and never counts anything
+ * against the student: the same rules as every line above. The number is the
+ * student's own current streak, so these are written around a count. */
+const STREAK = [
+  (n) => `Your ${n}-day streak is still going`,
+  (n) => `Day ${n} is one tap away`,
+  (n) => `${n} days in a row and counting`,
+  (n) => `Keep the ${n}-day streak rolling`,
+  (n) => `Bento here. ${n} days and going strong`,
+];
+
+export function streakMessage(n, dateStr) {
+  const i = Math.abs(dayIndex(dateStr));
+  return STREAK[i % STREAK.length](n);
+}
+
+export const STREAK_POOL_SIZE = STREAK.length;

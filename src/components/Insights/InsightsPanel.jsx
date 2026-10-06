@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
-import { getWeeklySummaries, getWeeklyHistoryFromMealHistory, getNutritionTargets, getDailyGoalHits, getDailyBreakdown, getStreak } from '../../lib/db';
+import { getWeeklySummaries, getWeeklyHistoryFromMealHistory, getNutritionTargets, getDailyGoalHits, getDailyBreakdown, getStreak, getVoiceStats, getUserProfile } from '../../lib/db';
+import { UNIVERSITIES } from '../../data/universities';
+import { voiceMessage } from '../../utils/bentoSays';
+import Mascot from '../Mascot/Mascot';
+import '../Mascot/Mascot.css';
 import WeeklySummaryCard from './WeeklySummaryCard';
 import DailyBreakdown from './DailyBreakdown';
 import BadgesPanel from '../Badges/BadgesPanel';
@@ -90,6 +94,42 @@ function Callouts({ targets, goalHits }) {
 // The live streak figure, moved off the meal-plan header. A streak only counts
 // as running if a meal was confirmed today or yesterday; otherwise it has
 // lapsed and showing the old number would overstate it.
+// What the student has put in, and who it reaches. The claim under the numbers
+// depends on the school (see voiceMessage), so it never says more than is true.
+function VoiceCard() {
+  const [stats, setStats] = useState(null);
+  const [uni, setUni] = useState(null);
+  useEffect(() => {
+    let off = false;
+    Promise.all([getVoiceStats(), getUserProfile()]).then(([st, profile]) => {
+      if (off) return;
+      setStats(st);
+      setUni(UNIVERSITIES.find(u => u.id === profile?.university) ?? null);
+    }).catch(() => {});
+    return () => { off = true; };
+  }, []);
+  // Hidden until it can be true, not shown with zeros.
+  if (!stats) return null;
+  const msg = voiceMessage({
+    diningPartner: uni?.diningPartner === true,
+    diningTeamName: uni?.diningTeamName,
+    universityName: uni?.name,
+  });
+  return (
+    <div className="voice-card">
+      <Mascot mood={stats.mealsThisMonth > 0 ? 'cheer' : 'happy'} size={64} hop={false} />
+      <div className="voice-card-body">
+        <h3>Your voice</h3>
+        <div className="voice-stats">
+          <div className="voice-stat"><strong>{stats.mealsThisMonth}</strong><span>meals confirmed this month</span></div>
+          <div className="voice-stat"><strong>{stats.dishesRated}</strong><span>dishes rated</span></div>
+        </div>
+        <p className="voice-note">{msg}</p>
+      </div>
+    </div>
+  );
+}
+
 function CurrentStreak({ streak, onOpenBadges }) {
   if (!streak) return null;
 
@@ -223,6 +263,7 @@ export default function InsightsPanel({ onClose, tabMode = false }) {
                 </p>
               )}
               <CurrentStreak streak={streak} onOpenBadges={() => setShowBadges(true)} />
+              <VoiceCard />
               <WeeklySummaryCard summary={latest} targets={targets} />
               <DailyBreakdown days={dailyDays} targets={targets} />
               <Callouts latest={latest} targets={targets} goalHits={goalHits} />
@@ -262,6 +303,7 @@ export default function InsightsPanel({ onClose, tabMode = false }) {
                 </p>
               )}
               <CurrentStreak streak={streak} onOpenBadges={() => setShowBadges(true)} />
+              <VoiceCard />
               <WeeklySummaryCard summary={latest} targets={targets} />
               <DailyBreakdown days={dailyDays} targets={targets} />
               <Callouts latest={latest} targets={targets} goalHits={goalHits} />

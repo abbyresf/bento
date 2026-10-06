@@ -974,3 +974,23 @@ export async function submitSurveyResponse(surveyId, { status = 'answered', choi
   });
   return !error;
 }
+
+
+/* The numbers on the "Your voice" card: meals this student confirmed this
+ * month, and dishes they have rated. Counts only, read from the student's own
+ * rows. Returns null if either read failed, so the card hides rather than
+ * showing a zero that is not true. */
+export async function getVoiceStats() {
+  const id = await uid();
+  if (!id) return null;
+  const now = new Date();
+  const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const [meals, rated] = await Promise.all([
+    supabase.from('meal_history').select('id', { count: 'exact', head: true })
+      .eq('user_id', id).gte('meal_date', monthStart),
+    supabase.from('item_ratings').select('item_id', { count: 'exact', head: true })
+      .eq('user_id', id),
+  ]);
+  if (meals.error || rated.error) return null;
+  return { mealsThisMonth: meals.count ?? 0, dishesRated: rated.count ?? 0 };
+}
