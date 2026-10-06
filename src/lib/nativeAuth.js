@@ -1,7 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
-import { SignInWithApple } from '@capacitor-community/apple-sign-in';
 import { supabase } from './supabase';
 
 /* Google sign-in inside the native shell.
@@ -112,6 +111,12 @@ async function sha256Hex(text) {
 export async function signInWithAppleNative() {
   const rawNonce = [...crypto.getRandomValues(new Uint8Array(16))]
     .map(b => b.toString(16).padStart(2, '0')).join('');
+
+  // Loaded here, not at the top of the file. The plugin's ESM entry has a broken
+  // relative import that Node cannot resolve, and the build's prerender step
+  // loads this module in Node. A dynamic import is only run on a device, and it
+  // keeps the plugin out of the web bundle.
+  const { SignInWithApple } = await import('@capacitor-community/apple-sign-in');
 
   let identityToken;
   try {
