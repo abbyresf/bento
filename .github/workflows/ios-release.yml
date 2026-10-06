@@ -65,7 +65,15 @@ jobs:
         run: npm test
 
       - name: Build web bundle and sync into the native project
-        run: npm run ios:sync
+        run: |
+          # These are baked into the bundle at build time. A missing secret does
+          # not fail the build, it ships an app that stops at launch with
+          # "Missing VITE_SUPABASE_URL" (build 8.1, found 6 Oct 2026). So check
+          # here and stop before a build number is spent. Only whether each is
+          # set is tested. The values are never printed.
+          [ -n "$VITE_SUPABASE_URL" ] || { echo "::error::repo secret VITE_SUPABASE_URL is empty or missing"; exit 1; }
+          [ -n "$VITE_SUPABASE_ANON_KEY" ] || { echo "::error::repo secret VITE_SUPABASE_ANON_KEY is empty or missing"; exit 1; }
+          npm run ios:sync
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
