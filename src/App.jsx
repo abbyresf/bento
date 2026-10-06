@@ -89,6 +89,10 @@ function App() {
   );
   const [showSettings, setShowSettings] = useState(false);
   const [showSplash, setShowSplash] = useState(() => {
+    // The app plays its opening animation on every cold launch, as a native app
+    // would. On the web it stays rate-limited to once in three hours, because
+    // a page reload is not an app launch.
+    if (Capacitor.isNativePlatform()) return true;
     const last = parseInt(localStorage.getItem('bento_splash_ts') || '0', 10);
     return Date.now() - last > 3 * 60 * 60 * 1000;
   });
