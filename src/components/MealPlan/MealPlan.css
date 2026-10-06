@@ -316,3 +316,25 @@
   pointer-events: none;
   z-index: 9999;
 }
+
+/* Shown when a confirmation did not save. Tap to dismiss. It sits above the tab
+   bar, in the app's own danger colours, with the database's reason in small
+   type so a failure can be diagnosed from a screenshot. */
+.save-error {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  background: var(--danger-fill, #dc2626);
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  font-size: 0.9rem;
+  animation: rise var(--dur-base) var(--ease-out) backwards;
+}
+.save-error small { opacity: 0.8; font-size: 0.72rem; word-break: break-word; }

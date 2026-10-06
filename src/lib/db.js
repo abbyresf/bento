@@ -389,10 +389,20 @@ export async function getMealHistory() {
   return data ?? [];
 }
 
+/* Saves a confirmed meal and returns the row id.
+ *
+ * THROWS if it did not save. It used to swallow the database's error and return
+ * null, and the screen marked the meal confirmed anyway, so a confirmation that
+ * never reached the database looked saved. Pulse counts what is in the database,
+ * so that made its numbers quietly lower than what students saw on their phones.
+ * The thrown error carries the database's code and message so the app can show
+ * them. */
 export async function addMealToHistory(mealItems, mealType, date = null, diningHall = null) {
   const id = await uid();
-  if (!id) return null;
-  const { data } = await supabase.from('meal_history').upsert({
+  if (!id) {
+    const e = new Error('Not signed in'); e.code = 'signed-out'; throw e;
+  }
+  const { data, error } = await supabase.from('meal_history').upsert({
     user_id:      id,
     items:        mealItems,
     confirmed_at: new Date().toISOString(),
@@ -404,22 +414,36 @@ export async function addMealToHistory(mealItems, mealType, date = null, diningH
   }, {
     onConflict: 'user_id,meal_date,meal_type',
   }).select('id').single();
-  return data?.id ?? null;
+  if (error) {
+    const e = new Error(error.message || 'Save failed'); e.code = error.code || 'save-failed'; throw e;
+  }
+  if (!data?.id) {
+    const e = new Error('The database did not return the saved row'); e.code = 'no-row'; throw e;
+  }
+  return data.id;
 }
 
-export async function getConfirmedMealsForDate(date) {
+/* Which meals are confirmed on a date, straight from the database.
+ * Returns null, not an empty result, when it could not find out, so a failed
+ * read is never mistaken for "nothing confirmed". */
+export async function fetchConfirmedMeals(date) {
   const id = await uid();
-  if (!id) return { breakfast: null, lunch: null, dinner: null };
-  const { data } = await supabase
+  if (!id) return null;
+  const { data, error } = await supabase
     .from('meal_history')
     .select('id, meal_type, items')
     .eq('user_id', id)
     .eq('meal_date', date);
+  if (error) return null;
   const result = { breakfast: null, lunch: null, dinner: null };
   for (const row of (data ?? [])) {
     if (row.meal_type in result) result[row.meal_type] = { rowId: row.id, items: row.items };
   }
   return result;
+}
+
+export async function getConfirmedMealsForDate(date) {
+  return (await fetchConfirmedMeals(date)) ?? { breakfast: null, lunch: null, dinner: null };
 }
 
 export async function removeMealFromHistory(rowId) {

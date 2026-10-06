@@ -26,7 +26,7 @@ function writePlanCache(date, meals) {
 
 import { hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
 import { fetchDiningMenu, getUniversityConfig, getSelectableLocations } from '../../services/menuFetcher';
-import { getUserProfile, getNutritionTargets, getDietaryRestrictions, getRecentItemIds, addMealToHistory, removeMealFromHistory, setCachedMenu, getCachedMenu, getCachedMenuAge, incrementStreak, incrementStreakForDate, getStreak, getConfirmedMealsForDate, recordDiningAvailability } from '../../lib/db';
+import { getUserProfile, getNutritionTargets, getDietaryRestrictions, getRecentItemIds, addMealToHistory, removeMealFromHistory, setCachedMenu, getCachedMenu, getCachedMenuAge, incrementStreak, incrementStreakForDate, getStreak, getConfirmedMealsForDate, fetchConfirmedMeals, recordDiningAvailability } from '../../lib/db';
 import { useRatings } from '../../context/RatingsContext';
 import { sumItems, MAX_SERVINGS } from '../../utils/servingSize.js';
 import BentoLogo from '../common/BentoLogo';
@@ -69,6 +69,8 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const [showStreakCelebration, setShowStreakCelebration] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  // Set when a confirmation could not be saved: { meal, code, message }.
+  const [saveError, setSaveError] = useState(null);
   const [pendingBadge, setPendingBadge] = useState(null);
   const [newBadge, setNewBadge] = useState(null);
   const [customMeals, setCustomMeals] = useState(() => {
@@ -185,6 +187,40 @@ export default function MealPlan({ settingsVersion = 0 }) {
     loadMenuAndOptimize();
     getStreak().then(s => setStreak(s));
   }, [loadMenuAndOptimize]);
+
+  // Today's confirmed meals come from the database, not from this phone.
+  //
+  // They used to be restored only from local storage, so the screen showed
+  // whatever the phone remembered, true or not. The database is what Pulse
+  // counts, so it is the source of truth: on opening, on returning to the app
+  // and on changing day, ask it which meals are confirmed and show that. The
+  // local copy stays as a fast first paint. A failed read changes nothing.
+  const savingRef = useRef(confirmingMeals);
+  useEffect(() => { savingRef.current = confirmingMeals; });
+  useEffect(() => {
+    if (viewDate !== localDateStr()) return;
+    let cancelled = false;
+    const sync = async () => {
+      const server = await fetchConfirmedMeals(viewDate);
+      // A confirmation in flight would be wiped by a read that started before
+      // it landed.
+      if (cancelled || !server || Object.values(savingRef.current).some(Boolean)) return;
+      const bools = { breakfast: false, lunch: false, dinner: false };
+      const ids   = { breakfast: null, lunch: null, dinner: null };
+      for (const m of ['breakfast', 'lunch', 'dinner']) {
+        if (server[m]) { bools[m] = true; ids[m] = server[m].rowId; }
+      }
+      setConfirmedMeals(bools);
+      setConfirmedMealIds(ids);
+      try {
+        localStorage.setItem('bento_confirmed_meals_v2', JSON.stringify({ date: viewDate, meals: bools }));
+      } catch { /* localStorage unavailable */ }
+    };
+    sync();
+    const onVisible = () => { if (document.visibilityState === 'visible') sync(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { cancelled = true; document.removeEventListener('visibilitychange', onVisible); };
+  }, [viewDate]);
 
   // Date navigation: when viewDate changes (not on initial mount — that's handled above).
   useEffect(() => {
@@ -608,7 +644,18 @@ export default function MealPlan({ settingsVersion = 0 }) {
     const today = localDateStr();
     const isViewingToday = viewDate === today;
     const hall = menu?.locations?.[location]?.shortName ?? null;
-    const rowId = await addMealToHistory(mealItems, meal, isViewingToday ? null : viewDate, hall);
+    setSaveError(null);
+    let rowId;
+    try {
+      rowId = await addMealToHistory(mealItems, meal, isViewingToday ? null : viewDate, hall);
+    } catch (err) {
+      // Not saved, so not confirmed. No confetti, no streak, nothing stored
+      // locally: the screen must never claim what the database does not have.
+      setConfirmingMeals(prev => ({ ...prev, [meal]: false }));
+      setSaveError({ meal, code: err.code ?? 'error', message: err.message ?? 'Unknown error' });
+      haptics.warning();
+      return;
+    }
     setConfirmingMeals(prev => ({ ...prev, [meal]: false }));
     const updatedConfirmed = { ...confirmedMeals, [meal]: true };
     setConfirmedMeals(updatedConfirmed);
@@ -816,6 +863,13 @@ export default function MealPlan({ settingsVersion = 0 }) {
         />
       )}
 
+      {saveError && (
+        <div className="save-error" role="alert" onClick={() => setSaveError(null)}>
+          <strong>Your {saveError.meal} was not saved.</strong>
+          <span>Check your connection and try again.</span>
+          <small>{saveError.code}: {saveError.message}</small>
+        </div>
+      )}
       {showFeedback && <FeedbackSheet onClose={() => setShowFeedback(false)} />}
 
       {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}
