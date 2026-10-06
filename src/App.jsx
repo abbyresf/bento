@@ -25,6 +25,7 @@ import NotifPrompt from './components/Notifications/NotifPrompt';
 import SurveyPopup from './components/Survey/SurveyPopup';
 import SplashScreen from './components/Splash/SplashScreen';
 import UpdatePrompt from './components/common/UpdatePrompt';
+import { syncNativePushToken } from './lib/push';
 import './App.css';
 import BentoLogo from './components/common/BentoLogo';
 
@@ -162,6 +163,12 @@ function App() {
       .catch(() => {});
     return () => { cancelled = true; };
   }, [session, hasCompletedOnboarding, hasAcceptedTerms, location.search]);
+
+  // Native only: refresh this device's APNs token each time a student is signed
+  // in. A stale token silently stops reminders. It never prompts for permission.
+  useEffect(() => {
+    if (session && isNative) syncNativePushToken();
+  }, [session, isNative]);
 
   // ── Computed values & handlers ────────────────────────────────────────────────
 

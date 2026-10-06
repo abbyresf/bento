@@ -49,6 +49,14 @@ const config: CapacitorConfig = {
     contentInset: 'always',
   },
 
+  plugins: {
+    PushNotifications: {
+      // Show a reminder that arrives while the app is open. Without this iOS
+      // delivers it silently to the web layer and nothing appears on screen.
+      presentationOptions: ['alert', 'sound'],
+    },
+  },
+
   server: {
     // Still served from the app bundle. There is no `url` here, and there must
     // not be: pointing the shell at bentodining.com would make this a web

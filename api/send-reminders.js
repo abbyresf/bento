@@ -13,6 +13,7 @@
 import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
 import { reminderMessage } from './reminderMessages.js';
+import { apnsConfigFromEnv, sendApns } from './_apns.js';
 
 function getSupabaseAdmin() {
   const url = process.env.VITE_SUPABASE_URL;
@@ -77,16 +78,18 @@ export default async function handler(req, res) {
     }
   }
 
+  // VAPID is for browsers only. The native app is reached through APNs, so
+  // missing web keys must not stop a send that has native recipients.
   const publicKey  = process.env.VITE_VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
-  if (!publicKey || !privateKey) {
-    return res.status(500).json({ error: 'VAPID keys not configured' });
+  const webReady   = Boolean(publicKey && privateKey);
+  if (webReady) {
+    webpush.setVapidDetails(
+      process.env.VAPID_SUBJECT || 'mailto:hello@bentodining.com',
+      publicKey,
+      privateKey
+    );
   }
-  webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT || 'mailto:hello@bentodining.com',
-    publicKey,
-    privateKey
-  );
 
   // Only students who still have the switch on. push_enabled is the authority,
   // not the browser permission, so turning it off in Settings stops sending
@@ -108,9 +111,18 @@ export default async function handler(req, res) {
   // makes no claim about what is being served, so there is nothing to look up.
   const line = reminderMessage(meal, day);
 
+  // A row is a browser subscription or a native APNs token, never both.
+  const nativeSubs = subs.filter(s => s.apns_token);
+  const webSubs    = subs.filter(s => !s.apns_token);
+
   let sent = 0, pruned = 0, failed = 0;
 
-  await Promise.all(subs.map(async (sub) => {
+  if (webSubs.length && !webReady) {
+    console.error('VAPID keys not configured, skipping', webSubs.length, 'web subscriptions');
+    failed += webSubs.length;
+  }
+
+  await Promise.all((webReady ? webSubs : []).map(async (sub) => {
     try {
       await webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
@@ -141,13 +153,60 @@ export default async function handler(req, res) {
     }
   }));
 
+  // Native app. The title carries the message, as with web push, and iOS shows
+  // the app name above it.
+  let nativeSent = 0, nativePruned = 0, nativeFailed = 0, nativeNote;
+  if (nativeSubs.length) {
+    const apns = apnsConfigFromEnv();
+    if (!apns) {
+      console.error('APNs not configured, skipping', nativeSubs.length, 'native devices');
+      nativeNote = 'APNs not configured';
+      nativeFailed = nativeSubs.length;
+    } else {
+      const { fatal, results } = await sendApns({
+        tokens: nativeSubs.map(n => n.apns_token),
+        title: line,
+        collapseId: `bento-${meal}`,
+        config: apns,
+      });
+      if (fatal) {
+        // Apple rejected our key or team id. Every device would fail the same
+        // way, so say so once instead of counting each as a dead token.
+        console.error('APNs rejected the provider token:', fatal);
+        nativeNote = `APNs rejected the key: ${fatal}`;
+      }
+      const byToken = new Map(results.map(r => [r.token, r]));
+      await Promise.all(nativeSubs.map(async (sub) => {
+        const r = byToken.get(sub.apns_token);
+        if (!r) { nativeFailed++; return; }
+        if (r.ok) {
+          nativeSent++;
+          await admin.from('push_subscriptions')
+            .update({ last_sent_at: new Date().toISOString(), failure_count: 0 })
+            .eq('id', sub.id);
+        } else if (r.prune) {
+          nativePruned++;
+          await admin.from('push_subscriptions').delete().eq('id', sub.id);
+        } else {
+          nativeFailed++;
+          await admin.from('push_subscriptions')
+            .update({ failure_count: (sub.failure_count ?? 0) + 1 })
+            .eq('id', sub.id);
+        }
+      }));
+    }
+  }
+
   // Recorded for the daily report. Best effort: the claim row already exists,
   // and failing to annotate it must not turn a successful send into an error.
   if (!force) {
     await admin.from('reminder_sends')
-      .update({ recipients: sent })
+      .update({ recipients: sent + nativeSent })
       .eq('meal', meal).eq('send_date', day);
   }
 
-  res.status(200).json({ meal, date: day, line, sent, pruned, failed, recipients: subs.length });
+  res.status(200).json({
+    meal, date: day, line, sent, pruned, failed, recipients: subs.length,
+    native: { sent: nativeSent, pruned: nativePruned, failed: nativeFailed, ...(nativeNote ? { note: nativeNote } : {}) },
+  });
 }

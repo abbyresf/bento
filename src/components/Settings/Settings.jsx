@@ -13,7 +13,10 @@ import {
 import { calculateNutritionTargets, ACTIVITY_LEVELS, GOALS } from '../../utils/tdeeCalculator';
 import UniversityPicker from '../common/UniversityPicker';
 import { useNutritionDisplay } from '../../context/NutritionDisplayContext';
+import { Capacitor } from '@capacitor/core';
 import { pushSupport, subscribeToPush, unsubscribeFromPush, getPushEnabled } from '../../lib/push';
+
+const isNative = Capacitor.isNativePlatform();
 import ThemePreview from './ThemePreview';
 import './Settings.css';
 
@@ -388,7 +391,9 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
                         if (r.ok) setPushOn(true);
                         else setPushNote(
                           r.reason === 'blocked'
-                            ? 'Your browser blocked the request. Re-allow notifications for Bento in its settings.'
+                            ? (isNative
+                                ? 'Notifications are off for Bento. Turn them on in Settings, then Notifications, then Bento.'
+                                : 'Your browser blocked the request. Re-allow notifications for Bento in its settings.')
                             : r.reason === 'dismissed'
                               ? 'No problem. You can turn this on any time.'
                               : 'Something went wrong. Try again in a moment.'

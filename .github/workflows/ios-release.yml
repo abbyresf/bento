@@ -61,8 +61,8 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Meal planner tests
-        run: npm run test:meals
+      - name: Tests
+        run: npm test
 
       - name: Build web bundle and sync into the native project
         run: npm run ios:sync
