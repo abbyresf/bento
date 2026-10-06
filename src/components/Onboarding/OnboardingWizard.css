@@ -798,97 +798,131 @@
   to   { transform: none; }
 }
 
-/* ── Step mark ────────────────────────────────────────────────────────────
-   An Apple-style tile with one glyph. 72px, so it adds a single compact row and
-   never crops or makes the page awkward to scroll. Starts after the wipe has
-   left. */
+/* ── Bento, the mascot ─────────────────────────────────────────────────────
+   A row: the character on the left, a speech bubble on the right. About 90px
+   tall, so it never crops and barely adds to the scroll. The mascot jumps in
+   when the wipe has left, then keeps breathing, blinking and fidgeting so the
+   screen is never dead. */
 .step-mark {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
-  margin: 0.2rem 0 0.9rem;
+  gap: 0.5rem;
+  margin: 0 0 0.6rem;
+  min-height: 92px;
 }
-.step-mark-caption {
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--text-disabled, #94a3b8);
-  animation: ob-rise 600ms var(--ease-out) 420ms backwards;
-}
-
-.step-mark-tile {
-  position: relative;
-  width: 72px;
-  height: 72px;
+.mascot {
+  width: 112px;
+  height: auto;
   flex: none;
-  border-radius: 22px;
-  /* A squircle, as close as CSS gets: the same continuous curve family. */
-  background: linear-gradient(145deg, var(--m1), var(--m2));
-  box-shadow:
-    0 10px 24px -8px color-mix(in srgb, var(--m2) 70%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    inset 0 -2px 6px rgba(0, 0, 0, 0.12);
-  overflow: hidden;
-  animation: mark-in 700ms var(--spring-bouncy) 120ms backwards;
+  overflow: visible;
 }
-.tone-orange { --m1: #FFB45E; --m2: #FD8F2A; }
-.tone-green  { --m1: #9AD35E; --m2: #5FA52E; }
-.tone-navy   { --m1: #3A5573; --m2: #24384F; }
 
-@keyframes mark-in {
-  from { opacity: 0; transform: scale(0.4) rotate(-14deg); }
+.step-bubble {
+  position: relative;
+  flex: 1;
+  max-width: 230px;
+  padding: 0.7rem 0.95rem;
+  border: 2.5px solid var(--border, #e4dccf);
+  border-radius: 18px;
+  background: #fff;
+  font-size: 0.98rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--text-primary, #24384F);
+  transform-origin: left center;
+  animation: bubble-pop 520ms var(--spring-bouncy) 720ms backwards;
+}
+/* The tail, pointing back at the mascot. */
+.step-bubble::before,
+.step-bubble::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  border: solid transparent;
+  transform: translateY(-50%);
+}
+.step-bubble::before { left: -13px; border-width: 9px 12px 9px 0; border-right-color: var(--border, #e4dccf); }
+.step-bubble::after  { left: -9px;  border-width: 8px 11px 8px 0; border-right-color: #fff; }
+@keyframes bubble-pop {
+  from { opacity: 0; transform: scale(0.4) translateX(-14px); }
   to   { opacity: 1; transform: none; }
 }
 
-.step-mark-glyph {
-  position: absolute;
-  inset: 14px;
-  width: 44px;
-  height: 44px;
-  color: #fff;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 3.4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+/* Jump in with squash and stretch, the way a cartoon character lands. */
+.m-hop {
+  transform-box: view-box;
+  transform-origin: 60px 108px;
+  animation:
+    m-land 900ms var(--ease-out) 200ms backwards,
+    m-breathe 2.6s ease-in-out 1.3s infinite;
 }
-/* The glyph draws itself on. pathLength normalises every path to 1, so one
-   rule fits them all. */
-.step-mark-glyph path,
-.step-mark-glyph circle {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  animation: mark-draw 760ms var(--ease-out) 360ms forwards;
+@keyframes m-land {
+  0%   { opacity: 0; transform: translateY(70px) scale(0.85, 1.25); }
+  45%  { opacity: 1; transform: translateY(-16px) scale(0.94, 1.1); }
+  65%  { transform: translateY(0) scale(1.12, 0.86); }
+  82%  { transform: translateY(-3px) scale(0.98, 1.03); }
+  100% { transform: none; }
 }
-.step-mark-glyph circle[fill="currentColor"] { stroke-dasharray: none; stroke-dashoffset: 0; animation: mark-dot 400ms var(--spring-bouncy) 900ms backwards; }
-@keyframes mark-draw { to { stroke-dashoffset: 0; } }
-@keyframes mark-dot  { from { opacity: 0; transform: scale(0); } to { opacity: 1; } }
+@keyframes m-breathe {
+  0%, 100% { transform: scale(1, 1); }
+  50%      { transform: scale(1.015, 0.975); }
+}
+.m-shadow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: m-shadow 900ms var(--ease-out) 200ms backwards;
+}
+@keyframes m-shadow { from { opacity: 0; transform: scale(0.3); } to { opacity: 1; transform: none; } }
 
-/* One band of light across the tile, once. */
-.step-mark-sheen {
-  position: absolute;
-  top: -20%;
-  bottom: -20%;
-  left: -60%;
-  width: 40%;
-  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), transparent);
-  transform: skewX(-20deg);
-  animation: mark-sheen 800ms var(--ease-out) 900ms backwards;
+/* Blinking. */
+.m-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: m-blink 4.2s ease-in-out 1.8s infinite;
 }
-@keyframes mark-sheen { from { left: -60%; } to { left: 140%; } }
+@keyframes m-blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.08); } }
 
-/* A soft glow that breathes behind the glyph. */
-.step-mark-glow {
-  position: absolute;
-  inset: 12px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.55), transparent 70%);
-  animation: mark-glow 2.6s ease-in-out 1s infinite alternate;
+/* Waving. The arm turns about its shoulder. */
+.m-wave {
+  transform-box: view-box;
+  transform-origin: 104px 62px;
+  animation: m-wave 900ms ease-in-out 1.1s 3;
 }
-@keyframes mark-glow { from { opacity: 0.25; transform: scale(0.8); } to { opacity: 0.75; transform: scale(1.15); } }
+@keyframes m-wave { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-24deg); } 60% { transform: rotate(14deg); } }
 
-/* The rest of the screen starts as the mark lands. */
+.m-cheer {
+  transform-box: view-box;
+  transform-origin: 16px 56px;
+  animation: m-cheer 700ms ease-in-out 1.1s infinite alternate;
+}
+.m-cheer.r { transform-origin: 104px 56px; animation-direction: alternate-reverse; }
+@keyframes m-cheer { from { transform: rotate(-8deg); } to { transform: rotate(8deg); } }
+
+/* Props. */
+.m-cap { transform-box: view-box; transform-origin: 60px 20px; animation: m-cap 700ms var(--spring-bouncy) 800ms backwards; }
+@keyframes m-cap { from { opacity: 0; transform: translateY(-40px) rotate(-20deg); } to { opacity: 1; transform: none; } }
+.m-tassel { transform-box: fill-box; transform-origin: top center; animation: m-swing 1.6s ease-in-out 1.6s infinite alternate; }
+@keyframes m-swing { from { transform: rotate(-10deg); } to { transform: rotate(10deg); } }
+
+.m-speed { animation: m-speed 700ms ease-out 1s infinite; }
+@keyframes m-speed { 0% { opacity: 0.7; transform: translateX(6px); } 100% { opacity: 0; transform: translateX(-10px); } }
+
+.m-flag { transform-box: view-box; transform-origin: 118px 28px; animation: m-flag-up 600ms var(--spring-bouncy) 800ms backwards; }
+@keyframes m-flag-up { from { opacity: 0; transform: translateY(24px) scale(0.5); } to { opacity: 1; transform: none; } }
+.m-flag-cloth { transform-box: fill-box; transform-origin: left center; animation: m-flap 700ms ease-in-out 1.4s infinite alternate; }
+@keyframes m-flap { from { transform: skewY(-6deg) scaleX(1); } to { transform: skewY(6deg) scaleX(0.8); } }
+
+.m-sprout { transform-box: view-box; transform-origin: 60px 14px; animation: m-sprout 700ms var(--spring-bouncy) 800ms backwards, m-sway 2.2s ease-in-out 1.7s infinite alternate; }
+@keyframes m-sprout { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: none; } }
+@keyframes m-sway { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+
+.m-bar { transform-box: fill-box; transform-origin: bottom; animation: m-bar 700ms var(--spring-bouncy) backwards; animation-delay: calc(900ms + var(--i) * 140ms); }
+@keyframes m-bar { from { transform: scaleY(0.05); } to { transform: scaleY(1); } }
+
+.m-confetti { animation: m-confetti 1.8s ease-in-out 1s infinite alternate; }
+@keyframes m-confetti { from { transform: translateY(0) rotate(-3deg); } to { transform: translateY(-6px) rotate(3deg); } }
+
+/* The rest of the screen starts as the mascot lands. */
 .step-stage .step-content > :not(h2):not(.step-mark) { animation-delay: 560ms; }
 .step-stage .step-content > :nth-child(4) { animation-delay: 620ms; }
 .step-stage .step-content > :nth-child(5) { animation-delay: 680ms; }
