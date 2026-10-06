@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { supabase } from './supabase';
-import { signInWithGoogleNative } from './nativeAuth';
+import { signInWithGoogleNative, signInWithAppleNative } from './nativeAuth';
 import { WEB_ORIGIN } from './apiBase';
 
 // ── Auth helpers ───────────────────────────────────────────────────────────
@@ -24,6 +24,11 @@ export async function signInWithGoogle() {
     options: { redirectTo: `${window.location.origin}/app` },
   });
   if (error) throw error;
+}
+
+// Native only. The button that calls this is not rendered on the web.
+export async function signInWithApple() {
+  return signInWithAppleNative();
 }
 
 export async function resetPasswordForEmail(email) {

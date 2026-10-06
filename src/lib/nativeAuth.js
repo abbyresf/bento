@@ -1,6 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
+import { SignInWithApple } from '@capacitor-community/apple-sign-in';
 import { supabase } from './supabase';
 
 /* Google sign-in inside the native shell.
@@ -83,4 +84,55 @@ export async function signInWithGoogleNative() {
   const finished = new Promise((resolve, reject) => { pending = { resolve, reject }; });
   await Browser.open({ url: data.url });
   return finished;
+}
+
+/* Sign in with Apple, native only.
+ *
+ * App Store guideline 4.8 requires it wherever another social login is offered,
+ * and Google is. iOS shows its own system sheet, so there is no browser and no
+ * redirect. The sheet returns an identity token, and Supabase checks it.
+ *
+ * Supabase must have the Apple provider enabled with this app's bundle id in
+ * "Authorized Client IDs". No Services ID or key is needed for this flow, which
+ * is only for web sign-in.
+ *
+ * The nonce guards against a replayed token. Apple is given the SHA-256 of a
+ * random value and puts that hash in the token. Supabase is given the raw
+ * value, hashes it itself, and compares. Swapping the two makes every sign-in
+ * fail with a nonce mismatch.
+ */
+const APPLE_CLIENT_ID = 'com.bentodining.app';
+
+async function sha256Hex(text) {
+  const bytes = new TextEncoder().encode(text);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+export async function signInWithAppleNative() {
+  const rawNonce = [...crypto.getRandomValues(new Uint8Array(16))]
+    .map(b => b.toString(16).padStart(2, '0')).join('');
+
+  let identityToken;
+  try {
+    const { response } = await SignInWithApple.authorize({
+      clientId: APPLE_CLIENT_ID,
+      // Required by the plugin's API, unused by the native sheet.
+      redirectURI: 'https://www.bentodining.com/app',
+      scopes: 'email name',
+      nonce: await sha256Hex(rawNonce),
+    });
+    identityToken = response.identityToken;
+  } catch (err) {
+    // Closing the sheet is a cancel, not an error. iOS reports it as code 1001.
+    if (/1001|cancel/i.test(`${err?.code ?? ''} ${err?.message ?? ''}`)) return;
+    throw err;
+  }
+
+  const { error } = await supabase.auth.signInWithIdToken({
+    provider: 'apple',
+    token: identityToken,
+    nonce: rawNonce,
+  });
+  if (error) throw error;
 }

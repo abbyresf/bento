@@ -263,3 +263,29 @@
   line-height: 1.6;
   margin: 0;
 }
+
+/* Sign in with Apple. Apple's guidelines ask for a black or white button of the
+   same size as the other social buttons, with the Apple mark and the words
+   "Continue with Apple". */
+.apple-btn {
+  /* The card spaces its children 1.5rem apart. Pull this one up so the two
+     social buttons read as a pair. */
+  margin-top: -0.9rem;
+  background: #000;
+  border-color: #000;
+  color: #fff;
+}
+.apple-btn:hover:not(:disabled) {
+  background: #1a1a1a;
+  border-color: #1a1a1a;
+}
+/* Apple asks for the white version on dark backgrounds. */
+[data-theme="dark"] .apple-btn {
+  background: #fff;
+  border-color: #fff;
+  color: #000;
+}
+[data-theme="dark"] .apple-btn:hover:not(:disabled) {
+  background: #e8e8e8;
+  border-color: #e8e8e8;
+}

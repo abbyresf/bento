@@ -6,5 +6,9 @@
 	     or TestFlight. "development" is correct for builds run from Xcode. -->
 	<key>aps-environment</key>
 	<string>development</string>
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
 </dict>
 </plist>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { useNavigate } from 'react-router-dom';
-import { signIn, signUp, signInWithGoogle, resetPasswordForEmail } from '../../lib/db';
+import { signIn, signUp, signInWithGoogle, signInWithApple, resetPasswordForEmail } from '../../lib/db';
 import './AuthScreen.css';
 import BentoLogo from '../common/BentoLogo';
 import ServiceDown from '../common/ServiceDown';
@@ -50,6 +50,7 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
   const [error, setError] = useState(null);
   const [serviceDown, setServiceDown] = useState(false);
   const [confirmSent, setConfirmSent] = useState(false);
@@ -112,6 +113,21 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
     }
   };
 
+  // Native only. Apple requires this button wherever Google sign-in is offered,
+  // and the web has no Apple sign-in configured.
+  const handleAppleSignIn = async () => {
+    setError(null);
+    setAppleLoading(true);
+    try {
+      await signInWithApple();
+    } catch (err) {
+      if (isOurFault(err.message)) setServiceDown(true);
+      else setError(friendlyAuthError(err.message));
+    } finally {
+      setAppleLoading(false);
+    }
+  };
+
   if (serviceDown) return <ServiceDown onRetry={() => setServiceDown(false)} />;
 
   return (
@@ -169,7 +185,7 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
             <button
               className="google-btn"
               onClick={handleGoogleSignIn}
-              disabled={googleLoading || loading}
+              disabled={googleLoading || appleLoading || loading}
             >
               <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
                 <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -179,6 +195,19 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
               </svg>
               {googleLoading ? 'Redirecting…' : 'Continue with Google'}
             </button>
+
+            {Capacitor.isNativePlatform() && (
+              <button
+                className="google-btn apple-btn"
+                onClick={handleAppleSignIn}
+                disabled={appleLoading || googleLoading || loading}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+                  <path d="M16.365 1.43c0 1.14-.493 2.27-1.177 3.08-.744.9-1.99 1.57-2.987 1.57-.12 0-.23-.02-.3-.03-.01-.06-.04-.22-.04-.39 0-1.15.572-2.27 1.206-2.98.804-.94 2.142-1.64 3.248-1.68.03.13.05.28.05.43zm4.565 15.71c-.03.07-.463 1.58-1.518 3.12-.945 1.34-1.94 2.71-3.43 2.71-1.517 0-1.9-.88-3.63-.88-1.698 0-2.302.91-3.67.91-1.377 0-2.332-1.26-3.428-2.8-1.287-1.82-2.323-4.63-2.323-7.28 0-4.28 2.797-6.55 5.552-6.55 1.448 0 2.675.95 3.6.95.865 0 2.222-1.01 3.902-1.01.613 0 2.886.06 4.374 2.19-.13.09-2.383 1.37-2.383 4.19 0 3.26 2.854 4.42 2.955 4.45z"/>
+                </svg>
+                {appleLoading ? 'Signing in…' : 'Continue with Apple'}
+              </button>
+            )}
 
             <div className="auth-divider">
               <span>or</span>
@@ -230,7 +259,7 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
 
               {error && <p className="auth-error">{error}</p>}
 
-              <button type="submit" className="auth-btn" disabled={loading || googleLoading}>
+              <button type="submit" className="auth-btn" disabled={loading || googleLoading || appleLoading}>
                 {loading ? 'Please wait…' : mode === 'login' ? 'Log in' : 'Create account'}
               </button>
 
