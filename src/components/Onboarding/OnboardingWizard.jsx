@@ -4,6 +4,8 @@ import { setUserProfile, setNutritionTargets, setDietaryRestrictions, setNutriti
 import { UNIVERSITIES } from '../../data/universities';
 import UniversityPicker from '../common/UniversityPicker';
 import CountUp from '../common/CountUp';
+import BigTitle from './BigTitle';
+import StepArt from './StepArt';
 import { haptics } from '../../lib/haptics';
 import MenuRatingOnboarding from './MenuRatingOnboarding';
 import './OnboardingWizard.css';
@@ -20,6 +22,9 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
   const [currentStep, setCurrentStep] = useState(0);
   // Which way the last move went, so the next step slides in from that side.
   const [direction, setDirection] = useState('fwd');
+  // A full-screen colour panel that sweeps across between steps. The step
+  // changes while the panel covers the screen, so the swap is never seen.
+  const [wipe, setWipe] = useState(null);
   const [profile, setProfile] = useState({
     university: 'brandeis',
     weight: '',
@@ -68,17 +73,35 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
     return Object.keys(newErrors).length === 0;
   };
 
+  const WIPE_COLORS = ['#FD8F2A', '#77BD3E', '#24384F'];
+  const reduced = typeof window !== 'undefined'
+    && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+  const changeStep = (delta) => {
+    const apply = () => setCurrentStep((prev) => Math.max(0, Math.min(prev + delta, STEPS.length - 1)));
+    if (reduced) { apply(); return; }
+    const next = Math.max(0, Math.min(currentStep + delta, STEPS.length - 1));
+    setWipe({
+      key: Date.now(),
+      color: WIPE_COLORS[next % WIPE_COLORS.length],
+      label: String(next + 1).padStart(2, '0'),
+      back: delta < 0,
+    });
+    setTimeout(apply, 330);
+    setTimeout(() => setWipe(null), 900);
+  };
+
   const handleNext = () => {
     if (STEPS[currentStep] === 'basics' && !validateBasics()) return;
     haptics.light();
     setDirection('fwd');
-    setCurrentStep((prev) => Math.min(prev + 1, STEPS.length - 1));
+    changeStep(1);
   };
 
   const handleBack = () => {
     haptics.selection();
     setDirection('back');
-    setCurrentStep((prev) => Math.max(prev - 1, 0));
+    changeStep(-1);
   };
 
   const handleProfileChange = (field, value) => {
@@ -118,7 +141,8 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
 
   const renderUniversityStep = () => (
     <div className="step-content">
-      <h2>Select your university</h2>
+      <StepArt kind="university" />
+      <BigTitle text="Select your university" />
       <p className="step-description">Bento pulls your dining hall's live menu each day.</p>
       <UniversityPicker
         value={profile.university}
@@ -130,7 +154,8 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
 
   const renderBasicsStep = () => (
     <div className="step-content">
-      <h2>Let's get to know you</h2>
+      <StepArt kind="basics" />
+      <BigTitle text="Let's get to know you" />
       <p className="step-description">We'll use this to calculate your daily nutrition needs.</p>
 
       <div className="form-row">
@@ -212,7 +237,8 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
 
   const renderActivityStep = () => (
     <div className="step-content">
-      <h2>How active are you?</h2>
+      <StepArt kind="activity" />
+      <BigTitle text="How active are you?" />
       <p className="step-description">This helps us estimate how many calories you burn daily.</p>
 
       <div className="activity-options">
@@ -240,7 +266,8 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
 
   const renderGoalsStep = () => (
     <div className="step-content">
-      <h2>What's your goal?</h2>
+      <StepArt kind="goals" />
+      <BigTitle text="What's your goal?" />
       <p className="step-description">We'll adjust your calorie target accordingly.</p>
 
       <div className="goal-options">
@@ -271,7 +298,8 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
 
   const renderDietaryStep = () => (
     <div className="step-content">
-      <h2>Dietary Preferences</h2>
+      <StepArt kind="dietary" />
+      <BigTitle text="Dietary Preferences" />
       <p className="step-description">Select any dietary restrictions or preferences.</p>
       <p className="step-allergy-notice">
         ⚠️ Bento filters suggestions based on dining hall data, which may be incomplete. If you have a serious food allergy, always confirm ingredients with dining staff before eating.
@@ -343,7 +371,8 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
 
     return (
       <div className="step-content">
-        <h2>Your Personalized Plan</h2>
+        <StepArt kind="review" />
+        <BigTitle text="Your Personalized Plan" />
         <p className="step-description">Here's what we calculated based on your inputs.</p>
 
         <div className="review-summary">
@@ -440,7 +469,8 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
 
   const renderNumbersStep = () => (
     <div className="step-content">
-      <h2>Nutrition numbers</h2>
+      <StepArt kind="numbers" />
+      <BigTitle text="Nutrition numbers" />
       <p className="step-description">
         Bento can show calories and macros on your plan, or keep them out of sight.
         Turn off anything you would rather not see. You can change this any time in Settings.
@@ -519,6 +549,11 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
   if (isSwipeStep) {
     return (
       <div className="onboarding-wizard onboarding-wizard-swipe">
+        {wipe && (
+          <div key={wipe.key} className={`wipe${wipe.back ? ' back' : ''}`} style={{ '--wipe': wipe.color }} aria-hidden="true">
+            <span className="wipe-num">{wipe.label}</span>
+          </div>
+        )}
         <div className="swipe-step-topbar">
           <img src="/logo-cropped.png" alt="Bento" className="swipe-step-logo" />
         </div>
@@ -534,8 +569,20 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
     );
   }
 
+  const wipeEl = wipe && (
+    <div
+      key={wipe.key}
+      className={`wipe${wipe.back ? ' back' : ''}`}
+      style={{ '--wipe': wipe.color }}
+      aria-hidden="true"
+    >
+      <span className="wipe-num">{wipe.label}</span>
+    </div>
+  );
+
   return (
     <div className="onboarding-wizard">
+      {wipeEl}
       <div className="wizard-header">
         <img src="/logo-cropped.png" alt="Bento" className="wizard-logo-img" />
         <p className="subtitle">Eat well. Every meal.</p>

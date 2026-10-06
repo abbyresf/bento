@@ -21,15 +21,46 @@
   gap: 1.5rem;
 }
 
-/* The logo assembles itself from its own shapes: the tray rises, the green
-   block slides out of the corner, the orange lands with a spring, and the
-   outline closes around them. Each shape is a separate path in the SVG, so the
-   motion is the real logo, not an effect on top of it. */
+/* The intro is a short film in five beats, about 4 seconds:
+     1. A glow swells behind where the mark will be.
+     2. The outline snaps in, huge, and settles to size with a 3D tilt.
+     3. The tray, green block and orange dot land one after another, each with
+        its own overshoot.
+     4. A band of light sweeps across the finished mark.
+     5. It holds, the tagline tracks in, and everything lifts away.
+   Each shape is a separate path in the SVG, so the motion is the real logo. */
+.splash-content { perspective: 700px; }
+
+.splash-glow {
+  position: absolute;
+  width: 360px;
+  height: 360px;
+  margin-top: -90px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(253, 144, 41, 0.42) 0%, rgba(119, 189, 62, 0.16) 42%, transparent 68%);
+  opacity: 0;
+  animation: splash-glow 2600ms var(--ease-out) 100ms forwards;
+  pointer-events: none;
+}
+@keyframes splash-glow {
+  0%   { opacity: 0; transform: scale(0.3); }
+  45%  { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 0.55; transform: scale(1.25); }
+}
+
 .splash-logo {
-  width: 104px;
+  position: relative;
+  width: 132px;
   height: auto;
   display: block;
   overflow: visible;
+  transform-style: preserve-3d;
+  animation: splash-mark 1500ms var(--spring-soft) 60ms both;
+}
+@keyframes splash-mark {
+  0%   { transform: scale(2.4) rotateX(38deg) rotateY(-30deg); }
+  55%  { transform: scale(0.94) rotateX(-6deg) rotateY(5deg); }
+  100% { transform: scale(1) rotateX(0) rotateY(0); }
 }
 
 .splash-logo path {
@@ -37,70 +68,72 @@
   transform-origin: center;
   opacity: 0;
 }
-
+.splash-p-outline { animation: splash-snap 520ms var(--ease-out) 80ms forwards; }
+.splash-p-rim     { animation: splash-snap 520ms var(--ease-out) 1250ms forwards; }
 .splash-p-cream {
   transform-origin: center bottom;
-  animation: splash-tray 760ms var(--spring-bouncy) 120ms forwards;
+  animation: splash-tray 800ms var(--spring-bouncy) 420ms forwards;
 }
 .splash-p-green {
   transform-origin: left center;
-  animation: splash-block 720ms var(--spring-snappy) 330ms forwards;
+  animation: splash-block 760ms var(--spring-bouncy) 780ms forwards;
 }
-.splash-p-orange {
-  animation: splash-dot 760ms var(--spring-bouncy) 520ms forwards;
+.splash-p-orange { animation: splash-dot 860ms var(--spring-bouncy) 1080ms forwards; }
+
+@keyframes splash-snap  { from { opacity: 0; transform: scale(1.12); } to { opacity: 1; transform: none; } }
+@keyframes splash-tray  { from { opacity: 0; transform: translateY(80px) scaleY(0.4); } to { opacity: 1; transform: none; } }
+@keyframes splash-block { from { opacity: 0; transform: translateX(-70px) scaleX(0.1); } to { opacity: 1; transform: none; } }
+@keyframes splash-dot   { from { opacity: 0; transform: scale(0) rotate(-180deg); } to { opacity: 1; transform: none; } }
+
+/* The band of light, clipped to the logo's own silhouette by the mark's box. */
+.splash-sheen {
+  position: absolute;
+  top: -10%;
+  bottom: -10%;
+  left: -50%;
+  width: 36%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.95), transparent);
+  transform: skewX(-20deg);
+  mix-blend-mode: overlay;
+  opacity: 0;
+  animation: splash-sheen 900ms var(--ease-out) 2000ms forwards;
+  pointer-events: none;
 }
-.splash-p-outline {
-  animation: splash-outline 700ms var(--ease-out) 60ms forwards;
-}
-.splash-p-rim {
-  animation: splash-outline 600ms var(--ease-out) 760ms forwards;
+.splash-mark-wrap { position: relative; overflow: visible; }
+@keyframes splash-sheen {
+  0%   { opacity: 0; left: -50%; }
+  15%  { opacity: 1; }
+  100% { opacity: 0; left: 130%; }
 }
 
-@keyframes splash-tray {
-  from { opacity: 0; transform: translateY(26px) scale(0.92); }
-  to   { opacity: 1; transform: none; }
-}
-@keyframes splash-block {
-  from { opacity: 0; transform: scaleX(0.2) translateX(-10px); }
-  to   { opacity: 1; transform: none; }
-}
-@keyframes splash-dot {
-  from { opacity: 0; transform: scale(0); }
-  to   { opacity: 1; transform: none; }
-}
-@keyframes splash-outline {
-  from { opacity: 0; transform: scale(0.97); }
-  to   { opacity: 1; transform: none; }
-}
-
-/* The whole mark settles with a small lift once assembled. */
+/* A last pulse once the light has passed. */
 .splash-content {
-  animation: splash-lift 900ms var(--spring-soft) 900ms both;
+  animation: splash-pulse 700ms var(--spring-bouncy) 2300ms both;
 }
-@keyframes splash-lift {
-  from { transform: translateY(0); }
-  to   { transform: translateY(-4px); }
+@keyframes splash-pulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.07); }
+  100% { transform: scale(1); }
 }
 
-/* Tagline: tracks in from wide letter-spacing as it fades up. */
 .splash-tagline {
   margin: 0;
   font-family: 'Nunito', 'Helvetica Neue', sans-serif;
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--text-disabled);
   opacity: 0;
-  animation: splash-tagline-in 900ms var(--ease-out) 1050ms forwards;
+  animation: splash-tagline-in 1000ms var(--ease-out) 2050ms forwards;
 }
-
 @keyframes splash-tagline-in {
-  from { opacity: 0; letter-spacing: 0.4em; transform: translateY(6px); }
+  from { opacity: 0; letter-spacing: 0.55em; transform: translateY(8px); }
   to   { opacity: 1; letter-spacing: 0.18em; transform: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .splash-logo, .splash-glow, .splash-sheen { animation: none; }
   .splash-logo path { animation: none; opacity: 1; }
   .splash-content   { animation: none; }
   .splash-tagline   { animation: none; opacity: 1; }

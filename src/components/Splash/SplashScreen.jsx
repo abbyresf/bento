@@ -5,14 +5,16 @@ export default function SplashScreen({ onDone }) {
   const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setLeaving(true), 2500);
-    const t2 = setTimeout(() => onDone(), 2950);
+    const t1 = setTimeout(() => setLeaving(true), 3700);
+    const t2 = setTimeout(() => onDone(), 4150);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
   return (
     <div className={`splash-screen${leaving ? ' splash-leaving' : ''}`}>
       <div className="splash-content">
+        <div className="splash-glow" aria-hidden="true" />
+        <div className="splash-mark-wrap">
         <svg
           className="splash-logo"
           viewBox="38 67 216 191"
@@ -44,6 +46,8 @@ export default function SplashScreen({ onDone }) {
             fill="#0a0e1a"
           />
         </svg>
+        <div className="splash-sheen" aria-hidden="true" />
+        </div>
         <p className="splash-tagline">Eat well. Every meal.</p>
       </div>
     </div>
