@@ -201,8 +201,11 @@ jobs:
           # with no email: runs 4 and 5 both went green and both builds were
           # rejected for a taken bundle name. So ask Apple for the verdict and
           # fail this run if the build was rejected.
-          python3 -m pip install --quiet pyjwt cryptography
-          python3 - <<'PY'
+          # A virtual environment, because the runner's Homebrew Python refuses
+          # system-wide installs ("externally-managed-environment").
+          python3 -m venv "$RUNNER_TEMP/jwtenv"
+          "$RUNNER_TEMP/jwtenv/bin/pip" install --quiet pyjwt cryptography
+          "$RUNNER_TEMP/jwtenv/bin/python" - <<'PY'
           import os, json, time, urllib.request, urllib.error, jwt
 
           def token():
