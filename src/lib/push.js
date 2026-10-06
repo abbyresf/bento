@@ -182,6 +182,8 @@ function registerForToken() {
   });
 }
 
+const NATIVE_TOKEN_KEY = 'bento_apns_token';
+
 async function saveNativeToken(token) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, reason: 'signed-out' };
@@ -192,6 +194,10 @@ async function saveNativeToken(token) {
   // endpoint is the table's unique key and web-only fields stay null, so a
   // native row is told apart by apns_token. The prefix keeps it from ever
   // colliding with a real web push endpoint.
+  // Remembered locally so signing out can remove this device's row and no one
+  // else's. The bento_ prefix means "Reset All Data" clears it too.
+  try { localStorage.setItem(NATIVE_TOKEN_KEY, token); } catch { /* storage unavailable */ }
+
   const { error } = await supabase.from('push_subscriptions').upsert({
     user_id:    user.id,
     endpoint:   `apns:${token}`,
@@ -249,4 +255,35 @@ export async function getPushEnabled() {
   const { data } = await supabase
     .from('profiles').select('push_enabled').eq('id', user.id).maybeSingle();
   return data?.push_enabled ?? false;
+}
+
+/**
+ * Stop reminders reaching THIS device. Call it before signing out.
+ *
+ * Signing out ends the session but not the push registration, so without this
+ * the phone keeps getting the previous account's reminders, and the next person
+ * to sign in on it would see someone else's. It removes only this device's row.
+ * The account-wide switch (profiles.push_enabled) is left alone, because the
+ * student's other devices are still signed in and should keep working.
+ *
+ * It has to run while the session still exists: the table's row-level security
+ * only lets a signed-in student delete their own rows. Never throws, because a
+ * failure here must not stop someone from signing out.
+ */
+export async function detachPushFromThisDevice() {
+  try {
+    if (Capacitor.isNativePlatform()) {
+      const token = localStorage.getItem(NATIVE_TOKEN_KEY);
+      if (token) {
+        await supabase.from('push_subscriptions').delete().eq('endpoint', `apns:${token}`);
+        localStorage.removeItem(NATIVE_TOKEN_KEY);
+      }
+    } else if ('serviceWorker' in navigator) {
+      const registration = await navigator.serviceWorker.getRegistration();
+      const subscription = await registration?.pushManager?.getSubscription();
+      if (subscription) {
+        await supabase.from('push_subscriptions').delete().eq('endpoint', subscription.endpoint);
+      }
+    }
+  } catch { /* signing out matters more than tidying the registration */ }
 }

@@ -14,7 +14,7 @@ import { calculateNutritionTargets, ACTIVITY_LEVELS, GOALS } from '../../utils/t
 import UniversityPicker from '../common/UniversityPicker';
 import { useNutritionDisplay } from '../../context/NutritionDisplayContext';
 import { Capacitor } from '@capacitor/core';
-import { pushSupport, subscribeToPush, unsubscribeFromPush, getPushEnabled } from '../../lib/push';
+import { pushSupport, subscribeToPush, unsubscribeFromPush, getPushEnabled, detachPushFromThisDevice } from '../../lib/push';
 
 const isNative = Capacitor.isNativePlatform();
 import ThemePreview from './ThemePreview';
@@ -35,6 +35,7 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
   const [saved, setSaved] = useState(false);
   const [confirming, setConfirming] = useState(null); // 'history' | 'reset' | 'delete'
   const [actionError, setActionError] = useState(null);
+  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -113,11 +114,27 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
     }
   };
 
+  // Plain sign out. Nothing is deleted: the account, plate history and settings
+  // stay saved and come back at the next sign in. onReset (App's handleReset)
+  // ends the session, clears the in-memory state and returns to sign in.
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    setActionError(null);
+    try {
+      await detachPushFromThisDevice();
+      await onReset();
+    } catch {
+      setActionError('Could not sign out. Please try again.');
+      setSigningOut(false);
+    }
+  };
+
   const handleResetAll = async () => {
     if (confirming !== 'reset') { setConfirming('reset'); return; }
     setConfirming(null);
     setActionError(null);
     try {
+      await detachPushFromThisDevice();
       await clearAllData();
       onReset();
     } catch {
@@ -452,6 +469,21 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
             )}
           >
             {display.anyVisible ? 'Hide all numbers' : 'Show all numbers'}
+          </button>
+        </section>
+
+        <section className="settings-section">
+          <h3>Account</h3>
+          <p className="section-note">
+            Signing out keeps your plate history and settings. They are here
+            when you sign back in.
+          </p>
+          <button
+            className="btn-secondary"
+            onClick={handleSignOut}
+            disabled={signingOut}
+          >
+            {signingOut ? 'Signing out…' : 'Sign out'}
           </button>
         </section>
 
