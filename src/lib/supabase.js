@@ -1,4 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, processLock } from '@supabase/supabase-js';
+import { Capacitor } from '@capacitor/core';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -11,4 +12,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// In the native app the auth session lock is an in-process one. The default uses
+// the browser's navigator.locks, which exists to coordinate several tabs of one
+// site. The app has a single web view and no tabs, and a lock that fails to
+// acquire there leaves getSession() pending, so App.jsx draws nothing. The web
+// keeps the default.
+export const supabase = createClient(
+  supabaseUrl,
+  supabaseAnonKey,
+  Capacitor.isNativePlatform() ? { auth: { lock: processLock } } : undefined,
+);
