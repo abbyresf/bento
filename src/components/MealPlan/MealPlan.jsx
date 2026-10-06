@@ -38,6 +38,7 @@ import StreakCelebration from '../Streak/StreakCelebration';
 import BadgeCelebration from '../Badges/BadgeCelebration';
 import RatingSheet from './RatingSheet';
 import Confetti from './Confetti';
+import { haptics } from '../../lib/haptics';
 import FeedbackSheet from '../Feedback/FeedbackSheet';
 import '../Feedback/FeedbackSheet.css';
 import './MealPlan.css';
@@ -620,6 +621,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
     // Show rating sheet; defer streak check until it closes
     pendingStreakRef.current = { isViewingToday, updatedConfirmed };
     setShowConfetti(true);
+    haptics.success();
     setPendingRating({ meal, items: mealItems, locationId: location });
   };
 

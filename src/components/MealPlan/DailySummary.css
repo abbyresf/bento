@@ -125,3 +125,24 @@
     font-size: 0.7rem;
   }
 }
+
+/* ── Motion ─────────────────────────────────────────────────────────────────
+   Each bar fills from empty when the screen opens, one after another, with a
+   spring so the end overshoots a hair and settles. A later change in the
+   total moves the same way. clip-path rather than scaling the bar, because
+   scaling would squash the rounded end. */
+.progress-fill {
+  transition: width var(--dur-slow) var(--spring-soft);
+  animation: bar-reveal 900ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 70ms + 120ms);
+}
+
+@keyframes bar-reveal {
+  from { clip-path: inset(0 100% 0 0 round 4px); }
+  to   { clip-path: inset(0 0 0 0 round 4px); }
+}
+
+.summary-item {
+  animation: rise var(--dur-slow) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}

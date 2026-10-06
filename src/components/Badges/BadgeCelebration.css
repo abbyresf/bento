@@ -5,10 +5,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(20, 10, 0, 0.65);
-  backdrop-filter: blur(4px);
-  animation: badgeFadeIn 0.25s ease;
+  background: rgba(24, 14, 4, 0.5);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  backdrop-filter: blur(22px) saturate(1.4);
+  animation: badgeFadeIn var(--dur-base) var(--ease-out) both;
   cursor: pointer;
+}
+.badge-celebration.leaving {
+  animation: badgeFadeOut 240ms var(--ease-ios) forwards;
 }
 
 .badge-celebration-inner {
@@ -24,28 +28,45 @@
   width: 90%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
   overflow: hidden;
-  animation: badgePopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: badgePopIn 680ms var(--spring-bouncy) both;
 }
 
-.badge-celebration-shine {
+.badge-celebration-glow {
   position: absolute;
-  top: -60px;
-  left: -60px;
-  width: 240px;
-  height: 240px;
-  background: radial-gradient(circle, rgba(244, 116, 33, 0.15) 0%, transparent 70%);
-  animation: shinePulse 2s ease-in-out infinite;
+  top: 1.2rem;
+  left: 50%;
+  width: 190px;
+  height: 190px;
+  margin-left: -95px;
+  background: radial-gradient(circle, rgba(244, 116, 33, 0.28) 0%, transparent 68%);
+  animation: glow-breathe 2.4s ease-in-out 600ms infinite alternate;
+  pointer-events: none;
+}
+
+/* One diagonal sweep of light across the card, as it settles. */
+.badge-celebration-sheen {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+  transform: skewX(-18deg);
+  animation: sheen-sweep 900ms var(--ease-out) 520ms both;
+  pointer-events: none;
+  z-index: 2;
 }
 
 .badge-celebration-emoji {
   font-size: 5rem;
   line-height: 1;
-  animation: badgeEmojiBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: badgeEmojiDrop 820ms var(--spring-bouncy) 160ms both;
   filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
   margin-bottom: 0.25rem;
 }
 
 .badge-celebration-title {
+  animation: rise var(--dur-slow) var(--ease-out) 420ms both;
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -54,6 +75,7 @@
 }
 
 .badge-celebration-name {
+  animation: rise var(--dur-slow) var(--ease-out) 500ms both;
   font-size: 1.5rem;
   font-weight: 800;
   color: #243b55;
@@ -61,6 +83,7 @@
 }
 
 .badge-celebration-desc {
+  animation: rise var(--dur-slow) var(--ease-out) 580ms both;
   font-size: 0.9rem;
   color: #64748b;
   text-align: center;
@@ -68,6 +91,7 @@
 }
 
 .badge-celebration-hint {
+  animation: rise var(--dur-slow) var(--ease-out) 900ms both;
   margin-top: 0.75rem;
   font-size: 0.75rem;
   color: #94a3b8;
@@ -78,18 +102,24 @@
   to   { opacity: 1; }
 }
 
+@keyframes badgeFadeOut { to { opacity: 0; } }
+
 @keyframes badgePopIn {
-  from { transform: scale(0.6) translateY(40px); opacity: 0; }
+  from { transform: scale(0.7) translateY(60px); opacity: 0; }
   to   { transform: scale(1)   translateY(0);    opacity: 1; }
 }
 
-@keyframes badgeEmojiBounce {
-  0%   { transform: scale(0) rotate(-20deg); }
-  60%  { transform: scale(1.2) rotate(5deg); }
-  100% { transform: scale(1) rotate(0deg); }
+@keyframes badgeEmojiDrop {
+  0%   { transform: translateY(-46px) scale(0.3) rotate(-24deg); opacity: 0; }
+  100% { transform: translateY(0)     scale(1)   rotate(0deg);   opacity: 1; }
 }
 
-@keyframes shinePulse {
-  0%, 100% { opacity: 0.6; transform: scale(1); }
-  50%       { opacity: 1;   transform: scale(1.15); }
+@keyframes sheen-sweep {
+  from { left: -60%; }
+  to   { left: 130%; }
+}
+
+@keyframes glow-breathe {
+  from { opacity: 0.55; transform: scale(0.95); }
+  to   { opacity: 1;    transform: scale(1.12); }
 }

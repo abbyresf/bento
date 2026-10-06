@@ -1,3 +1,4 @@
+import { haptics } from '../../lib/haptics';
 import './BottomNav.css';
 
 export default function BottomNav({ activeTab, onTabChange }) {
@@ -57,7 +58,10 @@ export default function BottomNav({ activeTab, onTabChange }) {
           <button
             key={tab.id}
             className={`bottom-nav-tab${active ? ' active' : ''}`}
-            onClick={() => onTabChange(tab.id)}
+            onClick={() => {
+              if (!active) haptics.selection();
+              onTabChange(tab.id);
+            }}
             aria-label={tab.label}
           >
             {tab.icon(active)}

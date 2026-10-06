@@ -1,0 +1,120 @@
+/* Motion system.
+ *
+ * One set of curves and durations, so the whole app moves the same way. The
+ * reference is Apple's own apps: motion that follows physics (springs that
+ * settle) instead of fixed-time ease curves, quick enough to never make anyone
+ * wait, and quiet enough in daily screens that you feel it more than see it.
+ * Onboarding is the one place that is allowed to be bold.
+ *
+ * Springs are CSS linear() easings sampled from a damped oscillator. Where
+ * linear() is not supported the cubic-bezier fallbacks apply, which are close.
+ *
+ * Every animation here is switched off by the reduced-motion block at the end.
+ */
+:root {
+  /* Decelerating curves for things entering. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-soft: cubic-bezier(0.25, 0.8, 0.25, 1);
+  /* iOS system curve for sheets and slides. */
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --spring-soft: var(--ease-out);
+  --spring-snappy: cubic-bezier(0.34, 1.3, 0.64, 1);
+  --spring-bouncy: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --dur-instant: 120ms;
+  --dur-quick: 200ms;
+  --dur-base: 320ms;
+  --dur-slow: 520ms;
+}
+
+@supports (transition-timing-function: linear(0, 1)) {
+  :root {
+    --spring-soft: linear(0, 0.045, 0.15, 0.283, 0.422, 0.553, 0.669, 0.766, 0.844, 0.903, 0.947, 0.978, 0.998, 1.011, 1.017, 1.02, 1.02, 1.018, 1.016, 1.013, 1.01, 1.008, 1.005, 1.004, 1.002, 1);
+    --spring-snappy: linear(0, 0.081, 0.258, 0.46, 0.644, 0.793, 0.901, 0.972, 1.013, 1.033, 1.038, 1.036, 1.029, 1.021, 1.014, 1.008, 1.004, 1);
+    --spring-bouncy: linear(0, 0.061, 0.208, 0.396, 0.589, 0.763, 0.906, 1.011, 1.079, 1.116, 1.126, 1.119, 1.101, 1.077, 1.053, 1.031, 1.012, 0.999, 0.99, 0.985, 0.984, 0.985, 0.987, 0.99, 0.993, 0.996, 0.998, 1);
+  }
+}
+
+/* ── Press feedback ─────────────────────────────────────────────────────────
+   Buttons dip slightly under the finger and spring back on release, as
+   controls do on iOS. Transform only, so it costs nothing to draw. */
+button:not(:disabled),
+[role='button']:not([aria-disabled='true']) {
+  transition-property: transform, background-color, border-color, color, box-shadow, opacity;
+  transition-duration: var(--dur-quick);
+  transition-timing-function: var(--spring-snappy);
+}
+
+@media (hover: none) {
+  button:not(:disabled):active,
+  [role='button']:not([aria-disabled='true']):active {
+    transform: scale(0.965);
+    transition-duration: var(--dur-instant);
+    transition-timing-function: var(--ease-out);
+  }
+  /* Small controls would shrink to nothing. */
+  .close-btn:active,
+  .insights-close:active,
+  .badges-panel-close:active,
+  .compose-close:active {
+    transform: scale(0.88);
+  }
+}
+
+/* ── Tab switching ──────────────────────────────────────────────────────────
+   Tabs stay mounted and are hidden, so a tab restarts this animation each time
+   it is shown. A cross-fade, as in Apple's own tab bars.
+
+   Opacity only, on purpose. A transform on this element would turn it into the
+   reference box for every position: fixed element inside it (the compose button,
+   the confetti, the sheets), and for the length of the animation those would
+   jump to the wrong place. Opacity does not do that. */
+.tab-content > :not([hidden]) {
+  animation: tab-enter var(--dur-base) var(--ease-out) both;
+}
+
+@keyframes tab-enter {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Entrance helpers ───────────────────────────────────────────────────────
+   .rise fades a block in from below. Give siblings an inline --i (0, 1, 2...)
+   to stagger them: each starts 45ms after the one before, capped so a long list
+   never makes anyone wait. */
+.rise {
+  animation: rise var(--dur-slow) var(--ease-out) both;
+  animation-delay: calc(min(var(--i, 0), 8) * 45ms);
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.pop-in {
+  animation: pop-in var(--dur-slow) var(--spring-bouncy) both;
+  animation-delay: calc(min(var(--i, 0), 8) * 45ms);
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.86); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────────────────
+   Someone who asked their phone for less motion gets none: no travel, no
+   springs. State changes still happen, instantly. Applies everywhere, which the
+   old per-file rules did not. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

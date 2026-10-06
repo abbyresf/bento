@@ -4,6 +4,8 @@ import { servingsOf, formatServing, MAX_SERVINGS } from '../../utils/servingSize
 import MenuBrowser from './MenuBrowser';
 import { STATIONS } from '../../data/mockMenu';
 import { useNutritionDisplay } from '../../context/NutritionDisplayContext';
+import CountUp from '../common/CountUp';
+import { haptics } from '../../lib/haptics';
 import './MealCard.css';
 
 const CATEGORY_ORDER = ['breakfast', 'entree', 'grill', 'deli', 'pizza', 'allgood', 'sides', 'soup', 'salad', 'bakery', 'beverage'];
@@ -443,25 +445,25 @@ export default function MealCard({
             <div className="meal-totals">
               {display.calories && (
                 <div className="total-item">
-                  <span className="total-value">{footerTotals.calories || 0}</span>
+                  <span className="total-value"><CountUp value={footerTotals.calories || 0} /></span>
                   <span className="total-label">cal</span>
                 </div>
               )}
               {display.protein && (
                 <div className="total-item">
-                  <span className="total-value">{footerTotals.protein || 0}g</span>
+                  <span className="total-value"><CountUp value={footerTotals.protein || 0} suffix="g" /></span>
                   <span className="total-label">protein</span>
                 </div>
               )}
               {display.carbs && (
                 <div className="total-item">
-                  <span className="total-value">{footerTotals.carbs || 0}g</span>
+                  <span className="total-value"><CountUp value={footerTotals.carbs || 0} suffix="g" /></span>
                   <span className="total-label">carbs</span>
                 </div>
               )}
               {display.fat && (
                 <div className="total-item">
-                  <span className="total-value">{footerTotals.fat || 0}g</span>
+                  <span className="total-value"><CountUp value={footerTotals.fat || 0} suffix="g" /></span>
                   <span className="total-label">fat</span>
                 </div>
               )}
@@ -471,7 +473,7 @@ export default function MealCard({
           {!isConfirmed && (
             <button
               className="confirm-btn"
-              onClick={onConfirm}
+              onClick={() => { haptics.medium(); onConfirm(); }}
               disabled={isConfirming || (mode === 'manual' && !customPlan)}
               title={mode === 'manual' && !customPlan ? 'Browse the menu to build your plate first' : undefined}
             >

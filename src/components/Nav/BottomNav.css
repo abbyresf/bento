@@ -43,3 +43,20 @@
   font-weight: 600;
   letter-spacing: 0.01em;
 }
+
+/* The icon of the tab you just opened springs up, then settles. It restarts
+   each time the tab becomes active, because the animation is tied to the class. */
+.bottom-nav-tab svg {
+  transition: transform var(--dur-base) var(--spring-bouncy);
+}
+.bottom-nav-tab.active svg {
+  animation: nav-pop 460ms var(--spring-bouncy);
+}
+.bottom-nav-label {
+  transition: color var(--dur-quick) var(--ease-out);
+}
+
+@keyframes nav-pop {
+  0%   { transform: scale(0.82) translateY(2px); }
+  100% { transform: scale(1)    translateY(0); }
+}

@@ -1,4 +1,5 @@
 import { useNutritionDisplay } from '../../context/NutritionDisplayContext';
+import CountUp from '../common/CountUp';
 import './DailySummary.css';
 
 export default function DailySummary({ totals, targets }) {
@@ -15,11 +16,11 @@ export default function DailySummary({ totals, targets }) {
     return 'good';
   };
 
-  const MacroItem = ({ label, percent, values }) => (
-    <div className={`summary-item ${getStatusClass(percent)}`}>
+  const MacroItem = ({ label, percent, values, index }) => (
+    <div className={`summary-item ${getStatusClass(percent)}`} style={{ '--i': index }}>
       <div className="summary-header">
         <span className="summary-label">{label}</span>
-        <span className="summary-percent">{percent}%</span>
+        <span className="summary-percent"><CountUp value={percent} suffix="%" duration={900} /></span>
       </div>
       <div className="progress-bar">
         <div className="progress-fill" style={{ width: `${Math.min(percent, 100)}%` }} />
@@ -46,8 +47,8 @@ export default function DailySummary({ totals, targets }) {
     <div className="daily-summary">
       <h2>Daily Progress</h2>
       <div className="summary-grid">
-        {metrics.map(m => (
-          <MacroItem key={m.key} label={m.label} percent={m.percent} values={m.values} />
+        {metrics.map((m, i) => (
+          <MacroItem key={m.key} index={i} label={m.label} percent={m.percent} values={m.values} />
         ))}
       </div>
     </div>

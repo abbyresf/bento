@@ -3,6 +3,8 @@ import { ACTIVITY_LEVELS, GOALS, calculateNutritionTargets } from '../../utils/t
 import { setUserProfile, setNutritionTargets, setDietaryRestrictions, setNutritionDisplay as saveNutritionDisplay } from '../../lib/db';
 import { UNIVERSITIES } from '../../data/universities';
 import UniversityPicker from '../common/UniversityPicker';
+import CountUp from '../common/CountUp';
+import { haptics } from '../../lib/haptics';
 import MenuRatingOnboarding from './MenuRatingOnboarding';
 import './OnboardingWizard.css';
 
@@ -16,6 +18,8 @@ const SECTIONS = [
 
 export default function OnboardingWizard({ onComplete, onGoContact, onRequestSchool }) {
   const [currentStep, setCurrentStep] = useState(0);
+  // Which way the last move went, so the next step slides in from that side.
+  const [direction, setDirection] = useState('fwd');
   const [profile, setProfile] = useState({
     university: 'brandeis',
     weight: '',
@@ -66,10 +70,14 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
 
   const handleNext = () => {
     if (STEPS[currentStep] === 'basics' && !validateBasics()) return;
+    haptics.light();
+    setDirection('fwd');
     setCurrentStep((prev) => Math.min(prev + 1, STEPS.length - 1));
   };
 
   const handleBack = () => {
+    haptics.selection();
+    setDirection('back');
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   };
 
@@ -97,6 +105,7 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
   };
 
   const handleComplete = async () => {
+    haptics.success();
     const targets = calculateTargets();
     await Promise.all([
       setUserProfile(profile),
@@ -342,19 +351,19 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
             <h3>Daily Targets</h3>
             <div className="target-grid">
               <div className="target-item">
-                <span className="target-value">{targets.calories}</span>
+                <span className="target-value"><CountUp value={targets.calories} duration={1300} /></span>
                 <span className="target-label">Calories</span>
               </div>
               <div className="target-item">
-                <span className="target-value">{targets.macros.protein}g</span>
+                <span className="target-value"><CountUp value={targets.macros.protein} suffix="g" duration={1300} /></span>
                 <span className="target-label">Protein</span>
               </div>
               <div className="target-item">
-                <span className="target-value">{targets.macros.carbs}g</span>
+                <span className="target-value"><CountUp value={targets.macros.carbs} suffix="g" duration={1300} /></span>
                 <span className="target-label">Carbs</span>
               </div>
               <div className="target-item">
-                <span className="target-value">{targets.macros.fat}g</span>
+                <span className="target-value"><CountUp value={targets.macros.fat} suffix="g" duration={1300} /></span>
                 <span className="target-label">Fat</span>
               </div>
             </div>
@@ -535,7 +544,9 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
       {sectionProgress}
 
       <form onSubmit={(e) => e.preventDefault()}>
-        {renderStep()}
+        <div key={currentStep} className={`step-stage ${direction}`}>
+          {renderStep()}
+        </div>
 
         <div className="wizard-actions">
           {currentStep > 0 && (

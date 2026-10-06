@@ -5,54 +5,96 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(20, 10, 0, 0.6);
-  backdrop-filter: blur(4px);
-  animation: celebFadeIn 0.25s ease;
+  /* A tinted blur, like the system's own overlays: the app stays visible behind
+     it, softened, so this reads as a layer above it and not as a new screen. */
+  background: rgba(24, 14, 4, 0.52);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  backdrop-filter: blur(22px) saturate(1.4);
+  animation: celeb-in var(--dur-base) var(--ease-out) both;
   cursor: pointer;
+}
+.streak-celebration.leaving {
+  animation: celeb-out 260ms var(--ease-ios) forwards;
 }
 
 .streak-celebration-inner {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
-  animation: celebPopIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  gap: 0.15rem;
 }
 
+/* Rings that leave the flame and fade as they travel. */
+.streak-rings {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.streak-rings span {
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 176, 96, 0.7);
+  opacity: 0;
+  animation: ring-out 1500ms var(--ease-out) both;
+}
+.streak-rings span:nth-child(2) { animation-delay: 160ms; }
+.streak-rings span:nth-child(3) { animation-delay: 320ms; }
+
 .flame-pop {
-  font-size: 7rem;
+  font-size: 7.5rem;
   line-height: 1;
-  animation: flameFlicker 0.45s ease-in-out infinite alternate;
-  filter: drop-shadow(0 0 24px rgba(255, 140, 0, 0.8));
+  filter: drop-shadow(0 0 28px rgba(255, 140, 0, 0.75));
+  /* Springs in once, then breathes. */
+  animation:
+    flame-in 780ms var(--spring-bouncy) both,
+    flame-idle 2.2s ease-in-out 780ms infinite alternate;
 }
 
 .streak-day-label {
-  font-size: 3.5rem;
+  margin-top: 0.4rem;
+  font-size: 4.5rem;
   font-weight: 900;
+  line-height: 1;
   color: #fff;
-  letter-spacing: -0.02em;
-  text-shadow: 0 2px 16px rgba(244, 116, 33, 0.7);
+  letter-spacing: -0.03em;
+  text-shadow: 0 2px 22px rgba(244, 116, 33, 0.55);
+  animation: rise var(--dur-slow) var(--ease-out) 180ms both;
 }
-
+.streak-day-unit {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+  letter-spacing: 0.02em;
+  animation: rise var(--dur-slow) var(--ease-out) 260ms both;
+}
 .streak-caption {
-  font-size: 1rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.75);
-  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
+  animation: rise var(--dur-slow) var(--ease-out) 360ms both;
 }
 
-@keyframes celebFadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
+@keyframes celeb-in  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes celeb-out { to   { opacity: 0; transform: scale(1.04); } }
 
-@keyframes celebPopIn {
-  from { transform: scale(0.4); opacity: 0; }
-  to   { transform: scale(1);   opacity: 1; }
+@keyframes flame-in {
+  from { transform: scale(0.15) translateY(30px); opacity: 0; }
+  to   { transform: scale(1)    translateY(0);    opacity: 1; }
 }
-
-@keyframes flameFlicker {
-  from { transform: scale(1)    rotate(-4deg); }
-  to   { transform: scale(1.12) rotate(4deg);  }
+@keyframes flame-idle {
+  from { transform: scale(1)    rotate(-2.5deg); }
+  to   { transform: scale(1.06) rotate(2.5deg); }
+}
+@keyframes ring-out {
+  0%   { transform: scale(0.5); opacity: 0.9; }
+  100% { transform: scale(3.4); opacity: 0; }
 }

@@ -748,3 +748,21 @@
 }
 
 .location-retry-btn:hover { background: var(--btn-bg-hover, #d9641a); }
+
+/* ── Motion ─────────────────────────────────────────────────────────────────
+   The badge that appears when a meal is confirmed pops in with a spring, and
+   the totals bar slides up into place. */
+.confirmed-badge {
+  animation: pop-in var(--dur-slow) var(--spring-bouncy) both;
+}
+.meal-totals {
+  animation: rise var(--dur-slow) var(--ease-out) both;
+  animation-delay: 80ms;
+}
+.confirm-btn {
+  transition-property: transform, background-color, box-shadow;
+  transition-duration: var(--dur-quick);
+}
+.confirm-btn:active:not(:disabled) {
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--btn-bg) 22%, transparent);
+}
