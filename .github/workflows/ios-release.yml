@@ -281,6 +281,61 @@ jobs:
           print("::warning::Apple was still processing build %s after 30 minutes. Check TestFlight." % want)
           PY
 
+      - name: Remove the throwaway development certificates
+        # Signing the archive asks Apple for a new development certificate every
+        # run, because the runner starts empty and has no key for an old one.
+        # Apple caps the account, and the ninth run hit the limit and failed
+        # ("Your account has reached the maximum number of certificates"). The
+        # key for each certificate is thrown away with the runner, so they cannot
+        # sign anything again. Revoke the ones the API key made.
+        #
+        # Matched by the exact name Apple gives them, "Created via API", and only
+        # of the DEVELOPMENT type. The managed distribution certificate that
+        # signs the TestFlight export is a different type, and a certificate made
+        # from a person's own Mac carries their name. Neither is touched. Runs are
+        # serialised by the concurrency group, so no other run is mid-signing.
+        # A failure here must not fail a release that otherwise worked.
+        if: always()
+        continue-on-error: true
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          if [ ! -x "$RUNNER_TEMP/jwtenv/bin/python" ]; then
+            python3 -m venv "$RUNNER_TEMP/jwtenv"
+            for attempt in 1 2 3 4; do
+              "$RUNNER_TEMP/jwtenv/bin/pip" install --quiet --retries 5 --timeout 60 pyjwt cryptography && break
+              [ "$attempt" = 4 ] && { echo "::warning::could not install the JWT library, certificates not cleaned up"; exit 0; }
+              sleep $((attempt * 10))
+            done
+          fi
+          "$RUNNER_TEMP/jwtenv/bin/python" - <<'PY'
+          import os, json, time, urllib.request, jwt
+
+          def token():
+              now = int(time.time())
+              return jwt.encode(
+                  {"iss": os.environ["ASC_ISSUER_ID"], "iat": now, "exp": now + 1000, "aud": "appstoreconnect-v1"},
+                  os.environ["ASC_KEY_P8"], algorithm="ES256",
+                  headers={"kid": os.environ["ASC_KEY_ID"], "typ": "JWT"})
+
+          def call(method, path):
+              req = urllib.request.Request("https://api.appstoreconnect.apple.com" + path, method=method,
+                                           headers={"Authorization": "Bearer " + token()})
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  body = r.read()
+                  return json.loads(body) if body else {}
+
+          certs = call("GET", "/v1/certificates?filter[certificateType]=DEVELOPMENT&limit=200")["data"]
+          throwaway = [c for c in certs if c["attributes"].get("name") == "Created via API"]
+          print("development certificates: %d, throwaway: %d" % (len(certs), len(throwaway)))
+          # A hard ceiling, so a surprise in the listing can never mean a mass revoke.
+          for c in throwaway[:25]:
+              call("DELETE", "/v1/certificates/" + c["id"])
+              print("revoked", c["id"])
+          PY
+
       - name: Remove key
         if: always()
         run: rm -rf "$RUNNER_TEMP/asc"
