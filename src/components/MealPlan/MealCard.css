@@ -772,3 +772,10 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+/* A meal confirmed with no signal: saved on the phone, not yet sent. */
+.pending-note {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary, #64748b);
+}

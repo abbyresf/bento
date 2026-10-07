@@ -24,7 +24,7 @@ const STEPS = [
   { value: 1,    label: 'All of it'  },
 ];
 
-export default function RatingSheet({ meal, items, diningHall, historyRowId, onClose }) {
+export default function RatingSheet({ meal, items, diningHall, historyRowId, onDefer, onClose }) {
   const { myRatings, rateItem } = useRatings();
   const [ratings, setRatings] = useState(() => {
     const init = {};
@@ -63,6 +63,19 @@ export default function RatingSheet({ meal, items, diningHall, historyRowId, onC
       items.filter(item => answered.has(item.id))
            .map(item => [item.id, STEPS[eaten[item.id]].value])
     );
+
+    // A meal confirmed with no signal has no saved row yet, so the answers are
+    // handed to the queue to be sent with it. The stars still update on screen
+    // now. The queued copy is what reaches the database.
+    if (onDefer && !historyRowId) {
+      onDefer({
+        ratings: rated.map(item => ({ item: { id: item.id, name: item.name }, rating: ratings[item.id] })),
+        consumed,
+      });
+      rated.forEach(item => { rateItem(item, ratings[item.id], diningHall ?? null).catch(() => {}); });
+      onClose();
+      return;
+    }
 
     await Promise.all([
       ...rated.map(item => rateItem(item, ratings[item.id], diningHall ?? null)),

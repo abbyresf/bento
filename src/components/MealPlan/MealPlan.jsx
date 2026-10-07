@@ -26,9 +26,10 @@ function writePlanCache(date, meals) {
 
 import { hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
 import { fetchDiningMenu, getUniversityConfig, getSelectableLocations } from '../../services/menuFetcher';
-import { getUserProfile, getNutritionTargets, getDietaryRestrictions, getRecentItemIds, addMealToHistory, removeMealFromHistory, setCachedMenu, getCachedMenu, getCachedMenuAge, incrementStreak, incrementStreakForDate, getStreak, getConfirmedMealsForDate, fetchConfirmedMeals, recordDiningAvailability } from '../../lib/db';
+import { getUserProfile, getNutritionTargets, getDietaryRestrictions, getRecentItemIds, addMealToHistory, removeMealFromHistory, setCachedMenu, getCachedMenu, getCachedMenuAge, incrementStreak, incrementStreakForDate, getStreak, getConfirmedMealsForDate, fetchConfirmedMeals, recordDiningAvailability, flushPendingConfirms, getSession, setMealConsumption } from '../../lib/db';
 import { useRatings } from '../../context/RatingsContext';
 import { buildPlatePayload, syncWidget, syncWidgetMascot } from '../../lib/widget';
+import { readQueue, enqueue, attachExtras, removeEntry, pendingMealsFor, isOfflineError, withTimeout } from '../../lib/pendingConfirms';
 import { sumItems, MAX_SERVINGS } from '../../utils/servingSize.js';
 import BentoLogo from '../common/BentoLogo';
 import { getNewBadge } from '../../data/badges';
@@ -78,6 +79,8 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const [showFeedback, setShowFeedback] = useState(false);
   // Set when a confirmation could not be saved: { meal, code, message }.
   const [saveError, setSaveError] = useState(null);
+  // Meals confirmed with no signal, saved on the phone and waiting to be sent.
+  const [pendingMeals, setPendingMeals] = useState(() => pendingMealsFor(localDateStr()));
   const outfit = useOutfit();
   const [showCloset, setShowCloset] = useState(false);
   const [pendingBadge, setPendingBadge] = useState(null);
@@ -108,6 +111,10 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const [dateRetry, setDateRetry] = useState(0);
   const [, setTick] = useState(0);
   const initialMountRef = useRef(true);
+  // The current values, for code that runs later (timers, connection events)
+  // and must not act on what was true when it was set up.
+  const viewDateRef = useRef(viewDate);
+  const confirmedIdsRef = useRef({});
 
   // The student's own star ratings, id -> stars. A ref keeps
   // loadMenuAndOptimize stable (no dependency on the ratings themselves).
@@ -219,8 +226,12 @@ export default function MealPlan({ settingsVersion = 0 }) {
       if (cancelled || !server || Object.values(savingRef.current).some(Boolean)) return;
       const bools = { breakfast: false, lunch: false, dinner: false };
       const ids   = { breakfast: null, lunch: null, dinner: null };
+      // A meal confirmed with no signal is not in the database yet, and must
+      // not be shown as unconfirmed just because the database has not seen it.
+      const waiting = pendingMealsFor(viewDate);
       for (const m of ['breakfast', 'lunch', 'dinner']) {
         if (server[m]) { bools[m] = true; ids[m] = server[m].rowId; }
+        else if (waiting[m]) bools[m] = true;
       }
       setConfirmedMeals(bools);
       setConfirmedMealIds(ids);
@@ -253,6 +264,48 @@ export default function MealPlan({ settingsVersion = 0 }) {
     syncWidgetMascot(outfit);
   }, [viewDate, mealPlan, menu, selectedLocation, customMeals, confirmedMeals, streak, outfit]);
 
+  useEffect(() => { viewDateRef.current = viewDate; });
+  useEffect(() => { confirmedIdsRef.current = confirmedMealIds; });
+
+  // Send meals that were confirmed with no signal. Tried on opening, on
+  // returning to the app, when the connection comes back, and every 30 seconds
+  // while anything is waiting, since "online" is not fired on every kind of
+  // recovery. Each saved meal then counts toward the streak, which waited for it.
+  useEffect(() => {
+    let stopped = false;
+    const run = async () => {
+      if (readQueue().length === 0) return;
+      let result;
+      try { result = await flushPendingConfirms(); } catch { return; }
+      if (stopped) return;
+      setPendingMeals(pendingMealsFor(viewDateRef.current));
+      if (!result.synced.length) return;
+      const today = localDateStr();
+      setConfirmedMealIds((prev) => {
+        const next = { ...prev };
+        for (const m of result.synced) if (m.date === viewDateRef.current) next[m.meal] = m.rowId;
+        return next;
+      });
+      for (const m of result.synced) {
+        const streakResult = m.date === today ? await incrementStreak() : await incrementStreakForDate(m.date);
+        if (streakResult && !stopped) {
+          setStreak({ currentStreak: streakResult.currentStreak, longestStreak: streakResult.longestStreak, lastConfirmedDate: m.date });
+        }
+      }
+    };
+    run();
+    const onVisible = () => { if (document.visibilityState === 'visible') run(); };
+    window.addEventListener('online', run);
+    document.addEventListener('visibilitychange', onVisible);
+    const timer = setInterval(run, 30000);
+    return () => {
+      stopped = true;
+      window.removeEventListener('online', run);
+      document.removeEventListener('visibilitychange', onVisible);
+      clearInterval(timer);
+    };
+  }, []);
+
   // Date navigation: when viewDate changes (not on initial mount — that's handled above).
   useEffect(() => {
     if (initialMountRef.current) {
@@ -264,8 +317,13 @@ export default function MealPlan({ settingsVersion = 0 }) {
     const savedPlan = readPlanCache()[viewDate] || { breakfast: null, lunch: null, dinner: null };
 
     setMealPlan(null);
-    setConfirmedMeals({ breakfast: false, lunch: false, dinner: false });
+    // Cleared until the database answers, except for meals waiting in the queue:
+    // the database has not seen those, so it cannot restore them, and with no
+    // signal it would not answer at all.
+    const waiting = pendingMealsFor(viewDate);
+    setConfirmedMeals({ breakfast: waiting.breakfast, lunch: waiting.lunch, dinner: waiting.dinner });
     setConfirmedMealIds({ breakfast: null, lunch: null, dinner: null });
+    setPendingMeals(waiting);
     setCustomMeals(savedPlan);
     setItemAlternatives({});
     setRecommendations({ breakfast: null, lunch: null, dinner: null });
@@ -297,8 +355,13 @@ export default function MealPlan({ settingsVersion = 0 }) {
           const record = confirmedForDate[meal];
           if (record) { confirmedBool[meal] = true; confirmedIds[meal] = record.rowId; }
         }
+        const waiting = pendingMealsFor(capturedDate);
+        for (const meal of ['breakfast', 'lunch', 'dinner']) {
+          if (!confirmedBool[meal] && waiting[meal]) confirmedBool[meal] = true;
+        }
         setConfirmedMeals(confirmedBool);
         setConfirmedMealIds(confirmedIds);
+        setPendingMeals(waiting);
         setRestrictions(fetchedRestrictions);
 
         if (fetchedRestrictions.__unknown) {
@@ -630,7 +693,11 @@ export default function MealPlan({ settingsVersion = 0 }) {
 
   const handleUndo = async (meal) => {
     const rowId = confirmedMealIds[meal];
-    if (rowId) await removeMealFromHistory(rowId);
+    if (pendingMeals[meal]) {
+      // Never reached the database, so there is nothing there to remove.
+      removeEntry(viewDate, meal);
+      setPendingMeals(prev => ({ ...prev, [meal]: false }));
+    } else if (rowId) await removeMealFromHistory(rowId);
     const updatedConfirmed = { ...confirmedMeals, [meal]: false };
     setConfirmedMeals(updatedConfirmed);
     setConfirmedMealIds(prev => ({ ...prev, [meal]: null }));
@@ -685,33 +752,57 @@ export default function MealPlan({ settingsVersion = 0 }) {
     const mealItems = customMeals[meal]?.items ?? mealPlan[location][meal].items;
     const today = localDateStr();
     const isViewingToday = viewDate === today;
+    const confirmDate = isViewingToday ? today : viewDate;
     const hall = menu?.locations?.[location]?.shortName ?? null;
+    const confirmedAt = new Date().toISOString();
     setSaveError(null);
-    let rowId;
+    let rowId = null;
+    let queued = false;
     try {
-      rowId = await addMealToHistory(mealItems, meal, isViewingToday ? null : viewDate, hall);
+      rowId = await withTimeout(addMealToHistory(mealItems, meal, isViewingToday ? null : viewDate, hall, confirmedAt));
     } catch (err) {
-      // Not saved, so not confirmed. No confetti, no streak, nothing stored
-      // locally: the screen must never claim what the database does not have.
-      setConfirmingMeals(prev => ({ ...prev, [meal]: false }));
-      setSaveError({ meal, code: err.code ?? 'error', message: err.message ?? 'Unknown error' });
-      haptics.warning();
-      return;
+      if (!isOfflineError(err)) {
+        // The database refused it. Not saved, so not confirmed: no confetti, no
+        // streak, nothing stored locally. The screen must never claim what the
+        // database does not have.
+        setConfirmingMeals(prev => ({ ...prev, [meal]: false }));
+        setSaveError({ meal, code: err.code ?? 'error', message: err.message ?? 'Unknown error' });
+        haptics.warning();
+        return;
+      }
+      // No signal. Keep the meal on the phone and send it when there is some.
+      // It is shown as confirmed, with a note that it has not been sent, and the
+      // streak waits until it has been.
+      let userId = null;
+      try { userId = (await getSession())?.user?.id ?? null; } catch { /* tagged on send */ }
+      enqueue({ userId, date: confirmDate, meal, items: mealItems, hall, confirmedAt });
+      queued = true;
     }
     setConfirmingMeals(prev => ({ ...prev, [meal]: false }));
     const updatedConfirmed = { ...confirmedMeals, [meal]: true };
     setConfirmedMeals(updatedConfirmed);
     setConfirmedMealIds(prev => ({ ...prev, [meal]: rowId }));
+    if (queued) setPendingMeals(prev => ({ ...prev, [meal]: true }));
     if (isViewingToday) {
       try {
         localStorage.setItem('bento_confirmed_meals_v2', JSON.stringify({ date: today, meals: updatedConfirmed }));
       } catch { /* localStorage unavailable */ }
     }
-    // Show rating sheet; defer streak check until it closes
-    pendingStreakRef.current = { isViewingToday, updatedConfirmed };
+    // Show rating sheet; defer streak check until it closes. A queued meal has
+    // no streak check here: it runs once the meal has actually been saved.
+    pendingStreakRef.current = queued ? null : { isViewingToday, updatedConfirmed };
     setShowConfetti(true);
     haptics.success();
-    setPendingRating({ meal, items: mealItems, locationId: location });
+    setPendingRating({ meal, items: mealItems, locationId: location, date: confirmDate, queued });
+  };
+
+  // The sheet after a queued confirmation has no saved meal to attach its
+  // answers to, so they are kept with the queued meal and sent with it. If the
+  // meal was sent while the sheet was open, they are sent straight away.
+  const handleDeferExtras = (info, { ratings, consumed }) => {
+    if (attachExtras(info.date, info.meal, { ratings, consumed })) return;
+    const rowId = confirmedIdsRef.current[info.meal];
+    if (rowId) setMealConsumption(rowId, consumed).catch(() => {});
   };
 
   const handleRatingClose = () => {
@@ -903,6 +994,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
             onRemoveItem={(itemId) => handleRemoveItem(meal, itemId)}
             onServingsChange={(itemId, n) => handleServingsChange(meal, itemId, n)}
             isConfirmed={confirmedMeals[meal]}
+            isPending={pendingMeals[meal]}
             isConfirming={confirmingMeals[meal]}
             onConfirm={() => handleConfirmMeal(meal)}
             onUndo={() => handleUndo(meal)}
@@ -920,6 +1012,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
           meal={pendingRating.meal}
           items={pendingRating.items}
           historyRowId={confirmedMealIds[pendingRating.meal]}
+          onDefer={pendingRating.queued ? (extras) => handleDeferExtras(pendingRating, extras) : null}
           diningHall={menu?.locations?.[pendingRating.locationId]?.shortName ?? null}
           onClose={handleRatingClose}
         />

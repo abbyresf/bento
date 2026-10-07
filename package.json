@@ -15,7 +15,7 @@
     "build:ssr": "vite build --ssr src/prerender-entry.jsx --outDir .ssr-build --emptyOutDir",
     "test:apns": "node --test test/apns.test.mjs",
     "test": "npm run test:meals && npm run test:apns && npm run test:copy",
-    "test:copy": "node --test test/bentoSays.test.mjs test/streakNudge.test.mjs test/mascotOutfits.test.mjs test/quests.test.mjs test/widget.test.mjs"
+    "test:copy": "node --test test/bentoSays.test.mjs test/streakNudge.test.mjs test/mascotOutfits.test.mjs test/quests.test.mjs test/widget.test.mjs test/pendingConfirms.test.mjs"
   },
   "dependencies": {
     "@capacitor-community/apple-sign-in": "^7.1.0",

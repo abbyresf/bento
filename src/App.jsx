@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
-import { isOnboardingComplete, isTermsAccepted, setTermsAccepted, signOut, updatePassword, recordInstallState, getActiveSurvey, clearAccountLocalData } from './lib/db';
+import { flushPendingConfirms, isOnboardingComplete, isTermsAccepted, setTermsAccepted, signOut, updatePassword, recordInstallState, getActiveSurvey, clearAccountLocalData } from './lib/db';
+import { readQueue, withTimeout } from './lib/pendingConfirms';
 import AuthScreen from './components/Auth/AuthScreen';
 import LandingPage from './components/Landing/LandingPage';
 import LandingContact from './components/Landing/LandingContact';
@@ -235,6 +236,12 @@ function App() {
   };
 
   const handleReset = async () => {
+    // Signing out clears what is stored on this phone, including any meal that
+    // was confirmed with no signal and has not been sent. If there is signal,
+    // send them first, but never let that hold up signing out for long.
+    if (readQueue().length > 0 && navigator.onLine !== false) {
+      try { await withTimeout(flushPendingConfirms(), 6000); } catch { /* sign out anyway */ }
+    }
     await signOut();
     clearAccountLocalData();
     resetOutfit();

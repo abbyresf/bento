@@ -5,6 +5,7 @@ import { signInWithGoogleNative, signInWithAppleNative } from './nativeAuth';
 import { WEB_ORIGIN } from './apiBase';
 import { weekRange } from '../data/quests';
 import { clearWidget } from './widget';
+import { readQueue, removeEntry, updateEntry, bumpAttempts, isOfflineError } from './pendingConfirms';
 
 // ── Auth helpers ───────────────────────────────────────────────────────────
 
@@ -133,15 +134,18 @@ export async function setNutritionDisplay(prefs) {
 // "half" alone would not be.
 export async function setMealConsumption(rowId, consumedById) {
   const id = await uid();
-  if (!id || !rowId || !consumedById || Object.keys(consumedById).length === 0) return;
+  // Nothing to write is a success. Returns false only when a write was wanted
+  // and did not happen, so a queued answer can be tried again.
+  if (!consumedById || Object.keys(consumedById).length === 0) return true;
+  if (!id || !rowId) return false;
 
-  const { data } = await supabase
+  const { data, error: readError } = await supabase
     .from('meal_history')
     .select('items')
     .eq('id', rowId)
     .eq('user_id', id)
     .maybeSingle();
-  if (!data?.items) return;
+  if (readError || !data?.items) return false;
 
   // Only items the student actually answered for are touched. An untouched
   // item keeps whatever it had, which is nothing, rather than being recorded
@@ -152,11 +156,12 @@ export async function setMealConsumption(rowId, consumedById) {
       : item
   );
 
-  await supabase
+  const { error } = await supabase
     .from('meal_history')
     .update({ items })
     .eq('id', rowId)
     .eq('user_id', id);
+  return !error;
 }
 
 // ── Feedback ───────────────────────────────────────────────────────────────
@@ -450,7 +455,7 @@ export async function getMealHistory() {
  * so that made its numbers quietly lower than what students saw on their phones.
  * The thrown error carries the database's code and message so the app can show
  * them. */
-export async function addMealToHistory(mealItems, mealType, date = null, diningHall = null) {
+export async function addMealToHistory(mealItems, mealType, date = null, diningHall = null, confirmedAt = null) {
   const id = await uid();
   if (!id) {
     const e = new Error('Not signed in'); e.code = 'signed-out'; throw e;
@@ -458,7 +463,9 @@ export async function addMealToHistory(mealItems, mealType, date = null, diningH
   const { data, error } = await supabase.from('meal_history').upsert({
     user_id:      id,
     items:        mealItems,
-    confirmed_at: new Date().toISOString(),
+    // A meal confirmed with no signal is sent later, but keeps the moment the
+    // student tapped Confirm, so Pulse files it under the day it was eaten.
+    confirmed_at: confirmedAt ?? new Date().toISOString(),
     meal_type:    mealType ?? null,
     meal_date:    date ?? localDateStr(),
     // Short name, matching item_rating_aggregates.dining_hall so Pulse can put
@@ -468,12 +475,70 @@ export async function addMealToHistory(mealItems, mealType, date = null, diningH
     onConflict: 'user_id,meal_date,meal_type',
   }).select('id').single();
   if (error) {
-    const e = new Error(error.message || 'Save failed'); e.code = error.code || 'save-failed'; throw e;
+    const e = new Error(error.message || 'Save failed'); e.code = error.code || 'save-failed';
+    // No database code means the request never got an answer, which is how a
+    // missing connection looks. See isOfflineError.
+    if (!error.code && isOfflineError(e)) e.offline = true;
+    throw e;
   }
   if (!data?.id) {
     const e = new Error('The database did not return the saved row'); e.code = 'no-row'; throw e;
   }
   return data.id;
+}
+
+/* Sends the meals that were confirmed with no signal (see pendingConfirms.js).
+ *
+ * Returns { synced, remaining }. synced lists what was saved this time, with the
+ * new row ids, so the screen can update and run the streak for each one.
+ *
+ * Stops at the first connection failure and leaves the rest queued. A refusal
+ * from the database is retried a few times and then the entry is given up on, so
+ * one bad entry cannot hold up the meals behind it. Only one flush runs at a
+ * time, because the screen asks on start, on return to the app, when the
+ * connection comes back and on a timer. */
+let flushing = null;
+export function flushPendingConfirms() {
+  if (flushing) return flushing;
+  flushing = (async () => {
+    const synced = [];
+    const id = await uid();
+    if (!id) return { synced, remaining: readQueue().length };
+    const entries = readQueue()
+      .filter((e) => !e.userId || e.userId === id)
+      .sort((a, b) => String(a.confirmedAt ?? '').localeCompare(String(b.confirmedAt ?? '')));
+
+    for (const e of entries) {
+      let rowId = e.rowId ?? null;
+      if (!rowId) {
+        try {
+          rowId = await addMealToHistory(e.items, e.meal, e.date, e.hall ?? null, e.confirmedAt ?? null);
+        } catch (err) {
+          if (isOfflineError(err)) break;
+          // Refused by the database. Try a few more times, then stop trying.
+          if (bumpAttempts(e.date, e.meal) >= 5) removeEntry(e.date, e.meal);
+          continue;
+        }
+        // Remember the saved row, so a later retry of the extras below does not
+        // save the meal again.
+        updateEntry(e.date, e.meal, { rowId });
+        synced.push({ date: e.date, meal: e.meal, rowId });
+      }
+
+      // The ratings and the plate-waste answers. They must not undo a saved meal
+      // if they fail, so the meal is already recorded above.
+      let extrasOk = true;
+      for (const r of e.ratings ?? []) {
+        if (!(await rateItem(r.item, r.rating, e.hall ?? null))) extrasOk = false;
+      }
+      if (e.consumed && Object.keys(e.consumed).length > 0) {
+        if (!(await setMealConsumption(rowId, e.consumed))) extrasOk = false;
+      }
+      if (extrasOk || bumpAttempts(e.date, e.meal) >= 5) removeEntry(e.date, e.meal);
+    }
+    return { synced, remaining: readQueue().length };
+  })().finally(() => { flushing = null; });
+  return flushing;
 }
 
 /* Which meals are confirmed on a date, straight from the database.
@@ -539,13 +604,13 @@ export async function getMyRatings() {
 // Upserts a rating. Passing null removes it.
 export async function rateItem(item, rating, diningHall = null) {
   const id = await uid();
-  if (!id) return;
+  if (!id) return false;
   if (rating === null) {
-    await supabase.from('item_ratings').delete().eq('user_id', id).eq('item_id', item.id);
-    return;
+    const { error } = await supabase.from('item_ratings').delete().eq('user_id', id).eq('item_id', item.id);
+    return !error;
   }
   const university = item.id?.startsWith('tu_') ? 'tufts' : 'brandeis';
-  await supabase.from('item_ratings').upsert({
+  const { error } = await supabase.from('item_ratings').upsert({
     user_id:     id,
     item_id:     item.id,
     item_name:   item.name,
@@ -554,6 +619,7 @@ export async function rateItem(item, rating, diningHall = null) {
     dining_hall: diningHall ?? null,
     updated_at:  new Date().toISOString(),
   }, { onConflict: 'user_id,item_id' });
+  return !error;
 }
 
 // Returns aggregate ratings for all items — used for the leaderboard and badge.
@@ -947,6 +1013,7 @@ const ACCOUNT_LOCAL_KEYS = [
   'bento_gates_v1',
   'bento_profile_cache_v1',
   'bento_widget_mascot_sig',
+  'bento_pending_confirms_v1',
 ];
 
 export function clearAccountLocalData() {

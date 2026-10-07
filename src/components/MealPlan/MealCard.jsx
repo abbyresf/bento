@@ -104,6 +104,7 @@ export default function MealCard({
   onRemoveItem,
   onServingsChange,
   isConfirmed,
+  isPending,
   isConfirming,
   onConfirm,
   onUndo,
@@ -220,6 +221,7 @@ export default function MealCard({
             <div className="meal-badges-row">
               {isPast && !isConfirmed && <span className="past-badge">Past</span>}
               {isConfirmed && <span className="confirmed-badge">Confirmed</span>}
+              {isConfirmed && isPending && <span className="pending-note">Syncs when you have signal</span>}
               {isConfirmed && (
                 <button className="undo-btn" onClick={e => { e.stopPropagation(); setCollapsed(false); onUndo(); }}>Undo</button>
               )}
