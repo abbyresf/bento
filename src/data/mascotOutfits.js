@@ -8,8 +8,9 @@
  * the count of dishes rated, so nothing has to be stored per unlock and nothing
  * can drift. Only which piece is worn is saved.
  *
- * Quests will grant pieces through a third rule type later; the shape already
- * allows it: { type: 'quest', id }.
+ * Weekly quests grant pieces by how many have been claimed in total
+ * ({ type: 'quests', value }). A single-quest rule, { type: 'quest', id }, is
+ * also supported.
  *
  * `slot` decides how it draws: 'head' sits on top, 'face' over the eyes, 'neck'
  * around the middle, 'back' behind the body. One piece is worn at a time. */
@@ -23,16 +24,20 @@ export const OUTFITS = [
   { id: 'partyhat',   name: 'Party hat',   slot: 'head', unlock: { type: 'streak', value: 30 } },
   { id: 'crown',      name: 'Crown',       slot: 'head', unlock: { type: 'streak', value: 60 } },
   { id: 'cape',       name: 'Cape',        slot: 'back', unlock: { type: 'streak', value: 100 } },
+  { id: 'bowtie',     name: 'Bow tie',     slot: 'neck', unlock: { type: 'quests', value: 3 } },
+  { id: 'flower',     name: 'Flower',      slot: 'head', unlock: { type: 'quests', value: 9 } },
 ];
 
 export const OUTFIT_IDS = OUTFITS.map((o) => o.id);
 
-/* ctx: { longestStreak, dishesRated, questsDone } with missing values as zero. */
+/* ctx: { longestStreak, dishesRated, questsClaimed } with missing values as zero.
+ * questsClaimed is how many weekly quests have been claimed in total. */
 export function isUnlocked(item, ctx = {}) {
   const u = item.unlock;
   if (!u) return true;
   if (u.type === 'streak') return (ctx.longestStreak ?? 0) >= u.value;
   if (u.type === 'rated')  return (ctx.dishesRated ?? 0) >= u.value;
+  if (u.type === 'quests') return (ctx.questsClaimed ?? 0) >= u.value;
   if (u.type === 'quest')  return (ctx.questsDone ?? []).includes(u.id);
   return false;
 }
@@ -48,6 +53,10 @@ export function unlockHint(item, ctx = {}) {
   if (u.type === 'rated') {
     const left = Math.max(0, u.value - (ctx.dishesRated ?? 0));
     return left === 1 ? 'Rate one more dish' : `Rate ${u.value} dishes`;
+  }
+  if (u.type === 'quests') {
+    const left = Math.max(0, u.value - (ctx.questsClaimed ?? 0));
+    return left === 1 ? 'Claim one more quest' : `Claim ${u.value} quests`;
   }
   if (u.type === 'quest') return 'Finish a quest';
   return '';

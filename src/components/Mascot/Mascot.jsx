@@ -50,6 +50,25 @@ const WEAR = {
       <rect x="82" y="66" width="13" height="26" rx="5" fill={OR} stroke={NV} strokeWidth="2.6" />
     </g>
   ),
+  bowtie: (
+    <g className="mc-wear">
+      <path d="M60 70L40 60v20z" fill={OR} stroke={NV} strokeWidth="3" strokeLinejoin="round" />
+      <path d="M60 70L80 60v20z" fill={OR} stroke={NV} strokeWidth="3" strokeLinejoin="round" />
+      <circle cx="60" cy="70" r="6" fill={GOLD} stroke={NV} strokeWidth="3" />
+    </g>
+  ),
+  flower: (
+    <g className="mc-wear">
+      <g transform="translate(88 18)">
+        <circle cx="0" cy="-9" r="7" fill="#FF8FA3" stroke={NV} strokeWidth="2.4" />
+        <circle cx="9" cy="-2" r="7" fill="#FF8FA3" stroke={NV} strokeWidth="2.4" />
+        <circle cx="5" cy="8" r="7" fill="#FF8FA3" stroke={NV} strokeWidth="2.4" />
+        <circle cx="-5" cy="8" r="7" fill="#FF8FA3" stroke={NV} strokeWidth="2.4" />
+        <circle cx="-9" cy="-2" r="7" fill="#FF8FA3" stroke={NV} strokeWidth="2.4" />
+        <circle cx="0" cy="0" r="5" fill={GOLD} stroke={NV} strokeWidth="2.4" />
+      </g>
+    </g>
+  ),
   chefhat: (
     <g className="mc-wear">
       <circle cx="42" cy="12" r="12" fill="#fff" stroke={NV} strokeWidth="3" />

@@ -45,8 +45,8 @@
 .closet-item.locked .closet-thumb .mc { filter: grayscale(1) opacity(0.45); }
 .closet-thumb { position: relative; display: flex; align-items: center; justify-content: center; height: 56px; }
 .closet-lock { position: absolute; right: -6px; bottom: -2px; font-size: 0.95rem; }
-.closet-name { font-size: 0.82rem; font-weight: 800; color: var(--text-primary, #24384F); }
-.closet-note { font-size: 0.68rem; font-weight: 700; color: var(--text-disabled, #94a3b8); line-height: 1.2; min-height: 1.6em; }
+.closet-name { font-size: 0.82rem; font-weight: 800; color: #24384F; }
+.closet-note { font-size: 0.68rem; font-weight: 700; color: #7b8aa0; line-height: 1.2; min-height: 1.6em; }
 .closet-item.on .closet-note { color: #E27A12; }
 
 .closet-done {

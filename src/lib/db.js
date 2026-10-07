@@ -2,6 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { supabase } from './supabase';
 import { signInWithGoogleNative, signInWithAppleNative } from './nativeAuth';
 import { WEB_ORIGIN } from './apiBase';
+import { weekRange } from '../data/quests';
 
 // ── Auth helpers ───────────────────────────────────────────────────────────
 
@@ -994,4 +995,52 @@ export async function getVoiceStats() {
   ]);
   if (meals.error || rated.error) return null;
   return { mealsThisMonth: meals.count ?? 0, dishesRated: rated.count ?? 0 };
+}
+
+// ── Weekly quests ──────────────────────────────────────────────────────────
+// Progress is derived from meal_history and item_ratings (src/data/quests.js).
+// Only claims are stored. See migration 042.
+
+/* Everything the quests card needs for one week. Returns null if any read
+ * failed, so the card hides rather than showing progress that is not true. */
+export async function getQuestWeek(weekStart) {
+  const id = await uid();
+  if (!id) return null;
+  const { start, startDate, endDate } = weekRange(weekStart);
+  const [meals, ratings, claims, total] = await Promise.all([
+    supabase.from('meal_history').select('meal_date, meal_type, items')
+      .eq('user_id', id).gte('meal_date', startDate).lt('meal_date', endDate),
+    supabase.from('item_ratings').select('item_id, updated_at')
+      .eq('user_id', id).gte('updated_at', start.toISOString()),
+    supabase.from('quest_claims').select('quest_id').eq('user_id', id).eq('week_start', weekStart),
+    supabase.from('quest_claims').select('quest_id', { count: 'exact', head: true }).eq('user_id', id),
+  ]);
+  if (meals.error || ratings.error) return null;
+  // A missing quest_claims table (migration 042 not run) reads as no claims.
+  return {
+    meals: meals.data ?? [],
+    ratings: ratings.data ?? [],
+    claimedIds: claims.error ? [] : (claims.data ?? []).map((r) => r.quest_id),
+    totalClaimed: total.error ? 0 : (total.count ?? 0),
+    claimsAvailable: !claims.error,
+  };
+}
+
+/* Records a claim. Throws if it did not save. Claiming twice is harmless. */
+export async function claimQuest(questId, weekStart) {
+  const id = await uid();
+  if (!id) { const e = new Error('Not signed in'); e.code = 'signed-out'; throw e; }
+  const { error } = await supabase.from('quest_claims')
+    .upsert({ user_id: id, quest_id: questId, week_start: weekStart },
+      { onConflict: 'user_id,quest_id,week_start', ignoreDuplicates: true });
+  if (error) { const e = new Error(error.message || 'Claim failed'); e.code = error.code || 'claim-failed'; throw e; }
+}
+
+/* How many quests this student has claimed in total, or 0 if unknown. */
+export async function getQuestsClaimed() {
+  const id = await uid();
+  if (!id) return 0;
+  const { count, error } = await supabase.from('quest_claims')
+    .select('quest_id', { count: 'exact', head: true }).eq('user_id', id);
+  return error ? 0 : (count ?? 0);
 }

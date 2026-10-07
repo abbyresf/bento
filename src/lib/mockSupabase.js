@@ -33,11 +33,16 @@ const FIXTURES = {
   }],
   streaks: [{ current_streak: 5, longest_streak: 12, last_confirmed_date: day(-1) }],
   meal_history: [
-    { id: 'm1', meal_type: 'lunch', confirmed_at: new Date(Date.now() - 86400000).toISOString(),
+    { id: 'm1', meal_type: 'lunch', meal_date: day(-1), confirmed_at: new Date(Date.now() - 86400000).toISOString(),
       items: [item('a', 'Grilled chicken breast', 280, 42, 0, 8), item('b', 'Brown rice', 215, 5, 45, 2)] },
-    { id: 'm2', meal_type: 'dinner', confirmed_at: new Date(Date.now() - 86400000).toISOString(),
+    { id: 'm2', meal_type: 'dinner', meal_date: day(-1), confirmed_at: new Date(Date.now() - 86400000).toISOString(),
       items: [item('c', 'Roasted vegetables', 120, 3, 18, 5), item('d', 'Baked salmon', 350, 34, 0, 22)] },
   ],
+  item_ratings: [
+    { item_id: 'a', updated_at: new Date().toISOString() },
+    { item_id: 'c', updated_at: new Date().toISOString() },
+  ],
+  quest_claims: [],
 };
 
 function query(name) {

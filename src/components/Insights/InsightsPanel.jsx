@@ -4,6 +4,7 @@ import { UNIVERSITIES } from '../../data/universities';
 import { voiceMessage } from '../../utils/bentoSays';
 import Mascot from '../Mascot/Mascot';
 import Closet from '../Mascot/Closet';
+import QuestsCard from '../Quests/QuestsCard';
 import { useOutfit } from '../../lib/mascotOutfit';
 import '../Mascot/Mascot.css';
 import WeeklySummaryCard from './WeeklySummaryCard';
@@ -270,7 +271,7 @@ export default function InsightsPanel({ onClose, tabMode = false }) {
                 </p>
               )}
               <CurrentStreak streak={streak} onOpenBadges={() => setShowBadges(true)} />
-              <VoiceCard />
+              <><VoiceCard /><QuestsCard /></>
               <WeeklySummaryCard summary={latest} targets={targets} />
               <DailyBreakdown days={dailyDays} targets={targets} />
               <Callouts latest={latest} targets={targets} goalHits={goalHits} />
@@ -310,7 +311,7 @@ export default function InsightsPanel({ onClose, tabMode = false }) {
                 </p>
               )}
               <CurrentStreak streak={streak} onOpenBadges={() => setShowBadges(true)} />
-              <VoiceCard />
+              <><VoiceCard /><QuestsCard /></>
               <WeeklySummaryCard summary={latest} targets={targets} />
               <DailyBreakdown days={dailyDays} targets={targets} />
               <Callouts latest={latest} targets={targets} goalHits={goalHits} />

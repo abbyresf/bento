@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Mascot from './Mascot';
 import { OUTFITS, isUnlocked, unlockHint } from '../../data/mascotOutfits';
 import { setOutfit, useOutfit } from '../../lib/mascotOutfit';
-import { getStreak, getVoiceStats } from '../../lib/db';
+import { getStreak, getVoiceStats, getQuestsClaimed } from '../../lib/db';
 import { haptics } from '../../lib/haptics';
 import './Closet.css';
 
@@ -15,13 +15,14 @@ export default function Closet({ onClose }) {
 
   useEffect(() => {
     let off = false;
-    Promise.all([getStreak(), getVoiceStats()]).then(([streak, voice]) => {
+    Promise.all([getStreak(), getVoiceStats(), getQuestsClaimed()]).then(([streak, voice, claimed]) => {
       if (off) return;
       setCtx({
         longestStreak: streak?.longestStreak ?? 0,
         dishesRated: voice?.dishesRated ?? 0,
+        questsClaimed: claimed ?? 0,
       });
-    }).catch(() => { if (!off) setCtx({ longestStreak: 0, dishesRated: 0 }); });
+    }).catch(() => { if (!off) setCtx({ longestStreak: 0, dishesRated: 0, questsClaimed: 0 }); });
     return () => { off = true; };
   }, []);
 
