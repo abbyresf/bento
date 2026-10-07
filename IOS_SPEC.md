@@ -484,6 +484,7 @@ Plate-based
 - **Mystery plate:** a friend picks one item without telling you, you build the
   rest around it.
 - **Bento plate:** between you, a plate has a protein, a vegetable and a grain.
+  Honor system: no food group data, we take their word that it has all three.
 - **Rainbow plate:** pick a color for your friend, who must eat one item of it.
   Honor system: no color data, we take their word that they chose an item of it.
 - **Match the plate:** you each build the same plate and confirm it, with a bonus
@@ -531,8 +532,6 @@ owns the piece they earn.
 
 ### Open items
 
-- **Bento plate food groups.** Needs a food group per menu item, or an honor-system
-  version like Rainbow plate. Decide before phase 2.
 - **Push reminders** have never been seen arriving end to end. Cover for me and any
   nudge depend on it.
 - **App Store:** change the Social Media answer in `APP_STORE_ANSWERS.md` and the
