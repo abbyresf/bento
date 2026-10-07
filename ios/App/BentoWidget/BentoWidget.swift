@@ -58,6 +58,14 @@ enum PlateState {
     case meal(title: String, line: MealLine, streak: Int?)
     case finished(streak: Int?)
 
+    var streak: Int? {
+        switch self {
+        case .needsApp: return nil
+        case .finished(let n): return n
+        case .meal(_, _, let n): return n
+        }
+    }
+
     /// Cheers when the next meal is confirmed, sleeps once the day is done.
     var mood: String {
         switch self {
@@ -135,24 +143,52 @@ struct PlateView: View {
     let entry: PlateEntry
 
     private var small: Bool { family == .systemSmall }
+    private var streak: Int { max(0, entry.state.streak ?? 0) }
+    private var isMeal: Bool { if case .meal = entry.state { return true } else { return false } }
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            content
-                // Medium keeps the words out from under Bento.
-                .padding(.trailing, small ? 0 : 104)
-            mascot
+        ZStack {
+            VStack(alignment: .leading, spacing: 0) { content }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                // Medium keeps the words out of Bento's column on the right.
+                .padding(.trailing, small ? 0 : 112)
+            overlays
         }
         .widgetBackground()
     }
 
+    /// Where Bento and the streak go.
+    ///  Small, with a meal: Bento in the top-right corner beside the title, so the
+    ///    dishes below get the full width. The streak lives in the text's bottom row.
+    ///  Small, any other state: Bento bottom-right, streak bottom-left.
+    ///  Medium: Bento in a column on the right with the streak under him.
     @ViewBuilder
-    private var mascot: some View {
+    private var overlays: some View {
+        if small {
+            if isMeal {
+                mascot(height: 44).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+            } else {
+                mascot(height: 52).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                if streak > 0 {
+                    streakLabel(streak).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                }
+            }
+        } else {
+            VStack(spacing: 3) {
+                mascot(height: streak > 0 ? 96 : 108)
+                if streak > 0 { streakLabel(streak) }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+        }
+    }
+
+    @ViewBuilder
+    private func mascot(height: CGFloat) -> some View {
         if let image = loadMascot(entry.state.mood) {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFit()
-                .frame(height: small ? 62 : 112)
+                .frame(height: height)
                 .accessibilityHidden(true)
         }
     }
@@ -162,54 +198,98 @@ struct PlateView: View {
         switch entry.state {
         case .needsApp:
             message(title: "Today's plate", body: "Open Bento to build it.")
-        case .finished(let streak):
-            message(title: "Done for today", body: "See you tomorrow.", streak: streak)
-        case .meal(let title, let line, let streak):
-            mealView(title: title, line: line, streak: streak)
+        case .finished:
+            message(title: "Done for today", body: "See you tomorrow.")
+        case .meal(let title, let line, _):
+            mealText(title: title, line: line)
         }
     }
 
-    private func message(title: String, body: String, streak: Int? = nil) -> some View {
+    private func message(title: String, body: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title).font(.headline).foregroundColor(navy)
             Text(body).font(.subheadline).foregroundColor(navy.opacity(0.7))
-            Spacer(minLength: 0)
-            if let streak = streak, streak > 0 { streakLabel(streak) }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func streakLabel(_ n: Int) -> some View {
         Text("🔥 \(n) day\(n == 1 ? "" : "s")")
             .font(.caption.weight(.semibold))
             .foregroundColor(orange)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
     }
 
-    private func mealView(title: String, line: MealLine, streak: Int?) -> some View {
-        // Small shares its bottom corner with Bento, so it shows fewer dishes.
-        let limit = small ? 2 : 4
-        let shown = Array(line.items.prefix(limit))
-        let extra = line.items.count - shown.count
-        return VStack(alignment: .leading, spacing: 3) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(title).font(.headline).foregroundColor(navy)
-                if line.confirmed {
-                    Text("Confirmed").font(.caption2.weight(.bold)).foregroundColor(.green)
+    /// The meal, with as many dishes as fit. How many fit depends on the device,
+    /// the widget size and the student's text size, so rather than guess a count
+    /// the widget tries the longest version first and falls back to shorter ones
+    /// until one fits the height it was given. Before iOS 16 there is no way to
+    /// ask, so it shows a count that fits everywhere.
+    @ViewBuilder
+    private func mealText(title: String, line: MealLine) -> some View {
+        if #available(iOS 16.0, *) {
+            if small {
+                ViewThatFits(in: .vertical) {
+                    column(title, line, limit: 3)
+                    column(title, line, limit: 2)
+                    column(title, line, limit: 1)
+                    column(title, line, limit: 0)
+                }
+            } else {
+                ViewThatFits(in: .vertical) {
+                    column(title, line, limit: 4)
+                    column(title, line, limit: 3)
+                    column(title, line, limit: 2)
+                    column(title, line, limit: 1)
+                    column(title, line, limit: 0)
                 }
             }
-            if let hall = line.hall, !hall.isEmpty {
-                Text(hall).font(.caption).foregroundColor(orange)
+        } else {
+            column(title, line, limit: small ? 2 : 3)
+        }
+    }
+
+    private func column(_ title: String, _ line: MealLine, limit: Int) -> some View {
+        let shown = Array(line.items.prefix(limit))
+        let extra = line.items.count - shown.count
+        let moreText = shown.isEmpty ? "\(extra) dish\(extra == 1 ? "" : "es")" : "+\(extra) more"
+        return VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .firstTextBaseline, spacing: 5) {
+                    Text(title).font(.headline).foregroundColor(navy).lineLimit(1).minimumScaleFactor(0.7)
+                    if line.confirmed {
+                        // A tick in the narrow widget, the word where there is room.
+                        if small {
+                            Image(systemName: "checkmark.circle.fill").font(.caption).foregroundColor(.green)
+                        } else {
+                            Text("Confirmed").font(.caption2.weight(.bold)).foregroundColor(.green).lineLimit(1)
+                        }
+                    }
+                }
+                if let hall = line.hall, !hall.isEmpty {
+                    Text(hall).font(.caption).foregroundColor(orange).lineLimit(1)
+                }
             }
+            // Beside Bento in the small widget, so these two lines leave his corner clear.
+            .padding(.trailing, small ? 50 : 0)
             ForEach(shown, id: \.self) { item in
                 Text(item).font(.footnote).foregroundColor(navy).lineLimit(1)
             }
-            if extra > 0 {
-                Text("+\(extra) more").font(.caption2).foregroundColor(navy.opacity(0.6))
+            if small {
+                Spacer(minLength: 0)
+                HStack(alignment: .firstTextBaseline) {
+                    if streak > 0 { streakLabel(streak).layoutPriority(1) }
+                    Spacer(minLength: 4)
+                    if extra > 0 {
+                        Text(moreText).font(.caption2).foregroundColor(navy.opacity(0.6)).lineLimit(1).minimumScaleFactor(0.7)
+                    }
+                }
+            } else if extra > 0 {
+                Text(moreText).font(.caption2).foregroundColor(navy.opacity(0.6)).lineLimit(1)
             }
-            Spacer(minLength: 0)
-            if let streak = streak, streak > 0 { streakLabel(streak) }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 }
 
