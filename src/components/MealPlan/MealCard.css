@@ -24,7 +24,7 @@
 }
 
 .meal-card.past:not(.confirmed) {
-  opacity: 0.65;
+  opacity: var(--dim-past, 0.65);
 }
 
 .meal-card.past.confirmed {
@@ -728,7 +728,7 @@
 .option-failed {
   font-size: 0.68rem;
   font-weight: 600;
-  color: #d9641a;
+  color: var(--accent-text);
   margin-left: auto;
   padding-right: 0.4rem;
   white-space: nowrap;

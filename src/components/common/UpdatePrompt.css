@@ -13,7 +13,9 @@
   padding: 0.55rem 0.9rem;
 
   background: var(--text-primary, #243b55);
-  color: #ffffff;
+  /* The toast is inverted: its background is the text colour, so its text is the
+     ground colour. A fixed white was invisible on the near-white dark toast. */
+  color: var(--bg-app, #ffffff);
   font-size: 0.78rem;
   box-shadow: 0 2px 10px rgba(36, 59, 85, 0.22);
   animation: updateDrop 0.22s cubic-bezier(0.22, 1, 0.36, 1);
@@ -60,4 +62,4 @@
   cursor: pointer;
 }
 
-.update-prompt-close:hover { color: #ffffff; }
+.update-prompt-close:hover { color: var(--bg-app, #ffffff); }

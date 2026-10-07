@@ -51,6 +51,40 @@
   --text-secondary:#64748b;
   --text-primary:  #243b55;
 
+  /* Extra steps between the original ramp, added so screens that hard-coded
+     these exact greys can use a token and still render identically in light.
+     Dark values are chosen for contrast, see the --dk- block. */
+  --text-heading: #1e293b;
+  --text-body: #374151;
+  --text-body-alt: #334155;
+  --text-muted: #475569;
+  --text-faint: #cbd5e1;
+  --surface-soft: #f8fafc;
+  --border-soft: #f1f5f9;
+  --border-strong: #d1d5db;
+  --border-warm: #e4dccf;
+  --accent-wash: #fff8f3;
+  --accent-border-soft: #fde8d4;
+  --warn-btn-bg: #fef3c7;
+  --warn-btn-bg-hover: #fde68a;
+  --warn-btn-border: #fcd34d;
+  --danger-btn-bg: #fee2e2;
+  --danger-btn-border: #fca5a5;
+  /* Bento's body is the dark ground colour, so on dark he needs a thin light rim
+     and a soft glow to read as a shape. None on light. */
+  --mascot-filter: none;
+  --info-bg: #f0f7ff;
+  --info-bg-hover: #e0f0ff;
+  --info-border: #dbeafe;
+  --info-text: #3b82f6;
+  --accent-ink: #c05a12;
+  /* How far dimmed states (a past meal, a locked badge) fade. Dimming a light
+     card on a light page costs little contrast. Dimming text on a dark card costs
+     a lot, so dark fades less. */
+  --dim-past: 0.65;
+  --dim-locked: 0.5;
+  --dim-unanswered: 0.55;
+
   /* Interactive. #f47421 was the app's real orange, used far more than the
      brand #FD8F2A, and it is what students have been looking at. */
   --accent-text:   #f47421;
@@ -123,11 +157,36 @@
   --dk-surface-sunk:  #1E2F42;
   --dk-border:        #3C5170;
   --dk-divider:       #495665;
-  --dk-text-disabled: #949DA8;
-  --dk-text-secondary:#C0C6CE;
+  --dk-text-disabled: #B4BEC9;
+  --dk-text-secondary:#CBD2DA;
   --dk-text-primary:  #F7F8FB;   /* near-white by design, never #FFFFFF */
+  --dk-text-heading: #F7F8FB;
+  --dk-text-body: #E3E8EE;
+  --dk-text-body-alt: #E3E8EE;
+  --dk-text-muted: #D5DBE2;
+  --dk-text-faint: #94A0AF;
+  --dk-surface-soft: #284058;
+  --dk-border-soft: #34496A;
+  --dk-border-strong: #4D6385;
+  --dk-border-warm: #3C5170;
+  --dk-accent-wash: rgba(253, 143, 42, 0.12);
+  --dk-accent-border-soft: rgba(253, 143, 42, 0.30);
+  --dk-warn-btn-bg: rgba(251, 191, 36, 0.14);
+  --dk-warn-btn-bg-hover: rgba(251, 191, 36, 0.24);
+  --dk-warn-btn-border: rgba(251, 191, 36, 0.42);
+  --dk-danger-btn-bg: rgba(249, 128, 128, 0.14);
+  --dk-danger-btn-border: rgba(249, 128, 128, 0.42);
+  --dk-mascot-filter: drop-shadow(0 0 0.6px rgba(214, 228, 245, 0.95)) drop-shadow(0 0 1.4px rgba(190, 212, 240, 0.75)) drop-shadow(0 0 9px rgba(140, 180, 235, 0.38));
+  --dk-info-bg: rgba(96, 165, 250, 0.14);
+  --dk-info-bg-hover: rgba(96, 165, 250, 0.22);
+  --dk-info-border: rgba(96, 165, 250, 0.40);
+  --dk-info-text: #8EBBFF;
+  --dk-accent-ink: #FFAA6B;
+  --dk-dim-past: 0.88;
+  --dk-dim-locked: 0.85;
+  --dk-dim-unanswered: 0.93;
 
-  --dk-accent-text:   #FC7A02;
+  --dk-accent-text:   #FF9A4D;
   --dk-btn-bg:        #FD8F2A;
   --dk-btn-bg-hover:  #FFA34D;
   --dk-btn-fg:        #1B1208;
@@ -143,7 +202,7 @@
   --dk-tag-gf-text:    #FCA5A5;
   --dk-tag-gf-bg:      rgba(252, 165, 165, 0.14);
 
-  --dk-fern-text:  #77BE3D;
+  --dk-fern-text:  #A3DD6B;
   --dk-fern-fill:  #77BE3D;
   --dk-fern-tint:  rgba(119, 190, 61, 0.18);
   --dk-fern-border:rgba(119, 190, 61, 0.42);
@@ -154,14 +213,14 @@
   --dk-meal-lunch:     #77BE3D;
   --dk-meal-dinner:    #FEEAD7;
 
-  --dk-success-text:  #77BE3D;
+  --dk-success-text:  #A3DD6B;
   --dk-success-fill:  #77BE3D;
   --dk-success-bg:    rgba(119, 190, 61, 0.18);
 
   --dk-warning-text:  #FBBF24;
   --dk-warning-bg:    rgba(251, 191, 36, 0.14);
   --dk-warning-border:rgba(251, 191, 36, 0.30);
-  --dk-danger-text:   #F98080;
+  --dk-danger-text:   #FFB3B3;
   --dk-danger-fill:   #F98080;
   --dk-danger-bg:     rgba(249, 128, 128, 0.14);
 
@@ -194,6 +253,31 @@
     --text-disabled: var(--dk-text-disabled);
     --text-secondary:var(--dk-text-secondary);
     --text-primary:  var(--dk-text-primary);
+    --text-heading: var(--dk-text-heading);
+    --text-body: var(--dk-text-body);
+    --text-body-alt: var(--dk-text-body-alt);
+    --text-muted: var(--dk-text-muted);
+    --text-faint: var(--dk-text-faint);
+    --surface-soft: var(--dk-surface-soft);
+    --border-soft: var(--dk-border-soft);
+    --border-strong: var(--dk-border-strong);
+    --border-warm: var(--dk-border-warm);
+    --accent-wash: var(--dk-accent-wash);
+    --accent-border-soft: var(--dk-accent-border-soft);
+    --warn-btn-bg: var(--dk-warn-btn-bg);
+    --warn-btn-bg-hover: var(--dk-warn-btn-bg-hover);
+    --warn-btn-border: var(--dk-warn-btn-border);
+    --danger-btn-bg: var(--dk-danger-btn-bg);
+    --danger-btn-border: var(--dk-danger-btn-border);
+    --mascot-filter: var(--dk-mascot-filter);
+    --info-bg: var(--dk-info-bg);
+    --info-bg-hover: var(--dk-info-bg-hover);
+    --info-border: var(--dk-info-border);
+    --info-text: var(--dk-info-text);
+    --accent-ink: var(--dk-accent-ink);
+    --dim-past: var(--dk-dim-past);
+    --dim-locked: var(--dk-dim-locked);
+    --dim-unanswered: var(--dk-dim-unanswered);
 
     --accent-text:   var(--dk-accent-text);
     --btn-bg:        var(--dk-btn-bg);
@@ -261,6 +345,31 @@
   --text-disabled: var(--dk-text-disabled);
   --text-secondary:var(--dk-text-secondary);
   --text-primary:  var(--dk-text-primary);
+  --text-heading: var(--dk-text-heading);
+  --text-body: var(--dk-text-body);
+  --text-body-alt: var(--dk-text-body-alt);
+  --text-muted: var(--dk-text-muted);
+  --text-faint: var(--dk-text-faint);
+  --surface-soft: var(--dk-surface-soft);
+  --border-soft: var(--dk-border-soft);
+  --border-strong: var(--dk-border-strong);
+  --border-warm: var(--dk-border-warm);
+  --accent-wash: var(--dk-accent-wash);
+  --accent-border-soft: var(--dk-accent-border-soft);
+  --warn-btn-bg: var(--dk-warn-btn-bg);
+  --warn-btn-bg-hover: var(--dk-warn-btn-bg-hover);
+  --warn-btn-border: var(--dk-warn-btn-border);
+  --danger-btn-bg: var(--dk-danger-btn-bg);
+  --danger-btn-border: var(--dk-danger-btn-border);
+  --mascot-filter: var(--dk-mascot-filter);
+  --info-bg: var(--dk-info-bg);
+  --info-bg-hover: var(--dk-info-bg-hover);
+  --info-border: var(--dk-info-border);
+  --info-text: var(--dk-info-text);
+  --accent-ink: var(--dk-accent-ink);
+  --dim-past: var(--dk-dim-past);
+  --dim-locked: var(--dk-dim-locked);
+  --dim-unanswered: var(--dk-dim-unanswered);
 
   --accent-text:   var(--dk-accent-text);
   --btn-bg:        var(--dk-btn-bg);

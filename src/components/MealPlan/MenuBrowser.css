@@ -1,7 +1,7 @@
 .menu-browser {
   position: fixed;
   inset: 0;
-  background: #faf7f4;
+  background: var(--bg-app);
   z-index: 300;
   display: flex;
   flex-direction: column;
@@ -20,8 +20,8 @@
   align-items: center;
   gap: 0.6rem;
   padding: 0.9rem 1rem 0.8rem;
-  background: white;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
@@ -29,14 +29,14 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #64748b;
+  color: var(--text-secondary);
   padding: 0.3rem;
   display: flex;
   align-items: center;
   border-radius: 8px;
 }
 
-.browser-back:hover { color: #243b55; }
+.browser-back:hover { color: var(--text-primary); }
 
 .browser-title {
   display: flex;
@@ -47,13 +47,13 @@
 .browser-meal {
   font-size: 1rem;
   font-weight: 700;
-  color: #243b55;
+  color: var(--text-primary);
   line-height: 1.2;
 }
 
 .browser-location {
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--text-disabled);
 }
 
 /* ── Search ─────────────────────────────────────────────── */
@@ -61,8 +61,8 @@
 .browser-search-wrap {
   position: relative;
   padding: 0.65rem 1rem;
-  background: white;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -71,29 +71,29 @@
 .browser-search-icon {
   position: absolute;
   left: 1.75rem;
-  color: #94a3b8;
+  color: var(--text-disabled);
   pointer-events: none;
 }
 
 .browser-search {
   width: 100%;
   padding: 0.55rem 2rem 0.55rem 2.25rem;
-  border: 1.5px solid #e2e8f0;
+  border: 1.5px solid var(--border);
   border-radius: 10px;
-  background: #f8fafc;
+  background: var(--surface-soft);
   font-size: 1rem;
-  color: #243b55;
+  color: var(--text-primary);
   outline: none;
 }
 
-.browser-search:focus { border-color: #f47421; }
+.browser-search:focus { border-color: var(--accent-text); }
 
 .browser-search-clear {
   position: absolute;
   right: 1.75rem;
   background: none;
   border: none;
-  color: #94a3b8;
+  color: var(--text-disabled);
   cursor: pointer;
   font-size: 0.75rem;
   padding: 0.25rem;
@@ -114,7 +114,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #94a3b8;
+  color: var(--text-disabled);
   padding: 0.8rem 1rem 0.3rem;
   margin: 0;
 }
@@ -124,12 +124,12 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.6rem 1rem;
-  background: white;
-  border-bottom: 1px solid #f1f5f9;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-soft);
   transition: background 0.12s;
 }
 
-.browser-item.selected { background: #fff8f3; }
+.browser-item.selected { background: var(--accent-wash); }
 
 .browser-item-info {
   flex: 1;
@@ -142,7 +142,7 @@
 .browser-item-name {
   font-size: 0.88rem;
   font-weight: 500;
-  color: #243b55;
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -156,8 +156,8 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #64748b;
-  background: #f1f5f9;
+  color: var(--text-secondary);
+  background: var(--surface-sunk);
   border-radius: 4px;
   padding: 0.05rem 0.35rem;
   vertical-align: 1px;
@@ -165,16 +165,16 @@
 
 .browser-item-macros {
   font-size: 0.72rem;
-  color: #94a3b8;
+  color: var(--text-disabled);
 }
 
 .browser-add-btn {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 1.5px solid #e2e8f0;
-  background: white;
-  color: #64748b;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -184,14 +184,14 @@
 }
 
 .browser-add-btn.added {
-  background: #f47421;
-  border-color: #f47421;
-  color: white;
+  background: var(--btn-bg);
+  border-color: var(--accent-text);
+  color: var(--btn-fg);
 }
 
 .browser-empty {
   text-align: center;
-  color: #94a3b8;
+  color: var(--text-disabled);
   font-size: 0.9rem;
   padding: 2.5rem 1rem;
 }
@@ -199,8 +199,8 @@
 /* ── Footer ─────────────────────────────────────────────── */
 
 .browser-footer {
-  background: white;
-  border-top: 1px solid #e2e8f0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
   padding: 0.85rem 1rem 2rem;
   display: flex;
   flex-direction: column;
@@ -218,17 +218,17 @@
 
 .browser-total-item {
   font-size: 0.82rem;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 .browser-total-sep {
   font-size: 0.75rem;
-  color: #cbd5e1;
+  color: var(--text-faint);
 }
 
 .browser-hint {
   font-size: 0.83rem;
-  color: #94a3b8;
+  color: var(--text-disabled);
   text-align: center;
   margin: 0;
 }
@@ -236,8 +236,8 @@
 .browser-done {
   width: 100%;
   padding: 0.875rem;
-  background: #f47421;
-  color: white;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
   border: none;
   border-radius: 12px;
   font-size: 0.95rem;
@@ -246,4 +246,4 @@
   transition: background 0.2s;
 }
 
-.browser-done:hover { background: #d9641a; }
+.browser-done:hover { background: var(--btn-bg-hover); }

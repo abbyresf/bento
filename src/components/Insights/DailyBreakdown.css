@@ -1,5 +1,5 @@
 .daily-breakdown-card {
-  background: #faf7f4;
+  background: var(--bg-app);
   border-radius: 12px;
   padding: 1rem 1.1rem;
   margin-bottom: 1rem;
@@ -21,17 +21,17 @@
   font-weight: 600;
   padding: 0.22rem 0.65rem;
   border-radius: 999px;
-  border: 1.5px solid #e2e8f0;
-  background: white;
-  color: #64748b;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .db-pill.active {
-  background: #f47421;
-  border-color: #f47421;
-  color: white;
+  background: var(--btn-bg);
+  border-color: var(--accent-text);
+  color: var(--btn-fg);
 }
 
 .db-rows {
@@ -49,7 +49,7 @@
 .db-day-label {
   font-size: 0.78rem;
   font-weight: 600;
-  color: #64748b;
+  color: var(--text-secondary);
   width: 32px;
   flex-shrink: 0;
 }
@@ -57,20 +57,20 @@
 .db-bar-track {
   flex: 1;
   height: 8px;
-  background: #e2e8f0;
+  background: var(--border);
   border-radius: 999px;
   overflow: hidden;
 }
 
 .db-bar-fill {
   height: 100%;
-  background: #4cae70;
+  background: var(--fern-fill);
   border-radius: 999px;
   transition: width 0.4s ease;
 }
 
 .db-bar-fill.over {
-  background: #f97316;
+  background: var(--btn-bg);
 }
 
 .db-bar-fill.empty {
@@ -80,7 +80,7 @@
 .db-bar-value {
   font-size: 0.73rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-body);
   white-space: nowrap;
   width: 96px;
   text-align: right;

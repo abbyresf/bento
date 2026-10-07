@@ -65,7 +65,7 @@
    looks like it has already recorded something. */
 .eaten {
   margin-top: 0.6rem;
-  opacity: 0.55;
+  opacity: var(--dim-unanswered, 0.55);
   transition: opacity 0.15s;
 }
 .eaten.answered { opacity: 1; }

@@ -13,10 +13,10 @@
   gap: 0.4rem;
   width: 100%;
   padding: 0.65rem 1rem;
-  background: #f0f7ff;
+  background: var(--info-bg);
   border: none;
-  border-bottom: 1px solid #dbeafe;
-  color: #3b82f6;
+  border-bottom: 1px solid var(--info-border);
+  color: var(--info-text);
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
@@ -24,7 +24,7 @@
 }
 
 .community-policy-btn svg:last-child { margin-left: auto; }
-.community-policy-btn:hover { background: #e0f0ff; }
+.community-policy-btn:hover { background: var(--info-bg-hover); }
 
 /* Sections */
 .community-section {
@@ -36,7 +36,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #94a3b8;
+  color: var(--text-disabled);
   margin-bottom: 0.75rem;
 }
 
@@ -46,7 +46,7 @@
   padding: 1.5rem 0;
   text-align: center;
   font-size: 0.875rem;
-  color: #94a3b8;
+  color: var(--text-disabled);
 }
 
 /* Leaderboard */
@@ -61,8 +61,8 @@
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 0.6rem 0.875rem;
 }
@@ -70,7 +70,7 @@
 .leaderboard-rank {
   font-size: 0.7rem;
   font-weight: 700;
-  color: #cbd5e1;
+  color: var(--text-faint);
   width: 24px;
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
@@ -79,7 +79,7 @@
 .leaderboard-name {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #1e293b;
+  color: var(--text-heading);
   flex: 1;
   min-width: 0;
   display: flex;
@@ -98,7 +98,7 @@
 .leaderboard-hall {
   font-size: 0.72rem;
   font-weight: 400;
-  color: #94a3b8;
+  color: var(--text-disabled);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -113,7 +113,7 @@
 .leaderboard-avg {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #f47421;
+  color: var(--accent-text);
   font-variant-numeric: tabular-nums;
   min-width: 24px;
 }
@@ -130,7 +130,7 @@
 
 .sort-toggle {
   display: flex;
-  background: #f1f5f9;
+  background: var(--surface-sunk);
   border-radius: 6px;
   padding: 2px;
   gap: 2px;
@@ -142,15 +142,15 @@
   cursor: pointer;
   font-size: 0.75rem;
   font-weight: 500;
-  color: #64748b;
+  color: var(--text-secondary);
   padding: 3px 10px;
   border-radius: 5px;
   transition: all 0.15s;
 }
 
 .sort-toggle button.active {
-  background: white;
-  color: #1e293b;
+  background: var(--surface);
+  color: var(--text-heading);
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
@@ -163,15 +163,15 @@
 
 /* Suggestion card */
 .suggestion-card {
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 0.875rem 1rem;
 }
 
 .suggestion-content {
   font-size: 0.9rem;
-  color: #334155;
+  color: var(--text-body-alt);
   line-height: 1.55;
   margin-bottom: 0.625rem;
   white-space: pre-wrap;
@@ -186,7 +186,7 @@
 
 .suggestion-time {
   font-size: 0.72rem;
-  color: #94a3b8;
+  color: var(--text-disabled);
 }
 
 .suggestion-actions {
@@ -200,19 +200,19 @@
   align-items: center;
   gap: 0.3rem;
   background: none;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   border-radius: 20px;
   padding: 4px 10px;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #64748b;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s;
   font-variant-numeric: tabular-nums;
 }
 
-.emphasize-btn:hover { border-color: #f47421; color: #f47421; }
-.emphasize-btn.active { background: #fff4ed; border-color: #f47421; color: #f47421; }
+.emphasize-btn:hover { border-color: var(--accent-text); color: var(--accent-text); }
+.emphasize-btn.active { background: var(--accent-wash); border-color: var(--accent-text); color: var(--accent-text); }
 
 .flag-btn {
   display: flex;
@@ -220,14 +220,14 @@
   background: none;
   border: none;
   padding: 4px;
-  color: #cbd5e1;
+  color: var(--text-faint);
   cursor: pointer;
   transition: color 0.15s;
   border-radius: 4px;
 }
 
-.flag-btn:hover:not(:disabled) { color: #ef4444; }
-.flag-btn.flagged { color: #ef4444; }
+.flag-btn:hover:not(:disabled) { color: var(--danger-text); }
+.flag-btn.flagged { color: var(--danger-text); }
 .flag-btn:disabled { cursor: default; }
 
 /* Compose FAB */
@@ -238,8 +238,8 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: #f47421;
-  color: white;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
   border: none;
   cursor: pointer;
   display: flex;
@@ -267,7 +267,7 @@
 }
 
 .compose-sheet {
-  background: white;
+  background: var(--surface);
   border-radius: 20px 20px 0 0;
   width: 100%;
   padding: 1.25rem 1.25rem 2rem;
@@ -284,43 +284,43 @@
 .compose-header h3 {
   font-size: 1rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-heading);
 }
 
 .compose-close {
   background: none;
   border: none;
   cursor: pointer;
-  color: #94a3b8;
+  color: var(--text-disabled);
   padding: 4px;
   display: flex;
 }
-.compose-close:hover { color: #64748b; }
+.compose-close:hover { color: var(--text-secondary); }
 
 .compose-anon-note {
   display: flex;
   align-items: center;
   gap: 0.375rem;
   font-size: 0.775rem;
-  color: #64748b;
+  color: var(--text-secondary);
   margin-bottom: 0.875rem;
 }
 
 .compose-textarea {
   width: 100%;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 0.75rem;
   font-size: 1rem;
-  color: #334155;
+  color: var(--text-body-alt);
   resize: none;
   outline: none;
   font-family: inherit;
   line-height: 1.55;
-  background: #f8fafc;
+  background: var(--surface-soft);
 }
 
-.compose-textarea:focus { border-color: #f47421; background: white; }
+.compose-textarea:focus { border-color: var(--accent-text); background: var(--surface); }
 
 .compose-footer {
   display: flex;
@@ -332,20 +332,20 @@
 
 .compose-count {
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--text-disabled);
   font-variant-numeric: tabular-nums;
   margin-right: auto;
 }
-.compose-count.warning { color: #ef4444; }
+.compose-count.warning { color: var(--danger-text); }
 
 .compose-error {
   font-size: 0.775rem;
-  color: #ef4444;
+  color: var(--danger-text);
 }
 
 .compose-submit {
-  background: #f47421;
-  color: white;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
   border: none;
   border-radius: 8px;
   padding: 0.5rem 1.25rem;
@@ -363,24 +363,3 @@
 }
 
 /* Dark mode */
-/* Guarded so an explicit Light choice in Settings wins over a dark OS. Without
-   the :not(), this block applied whenever the phone was dark and these screens
-   rendered dark inside an otherwise light app.
-   These rules still predate the token layer; they want migrating to tokens so
-   dark is consistent with the rest of the app, but the guard is the part that
-   was actually broken. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .community-policy-btn { background: #1a2a3a; border-color: #1e3a5f; color: #60a5fa; }
-  :root:not([data-theme="light"]) .community-policy-btn:hover { background: #1e3250; }
-  :root:not([data-theme="light"]) .leaderboard-item, .suggestion-card { background: #1e2a3a; border-color: #2d3a4d; }
-  :root:not([data-theme="light"]) .leaderboard-name { color: #e2e8f0; }
-  :root:not([data-theme="light"]) .suggestion-content { color: #cbd5e1; }
-  :root:not([data-theme="light"]) .sort-toggle { background: #1e2a3a; }
-  :root:not([data-theme="light"]) .sort-toggle button { color: #94a3b8; }
-  :root:not([data-theme="light"]) .sort-toggle button.active { background: #2d3a4d; color: #e2e8f0; }
-  :root:not([data-theme="light"]) .compose-sheet { background: #1e2a3a; }
-  :root:not([data-theme="light"]) .compose-header h3 { color: #e2e8f0; }
-  :root:not([data-theme="light"]) .compose-textarea { background: #162030; border-color: #2d3a4d; color: #e2e8f0; }
-  :root:not([data-theme="light"]) .compose-textarea:focus { border-color: #f47421; background: #1e2a3a; }
-  :root:not([data-theme="light"]) .emphasize-btn { border-color: #2d3a4d; color: #94a3b8; }
-}

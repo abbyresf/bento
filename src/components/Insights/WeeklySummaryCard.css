@@ -1,5 +1,5 @@
 .weekly-summary-card {
-  background: #faf7f4;
+  background: var(--bg-app);
   border-radius: 12px;
   padding: 1rem 1.1rem;
   margin-bottom: 1rem;
@@ -17,13 +17,13 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #94a3b8;
+  color: var(--text-disabled);
   margin: 0;
 }
 
 .summary-avg-label {
   font-size: 0.7rem;
-  color: #cbd5e1;
+  color: var(--text-faint);
   font-weight: 500;
 }
 
@@ -43,7 +43,7 @@
 .macro-bar-label {
   font-size: 0.78rem;
   font-weight: 600;
-  color: #64748b;
+  color: var(--text-secondary);
   width: 56px;
   flex-shrink: 0;
 }
@@ -51,26 +51,26 @@
 .macro-bar-track {
   flex: 1;
   height: 8px;
-  background: #e2e8f0;
+  background: var(--border);
   border-radius: 999px;
   overflow: hidden;
 }
 
 .macro-bar-fill {
   height: 100%;
-  background: #4cae70;
+  background: var(--fern-fill);
   border-radius: 999px;
   transition: width 0.4s ease;
 }
 
 .macro-bar-fill.over {
-  background: #f97316;
+  background: var(--btn-bg);
 }
 
 .macro-bar-values {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-body);
   white-space: nowrap;
   width: 88px;
   text-align: right;
@@ -87,20 +87,20 @@
 
 .summary-extra-chip {
   font-size: 0.75rem;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 999px;
   padding: 0.2rem 0.65rem;
-  color: #374151;
+  color: var(--text-body);
   white-space: nowrap;
 }
 
 .summary-extra-chip strong {
-  color: #f47421;
+  color: var(--accent-text);
 }
 
 .food-chip {
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 .macro-bar-fill.empty {
@@ -108,10 +108,10 @@
 }
 
 .placeholder-chip {
-  color: #cbd5e1;
-  border-color: #f1f5f9;
+  color: var(--text-faint);
+  border-color: var(--border-soft);
 }
 
 .placeholder-text {
-  color: #cbd5e1 !important;
+  color: var(--text-faint) !important;
 }

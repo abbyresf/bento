@@ -36,18 +36,18 @@
   padding: 0.55rem 0.3rem 0.6rem;
   border: 2.5px solid var(--border, #e4dccf);
   border-radius: 16px;
-  background: #fff;
+  background: var(--surface);
   font-family: inherit;
   cursor: pointer;
 }
-.closet-item.on { border-color: #FD8F2A; background: #FFF6EC; }
-.closet-item.locked { background: #F7F4EF; }
+.closet-item.on { border-color: var(--brand-orange); background: var(--accent-wash); }
+.closet-item.locked { background: var(--bg-app); }
 .closet-item.locked .closet-thumb .mc { filter: grayscale(1) opacity(0.45); }
 .closet-thumb { position: relative; display: flex; align-items: center; justify-content: center; height: 56px; }
 .closet-lock { position: absolute; right: -6px; bottom: -2px; font-size: 0.95rem; }
-.closet-name { font-size: 0.82rem; font-weight: 800; color: #24384F; }
-.closet-note { font-size: 0.68rem; font-weight: 700; color: #7b8aa0; line-height: 1.2; min-height: 1.6em; }
-.closet-item.on .closet-note { color: #E27A12; }
+.closet-name { font-size: 0.82rem; font-weight: 800; color: var(--text-primary); }
+.closet-note { font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); line-height: 1.2; min-height: 1.6em; }
+.closet-item.on .closet-note { color: var(--accent-ink); }
 
 .closet-done {
   width: 100%;

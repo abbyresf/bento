@@ -9,19 +9,19 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 0.875rem;
-  border: 1.5px solid #d1d5db;
+  border: 1.5px solid var(--border-strong);
   border-radius: 10px;
-  background: white;
+  background: var(--surface);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .university-search-wrap:focus-within {
-  border-color: #f47421;
+  border-color: var(--accent-text);
   box-shadow: 0 0 0 3px rgba(244, 116, 33, 0.1);
 }
 
 .search-icon {
-  color: #94a3b8;
+  color: var(--text-disabled);
   flex-shrink: 0;
   pointer-events: none;
 }
@@ -34,7 +34,7 @@
   padding: 0;
   font-size: 1rem;
   font-family: inherit;
-  color: #243b55;
+  color: var(--text-primary);
   background: transparent;
 }
 
@@ -42,7 +42,7 @@
   background: none;
   border: none;
   font-size: 1.2rem;
-  color: #94a3b8;
+  color: var(--text-disabled);
   cursor: pointer;
   line-height: 1;
   padding: 0;
@@ -52,7 +52,7 @@
 }
 
 .search-clear:hover {
-  color: #475569;
+  color: var(--text-muted);
 }
 
 .university-current {
@@ -60,9 +60,9 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.875rem 1.125rem;
-  border: 2px solid #f47421;
+  border: 2px solid var(--accent-text);
   border-radius: 10px;
-  background: #fff8f3;
+  background: var(--accent-wash);
 }
 
 .university-list {
@@ -76,10 +76,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.875rem 1.125rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--border);
   border-radius: 10px;
   cursor: pointer;
-  background: white;
+  background: var(--surface);
   transition: border-color 0.15s, background 0.15s;
   text-align: left;
   width: 100%;
@@ -87,13 +87,13 @@
 }
 
 .university-option:hover:not(:disabled) {
-  border-color: #cbd5e1;
-  background: #f8fafc;
+  border-color: var(--divider);
+  background: var(--surface-soft);
 }
 
 .university-option.selected {
-  border-color: #f47421;
-  background: #fff8f3;
+  border-color: var(--accent-text);
+  background: var(--accent-wash);
 }
 
 .university-option.coming-soon {
@@ -116,30 +116,30 @@
 .university-name {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #243b55;
+  color: var(--text-primary);
 }
 
 .university-abbr {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--text-disabled);
 }
 
 .university-location {
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 .check-icon {
-  color: #f47421;
+  color: var(--accent-text);
   flex-shrink: 0;
 }
 
 .coming-soon-badge {
   font-size: 0.72rem;
   font-weight: 600;
-  color: #94a3b8;
-  background: #f1f5f9;
+  color: var(--text-disabled);
+  background: var(--surface-sunk);
   padding: 0.2rem 0.55rem;
   border-radius: 20px;
   flex-shrink: 0;
@@ -147,7 +147,7 @@
 
 .university-empty {
   font-size: 0.9rem;
-  color: #94a3b8;
+  color: var(--text-disabled);
   text-align: center;
   padding: 1.5rem 0;
   margin: 0;
@@ -155,7 +155,7 @@
 
 .university-request-prompt {
   font-size: 0.85rem;
-  color: #94a3b8;
+  color: var(--text-disabled);
   text-align: center;
   margin: 0.25rem 0 0;
 }
@@ -167,11 +167,11 @@
   font-size: inherit;
   font-family: inherit;
   font-weight: 600;
-  color: #f47421;
+  color: var(--accent-text);
   cursor: pointer;
   text-decoration: none;
 }
 
 .university-request-link:hover {
-  color: #d9641a;
+  color: var(--accent-text);
 }

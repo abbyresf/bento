@@ -8,19 +8,19 @@
 .terms-page-header {
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid #f1f5f9;
+  border-bottom: 2px solid var(--border-soft);
 }
 
 .terms-page-header h1 {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #243b55;
+  color: var(--text-primary);
   margin: 0 0 0.25rem;
 }
 
 .terms-page-sub {
   font-size: 0.82rem;
-  color: #94a3b8;
+  color: var(--text-disabled);
   margin: 0;
 }
 
@@ -32,13 +32,13 @@
 
 .terms-page-intro {
   font-size: 0.9rem;
-  color: #64748b;
+  color: var(--text-secondary);
   line-height: 1.65;
   margin: 0;
   padding: 1rem 1.25rem;
-  background: white;
+  background: var(--surface);
   border-radius: 10px;
-  border-left: 3px solid #f47421;
+  border-left: 3px solid var(--accent-text);
   box-shadow: 0 4px 16px rgba(36, 59, 85, 0.1);
 }
 
@@ -47,26 +47,26 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #f47421;
+  color: var(--accent-text);
   margin: 0 0 0.5rem;
 }
 
 .terms-page-section p {
   font-size: 0.9rem;
-  color: #374151;
+  color: var(--text-body);
   line-height: 1.7;
   margin: 0;
 }
 
 .terms-page-section strong {
-  color: #243b55;
+  color: var(--text-primary);
   font-weight: 700;
 }
 
 .terms-page-footer-note {
   font-size: 0.82rem;
-  color: #94a3b8;
+  color: var(--text-disabled);
   margin: 0;
   padding-top: 0.5rem;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--border-soft);
 }

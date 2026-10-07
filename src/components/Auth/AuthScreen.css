@@ -281,8 +281,8 @@
 }
 /* Apple asks for the white version on dark backgrounds. */
 [data-theme="dark"] .apple-btn {
-  background: #fff;
-  border-color: #fff;
+  background: var(--surface);
+  border-color: var(--surface);
   color: #000;
 }
 [data-theme="dark"] .apple-btn:hover:not(:disabled) {

@@ -8,13 +8,13 @@
 .mro-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-heading);
   margin: 0 0 0.4rem;
 }
 
 .mro-sub {
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--text-secondary);
   margin: 0 0 1.75rem;
   line-height: 1.5;
 }
@@ -31,7 +31,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.875rem 0;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border-soft);
 }
 
 .mro-item:last-child {
@@ -41,7 +41,7 @@
 .mro-item-name {
   font-size: 0.95rem;
   font-weight: 500;
-  color: #334155;
+  color: var(--text-body-alt);
 }
 
 .mro-footer {
@@ -51,49 +51,35 @@
   padding: 1.25rem 0 max(1.5rem, env(safe-area-inset-bottom));
   position: sticky;
   bottom: 0;
-  background: white;
+  background: var(--surface);
 }
 
 .mro-skip {
   flex: 1;
   padding: 0.8rem;
-  background: #f1f5f9;
+  background: var(--surface-sunk);
   border: none;
   border-radius: 12px;
   font-size: 0.95rem;
   font-weight: 600;
-  color: #64748b;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: background 0.15s;
 }
-.mro-skip:hover:not(:disabled) { background: #e2e8f0; }
+.mro-skip:hover:not(:disabled) { background: var(--border); }
 .mro-skip:disabled { opacity: 0.5; }
 
 .mro-submit {
   flex: 2;
   padding: 0.8rem;
-  background: #f47421;
+  background: var(--btn-bg);
   border: none;
   border-radius: 12px;
   font-size: 0.95rem;
   font-weight: 600;
-  color: white;
+  color: var(--btn-fg);
   cursor: pointer;
   transition: opacity 0.15s;
 }
 .mro-submit:hover:not(:disabled) { opacity: 0.9; }
 .mro-submit:disabled { opacity: 0.35; cursor: not-allowed; }
-
-/* Guarded so an explicit Light choice in Settings wins over a dark OS. Without
-   the :not(), this block applied whenever the phone was dark and these screens
-   rendered dark inside an otherwise light app.
-   These rules still predate the token layer; they want migrating to tokens so
-   dark is consistent with the rest of the app, but the guard is the part that
-   was actually broken. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .mro-title { color: #e2e8f0; }
-  :root:not([data-theme="light"]) .mro-item { border-color: #1e2a3a; }
-  :root:not([data-theme="light"]) .mro-item-name { color: #cbd5e1; }
-  :root:not([data-theme="light"]) .mro-skip { background: #162030; color: #94a3b8; }
-  :root:not([data-theme="light"]) .mro-skip:hover:not(:disabled) { background: #1e2a3a; }
-}

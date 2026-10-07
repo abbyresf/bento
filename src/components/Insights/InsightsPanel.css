@@ -15,7 +15,7 @@
   z-index: 1000;
   width: 100%;
   max-width: 420px;
-  background: white;
+  background: var(--surface);
   box-shadow: -4px 0 20px rgba(36, 59, 85, 0.12);
   display: flex;
   flex-direction: column;
@@ -28,14 +28,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.25rem 1.25rem 0.75rem;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border-soft);
   flex-shrink: 0;
 }
 
 .insights-panel-header h2 {
   font-size: 1.2rem;
   font-weight: 800;
-  color: #243b55;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -46,15 +46,15 @@
   width: 32px;
   height: 32px;
   border: none;
-  background: #f1f5f9;
+  background: var(--surface-sunk);
   border-radius: 50%;
   cursor: pointer;
-  color: #64748b;
+  color: var(--text-secondary);
   transition: background 0.15s;
 }
 
 .insights-close:hover {
-  background: #e2e8f0;
+  background: var(--border);
 }
 
 /* Scrollable body */
@@ -67,7 +67,7 @@
 /* Loading */
 .insights-loading {
   font-size: 0.88rem;
-  color: #94a3b8;
+  color: var(--text-disabled);
   text-align: center;
   margin-top: 3rem;
 }
@@ -75,18 +75,18 @@
 /* Pending note (shown before first week completes) */
 .insights-pending-note {
   font-size: 0.82rem;
-  color: #94a3b8;
+  color: var(--text-disabled);
   line-height: 1.5;
   margin: 0 0 0.85rem;
   padding: 0.6rem 0.85rem;
-  background: #f8fafc;
+  background: var(--surface-soft);
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
 }
 
 /* Placeholder text shared style */
 .placeholder-text {
-  color: #cbd5e1 !important;
+  color: var(--text-faint) !important;
 }
 
 /* Section label */
@@ -95,7 +95,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: #94a3b8;
+  color: var(--text-disabled);
   margin: 0 0 0.65rem;
 }
 
@@ -109,7 +109,7 @@
   align-items: flex-start;
   gap: 0.6rem;
   padding: 0.6rem 0;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border-soft);
 }
 
 .insights-callout:last-child {
@@ -124,7 +124,7 @@
 
 .callout-text {
   font-size: 0.85rem;
-  color: #374151;
+  color: var(--text-body);
   line-height: 1.45;
 }
 
@@ -138,7 +138,7 @@
 }
 
 .streak-history-list {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -148,7 +148,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.65rem 0.9rem;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border-soft);
 }
 
 .streak-history-row:last-child {
@@ -157,14 +157,14 @@
 
 .streak-history-week {
   font-size: 0.83rem;
-  color: #374151;
+  color: var(--text-body);
   font-weight: 500;
 }
 
 .streak-history-count {
   font-size: 0.83rem;
   font-weight: 700;
-  color: #f47421;
+  color: var(--accent-text);
 }
 
 @keyframes insightsOverlayFade {
@@ -201,8 +201,8 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.85rem 1rem;
-  background: #fff;
-  border: 1px solid #e8e3dd;
+  background: var(--surface);
+  border: 1px solid var(--border-warm);
   border-radius: 14px;
   margin-bottom: 1rem;
 }
@@ -228,12 +228,12 @@
 .streak-current-count {
   font-size: 1rem;
   font-weight: 700;
-  color: #243b55;
+  color: var(--text-primary);
 }
 
 .streak-current-sub {
   font-size: 0.78rem;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 /* Badges were previously reachable only by tapping the header streak badge;
@@ -242,17 +242,17 @@
   flex-shrink: 0;
   padding: 0.4rem 0.8rem;
   background: transparent;
-  border: 1.5px solid #e2e8f0;
+  border: 1.5px solid var(--border);
   border-radius: 50px;
   font-family: inherit;
   font-size: 0.78rem;
   font-weight: 600;
-  color: #475569;
+  color: var(--text-muted);
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
 }
 
 .streak-badges-btn:hover {
-  border-color: #f47421;
-  color: #f47421;
+  border-color: var(--accent-text);
+  color: var(--accent-text);
 }

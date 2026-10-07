@@ -1,4 +1,4 @@
-.mc { display: block; flex: none; overflow: visible; }
+.mc { display: block; flex: none; overflow: visible; filter: var(--mascot-filter, none); }
 .mc-body {
   transform-box: view-box;
   transform-origin: 60px 110px;
@@ -61,16 +61,16 @@
   align-items: center;
   padding: 0.9rem 1rem;
   margin-bottom: 1rem;
-  background: #fff;
-  border: 1px solid #e8e3dd;
+  background: var(--surface);
+  border: 1px solid var(--border-warm);
   border-radius: 14px;
 }
 .voice-card-body { min-width: 0; }
-.voice-card h3 { margin: 0 0 0.35rem; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #94a3b8; }
+.voice-card h3 { margin: 0 0 0.35rem; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-disabled); }
 .voice-stats { display: flex; gap: 1.1rem; margin-bottom: 0.35rem; }
-.voice-stat strong { display: block; font-size: 1.5rem; font-weight: 900; line-height: 1; color: #243b55; font-variant-numeric: tabular-nums; }
-.voice-stat span { font-size: 0.72rem; color: #94a3b8; font-weight: 600; }
-.voice-note { margin: 0; font-size: 0.8rem; line-height: 1.35; color: #64748b; }
+.voice-stat strong { display: block; font-size: 1.5rem; font-weight: 900; line-height: 1; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.voice-stat span { font-size: 0.72rem; color: var(--text-disabled); font-weight: 600; }
+.voice-note { margin: 0; font-size: 0.8rem; line-height: 1.35; color: var(--text-secondary); }
 
 /* A piece appears with a little pop when it is put on. */
 .mc-wear { transform-box: view-box; transform-origin: 60px 40px; animation: mc-wear-in 460ms var(--spring-bouncy) backwards; }

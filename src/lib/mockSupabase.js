@@ -39,8 +39,10 @@ const FIXTURES = {
       items: [item('c', 'Roasted vegetables', 120, 3, 18, 5), item('d', 'Baked salmon', 350, 34, 0, 22)] },
   ],
   item_ratings: [
-    { item_id: 'a', updated_at: new Date().toISOString() },
-    { item_id: 'c', updated_at: new Date().toISOString() },
+    { item_id: 'a', item_name: 'Grilled chicken breast', rating: 5, updated_at: new Date().toISOString() },
+    { item_id: 'c', item_name: 'Roasted vegetables', rating: 4, updated_at: new Date().toISOString() },
+    { item_id: 'd', item_name: 'Baked salmon', rating: 4, updated_at: new Date().toISOString() },
+    { item_id: 'b', item_name: 'Brown rice', rating: 3, updated_at: new Date().toISOString() },
   ],
   quest_claims: [],
 };

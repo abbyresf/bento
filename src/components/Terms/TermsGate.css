@@ -1,6 +1,6 @@
 .terms-screen {
   min-height: 100vh;
-  background: #faf7f4;
+  background: var(--bg-app);
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -8,7 +8,7 @@
 }
 
 .terms-card {
-  background: white;
+  background: var(--surface);
   border-radius: 16px;
   box-shadow: 0 4px 24px rgba(36, 59, 85, 0.1);
   width: 100%;
@@ -33,26 +33,26 @@
 .terms-title {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #243b55;
+  color: var(--text-primary);
   margin: 0;
   text-align: center;
 }
 
 .terms-subtitle {
   font-size: 0.9rem;
-  color: #64748b;
+  color: var(--text-secondary);
   margin: -0.5rem 0 0;
   text-align: center;
 }
 
 /* Scrollable terms body */
 .terms-body {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 1.25rem 1.5rem;
   max-height: 340px;
   overflow-y: auto;
-  background: #faf7f4;
+  background: var(--bg-app);
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -68,7 +68,7 @@
 }
 
 .terms-body::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--divider);
   border-radius: 3px;
 }
 
@@ -77,19 +77,19 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #f47421;
+  color: var(--accent-text);
   margin: 0 0 0.4rem;
 }
 
 .terms-section p {
   font-size: 0.88rem;
-  color: #374151;
+  color: var(--text-body);
   line-height: 1.65;
   margin: 0;
 }
 
 .terms-section strong {
-  color: #243b55;
+  color: var(--text-primary);
   font-weight: 700;
 }
 
@@ -100,17 +100,17 @@
   gap: 0.75rem;
   cursor: pointer;
   font-size: 0.88rem;
-  color: #374151;
+  color: var(--text-body);
   line-height: 1.5;
   padding: 1rem;
-  background: #f8faff;
-  border: 1px solid #e2e8f0;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
   border-radius: 10px;
   transition: border-color 0.15s;
 }
 
 .terms-checkbox-row:hover {
-  border-color: #f47421;
+  border-color: var(--accent-text);
 }
 
 .terms-checkbox {
@@ -118,7 +118,7 @@
   width: 18px;
   height: 18px;
   margin-top: 0.1rem;
-  accent-color: #f47421;
+  accent-color: var(--btn-bg);
   cursor: pointer;
 }
 
@@ -126,8 +126,8 @@
 .terms-continue-btn {
   width: 100%;
   padding: 0.85rem;
-  background: #f47421;
-  color: white;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
   border: none;
   border-radius: 10px;
   font-size: 1rem;
@@ -137,7 +137,7 @@
 }
 
 .terms-continue-btn:hover:not(:disabled) {
-  background: #d9641a;
+  background: var(--btn-bg-hover);
 }
 
 .terms-continue-btn:disabled {

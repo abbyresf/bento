@@ -4,8 +4,8 @@
   left: 0;
   right: 0;
   height: 60px;
-  background: white;
-  border-top: 1px solid #e2e8f0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
   display: flex;
   z-index: 900;
   box-shadow: 0 -2px 12px rgba(36, 59, 85, 0.06);
@@ -21,17 +21,17 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #94a3b8;
+  color: var(--text-disabled);
   transition: color 0.15s;
   padding: 0.5rem 0;
 }
 
 .tab-item:hover {
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 .tab-item.active {
-  color: #f47421;
+  color: var(--accent-text);
 }
 
 .tab-icon {

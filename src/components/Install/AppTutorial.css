@@ -16,7 +16,7 @@
 .tutorial-sheet {
   position: relative;
   width: 100%;
-  background: white;
+  background: var(--surface);
   border-radius: 28px 28px 0 0;
   padding: 1rem 1.75rem 2.75rem;
   display: flex;
@@ -34,7 +34,7 @@
 .tutorial-handle {
   width: 36px;
   height: 4px;
-  background: #e2e8f0;
+  background: var(--border);
   border-radius: 2px;
   margin-bottom: 0.75rem;
 }
@@ -47,13 +47,13 @@
   border: none;
   font-size: 0.82rem;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--text-disabled);
   cursor: pointer;
   padding: 0.25rem;
   letter-spacing: 0.01em;
 }
 
-.tutorial-skip:hover { color: #64748b; }
+.tutorial-skip:hover { color: var(--text-secondary); }
 
 /* Animated content area — fades in fresh on each step */
 .tutorial-content {
@@ -84,21 +84,21 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #94a3b8;
+  color: var(--text-disabled);
   margin: 0 0 0.5rem;
 }
 
 .tutorial-title {
   font-size: 1.25rem;
   font-weight: 800;
-  color: #243b55;
+  color: var(--text-primary);
   margin: 0 0 0.65rem;
   line-height: 1.25;
 }
 
 .tutorial-body {
   font-size: 0.92rem;
-  color: #64748b;
+  color: var(--text-secondary);
   line-height: 1.65;
   margin: 0 0 1.75rem;
   max-width: 290px;
@@ -115,7 +115,7 @@
   height: 7px;
   width: 7px;
   border-radius: 999px;
-  background: #e2e8f0;
+  background: var(--border);
   border: none;
   padding: 0;
   cursor: pointer;
@@ -123,15 +123,15 @@
 }
 
 .tutorial-dot.active {
-  background: #f47421;
+  background: var(--btn-bg);
   width: 22px;
 }
 
 .tutorial-next {
   width: 100%;
   padding: 0.9rem;
-  background: #f47421;
-  color: white;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
   border: none;
   border-radius: 14px;
   font-size: 1rem;
@@ -141,4 +141,4 @@
   letter-spacing: 0.01em;
 }
 
-.tutorial-next:hover { background: #d9641a; }
+.tutorial-next:hover { background: var(--btn-bg-hover); }

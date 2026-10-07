@@ -15,7 +15,7 @@
 
 .install-sheet {
   width: 100%;
-  background: white;
+  background: var(--surface);
   border-radius: 24px 24px 0 0;
   padding: 1rem 1.5rem 2.5rem;
   display: flex;
@@ -33,7 +33,7 @@
 .install-handle {
   width: 36px;
   height: 4px;
-  background: #e2e8f0;
+  background: var(--border);
   border-radius: 2px;
   margin-bottom: 1.5rem;
 }
@@ -47,13 +47,13 @@
 .install-title {
   font-size: 1.25rem;
   font-weight: 800;
-  color: #243b55;
+  color: var(--text-primary);
   margin: 0 0 0.5rem;
 }
 
 .install-sub {
   font-size: 0.9rem;
-  color: #64748b;
+  color: var(--text-secondary);
   margin: 0 0 1.5rem;
   line-height: 1.5;
   max-width: 300px;
@@ -70,8 +70,8 @@
 .install-btn {
   width: 100%;
   padding: 0.875rem;
-  background: #f47421;
-  color: white;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
   border: none;
   border-radius: 12px;
   font-size: 1rem;
@@ -81,13 +81,13 @@
 }
 
 .install-btn:hover {
-  background: #d9641a;
+  background: var(--btn-bg-hover);
 }
 
 .install-dismiss {
   background: none;
   border: none;
-  color: #94a3b8;
+  color: var(--text-disabled);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
@@ -95,7 +95,7 @@
 }
 
 .install-dismiss:hover {
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 /* iOS steps */
@@ -112,7 +112,7 @@
   align-items: flex-start;
   gap: 0.875rem;
   text-align: left;
-  background: #f8fafc;
+  background: var(--surface-soft);
   border-radius: 12px;
   padding: 0.75rem 1rem;
 }
@@ -121,8 +121,8 @@
   flex-shrink: 0;
   width: 24px;
   height: 24px;
-  background: #f47421;
-  color: white;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
   border-radius: 50%;
   font-size: 0.78rem;
   font-weight: 800;
@@ -134,7 +134,7 @@
 
 .ios-step-text {
   font-size: 0.9rem;
-  color: #374151;
+  color: var(--text-body);
   line-height: 1.45;
   display: flex;
   flex-wrap: wrap;
@@ -145,7 +145,7 @@
 .ios-share-icon {
   width: 16px;
   height: 16px;
-  color: #3b82f6;
+  color: var(--info-text);
   flex-shrink: 0;
   display: inline-block;
 }

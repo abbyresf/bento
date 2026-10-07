@@ -9,7 +9,7 @@
 }
 
 .policy-modal {
-  background: white;
+  background: var(--surface);
   border-radius: 20px 20px 0 0;
   width: 100%;
   max-height: 80vh;
@@ -28,24 +28,24 @@
 .policy-modal-header h2 {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-heading);
 }
 
 .policy-close {
   background: none;
   border: none;
   cursor: pointer;
-  color: #94a3b8;
+  color: var(--text-disabled);
   padding: 4px;
   display: flex;
   align-items: center;
 }
 
-.policy-close:hover { color: #64748b; }
+.policy-close:hover { color: var(--text-secondary); }
 
 .policy-body p {
   font-size: 0.875rem;
-  color: #475569;
+  color: var(--text-muted);
   line-height: 1.6;
   margin-bottom: 1rem;
 }
@@ -55,7 +55,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #94a3b8;
+  color: var(--text-disabled);
   margin-bottom: 0.5rem;
   margin-top: 1.25rem;
 }
@@ -69,23 +69,11 @@
 
 .policy-body li {
   font-size: 0.875rem;
-  color: #475569;
+  color: var(--text-muted);
   line-height: 1.5;
 }
 
 @keyframes slideUp {
   from { transform: translateY(20px); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
-}
-
-/* Guarded so an explicit Light choice in Settings wins over a dark OS. Without
-   the :not(), this block applied whenever the phone was dark and these screens
-   rendered dark inside an otherwise light app.
-   These rules still predate the token layer; they want migrating to tokens so
-   dark is consistent with the rest of the app, but the guard is the part that
-   was actually broken. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .policy-modal { background: #1e2a3a; }
-  :root:not([data-theme="light"]) .policy-modal-header h2 { color: #e2e8f0; }
-  :root:not([data-theme="light"]) .policy-body p, .policy-body li { color: #94a3b8; }
 }
