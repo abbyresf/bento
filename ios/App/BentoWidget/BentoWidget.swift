@@ -166,7 +166,10 @@ struct PlateView: View {
     private var overlays: some View {
         if small {
             if isMeal {
-                mascot(height: 38).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                // Nudged out into the corner so he lines up with the title, not the dishes.
+                mascot(height: 44)
+                    .offset(x: 6, y: -8)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             } else {
                 mascot(height: 52).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                 if streak > 0 {
