@@ -47,8 +47,11 @@ before a version can be submitted for review.
 | Contests | None | Quests are personal goals, not contests |
 | Loot Boxes | None | Closet pieces are earned, never random or bought |
 
-**Expected result: 9+**, driven by the health and wellness answer. You may raise
-it. Apple lets you set a higher minimum age than the questionnaire gives.
+**Expected result: 9+**, driven by the health and wellness answer. **Decision,
+7 Oct 2026: set it to 13+**, to match the privacy policy, which says Bento is not
+directed to children under 13. Apple lets you set a higher minimum age than the
+questionnaire gives: in the Age Rating section, choose the higher rating after
+answering the questions.
 
 **User-generated content brings guideline 1.2.** A reviewer can ask for a way to
 report content, a way to block abusive users, filtering, and published contact
