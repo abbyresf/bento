@@ -289,8 +289,8 @@ jobs:
         # key for each certificate is thrown away with the runner, so they cannot
         # sign anything again. Revoke the ones the API key made.
         #
-        # Matched by the exact name Apple gives them, "Created via API", and only
-        # of the DEVELOPMENT type. The managed distribution certificate that
+        # Matched by the label Apple gives them, "Created via API", and only of the
+        # DEVELOPMENT type. The managed distribution certificate that
         # signs the TestFlight export is a different type, and a certificate made
         # from a person's own Mac carries their name. Neither is touched. Runs are
         # serialised by the concurrency group, so no other run is mid-signing.
@@ -328,7 +328,16 @@ jobs:
                   return json.loads(body) if body else {}
 
           certs = call("GET", "/v1/certificates?filter[certificateType]=DEVELOPMENT&limit=200")["data"]
-          throwaway = [c for c in certs if c["attributes"].get("name") == "Created via API"]
+          # The portal labels these "Created via API", but which API field carries
+          # that label is not documented, so check both name fields. Run 18
+          # matched on name alone and found none. The listing is printed so a
+          # surprise is visible in the log. Serial numbers are not printed.
+          def label(c):
+              a = c["attributes"]
+              return [a.get("name") or "", a.get("displayName") or ""]
+          for c in certs:
+              print("  type=%s name=%r displayName=%r" % (c["attributes"].get("certificateType"), *label(c)))
+          throwaway = [c for c in certs if any("Created via API" in v for v in label(c))]
           print("development certificates: %d, throwaway: %d" % (len(certs), len(throwaway)))
           # A hard ceiling, so a surprise in the listing can never mean a mass revoke.
           for c in throwaway[:25]:
