@@ -222,7 +222,14 @@ jobs:
           # A virtual environment, because the runner's Homebrew Python refuses
           # system-wide installs ("externally-managed-environment").
           python3 -m venv "$RUNNER_TEMP/jwtenv"
-          "$RUNNER_TEMP/jwtenv/bin/pip" install --quiet pyjwt cryptography
+          # Retried, because PyPI is occasionally unreachable from a runner. Run
+          # #14 (6 Oct 2026) failed here with "No matching distribution found"
+          # while Apple had in fact accepted the build.
+          for attempt in 1 2 3 4; do
+            "$RUNNER_TEMP/jwtenv/bin/pip" install --quiet --retries 5 --timeout 60 pyjwt cryptography && break
+            [ "$attempt" = 4 ] && { echo "::error::could not install the JWT library after 4 attempts"; exit 1; }
+            echo "pip install failed, retrying in $((attempt * 10))s"; sleep $((attempt * 10))
+          done
           "$RUNNER_TEMP/jwtenv/bin/python" - <<'PY'
           import os, json, time, urllib.request, urllib.error, jwt
 

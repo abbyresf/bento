@@ -16,7 +16,12 @@ jobs:
 
     steps:
       - name: Install JWT library
-        run: python3 -m pip install --quiet pyjwt cryptography
+        run: |
+          for attempt in 1 2 3; do
+            python3 -m pip install --quiet --retries 5 --timeout 60 pyjwt cryptography && break
+            [ "$attempt" = 3 ] && exit 1
+            sleep $((attempt * 10))
+          done
 
       - name: List apps, builds and uploads
         env:

@@ -26,6 +26,7 @@ import SurveyPopup from './components/Survey/SurveyPopup';
 import SplashScreen from './components/Splash/SplashScreen';
 import UpdatePrompt from './components/common/UpdatePrompt';
 import { syncNativePushToken } from './lib/push';
+import { loadOutfit, resetOutfit } from './lib/mascotOutfit';
 import './App.css';
 import BentoLogo from './components/common/BentoLogo';
 
@@ -179,6 +180,11 @@ function App() {
     if (session && isNative) syncNativePushToken();
   }, [session, isNative]);
 
+  // The piece Bento is wearing follows the student, so ask for it once signed in.
+  useEffect(() => {
+    if (session) loadOutfit();
+  }, [session]);
+
   // ── Computed values & handlers ────────────────────────────────────────────────
 
   // [0-9a-f-]+ was written when the invite token was the row's UUID. Tokens are
@@ -199,6 +205,7 @@ function App() {
   const handleReset = async () => {
     await signOut();
     clearAccountLocalData();
+    resetOutfit();
     setHasCompletedOnboarding(null);
     setHasAcceptedTerms(null);
     setActiveTab('today');

@@ -8,8 +8,81 @@
  * It idles (a slow breath) and blinks, and hops once when it first appears.
  * Under reduced motion it holds still. `size` is the rendered height in px. */
 const NV = '#24384F', OR = '#FD8F2A', GR = '#77BD3E', CR = '#FDECD7';
+const GOLD = '#FFC53D';
 
-export default function Mascot({ mood = 'happy', size = 64, hop = true }) {
+/* The closet. Each piece is drawn in the mascot's own coordinates (the body is
+   x 14 to 106, y 16 to 102), so it sits right in every mood. `back` pieces are
+   drawn before the body, everything else after it. */
+const WEAR = {
+  gradcap: (
+    <g className="mc-wear">
+      <path d="M60 4L102 19 60 34 18 19z" fill={NV} />
+      <path d="M38 27v9c0 6 44 6 44 0v-9" fill="#1A2A3D" />
+      <path d="M96 20v17" stroke={OR} strokeWidth="3" strokeLinecap="round" />
+      <circle cx="96" cy="40" r="4" fill={OR} />
+    </g>
+  ),
+  headband: (
+    <g className="mc-wear">
+      <path d="M16 36Q60 22 104 36" stroke={OR} strokeWidth="10" strokeLinecap="round" fill="none" />
+      <path d="M16 36Q60 22 104 36" stroke="#fff" strokeWidth="2" strokeLinecap="round" fill="none" strokeDasharray="2 9" opacity="0.7" />
+    </g>
+  ),
+  sunglasses: (
+    <g className="mc-wear">
+      <rect x="31" y="67" width="27" height="19" rx="8" fill="#1A2A3D" stroke={NV} strokeWidth="3" />
+      <rect x="62" y="67" width="27" height="19" rx="8" fill="#1A2A3D" stroke={NV} strokeWidth="3" />
+      <path d="M58 74h4" stroke={NV} strokeWidth="3" strokeLinecap="round" />
+      <path d="M36 72l8-2M67 72l8-2" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" opacity="0.7" />
+    </g>
+  ),
+  sprout: (
+    <g className="mc-wear mc-sway">
+      <path d="M60 16V4" stroke={NV} strokeWidth="4" strokeLinecap="round" />
+      <path d="M60 7Q44 -3 36 9 52 15 60 7z" fill={GR} stroke={NV} strokeWidth="3" strokeLinejoin="round" />
+      <path d="M60 7Q76 -3 84 9 68 15 60 7z" fill={GR} stroke={NV} strokeWidth="3" strokeLinejoin="round" />
+    </g>
+  ),
+  scarf: (
+    <g className="mc-wear">
+      <path d="M15 64Q60 74 105 64" stroke={OR} strokeWidth="11" strokeLinecap="round" fill="none" />
+      <path d="M15 64Q60 74 105 64" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" fill="none" strokeDasharray="3 8" opacity="0.65" />
+      <rect x="82" y="66" width="13" height="26" rx="5" fill={OR} stroke={NV} strokeWidth="2.6" />
+    </g>
+  ),
+  chefhat: (
+    <g className="mc-wear">
+      <circle cx="42" cy="12" r="12" fill="#fff" stroke={NV} strokeWidth="3" />
+      <circle cx="60" cy="6" r="13" fill="#fff" stroke={NV} strokeWidth="3" />
+      <circle cx="78" cy="12" r="12" fill="#fff" stroke={NV} strokeWidth="3" />
+      <rect x="36" y="14" width="48" height="12" rx="4" fill="#fff" stroke={NV} strokeWidth="3" />
+    </g>
+  ),
+  partyhat: (
+    <g className="mc-wear">
+      <path d="M60 -6L82 22H38z" fill={OR} stroke={NV} strokeWidth="3" strokeLinejoin="round" />
+      <path d="M52 8l-9 14M60 -2l-5 24M67 6l-4 16" stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity="0.8" />
+      <circle cx="60" cy="-6" r="5" fill={GOLD} stroke={NV} strokeWidth="2.4" />
+    </g>
+  ),
+  crown: (
+    <g className="mc-wear">
+      <path d="M34 22L38 2l14 11 8-13 8 13 14-11 4 20z" fill={GOLD} stroke={NV} strokeWidth="3" strokeLinejoin="round" />
+      <circle cx="60" cy="14" r="3.4" fill="#FF6B8A" stroke={NV} strokeWidth="1.8" />
+      <circle cx="44" cy="17" r="2.4" fill={GR} stroke={NV} strokeWidth="1.6" />
+      <circle cx="76" cy="17" r="2.4" fill={GR} stroke={NV} strokeWidth="1.6" />
+    </g>
+  ),
+  cape: (
+    <g className="mc-wear mc-cape">
+      <path d="M26 38Q-12 66 -4 108Q28 98 60 108Q92 98 124 108Q132 66 94 38z" fill="#E8553A" stroke={NV} strokeWidth="3" strokeLinejoin="round" />
+      <path d="M6 94Q14 70 28 56M114 94Q106 70 92 56" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" fill="none" opacity="0.45" />
+    </g>
+  ),
+};
+const BACK = new Set(['cape']);
+
+export default function Mascot({ mood = 'happy', size = 64, hop = true, outfit = null }) {
   const cheer = mood === 'cheer';
   const sleepy = mood === 'sleepy';
   return (
@@ -21,6 +94,7 @@ export default function Mascot({ mood = 'happy', size = 64, hop = true }) {
     >
       <ellipse cx="60" cy="110" rx="32" ry="5" fill="rgba(36,56,80,0.16)" />
       <g className="mc-body">
+        {outfit && BACK.has(outfit) && WEAR[outfit]}
         <g fill={NV}>
           <rect x="32" y="96" width="20" height="14" rx="7" />
           <rect x="68" y="96" width="20" height="14" rx="7" />
@@ -61,6 +135,7 @@ export default function Mascot({ mood = 'happy', size = 64, hop = true }) {
         ) : (
           <path d="M52 84q8 11 16 0z" fill="#E8553A" stroke={NV} strokeWidth="2.6" strokeLinejoin="round" />
         )}
+        {outfit && !BACK.has(outfit) && WEAR[outfit]}
         {sleepy && <text x="96" y="22" fontSize="18" fontWeight="900" fill={NV} className="mc-z">z</text>}
       </g>
     </svg>

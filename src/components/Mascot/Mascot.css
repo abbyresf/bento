@@ -71,3 +71,13 @@
 .voice-stat strong { display: block; font-size: 1.5rem; font-weight: 900; line-height: 1; color: var(--text-primary, #24384F); font-variant-numeric: tabular-nums; }
 .voice-stat span { font-size: 0.72rem; color: var(--text-disabled, #94a3b8); font-weight: 600; }
 .voice-note { margin: 0; font-size: 0.8rem; line-height: 1.35; color: var(--text-secondary, #64748b); }
+
+/* A piece appears with a little pop when it is put on. */
+.mc-wear { transform-box: view-box; transform-origin: 60px 40px; animation: mc-wear-in 460ms var(--spring-bouncy) backwards; }
+@keyframes mc-wear-in { from { opacity: 0; transform: translateY(-14px) scale(0.7); } to { opacity: 1; transform: none; } }
+.mc-sway { animation: mc-wear-in 460ms var(--spring-bouncy) backwards, mc-sway 2.2s ease-in-out 600ms infinite alternate; transform-origin: 60px 16px; }
+@keyframes mc-sway { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+
+.bento-says-mascot { background: none; border: 0; padding: 0; margin: 0; cursor: pointer; flex: none; -webkit-tap-highlight-color: transparent; }
+
+.voice-mascot { background: none; border: 0; padding: 0; cursor: pointer; flex: none; -webkit-tap-highlight-color: transparent; }

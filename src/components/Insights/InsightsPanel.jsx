@@ -3,6 +3,8 @@ import { getWeeklySummaries, getWeeklyHistoryFromMealHistory, getNutritionTarget
 import { UNIVERSITIES } from '../../data/universities';
 import { voiceMessage } from '../../utils/bentoSays';
 import Mascot from '../Mascot/Mascot';
+import Closet from '../Mascot/Closet';
+import { useOutfit } from '../../lib/mascotOutfit';
 import '../Mascot/Mascot.css';
 import WeeklySummaryCard from './WeeklySummaryCard';
 import DailyBreakdown from './DailyBreakdown';
@@ -99,6 +101,8 @@ function Callouts({ targets, goalHits }) {
 function VoiceCard() {
   const [stats, setStats] = useState(null);
   const [uni, setUni] = useState(null);
+  const outfit = useOutfit();
+  const [closet, setCloset] = useState(false);
   useEffect(() => {
     let off = false;
     Promise.all([getVoiceStats(), getUserProfile()]).then(([st, profile]) => {
@@ -117,7 +121,9 @@ function VoiceCard() {
   });
   return (
     <div className="voice-card">
-      <Mascot mood={stats.mealsThisMonth > 0 ? 'cheer' : 'happy'} size={64} hop={false} />
+      <button className="voice-mascot" onClick={() => setCloset(true)} aria-label="Open Bento's closet">
+        <Mascot mood={stats.mealsThisMonth > 0 ? 'cheer' : 'happy'} size={64} hop={false} outfit={outfit} />
+      </button>
       <div className="voice-card-body">
         <h3>Your voice</h3>
         <div className="voice-stats">
@@ -126,6 +132,7 @@ function VoiceCard() {
         </div>
         <p className="voice-note">{msg}</p>
       </div>
+      {closet && <Closet onClose={() => setCloset(false)} />}
     </div>
   );
 }

@@ -35,6 +35,8 @@ import { optimizeDay, findAlternatives, findRecommendedAdditions } from '../../u
 import MealCard from './MealCard';
 import DailySummary from './DailySummary';
 import Mascot from '../Mascot/Mascot';
+import Closet from '../Mascot/Closet';
+import { useOutfit } from '../../lib/mascotOutfit';
 import '../Mascot/Mascot.css';
 import { bentoSays } from '../../utils/bentoSays';
 import StreakCelebration from '../Streak/StreakCelebration';
@@ -74,6 +76,8 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const [showFeedback, setShowFeedback] = useState(false);
   // Set when a confirmation could not be saved: { meal, code, message }.
   const [saveError, setSaveError] = useState(null);
+  const outfit = useOutfit();
+  const [showCloset, setShowCloset] = useState(false);
   const [pendingBadge, setPendingBadge] = useState(null);
   const [newBadge, setNewBadge] = useState(null);
   const [customMeals, setCustomMeals] = useState(() => {
@@ -810,7 +814,9 @@ export default function MealPlan({ settingsVersion = 0 }) {
         // Keyed on the line, so the bubble pops again when the line changes.
         return (
           <div className="bento-says" key={say.text}>
-            <Mascot mood={say.mood} size={60} />
+            <button className="bento-says-mascot" onClick={() => setShowCloset(true)} aria-label="Open Bento's closet">
+              <Mascot mood={say.mood} size={60} outfit={outfit} />
+            </button>
             <div className="bento-says-bubble">{say.text}</div>
           </div>
         );
@@ -889,6 +895,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
           <small>{saveError.code}: {saveError.message}</small>
         </div>
       )}
+      {showCloset && <Closet onClose={() => setShowCloset(false)} />}
       {showFeedback && <FeedbackSheet onClose={() => setShowFeedback(false)} />}
 
       {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}

@@ -890,6 +890,7 @@ const ACCOUNT_LOCAL_KEYS = [
   'bento_confirmed_meals_v2',
   'bento_meal_plans_v3',
   'bento_custom_meals_v1',
+  'bento_mascot_outfit',
 ];
 
 export function clearAccountLocalData() {
