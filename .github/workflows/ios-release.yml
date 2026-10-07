@@ -115,7 +115,7 @@ jobs:
           head -1 "$KEY" | grep -q '^-----BEGIN PRIVATE KEY-----$' || { echo "ASC_KEY_P8 must be the full .p8 text, starting with the BEGIN PRIVATE KEY line"; exit 1; }
           openssl pkey -in "$KEY" -noout || { echo "ASC_KEY_P8 is not a readable private key"; exit 1; }
 
-      - name: Set the team on the App target
+      - name: Set the team on the App and widget targets
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
@@ -128,9 +128,11 @@ jobs:
           [ -n "$APPLE_TEAM_ID" ] || { echo "APPLE_TEAM_ID is empty"; exit 1; }
           PBX=ios/App/App.xcodeproj/project.pbxproj
           BEFORE=$(grep -c 'CODE_SIGN_STYLE = Automatic;' "$PBX")
-          [ "$BEFORE" -eq 2 ] || { echo "expected 2 App target configs, found $BEFORE"; exit 1; }
+          # Two targets, App and BentoWidget, each with a Debug and a Release
+          # config. The widget is signed with the same team.
+          [ "$BEFORE" -eq 4 ] || { echo "expected 4 target configs (App and BentoWidget), found $BEFORE"; exit 1; }
           sed -i '' "s/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Automatic; DEVELOPMENT_TEAM = $APPLE_TEAM_ID;/" "$PBX"
-          [ "$(grep -c "DEVELOPMENT_TEAM = $APPLE_TEAM_ID;" "$PBX")" -eq 2 ]
+          [ "$(grep -c "DEVELOPMENT_TEAM = $APPLE_TEAM_ID;" "$PBX")" -eq 4 ]
 
       - name: Archive
         env:
@@ -178,6 +180,15 @@ jobs:
             grep -q "<key>$key</key>" "$RUNNER_TEMP/ents.plist" || { echo "::error::archive is missing the $key entitlement"; exit 1; }
           done
           echo "entitlements present: aps-environment, applesignin"
+
+          # The home-screen widget reads the plate from a shared app group. If
+          # the extension is missing, or either side lacks the group, the build
+          # would install fine and the widget would show nothing, so fail here.
+          grep -q "<key>com.apple.security.application-groups</key>" "$RUNNER_TEMP/ents.plist" || { echo "::error::the app is missing the app group entitlement"; exit 1; }
+          WIDGET="$APP/PlugIns/BentoWidget.appex"
+          [ -d "$WIDGET" ] || { echo "::error::the widget extension is not embedded in the app"; exit 1; }
+          codesign -d --entitlements :- "$WIDGET" 2>/dev/null | grep -q "group.com.bentodining.app" || { echo "::error::the widget is missing the app group"; exit 1; }
+          echo "widget embedded and carries the app group"
 
       - name: Export and upload to TestFlight
         env:

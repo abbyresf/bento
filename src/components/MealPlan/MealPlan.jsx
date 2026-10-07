@@ -28,6 +28,7 @@ import { hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
 import { fetchDiningMenu, getUniversityConfig, getSelectableLocations } from '../../services/menuFetcher';
 import { getUserProfile, getNutritionTargets, getDietaryRestrictions, getRecentItemIds, addMealToHistory, removeMealFromHistory, setCachedMenu, getCachedMenu, getCachedMenuAge, incrementStreak, incrementStreakForDate, getStreak, getConfirmedMealsForDate, fetchConfirmedMeals, recordDiningAvailability } from '../../lib/db';
 import { useRatings } from '../../context/RatingsContext';
+import { buildPlatePayload, syncWidget } from '../../lib/widget';
 import { sumItems, MAX_SERVINGS } from '../../utils/servingSize.js';
 import BentoLogo from '../common/BentoLogo';
 import { getNewBadge } from '../../data/badges';
@@ -232,6 +233,24 @@ export default function MealPlan({ settingsVersion = 0 }) {
     document.addEventListener('visibilitychange', onVisible);
     return () => { cancelled = true; document.removeEventListener('visibilitychange', onVisible); };
   }, [viewDate]);
+
+  // Keep the home-screen widget showing today's plate. Only today: the widget
+  // has no use for another day, and a student browsing tomorrow must not
+  // overwrite it. A streak only counts as running if a meal was confirmed today
+  // or yesterday, the same rule as the Insights tab.
+  useEffect(() => {
+    const today = localDateStr();
+    if (viewDate !== today || !mealPlan || !menu) return;
+    const yesterday = localDateStr(new Date(Date.now() - 86400000));
+    const running = streak.lastConfirmedDate === today || streak.lastConfirmedDate === yesterday;
+    const meals = {};
+    for (const m of ['breakfast', 'lunch', 'dinner']) {
+      const loc = selectedLocation[m];
+      const items = customMeals[m]?.items ?? mealPlan[loc]?.[m]?.items ?? [];
+      meals[m] = { hall: menu.locations?.[loc]?.shortName ?? null, items, confirmed: !!confirmedMeals[m] };
+    }
+    syncWidget(buildPlatePayload({ date: today, streak: running ? streak.currentStreak : 0, meals }));
+  }, [viewDate, mealPlan, menu, selectedLocation, customMeals, confirmedMeals, streak]);
 
   // Date navigation: when viewDate changes (not on initial mount — that's handled above).
   useEffect(() => {

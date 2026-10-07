@@ -4,6 +4,7 @@ import { supabase } from './supabase';
 import { signInWithGoogleNative, signInWithAppleNative } from './nativeAuth';
 import { WEB_ORIGIN } from './apiBase';
 import { weekRange } from '../data/quests';
+import { clearWidget } from './widget';
 
 // ── Auth helpers ───────────────────────────────────────────────────────────
 
@@ -948,6 +949,8 @@ const ACCOUNT_LOCAL_KEYS = [
 ];
 
 export function clearAccountLocalData() {
+  // The widget shows the last plate it was given, so it must be emptied too.
+  clearWidget();
   try {
     ACCOUNT_LOCAL_KEYS.forEach(k => localStorage.removeItem(k));
     // Cached menus are public data, but a plan is built from them per student.
