@@ -459,6 +459,9 @@ typically 24–48 hours per round.
 
 Decided with the owner on 7 Oct 2026. Nothing here is built.
 
+**The full design, data model, phases and the issues found by checking it
+against the code now live in `SOCIAL_SPEC.md`.** This section is the short form.
+
 ### Principles
 
 - **Nothing is shared automatically.** A friend sees where you are only after you
