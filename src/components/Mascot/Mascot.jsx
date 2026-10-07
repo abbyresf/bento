@@ -46,11 +46,14 @@ const WEAR = {
     </g>
   ),
   scarf: (
-    // The tail is drawn first and the wrap over it, so the wrap goes around the
-    // neck on top and the tail hangs from underneath it.
+    // One green scarf with one outline and one dash pattern. The tail is drawn
+    // first and the wrap over it, so the wrap goes around the neck on top and
+    // the tail hangs from underneath it.
     <g className="mc-wear">
-      <path d="M83 98L81 118Q88 122 95 118L95 99z" fill={OR} stroke={NV} strokeWidth="2.6" strokeLinejoin="round" />
-      <path d="M17 96Q60 106 103 96" stroke={OR} strokeWidth="9" strokeLinecap="round" fill="none" />
+      <path d="M82 98V122Q89 127 96 122V98z" fill={GR} stroke={NV} strokeWidth="2.6" strokeLinejoin="round" />
+      <path d="M89 108V120" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" fill="none" strokeDasharray="3 6" opacity="0.65" />
+      <path d="M17 96Q60 106 103 96" stroke={NV} strokeWidth="14" strokeLinecap="round" fill="none" />
+      <path d="M17 96Q60 106 103 96" stroke={GR} strokeWidth="9" strokeLinecap="round" fill="none" />
       <path d="M17 96Q60 106 103 96" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" fill="none" strokeDasharray="3 8" opacity="0.65" />
     </g>
   ),

@@ -46,9 +46,9 @@ const MOODS = ['happy', 'cheer', 'sleepy'];
 const SIG_KEY = 'bento_widget_mascot_sig';
 // The Mascot's own viewBox is "-8 -4 136 124", and the app lets pieces overflow
 // it. A picture cannot overflow, and the party hat's pom-pom and the chef hat's
-// puffs reach above it, so the picture gets 12 units more headroom.
-const VIEWBOX = '-8 -16 136 136';
-const W = 136, H = 136, SCALE = 3;   // drawn at 3x
+// puffs reach above it, so the picture gets 12 units more headroom, and 10 more below for the scarf's tail.
+const VIEWBOX = '-8 -16 136 146';
+const W = 136, H = 146, SCALE = 3;   // drawn at 3x
 
 export async function drawMascotPng(mood, outfit) {
   const [{ renderToStaticMarkup }, { default: Mascot }, { createElement }] = await Promise.all([
