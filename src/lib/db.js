@@ -946,6 +946,7 @@ const ACCOUNT_LOCAL_KEYS = [
   'bento_mascot_outfit',
   'bento_gates_v1',
   'bento_profile_cache_v1',
+  'bento_widget_mascot_sig',
 ];
 
 export function clearAccountLocalData() {

@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { supabase } from './supabase';
 import { OUTFIT_IDS } from '../data/mascotOutfits';
+import { syncWidgetMascot } from './widget';
 
 /* What Bento is wearing, shared by every screen that shows the mascot.
  *
@@ -39,6 +40,8 @@ export async function setOutfit(id) {
     if (next) localStorage.setItem(KEY, next); else localStorage.removeItem(KEY);
   } catch { /* storage unavailable */ }
   emit(next);
+  // The widget wears the same piece, whichever tab it was chosen from.
+  syncWidgetMascot(next);
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) await supabase.from('profiles').update({ mascot_outfit: next }).eq('id', user.id);
@@ -58,6 +61,7 @@ export async function loadOutfit() {
       if (saved) localStorage.setItem(KEY, saved); else localStorage.removeItem(KEY);
     } catch { /* ignore */ }
     if (saved !== current) emit(saved);
+    syncWidgetMascot(saved);
   } catch { /* keep the local copy */ }
 }
 

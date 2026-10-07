@@ -28,7 +28,7 @@ import { hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
 import { fetchDiningMenu, getUniversityConfig, getSelectableLocations } from '../../services/menuFetcher';
 import { getUserProfile, getNutritionTargets, getDietaryRestrictions, getRecentItemIds, addMealToHistory, removeMealFromHistory, setCachedMenu, getCachedMenu, getCachedMenuAge, incrementStreak, incrementStreakForDate, getStreak, getConfirmedMealsForDate, fetchConfirmedMeals, recordDiningAvailability } from '../../lib/db';
 import { useRatings } from '../../context/RatingsContext';
-import { buildPlatePayload, syncWidget } from '../../lib/widget';
+import { buildPlatePayload, syncWidget, syncWidgetMascot } from '../../lib/widget';
 import { sumItems, MAX_SERVINGS } from '../../utils/servingSize.js';
 import BentoLogo from '../common/BentoLogo';
 import { getNewBadge } from '../../data/badges';
@@ -250,7 +250,8 @@ export default function MealPlan({ settingsVersion = 0 }) {
       meals[m] = { hall: menu.locations?.[loc]?.shortName ?? null, items, confirmed: !!confirmedMeals[m] };
     }
     syncWidget(buildPlatePayload({ date: today, streak: running ? streak.currentStreak : 0, meals }));
-  }, [viewDate, mealPlan, menu, selectedLocation, customMeals, confirmedMeals, streak]);
+    syncWidgetMascot(outfit);
+  }, [viewDate, mealPlan, menu, selectedLocation, customMeals, confirmedMeals, streak, outfit]);
 
   // Date navigation: when viewDate changes (not on initial mount — that's handled above).
   useEffect(() => {

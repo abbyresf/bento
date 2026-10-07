@@ -1,5 +1,6 @@
 import WidgetKit
 import SwiftUI
+import UIKit
 
 /// Today's plate on the home screen. Reads what the app last wrote to the shared
 /// group (see WidgetBridgePlugin.swift) and shows the next meal. It never
@@ -12,6 +13,18 @@ private let plateKey = "plate_v1"
 private let navy = Color(red: 0x24 / 255, green: 0x38 / 255, blue: 0x4F / 255)
 private let orange = Color(red: 0xFD / 255, green: 0x8F / 255, blue: 0x2A / 255)
 private let cream = Color(red: 0xFD / 255, green: 0xEC / 255, blue: 0xD7 / 255)
+
+/// Bento's picture for a mood, drawn by the app wearing whatever the student has
+/// on (see syncWidgetMascot in src/lib/widget.js). Returns nil until the app has
+/// run once, and the widget simply draws no mascot then. A variable so the
+/// layout can be rendered with a stand-in image in tests.
+var loadMascot: (String) -> UIImage? = { mood in
+    guard let url = FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: appGroup)?
+            .appendingPathComponent("mascot_\(mood).png"),
+          let data = try? Data(contentsOf: url) else { return nil }
+    return UIImage(data: data)
+}
 
 struct MealLine: Codable {
     let hall: String?
@@ -44,6 +57,15 @@ enum PlateState {
     case needsApp
     case meal(title: String, line: MealLine, streak: Int?)
     case finished(streak: Int?)
+
+    /// Cheers when the next meal is confirmed, sleeps once the day is done.
+    var mood: String {
+        switch self {
+        case .needsApp: return "happy"
+        case .finished: return "sleepy"
+        case .meal(_, let line, _): return line.confirmed ? "cheer" : "happy"
+        }
+    }
 }
 
 struct PlateEntry: TimelineEntry {
@@ -112,9 +134,27 @@ struct PlateView: View {
     @Environment(\.widgetFamily) private var family
     let entry: PlateEntry
 
+    private var small: Bool { family == .systemSmall }
+
     var body: some View {
-        content
-            .widgetBackground()
+        ZStack(alignment: .bottomTrailing) {
+            content
+                // Medium keeps the words out from under Bento.
+                .padding(.trailing, small ? 0 : 104)
+            mascot
+        }
+        .widgetBackground()
+    }
+
+    @ViewBuilder
+    private var mascot: some View {
+        if let image = loadMascot(entry.state.mood) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFit()
+                .frame(height: small ? 56 : 104)
+                .accessibilityHidden(true)
+        }
     }
 
     @ViewBuilder
@@ -146,7 +186,8 @@ struct PlateView: View {
     }
 
     private func mealView(title: String, line: MealLine, streak: Int?) -> some View {
-        let limit = family == .systemSmall ? 3 : 4
+        // Small shares its bottom corner with Bento, so it shows fewer dishes.
+        let limit = small ? 2 : 4
         let shown = Array(line.items.prefix(limit))
         let extra = line.items.count - shown.count
         return VStack(alignment: .leading, spacing: 3) {
@@ -166,7 +207,7 @@ struct PlateView: View {
                 Text("+\(extra) more").font(.caption2).foregroundColor(navy.opacity(0.6))
             }
             Spacer(minLength: 0)
-            if let streak = streak, streak > 0, family != .systemSmall { streakLabel(streak) }
+            if let streak = streak, streak > 0 { streakLabel(streak) }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
