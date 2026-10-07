@@ -455,6 +455,93 @@ typically 24–48 hours per round.
 
 ---
 
+## 11. Duo: friends and roommates (design, not started)
+
+Decided with the owner on 7 Oct 2026. Nothing here is built.
+
+### Principles
+
+- **Nothing is shared automatically.** A friend sees where you are only after you
+  tap "I'm here", and you pick which friends get it. Plans stay private.
+- **Personal progress never depends on a friend.** Personal streaks, quests and
+  goals are untouched by anything in Duo. The duo streak is extra.
+- **If one person quits,** duo streaks and duo quests end quietly. Nothing
+  personal changes for the other person. Rewards already earned stay owned by the
+  person who earned them.
+- **A plate quest counts when at least one person confirms.**
+- **Allergens and diet are filtered on the server** against the recipient's
+  profile before any plate or item is offered. The friend never sees the profile.
+- **No feed, chat, public profiles or search by name.** Invite by link or code.
+- **Food stays out of the comparison.** Quests count confirming and food groups,
+  never calories or amounts.
+- **Pulse** still sees aggregates only. Friend links are not exposed to clients.
+
+### Quests
+
+Plate-based
+- **Plate swap:** each person builds a plate for the other, who can accept, swap
+  items or skip.
+- **Mystery plate:** a friend picks one item without telling you, you build the
+  rest around it.
+- **Bento plate:** between you, a plate has a protein, a vegetable and a grain.
+- **Rainbow plate:** pick a color for your friend, who must eat one item of it.
+  Needs a color per menu item, see Open items.
+- **Match the plate:** you each build the same plate and confirm it, with a bonus
+  if you both rate it.
+
+Rating-based
+- **Taste test:** you both rate the same new dish, and the quest asks whether you
+  agreed.
+- **Pick of the week:** each nominates a favorite from their ratings and the other
+  tries it.
+- **Review duo:** rate five items between you.
+
+Streak and habit
+- **Daily duo:** both confirm a meal on the same day. Feeds the duo streak.
+- **Cover for me:** either person can nudge before 8pm, and the quest counts if the
+  friend confirms after it. Needs push reminders verified end to end.
+- **Week of dinners:** both confirm dinner five nights.
+
+Silly and collectible
+- **Twin day:** both Bentos stand side by side on Today for a day, once both
+  approve, each wearing their own equipped outfit. Either person can end it early
+  and it ends at midnight.
+- **Outfit swap:** wear each other's outfit for a day, with a preview button. Same
+  approval rules as Twin day.
+
+Dropped: Table for two (too rare) and New hall duo (Brandeis has two halls and most
+students use both).
+
+### Rewards
+
+Matching pairs that unlock only when both finish a quest, such as paired scarves or
+a two-part costume, plus a duo badge that grows with the duo streak. Each person
+owns the piece they earn.
+
+### Phases
+
+1. **Foundation:** invites, friend list, block and remove, "I'm here", duo streak,
+   Daily duo and Week of dinners. Includes the migration, privacy policy update, the
+   App Store Social Media answer, and block and report for review.
+2. **Plate and rating quests:** all plate-based and rating-based quests, with the
+   server-side allergen filter and the color or food-group tags.
+3. **Collectibles:** matching closet pieces, duo badge, Twin day and Outfit swap.
+4. **Widget:** the pair on the widget, which needs friend pictures shared into the
+   widget container.
+
+### Open items
+
+- **Color and food group per menu item.** Start with keyword tagging, let a friend
+  dispute an item, and correct the list from disputes.
+- **Push reminders** have never been seen arriving end to end. Cover for me and any
+  nudge depend on it.
+- **App Store:** change the Social Media answer in `APP_STORE_ANSWERS.md` and the
+  privacy policy before phase 1 ships.
+- **Invite flow:** link or code, expiry, and what happens to a pending invite when
+  either person deletes their account.
+
+---
+
 ## Sources
 
 - Capacitor environment: Node 22+, Xcode 26.0 minimum, SPM default in
