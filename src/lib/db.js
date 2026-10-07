@@ -1,4 +1,5 @@
 import { Capacitor } from '@capacitor/core';
+import { isAuthRetryableFetchError } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import { signInWithGoogleNative, signInWithAppleNative } from './nativeAuth';
 import { WEB_ORIGIN } from './apiBase';
@@ -54,8 +55,22 @@ export async function getSession() {
   return data.session;
 }
 
-function uid() {
-  return supabase.auth.getUser().then(({ data }) => data.user?.id);
+/* The signed-in user's id, checked with the server (getUser, never getSession:
+ * getSession can return null mid-refresh and silently break writes).
+ *
+ * One exception. With no network, getUser fails with a retryable fetch error
+ * and used to return undefined, so every read behaved as if nobody was signed
+ * in, which sent a returning student with no signal to onboarding. A network
+ * failure says nothing about who is signed in, so only then is the id taken
+ * from the stored session. Any other failure still returns undefined. */
+async function uid() {
+  const { data, error } = await supabase.auth.getUser();
+  if (data?.user?.id) return data.user.id;
+  if (error && isAuthRetryableFetchError(error)) {
+    const { data: s } = await supabase.auth.getSession();
+    return s?.session?.user?.id;
+  }
+  return undefined;
 }
 
 // ── User Profile ───────────────────────────────────────────────────────────
@@ -259,20 +274,42 @@ export async function recordInstallState({ installed, platform }) {
 
 // ── Nutrition Targets ──────────────────────────────────────────────────────
 
+/* The targets and dietary restrictions this account last read or saved on this
+ * device. Used only when a read fails (no signal), so a student who opens the
+ * app offline still gets the plate built against THEIR restrictions. Without
+ * it a failed restrictions read fell through to "no restrictions", which would
+ * build a plate that ignores a saved allergen. Stored under a bento_ key so sign
+ * out clears it, and keyed by user so one account never reads another's. */
+const PROFILE_CACHE_KEY = 'bento_profile_cache_v1';
+function readProfileCache(id) {
+  try {
+    const c = JSON.parse(localStorage.getItem(PROFILE_CACHE_KEY) || 'null');
+    return c && c.userId === id ? c : {};
+  } catch { return {}; }
+}
+function writeProfileCache(id, patch) {
+  try {
+    localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify({ ...readProfileCache(id), ...patch, userId: id }));
+  } catch { /* storage unavailable */ }
+}
+
 export async function getNutritionTargets() {
   const id = await uid();
   if (!id) return null;
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('nutrition_targets')
     .select('calories, protein, carbs, fat')
     .eq('user_id', id)
-    .single();
+    .maybeSingle();
+  if (error) return readProfileCache(id).targets ?? null;
   if (!data) return null;
   // Reconstruct the nested shape the optimizer expects
-  return {
+  const targets = {
     calories: data.calories,
     macros: { protein: data.protein, carbs: data.carbs, fat: data.fat },
   };
+  writeProfileCache(id, { targets });
+  return targets;
 }
 
 export async function setNutritionTargets(targets) {
@@ -282,6 +319,7 @@ export async function setNutritionTargets(targets) {
   const protein = targets.macros?.protein ?? targets.protein;
   const carbs   = targets.macros?.carbs   ?? targets.carbs;
   const fat     = targets.macros?.fat     ?? targets.fat;
+  writeProfileCache(id, { targets: { calories: targets.calories, macros: { protein, carbs, fat } } });
   await supabase.from('nutrition_targets').upsert({
     user_id:    id,
     calories:   targets.calories,
@@ -327,17 +365,22 @@ const RESTRICTIONS_DEFAULT = {
   allergies: [], avoidIngredients: [],
 };
 
+/* Returns the saved restrictions. When the read FAILS and nothing is cached it
+ * returns the empty defaults marked `__unknown`, so a caller can refuse to build
+ * a plate against restrictions it never saw. A student with no saved row is not
+ * a failure: that is the real defaults, unmarked. */
 export async function getDietaryRestrictions() {
   const id = await uid();
-  if (!id) return RESTRICTIONS_DEFAULT;
-  const { data } = await supabase
+  if (!id) return { ...RESTRICTIONS_DEFAULT, __unknown: true };
+  const { data, error } = await supabase
     .from('dietary_restrictions')
     .select('*')
     .eq('user_id', id)
-    .single();
+    .maybeSingle();
+  if (error) return readProfileCache(id).restrictions ?? { ...RESTRICTIONS_DEFAULT, __unknown: true };
   if (!data) return RESTRICTIONS_DEFAULT;
   const { freeText, flags } = decodeAllergens(data.allergies);
-  return {
+  const restrictions = {
     vegetarian:        data.vegetarian    ?? false,
     vegan:             data.vegan         ?? false,
     glutenFree:        data.gluten_free   ?? false,
@@ -356,11 +399,19 @@ export async function getDietaryRestrictions() {
     allergies:         freeText,
     avoidIngredients:  data.avoid_ingredients ?? [],
   };
+  writeProfileCache(id, { restrictions });
+  return restrictions;
 }
 
 export async function setDietaryRestrictions(restrictions) {
   const id = await uid();
   if (!id) return;
+  // A read that failed hands back defaults marked __unknown. Saving those would
+  // overwrite the student's real restrictions with an empty set.
+  if (restrictions?.__unknown) return;
+  // Cached before the write on purpose: if the write fails, the next offline
+  // plate should still honour what the student just asked to avoid.
+  writeProfileCache(id, { restrictions: { ...restrictions } });
   await supabase.from('dietary_restrictions').upsert({
     user_id:           id,
     vegetarian:        restrictions.vegetarian  ?? false,
@@ -796,7 +847,7 @@ export async function incrementStreakForDate(date) {
 
 export async function isOnboardingComplete() {
   const id = await uid();
-  if (!id) return false;
+  if (!id) return null;                 // unknown, not "incomplete"
   const { data, error } = await supabase
     .from('profiles')
     .select('weight, age')
@@ -808,7 +859,7 @@ export async function isOnboardingComplete() {
 
 export async function isTermsAccepted() {
   const id = await uid();
-  if (!id) return false;
+  if (!id) return null;                 // unknown, not "declined"
   const { data, error } = await supabase
     .from('profiles')
     .select('terms_accepted')
@@ -892,6 +943,8 @@ const ACCOUNT_LOCAL_KEYS = [
   'bento_meal_plans_v3',
   'bento_custom_meals_v1',
   'bento_mascot_outfit',
+  'bento_gates_v1',
+  'bento_profile_cache_v1',
 ];
 
 export function clearAccountLocalData() {

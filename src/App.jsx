@@ -48,6 +48,21 @@ function devicePlatform() {
   return 'desktop';
 }
 
+/* The onboarding and terms answers last read for this account on this device,
+ * used only when a later read fails (see the effect that calls these). Stored
+ * under a bento_ key so sign out clears it. */
+function readGates(userId) {
+  try {
+    const g = JSON.parse(localStorage.getItem('bento_gates_v1') || 'null');
+    return g && g.userId === userId ? g : {};
+  } catch { return {}; }
+}
+function writeGates(userId, patch) {
+  try {
+    localStorage.setItem('bento_gates_v1', JSON.stringify({ ...readGates(userId), ...patch, userId }));
+  } catch { /* storage unavailable */ }
+}
+
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -136,8 +151,21 @@ function App() {
 
   useEffect(() => {
     if (!session) return;
-    isOnboardingComplete().then(setHasCompletedOnboarding);
-    isTermsAccepted().then(setHasAcceptedTerms);
+    // A read that fails (no signal) is "unknown". Unknown falls back to what
+    // this account last read successfully on this device, and with nothing
+    // stored shows the app: redoing onboarding or the terms because of a dead
+    // connection is worse than a student seeing the app a moment early. Left as
+    // null the screen would be a spinner for as long as the network is down.
+    const uidKey = session.user?.id;
+    const last = readGates(uidKey);
+    isOnboardingComplete().then((v) => {
+      if (v !== null) writeGates(uidKey, { onboarded: v });
+      setHasCompletedOnboarding(v ?? last.onboarded ?? true);
+    });
+    isTermsAccepted().then((v) => {
+      if (v !== null) writeGates(uidKey, { terms: v });
+      setHasAcceptedTerms(v ?? last.terms ?? true);
+    });
     // Whether this is a home-screen install decides whether push can ever
     // reach this student, so it is recorded rather than only detected.
     recordInstallState({ installed: isStandalone(), platform: devicePlatform() })
@@ -195,11 +223,15 @@ function App() {
   const isAuthRoute = location.pathname === '/login' || location.pathname === '/signup';
   const isAppRoute  = location.pathname.startsWith('/app');
 
-  const handleOnboardingComplete = () => setHasCompletedOnboarding(true);
+  const handleOnboardingComplete = () => {
+    setHasCompletedOnboarding(true);
+    writeGates(session?.user?.id, { onboarded: true });
+  };
 
   const handleAcceptTerms = async () => {
     await setTermsAccepted();
     setHasAcceptedTerms(true);
+    writeGates(session?.user?.id, { terms: true });
   };
 
   const handleReset = async () => {

@@ -66,6 +66,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
   });
   const [confirmingMeals, setConfirmingMeals] = useState({ breakfast: false, lunch: false, dinner: false });
   const [loading, setLoading] = useState(true);
+  const [planBlocked, setPlanBlocked] = useState(false);
   const [usingCachedData, setUsingCachedData] = useState(null); // null | 'cache' | 'offline'
   const [itemAlternatives, setItemAlternatives] = useState({});
   const [recommendations, setRecommendations] = useState({ breakfast: null, lunch: null, dinner: null });
@@ -181,7 +182,10 @@ export default function MealPlan({ settingsVersion = 0 }) {
       setRecommendations({ breakfast: null, lunch: null, dinner: null });
       setRestrictions(fetchedRestrictions);
 
-      if (targets) {
+      // Never plan against restrictions that could not be read: an unreadable
+      // allergen list is not an empty one.
+      setPlanBlocked(!!fetchedRestrictions.__unknown);
+      if (targets && !fetchedRestrictions.__unknown) {
         const optimized = optimizeDay(menuData, targets, fetchedRestrictions, recentItems, undefined, ratingsByIdRef.current);
         setMealPlan(optimized);
       }
@@ -277,7 +281,9 @@ export default function MealPlan({ settingsVersion = 0 }) {
         setConfirmedMealIds(confirmedIds);
         setRestrictions(fetchedRestrictions);
 
-        if (targets) {
+        if (fetchedRestrictions.__unknown) {
+          setDateError({ date: capturedDate, kind: 'fetch' });
+        } else if (targets) {
           const optimized = optimizeDay(menuData, targets, fetchedRestrictions, recentItems, undefined, ratingsByIdRef.current);
           setMealPlan(optimized);
         } else {
@@ -376,7 +382,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
           Object.entries(prev).map(([meal, loc]) => [meal, locIds.includes(loc) ? loc : locIds[0]])
         );
       });
-      if (targets) {
+      if (targets && !fetchedRestrictions.__unknown) {
         if (cancelled) return;
         const optimized = optimizeDay(menu, targets, fetchedRestrictions, recentItems, undefined, ratingsByIdRef.current);
         setMealPlan(optimized);
@@ -411,6 +417,11 @@ export default function MealPlan({ settingsVersion = 0 }) {
       getDietaryRestrictions(),
       getRecentItemIds(),
     ]);
+    // Suggest nothing rather than suggest against restrictions that were not read.
+    if (restrictions.__unknown) {
+      setRecommendations((prev) => ({ ...prev, [meal]: [] }));
+      return;
+    }
     const excludeIds = new Set(currentMealPlan.items.map((i) => i.id));
     const recs = findRecommendedAdditions(
       menu.locations[location].meals[meal],
@@ -534,6 +545,10 @@ export default function MealPlan({ settingsVersion = 0 }) {
       getDietaryRestrictions(),
       getRecentItemIds(),
     ]);
+    if (restrictions.__unknown) {
+      setItemAlternatives((prev) => ({ ...prev, [key]: [] }));
+      return;
+    }
     const excludeIds = new Set(currentMealPlan.items.map((i) => i.id));
     const alts = findAlternatives(
       currentItem,
@@ -737,7 +752,9 @@ export default function MealPlan({ settingsVersion = 0 }) {
   if (!mealPlan && !dateLoading && isViewingToday) {
     return (
       <div className="meal-plan-error">
-        <p>Unable to generate meal plan. Please complete setup first.</p>
+        {planBlocked || usingCachedData === 'offline'
+          ? <p>Bento could not reach its servers, so today's plate is not built yet. Check your connection and reopen the app.</p>
+          : <p>Unable to generate meal plan. Please complete setup first.</p>}
       </div>
     );
   }
