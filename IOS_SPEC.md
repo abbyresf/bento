@@ -9,6 +9,43 @@ labelled as one.
 
 ---
 
+## 0. Progress, 7 Oct 2026
+
+Read against §5. "Verified" means seen working on the simulator or a phone,
+"built" means the code exists and passes CI but was not seen working end to end.
+
+| Step | State | Notes |
+| --- | --- | --- |
+| 1. Toolchain | **Done** | Xcode installed, simulator runtime installed. CI runs Xcode 26.6 / iOS SDK 26.5 |
+| 2. Account, identifiers, name | **Done** | Individual enrolment, `com.bentodining.app`, app record exists. Store name is **Bento Dining** after error 90129 |
+| 3. Scaffold | **Done** | Runs on the simulator and on a real phone. Service worker and Vercel Analytics are off in native builds. **Routing changed from the spec:** history routing failed in the shell, so native builds use `HashRouter` and the web is untouched |
+| 4. Signing and CI | **Done, one gap** | `ios-release.yml` archives signed with cloud-managed signing (App Store Connect API key, Admin role), uploads to TestFlight, then polls Apple for the processing verdict. Build number is `run_number.run_attempt`. **Gap:** every run so far was a manual dispatch. A pushed tag has never been tried |
+| 5. Native capabilities | **Built** | APNs sender and device tokens, Sign in with Apple, Google return by URL scheme. Sign in with Apple and the Google return were each confirmed working once. **Push delivery to a phone has not been seen end to end** |
+| 6. Guideline 4.2 | **Partly done** | Done: icon on the logo cream, safe areas, no install prompt, edge-to-edge layout, haptics, motion system, mascot and closet, weekly quests, launch animation. **Not done:** offline launch is untested, no home-screen widget |
+| 7. Compliance | **Partly done** | Done: privacy policy and support pages on their own URLs, in-app account deletion, export compliance flag. **Not done:** `PrivacyInfo.xcprivacy`, privacy nutrition labels, age rating |
+| 8. TestFlight, internal | **Running** | Builds 7.1 to 15.1 uploaded. Apple lists them as valid |
+| 9. Submit | Not started | Needs screenshots, store copy, reviewer notes with a demo account |
+| 10. Operate | Not started | Crash monitoring still has no tool |
+
+**Beyond the spec.** Native layout for iOS, the motion system, onboarding with
+the mascot, Bento's closet, weekly quests, the evening streak nudge and the
+"Your voice" card were all built after step 5. None of it is required for
+submission. The streak, confirmation-saving and sign-out fixes found during
+phone testing are listed in the git log from `1aaf346` onward.
+
+**Decision, 7 Oct 2026: guideline 5.1.3 is dropped.** Bento is a dining app.
+BentoPulse clients use its data for their own research, and the app is not
+itself conducting human subject research. The ethics-review and participant
+consent items in step 7 and §8 no longer apply. Privacy labels, the privacy
+manifest and the age rating still do, because every app needs them.
+
+**Still open:** push delivery check, tag-triggered release, offline launch,
+widget, `PrivacyInfo.xcprivacy`, nutrition labels, age rating, crash
+monitoring, the Supabase migration workflow's invalid `SUPABASE_ACCESS_TOKEN`,
+and the account-owner question in §10.
+
+---
+
 ## 1. What is being built, and why
 
 Bento is React 19 + Vite 7. **Capacitor 8 wraps the existing web build in a
@@ -24,7 +61,7 @@ scaffold later.
 
 ---
 
-## 2. Verified state, 4 Oct 2026
+## 2. Verified state, 4 Oct 2026 (historical, see §0 for today)
 
 | | State | Needed | OK |
 | --- | --- | --- | --- |
@@ -275,10 +312,8 @@ Assume one rejection round regardless.
   allergies and nutrition goals. Dietary and allergy data is health-adjacent
   and must be declared honestly.
 - `PrivacyInfo.xcprivacy` for the app and any SDK that requires one.
-- **Guideline 5.1.3, human subject research.** The study runs through this app.
-  Apple requires participant consent and approval from an independent ethics
-  review board, with proof on request. The study's IRB approval covers it, and
-  its timing is now on the submission's critical path too.
+- ~~Guideline 5.1.3, human subject research.~~ **Dropped 7 Oct.** Bento is
+  not a research app. BentoPulse clients use its data for their own research.
 - Age rating, support URL, marketing URL, privacy policy URL, export
   compliance (standard HTTPS only).
 - Account deletion in-app: **already done**, and the privacy copy was corrected
@@ -331,11 +366,11 @@ compliments.
    watched" and named nothing. Pick one before TestFlight. Sentry has a
    Capacitor SDK and is the default choice. Without it, a native crash is
    invisible: there is no console to check and no server log to read.
-7. **Test coverage is one file.** `test/mealPlan.test.mjs` covers the meal
+7. **Test coverage was one file, now 39 tests across 6 files** (meal plan, APNs, copy rules, streak nudge, closet, quests). Auth gates are still untested. Original finding: `test/mealPlan.test.mjs` covers the meal
    optimizer. Nothing else has automated tests. On the web a bad deploy is
    fixed in minutes; in a binary it is days. At minimum the meal algorithm and
    the auth gates deserve tests before submission.
-8. **6 lint errors are shipping-relevant.** All are
+8. ~~**6 lint errors are shipping-relevant.**~~ **Fixed 5 Oct (`af38751`), lint is at 0 errors.** Original finding: All are
    `react-hooks/set-state-in-effect`, in `MealCard`, `CommunityTab` and
    `PulseDashboard`. They are real behavioural findings about cascading
    renders, deliberately left for their own change. A webview on an 8 GB
@@ -382,8 +417,6 @@ between a project that outlives its founder and one that does not.
 that §3 is decided quickly. Steps 5 to 7 are the bulk. App Review itself is
 typically 24–48 hours per round.
 
-The research study cannot start until the app is approved, so **App Review is
-on the study's critical path**.
 
 ---
 
