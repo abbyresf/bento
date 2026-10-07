@@ -485,7 +485,7 @@ Plate-based
   rest around it.
 - **Bento plate:** between you, a plate has a protein, a vegetable and a grain.
 - **Rainbow plate:** pick a color for your friend, who must eat one item of it.
-  Needs a color per menu item, see Open items.
+  Honor system: no color data, we take their word that they chose an item of it.
 - **Match the plate:** you each build the same plate and confirm it, with a bonus
   if you both rate it.
 
@@ -531,8 +531,8 @@ owns the piece they earn.
 
 ### Open items
 
-- **Color and food group per menu item.** Start with keyword tagging, let a friend
-  dispute an item, and correct the list from disputes.
+- **Bento plate food groups.** Needs a food group per menu item, or an honor-system
+  version like Rainbow plate. Decide before phase 2.
 - **Push reminders** have never been seen arriving end to end. Cover for me and any
   nudge depend on it.
 - **App Store:** change the Social Media answer in `APP_STORE_ANSWERS.md` and the
