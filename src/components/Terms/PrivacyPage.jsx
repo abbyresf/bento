@@ -6,7 +6,7 @@ export default function PrivacyPage() {
     <div className="terms-page">
       <div className="terms-page-header">
         <h1>Privacy Policy</h1>
-        <p className="terms-page-sub">Last updated August 2026</p>
+        <p className="terms-page-sub">Last updated October 2026</p>
       </div>
 
       <div className="terms-page-body">

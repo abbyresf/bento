@@ -47,8 +47,11 @@ before a version can be submitted for review.
 | Contests | None | Quests are personal goals, not contests |
 | Loot Boxes | None | Closet pieces are earned, never random or bought |
 
-**Expected result: 9+**, driven by the health and wellness answer. You may raise
-it. Apple lets you set a higher minimum age than the questionnaire gives.
+**Expected result: 9+**, driven by the health and wellness answer. **Decision,
+7 Oct 2026: set it to 13+**, to match the privacy policy, which says Bento is not
+directed to children under 13. Apple lets you set a higher minimum age than the
+questionnaire gives: in the Age Rating section, choose the higher rating after
+answering the questions.
 
 **User-generated content brings guideline 1.2.** A reviewer can ask for a way to
 report content, a way to block abusive users, filtering, and published contact
@@ -84,6 +87,15 @@ Two judgement calls to confirm:
   turns them into aggregate counts. That is the honest reading.
 - If crash monitoring is added later, add **Diagnostics, Crash Data** here and in
   the manifest.
+
+## The privacy policy page
+
+Updated 7 Oct 2026 to match the labels above. It now lists what is collected
+(body measurements, quests, the mascot piece, survey answers, notification
+tokens), names the services that handle data (Supabase, Vercel, Apple, Google,
+EmailJS for the website contact form), describes notifications, and says plainly
+what survives account deletion: anonymous suggestions, and feedback messages and
+university requests with the link to the account removed.
 
 ## Keep these in step
 
