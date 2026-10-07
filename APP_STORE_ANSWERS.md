@@ -85,6 +85,15 @@ Two judgement calls to confirm:
 - If crash monitoring is added later, add **Diagnostics, Crash Data** here and in
   the manifest.
 
+## The privacy policy page
+
+Updated 7 Oct 2026 to match the labels above. It now lists what is collected
+(body measurements, quests, the mascot piece, survey answers, notification
+tokens), names the services that handle data (Supabase, Vercel, Apple, Google,
+EmailJS for the website contact form), describes notifications, and says plainly
+what survives account deletion: anonymous suggestions, and feedback messages and
+university requests with the link to the account removed.
+
 ## Keep these in step
 
 Change one of: the manifest, these answers, the privacy policy page. Then change

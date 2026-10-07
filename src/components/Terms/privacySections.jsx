@@ -7,22 +7,22 @@ const PRIVACY_SECTIONS = [
   {
     id: 'what-we-collect',
     heading: 'Information We Collect',
-    body: 'We collect information you provide directly: your email address and password when you register; dietary restrictions, food allergies, calorie goals, and macro targets you enter during onboarding; and food selections, meal confirmations, and favorites you log while using the app. We also collect limited technical data automatically, including your IP address, browser type, and device information, which is handled by our infrastructure provider Supabase. We do not collect your name, phone number, or payment information.',
+    body: 'You give us your email address and password when you register. If you sign in with Google or Apple, we receive your email and an account ID from them instead, and Apple can hide your email behind a relay address. You also give us your age, sex, height, weight, activity level and goal, which we use to work out calorie and macro targets. You give us your dietary restrictions, food allergies and the ingredients you avoid. As you use Bento, we store the meals you confirm, the dishes you rate, your favorites, your streak, the quests you claim and the piece Bento wears. We store your answers to surveys, the suggestions you post and the feedback you send. If you turn on reminders, we store a notification token for your device. We also receive technical data when you use Bento, including your IP address and device type, which our infrastructure providers handle. We do not collect your name, phone number, contacts, photos, location or payment information.',
   },
   {
     id: 'health-data',
     heading: 'Dietary and Health-Related Data',
-    body: 'Dietary restrictions, food allergies, and nutrition goals are considered sensitive data. We treat this information with heightened care. It is used solely to power your personalized meal recommendations and is never sold, rented, or shared with advertisers. It is never disclosed to your university, dining staff, or any third party in a form that identifies you individually.',
+    body: 'Your restrictions, allergies, body measurements and nutrition goals are sensitive. We use them only to build your plate and your reminders. We do not sell them and we do not share them with advertisers. We never disclose them to your university, dining staff or anyone else in a form that identifies you.',
   },
   {
     id: 'how-we-use',
     heading: 'How We Use Your Information',
-    body: 'We use your information to provide and personalize the Bento service, including generating meal recommendations based on your goals, restrictions, and dining hall menu. We use aggregated and anonymized data — with all individual identifiers removed — to surface trends to university dining administrators (for example, "30% of students have a gluten restriction"), which helps dining services better serve the student population. We may use your email address to send service-related messages such as account verification or policy updates. We do not send marketing emails without your explicit consent.',
+    body: 'We use your information to run Bento. That means building your plate from your goals, restrictions and the dining hall menu, keeping your streak and quests, and sending the reminders you turn on. We combine information from many students into counts, such as how many students have a gluten restriction, and share those counts with university dining teams and research partners who work with BentoPulse. Those reports never contain individual records, names or emails. We may use your email to send service messages such as account verification or policy updates. We do not send marketing email without your consent.',
   },
   {
     id: 'sharing',
     heading: 'Information Sharing',
-    body: 'We do not sell your personal information. We share data in the following limited circumstances: (1) Supabase, our database and authentication provider, stores and processes your data on our behalf under their own privacy and security standards; (2) dining administrators at your university may receive anonymized, aggregated reports — never individual user data; (3) we may disclose information if required by law or to protect the rights and safety of users. No other third-party sharing occurs.',
+    body: 'We do not sell your personal information. We share it only with the services that run Bento. Supabase stores your data and handles sign in. Vercel hosts the website and the servers that send reminders. Apple delivers notifications to iPhones and handles Sign in with Apple, and Google handles Sign in with Google. If you use the contact form on our website, EmailJS delivers your message to us. These providers handle data for us under their own privacy terms. University dining teams and research partners receive aggregated reports only, never individual records. We may disclose information if the law requires it or to protect people\'s safety. Nothing else is shared. We do not track you across other companies\' apps or websites.',
   },
   {
     id: 'university',
@@ -32,7 +32,7 @@ const PRIVACY_SECTIONS = [
   {
     id: 'retention',
     heading: 'Data Retention',
-    body: 'We retain your account data for as long as your account is active. You can delete your account and all associated data yourself at any time from Settings, and the deletion takes effect immediately. You may also email bentodining@gmail.com and we will process the request within 30 days. Some anonymized, aggregated records may be retained after deletion as they cannot be linked back to any individual.',
+    body: 'We keep your account data while your account is active. You can delete your account in Settings and it takes effect at once. Deleting removes your profile, restrictions, meal history, ratings, favorites, streak, quests, survey answers and notification settings. Some things stay. Suggestions are anonymous and not tied to your account, so we cannot find and remove yours. Feedback messages and requests to add a university stay with the link to your account removed. Email bentodining@gmail.com and we will delete one of these within 30 days. Counts that combine many students cannot be traced to you and may remain.',
   },
   {
     id: 'your-rights',
@@ -47,7 +47,12 @@ const PRIVACY_SECTIONS = [
   {
     id: 'cookies',
     heading: 'Cookies and Local Storage',
-    body: 'Bento uses browser local storage and session tokens to keep you logged in and save app preferences. We do not use third-party tracking cookies or advertising cookies. You can clear local storage at any time through your browser settings, though doing so will sign you out of the app.',
+    body: 'Bento uses browser storage and sign-in tokens to keep you signed in and save your preferences. In the iOS app the same information is kept in the app\'s own storage, and the home-screen widget keeps a copy of today\'s plate on your device. We do not use third-party tracking cookies or advertising cookies. Clearing your browser storage or deleting the app signs you out.',
+  },
+  {
+    id: 'notifications',
+    heading: 'Notifications',
+    body: 'If you turn on reminders, we store a token for your device or browser so we can send them. Apple or your browser\'s push service delivers each notification. We use it only for the reminders you chose, such as meal and streak reminders. You can turn them off in Settings or in your phone\'s settings, and signing out stops reminders on that device.',
   },
   {
     id: 'children',
