@@ -15,9 +15,11 @@ const GOLD = '#FFC53D';
    drawn before the body, everything else after it. */
 const WEAR = {
   gradcap: (
-    <g className="mc-wear">
-      <path d="M60 4L102 19 60 34 18 19z" fill={NV} />
+    // Sits on top of the head, not over the colour blocks, so the whole piece is
+    // lifted 12 units. The tassel hangs from the right corner of the board.
+    <g className="mc-wear" transform="translate(0 -12)">
       <path d="M38 27v9c0 6 44 6 44 0v-9" fill="#1A2A3D" />
+      <path d="M60 4L102 19 60 34 18 19z" fill={NV} />
       <path d="M96 20v17" stroke={OR} strokeWidth="3" strokeLinecap="round" />
       <circle cx="96" cy="40" r="4" fill={OR} />
     </g>
@@ -44,17 +46,20 @@ const WEAR = {
     </g>
   ),
   scarf: (
+    // The tail is drawn first and the wrap over it, so the wrap goes around the
+    // neck on top and the tail hangs from underneath it.
     <g className="mc-wear">
+      <path d="M83 98L81 118Q88 122 95 118L95 99z" fill={OR} stroke={NV} strokeWidth="2.6" strokeLinejoin="round" />
       <path d="M17 96Q60 106 103 96" stroke={OR} strokeWidth="9" strokeLinecap="round" fill="none" />
       <path d="M17 96Q60 106 103 96" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" fill="none" strokeDasharray="3 8" opacity="0.65" />
-      <path d="M83 101L81 118Q88 122 95 118L95 102z" fill={OR} stroke={NV} strokeWidth="2.6" strokeLinejoin="round" />
     </g>
   ),
   bowtie: (
+    // Under the chin, level with the scarf, not on the face.
     <g className="mc-wear">
-      <path d="M60 70L40 60v20z" fill={OR} stroke={NV} strokeWidth="3" strokeLinejoin="round" />
-      <path d="M60 70L80 60v20z" fill={OR} stroke={NV} strokeWidth="3" strokeLinejoin="round" />
-      <circle cx="60" cy="70" r="6" fill={GOLD} stroke={NV} strokeWidth="3" />
+      <path d="M60 100L42 91V109z" fill={OR} stroke={NV} strokeWidth="3" strokeLinejoin="round" />
+      <path d="M60 100L78 91V109z" fill={OR} stroke={NV} strokeWidth="3" strokeLinejoin="round" />
+      <circle cx="60" cy="100" r="5.5" fill={GOLD} stroke={NV} strokeWidth="3" />
     </g>
   ),
   flower: (
@@ -71,16 +76,18 @@ const WEAR = {
   ),
   chefhat: (
     <g className="mc-wear">
-      <circle cx="42" cy="12" r="12" fill="#fff" stroke={NV} strokeWidth="3" />
-      <circle cx="60" cy="6" r="13" fill="#fff" stroke={NV} strokeWidth="3" />
-      <circle cx="78" cy="12" r="12" fill="#fff" stroke={NV} strokeWidth="3" />
-      <rect x="36" y="14" width="48" height="12" rx="4" fill="#fff" stroke={NV} strokeWidth="3" />
+      <circle cx="41" cy="9" r="11" fill="#fff" stroke={NV} strokeWidth="3" />
+      <circle cx="60" cy="2" r="13" fill="#fff" stroke={NV} strokeWidth="3" />
+      <circle cx="79" cy="9" r="11" fill="#fff" stroke={NV} strokeWidth="3" />
+      <rect x="35" y="10" width="50" height="22" rx="5" fill="#fff" stroke={NV} strokeWidth="3" />
     </g>
   ),
   partyhat: (
+    // The stripes run across the cone, each one ending on its two edges, so
+    // they follow its shape. The cone's edges run from (60,-6) to (38,22) and (82,22).
     <g className="mc-wear">
       <path d="M60 -6L82 22H38z" fill={OR} stroke={NV} strokeWidth="3" strokeLinejoin="round" />
-      <path d="M52 8l-9 14M60 -2l-5 24M67 6l-4 16" stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity="0.8" />
+      <path d="M53.5 6.5L69.5 9.5M48 13.5L74 17.5" stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity="0.9" />
       <circle cx="60" cy="-6" r="5" fill={GOLD} stroke={NV} strokeWidth="2.4" />
     </g>
   ),
