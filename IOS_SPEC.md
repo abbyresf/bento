@@ -9,7 +9,7 @@ labelled as one.
 
 ---
 
-## 0. Progress, 7 Oct 2026
+## 0. Progress, 7 Oct 2026 (updated end of day)
 
 Read against §5. "Verified" means seen working on the simulator or a phone,
 "built" means the code exists and passes CI but was not seen working end to end.
@@ -19,11 +19,11 @@ Read against §5. "Verified" means seen working on the simulator or a phone,
 | 1. Toolchain | **Done** | Xcode installed, simulator runtime installed. CI runs Xcode 26.6 / iOS SDK 26.5 |
 | 2. Account, identifiers, name | **Done** | Individual enrolment, `com.bentodining.app`, app record exists. Store name is **Bento Dining** after error 90129 |
 | 3. Scaffold | **Done** | Runs on the simulator and on a real phone. Service worker and Vercel Analytics are off in native builds. **Routing changed from the spec:** history routing failed in the shell, so native builds use `HashRouter` and the web is untouched |
-| 4. Signing and CI | **Done, one gap** | `ios-release.yml` archives signed with cloud-managed signing (App Store Connect API key, Admin role), uploads to TestFlight, then polls Apple for the processing verdict. Build number is `run_number.run_attempt`. **Gap:** every run so far was a manual dispatch. A pushed tag has never been tried |
+| 4. Signing and CI | **Done, one gap** | `ios-release.yml` archives signed with cloud-managed signing (App Store Connect API key, Admin role), uploads to TestFlight, then polls Apple for the processing verdict. Build number is `run_number.run_attempt`. The home-screen widget needed two identifiers created by hand in the developer portal, because the API key cannot create App Groups: the App Group `group.com.bentodining.app` and the App ID `com.bentodining.app.widget` (App Groups on). Signing also creates a throwaway development certificate every run, which hit Apple's limit once (run 17), so a cleanup step now revokes the ones named "Created via API" at the end of each run and leaves the owner's own and the managed distribution certificate alone. **Gap:** every run so far was a manual dispatch. A pushed tag has never been tried |
 | 5. Native capabilities | **Built** | APNs sender and device tokens, Sign in with Apple, Google return by URL scheme. Sign in with Apple and the Google return were each confirmed working once. **Push delivery to a phone has not been seen end to end** |
-| 6. Guideline 4.2 | **Partly done** | Done: icon on the logo cream, safe areas, no install prompt, edge-to-edge layout, haptics, motion system, mascot and closet, weekly quests, launch animation. **Not done:** offline launch is untested, no home-screen widget |
-| 7. Compliance | **Partly done** | Done: privacy policy and support pages on their own URLs, in-app account deletion, export compliance flag. **Not done:** `PrivacyInfo.xcprivacy`, privacy nutrition labels, age rating |
-| 8. TestFlight, internal | **Running** | Builds 7.1 to 15.1 uploaded. Apple lists them as valid |
+| 6. Guideline 4.2 | **Done, with device checks pending** | Icon on the logo cream, safe areas, no install prompt, edge-to-edge layout, haptics, motion system, mascot and closet, weekly quests, launch animation. **Home-screen widget:** shows the next meal with Bento wearing the student's outfit, small and medium, seen working on a phone. A first layout overflowed on long meals, so it now picks how many dishes fit (built 20.1, not yet seen on the phone). **Offline:** opening with no signal no longer sends a signed-in student to onboarding, and the last targets and restrictions are cached per account, so an unreadable allergen list can never produce a plate. Meals confirmed with no signal are queued and sent when there is signal, keeping the tap time and carrying ratings and plate-waste answers (built and tested in a browser against the real client, **not yet tried in the app on a device**) |
+| 7. Compliance | **Mostly done, owner entries pending** | Done: `PrivacyInfo.xcprivacy` (bundled in the app and widget), privacy policy updated to match what is collected and shared, support page, in-app account deletion, export compliance flag. Drafted in `APP_STORE_ANSWERS.md`: privacy labels and the age rating, set to **13+** to match the policy. **Not done:** entering both in App Store Connect, which only the account holder can do |
+| 8. TestFlight, internal | **Running** | Builds 7.1 to 20.1 uploaded and valid, 21.1 in progress. The widget, the closet order and the offline queue are in the latest builds |
 | 9. Submit | Not started | Needs screenshots, store copy, reviewer notes with a demo account |
 | 10. Operate | Not started | Crash monitoring still has no tool |
 
@@ -48,10 +48,13 @@ aggregates only, never individual rows, so Pulse adds no "shared with third
 parties" declaration. If clients are ever given row-level data, revisit this and
 the App Store Connect labels together.
 
-**Still open:** push delivery check, tag-triggered release, offline launch,
-widget, `PrivacyInfo.xcprivacy`, nutrition labels, age rating, crash
-monitoring, the Supabase migration workflow's invalid `SUPABASE_ACCESS_TOKEN`,
-and the account-owner question in §10.
+**Still open:** a push reminder arriving on a phone (never seen end to end), a
+tag-triggered release, the offline checks above on a device, entering the
+privacy labels and age rating in App Store Connect (owner), the store listing
+with screenshots at the required sizes, a reviewer demo account and notes,
+crash monitoring (none chosen, and adding one adds crash data to the labels),
+the Supabase migration workflow's invalid `SUPABASE_ACCESS_TOKEN`, and the
+account-owner question in §10.
 
 ---
 
