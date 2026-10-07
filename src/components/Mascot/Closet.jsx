@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Mascot from './Mascot';
-import { OUTFITS, isUnlocked, unlockHint } from '../../data/mascotOutfits';
+import { OUTFITS, closetOrder, isUnlocked, unlockHint } from '../../data/mascotOutfits';
 import { setOutfit, useOutfit } from '../../lib/mascotOutfit';
 import { getStreak, getVoiceStats, getQuestsClaimed } from '../../lib/db';
 import { haptics } from '../../lib/haptics';
@@ -45,7 +45,7 @@ export default function Closet({ onClose }) {
         <p className="closet-sub">{ctx ? `${earned} of ${OUTFITS.length} unlocked` : ' '}</p>
 
         <div className="closet-grid">
-          {OUTFITS.map((item) => {
+          {closetOrder(OUTFITS, ctx ?? {}).map((item) => {
             const open = ctx ? isUnlocked(item, ctx) : false;
             const on = worn === item.id;
             return (

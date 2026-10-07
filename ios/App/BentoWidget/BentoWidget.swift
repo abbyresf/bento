@@ -152,7 +152,7 @@ struct PlateView: View {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFit()
-                .frame(height: small ? 56 : 104)
+                .frame(height: small ? 62 : 112)
                 .accessibilityHidden(true)
         }
     }

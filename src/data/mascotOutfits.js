@@ -62,6 +62,29 @@ export function unlockHint(item, ctx = {}) {
   return '';
 }
 
+/* How far along a piece is, from 0 to 1. A piece that is unlocked is 1. Used to
+ * put the piece closest to being earned at the top of the locked ones. */
+export function unlockProgress(item, ctx = {}) {
+  const u = item.unlock;
+  if (!u || isUnlocked(item, ctx)) return 1;
+  const have = u.type === 'streak' ? (ctx.longestStreak ?? 0)
+    : u.type === 'rated' ? (ctx.dishesRated ?? 0)
+    : u.type === 'quests' ? (ctx.questsClaimed ?? 0)
+    : 0;
+  return u.value ? Math.min(1, Math.max(0, have / u.value)) : 0;
+}
+
+/* The order the closet shows. Earned pieces first, in the order they are listed
+ * above, which is roughly the order a student earns them. Then the locked ones,
+ * nearest to unlocking first, so the next goal is always the first locked tile.
+ * Ties keep the listed order. */
+export function closetOrder(items, ctx = {}) {
+  return items
+    .map((item, index) => ({ item, index, open: isUnlocked(item, ctx), progress: unlockProgress(item, ctx) }))
+    .sort((a, b) => (b.open - a.open) || (a.open ? 0 : b.progress - a.progress) || (a.index - b.index))
+    .map((x) => x.item);
+}
+
 // A saved id that no longer exists, or is not unlocked, falls back to nothing
 // worn rather than showing a piece the student has not earned.
 export function validOutfit(id, ctx) {

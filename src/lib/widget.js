@@ -44,7 +44,11 @@ export function buildPlatePayload({ date, streak, meals }) {
  * done. They are only redrawn when the outfit changes. */
 const MOODS = ['happy', 'cheer', 'sleepy'];
 const SIG_KEY = 'bento_widget_mascot_sig';
-const W = 136, H = 124, SCALE = 3;   // the Mascot's viewBox, drawn at 3x
+// The Mascot's own viewBox is "-8 -4 136 124", and the app lets pieces overflow
+// it. A picture cannot overflow, and the party hat's pom-pom and the chef hat's
+// puffs reach above it, so the picture gets 12 units more headroom.
+const VIEWBOX = '-8 -16 136 136';
+const W = 136, H = 136, SCALE = 3;   // drawn at 3x
 
 export async function drawMascotPng(mood, outfit) {
   const [{ renderToStaticMarkup }, { default: Mascot }, { createElement }] = await Promise.all([
@@ -52,10 +56,11 @@ export async function drawMascotPng(mood, outfit) {
     import('../components/Mascot/Mascot'),
     import('react'),
   ]);
-  let svg = renderToStaticMarkup(createElement(Mascot, { mood, size: H, hop: false, outfit }));
+  let svg = renderToStaticMarkup(createElement(Mascot, { mood, size: 124, hop: false, outfit }));
   // A standalone image needs its own namespace and size, and has no page CSS.
   svg = svg
     .replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"')
+    .replace(/viewBox="[^"]*"/, `viewBox="${VIEWBOX}"`)
     .replace(/ style="[^"]*"/, ` width="${W * SCALE}" height="${H * SCALE}"`);
   const img = new Image();
   await new Promise((resolve, reject) => {
@@ -71,7 +76,8 @@ export async function drawMascotPng(mood, outfit) {
 
 export async function syncWidgetMascot(outfit) {
   if (!Capacitor.isNativePlatform()) return;
-  const sig = String(outfit ?? 'none');
+  // v2: the picture gained headroom, so pictures stored before it are redrawn.
+  const sig = 'v2:' + String(outfit ?? 'none');
   try { if (localStorage.getItem(SIG_KEY) === sig) return; } catch { /* storage unavailable */ }
   try {
     for (const mood of MOODS) {

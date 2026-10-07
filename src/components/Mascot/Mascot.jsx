@@ -45,9 +45,9 @@ const WEAR = {
   ),
   scarf: (
     <g className="mc-wear">
-      <path d="M15 64Q60 74 105 64" stroke={OR} strokeWidth="11" strokeLinecap="round" fill="none" />
-      <path d="M15 64Q60 74 105 64" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" fill="none" strokeDasharray="3 8" opacity="0.65" />
-      <rect x="82" y="66" width="13" height="26" rx="5" fill={OR} stroke={NV} strokeWidth="2.6" />
+      <path d="M17 96Q60 106 103 96" stroke={OR} strokeWidth="9" strokeLinecap="round" fill="none" />
+      <path d="M17 96Q60 106 103 96" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" fill="none" strokeDasharray="3 8" opacity="0.65" />
+      <path d="M83 101L81 118Q88 122 95 118L95 102z" fill={OR} stroke={NV} strokeWidth="2.6" strokeLinejoin="round" />
     </g>
   ),
   bowtie: (
