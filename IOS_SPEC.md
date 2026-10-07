@@ -39,6 +39,15 @@ itself conducting human subject research. The ethics-review and participant
 consent items in step 7 and §8 no longer apply. Privacy labels, the privacy
 manifest and the age rating still do, because every app needs them.
 
+**Privacy label basis, 7 Oct 2026.** `NSPrivacyTracking` is false: Apple's
+"tracking" means linking app data with other companies' data for advertising or
+sharing with data brokers, and Bento does neither. Data collection is declared
+as collected and linked to the account (email, user ID, push token, dietary and
+health data, usage, community posts). Per the owner, BentoPulse clients see
+aggregates only, never individual rows, so Pulse adds no "shared with third
+parties" declaration. If clients are ever given row-level data, revisit this and
+the App Store Connect labels together.
+
 **Still open:** push delivery check, tag-triggered release, offline launch,
 widget, `PrivacyInfo.xcprivacy`, nutrition labels, age rating, crash
 monitoring, the Supabase migration workflow's invalid `SUPABASE_ACCESS_TOKEN`,
