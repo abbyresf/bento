@@ -166,7 +166,7 @@ struct PlateView: View {
     private var overlays: some View {
         if small {
             if isMeal {
-                mascot(height: 44).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                mascot(height: 38).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             } else {
                 mascot(height: 52).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                 if streak > 0 {
@@ -272,7 +272,7 @@ struct PlateView: View {
                 }
             }
             // Beside Bento in the small widget, so these two lines leave his corner clear.
-            .padding(.trailing, small ? 50 : 0)
+            .padding(.trailing, small ? 44 : 0)
             ForEach(shown, id: \.self) { item in
                 Text(item).font(.footnote).foregroundColor(navy).lineLimit(1)
             }
