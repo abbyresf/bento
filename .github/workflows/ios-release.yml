@@ -181,6 +181,13 @@ jobs:
           done
           echo "entitlements present: aps-environment, applesignin"
 
+          # Invite links open the app only if the build is allowed to claim the
+          # domain. Without this entitlement a link opens Safari instead, and
+          # nothing looks wrong until someone taps one.
+          grep -q "<key>com.apple.developer.associated-domains</key>" "$RUNNER_TEMP/ents.plist" || { echo "::error::archive is missing the associated-domains entitlement"; exit 1; }
+          grep -q "applinks:www.bentodining.com" "$RUNNER_TEMP/ents.plist" || { echo "::error::archive does not claim www.bentodining.com"; exit 1; }
+          echo "invite links: associated domain present"
+
           # The home-screen widget reads the plate from a shared app group. If
           # the extension is missing, or either side lacks the group, the build
           # would install fine and the widget would show nothing, so fail here.

@@ -264,6 +264,12 @@ report, a way to block, and a response process. Everything else in Duo is fixed
 phrases and item ids, so names are the only free text.
 
 **B6. Invites go out through the iOS share sheet, as a link that opens the app.**
+*Status 8 Oct 2026: the entitlement, the site file (`public/.well-known/apple-app-site-association`),
+the `vercel.json` rewrite and header, and a CI check for the entitlement are written.
+Still needed: the Associated Domains capability switched on for the App ID in the
+developer portal, then a deploy, then a build. On the web, `/join/CODE` sends the
+person to the web app, where the join sheet appears after sign in, so Safari users
+without the app are covered.*
 Decided 8 Oct 2026, so the inviter just picks a friend in Messages. The app builds
 a message with a link like `https://www.bentodining.com/join/ABCD2345` and hands it
 to the share sheet (`@capacitor/share`), where Messages is the first choice. That

@@ -1,0 +1,12 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["2W23X84BV8.com.bentodining.app"],
+        "components": [
+          { "/": "/join/*", "comment": "Buddy invite links open the app." }
+        ]
+      }
+    ]
+  }
+}

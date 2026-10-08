@@ -15,11 +15,24 @@
       "destination": "/api/dining"
     },
     {
-      "source": "/((?!api/|sitemap\\.xml|robots\\.txt|home\\.html).*)",
+      "source": "/((?!api/|\\.well-known/|sitemap\\.xml|robots\\.txt|home\\.html).*)",
       "destination": "/index.html"
     }
   ],
   "headers": [
+    {
+      "source": "/.well-known/apple-app-site-association",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    },
     {
       "source": "/api/(dining|tufts)(.*)",
       "headers": [
