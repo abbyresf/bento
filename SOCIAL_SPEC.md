@@ -192,8 +192,8 @@ Each phase ends with a TestFlight build and a real two-phone test.
 
 ## 9. Limits and abuse
 
-- Invite codes: 8 characters, expire in 24 hours, single use, hashed at rest,
-  hand-typed so no universal link is needed in phase 1.
+- Invite codes: 8 characters, expire in 24 hours, single use, hashed at rest.
+  Sent as a link through the share sheet, and also typeable (issue B6).
 - At most 20 friends, 5 pending invites, 1 nudge per friend per day.
 - Same university only (`profiles.university`).
 - Blocking is silent. The blocked person sees the friendship as ended.
@@ -252,11 +252,41 @@ user-generated content, which brings Apple's guideline 1.2 expectations: a way t
 report, a way to block, and a response process. Everything else in Duo is fixed
 phrases and item ids, so names are the only free text.
 
-**B6. Invite links need a domain setup the app does not have.** The app has no
-associated-domains entitlement. A tapped link would open the website, not the app.
-Phase 1 uses typed codes. Links can come later with an
-`apple-app-site-association` file on `bentodining.com`. The existing
-`send-invite` and `redeem-invite` functions are for Pulse admins. Do not reuse them.
+**B6. Invites go out through the iOS share sheet, as a link that opens the app.**
+Decided 8 Oct 2026, so the inviter just picks a friend in Messages. The app builds
+a message with a link like `https://www.bentodining.com/join/ABCD2345` and hands it
+to the share sheet (`@capacitor/share`), where Messages is the first choice. That
+link only opens the app if the app has the associated-domains setup it lacks today:
+- The `com.apple.developer.associated-domains` entitlement with
+  `applinks:www.bentodining.com`.
+- The Associated Domains capability turned on for the App ID `com.bentodining.app`
+  by hand in the developer portal, as with the App Groups. Cloud signing cannot add
+  it. Provisioning profiles then need regenerating.
+- A file at `/.well-known/apple-app-site-association` on the site, served as JSON
+  with no redirect. `vercel.json` currently rewrites every non-API path to the app,
+  so `.well-known` has to be excluded from that rewrite.
+- An `appUrlOpen` handler in the app. One already exists for sign-in
+  (`src/lib/nativeAuth.js`), and the join link needs its own branch.
+- A web page for `/join/<code>` for anyone without the app: who invited you and a
+  link to get Bento. The page never redeems anything. Redeeming happens only inside
+  the app after a confirm, so a link preview bot cannot use up a code.
+The typed code stays as a fallback. The existing `send-invite` and `redeem-invite`
+functions are for Pulse admins, so do not reuse them.
+
+**B13. Two accounts under one email.** The live database already shows one person
+with two accounts on the same email, one used on the web with a web push
+subscription and one used in the iOS app. Friendships belong to an account, so an
+invite accepted on the wrong account looks lost. About 60 web accounts exist and
+those people will likely sign in on iOS. Auth offers email and password, Google and
+Apple, and an Apple sign-in can hide the real email, so the same person can arrive
+as a different account. Needed before Duo ships:
+- Find the cause for the existing duplicate (which providers, confirmed or not).
+- Tell web users to sign in the way they did before, so the iOS app opens their
+  existing account, with its streak, ratings and history.
+- Settings shows which account is signed in (email) and the join screen says
+  "Signed in as <email>" with a confirm, so a mismatch is obvious before accepting.
+- Do not auto-merge accounts. A merge moves meals, ratings and streaks and is hard to
+  undo, so any merge is a deliberate, per-person action.
 
 **B7. No realtime today.** The app does not use Supabase Realtime. Friend state
 loads on open and on return to the app, with push as a nudge to open it. Add
