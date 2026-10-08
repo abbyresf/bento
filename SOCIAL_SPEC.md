@@ -134,12 +134,46 @@ to other tables; do not copy that pattern (issue D1).
 - **Local caches** use the `bento_` prefix and must be added to
   `ACCOUNT_LOCAL_KEYS` in `src/lib/db.js` (issue B4).
 
+## 7a. "I'm here": how a friend finds out
+
+Decided 8 Oct 2026. Tapping "I'm here" picks a hall and meal, then reaches the
+friends you have switched on in three ways:
+
+1. **A push notification:** "Maya is at Usdan". Fixed phrases only.
+2. **A row on Today** in the app, which is the version that always works.
+3. **The widget:** a small list of friends who are at a dining hall now, with the
+   hall and the time, like "Maya, Usdan, 12:42".
+
+Rules:
+- It shares a hall name the person chose, never GPS. No location permission.
+- It expires after 90 minutes, and "I've left" clears it sooner.
+- It is sent per friend. Nothing goes to someone you did not switch on.
+- No history is shown, and pings are deleted after 24 hours.
+- Limit: 6 pings a day, so it cannot be used to watch someone.
+
+How the widget gets it. A widget cannot receive a push and cannot reuse the app's
+login safely, so:
+- The app gives the widget a **read-only widget token** that can do one thing,
+  list the caller's friends who are currently at a hall. The server stores only its
+  hash. It lives in the app group, and `clearWidget()` and sign-out delete it.
+- A new route, `api/duo-widget.js`, takes the token and returns that list.
+- WidgetKit refreshes on its own schedule, not on demand, so the widget can be
+  minutes behind. It shows the time of each ping so a stale row is obvious, and it
+  drops any row older than 90 minutes by itself. The app also reloads the widget
+  whenever it opens or receives a push.
+- Before the widget is built, check that the extension may make network calls from
+  a timeline and what refresh budget it gets.
+
 ## 8. Phases
 
 **Phase 1: foundation.** Migration (friendships, invites, pings, `display_name`,
 `push_social_enabled`). Functions in section 5. Invite by code. Friends list,
-block, remove. "I'm here" with per-friend switch. Duo streak, Daily duo, Week of
-dinners. Privacy policy and App Store answer updates. Reviewer demo pair.
+block, remove. "I'm here" with per-friend switch, shown on Today and by push. Duo
+streak, Daily duo, Week of dinners. Privacy policy and App Store answer updates.
+Reviewer demo pair. **Push must be verified first** (issue B3).
+
+**Phase 1b: widget presence.** Widget token, `api/duo-widget.js`, the friends list
+on the widget (section 7a).
 
 **Phase 2: plate and rating quests.** `duo_quests`, `duo_claims`, the plate flow,
 the rating quests, and the on-device allergen check (A1).
@@ -147,7 +181,7 @@ the rating quests, and the on-device allergen check (A1).
 **Phase 3: collectibles.** Matching closet pieces, duo badge, Twin day, Outfit
 swap.
 
-**Phase 4: widget.** Friend pictures in the app group, a pair on the widget.
+**Phase 4: widget pair.** Friend pictures in the app group, a pair on the widget.
 
 Each phase ends with a TestFlight build and a real two-phone test.
 
@@ -238,8 +272,17 @@ the two numbers feel consistent. Count only days after the pairing started, and 
 the duo streak read-only for clients (no client-writable counter, as with the
 personal one).
 
-**B11. The widget holds one picture.** It stores only the student's own Bento, in
-the app group. Friend pictures mean new files and new size limits. That is phase 4.
+**B11. The widget holds one picture and no friend data.** It stores only the
+student's own Bento and plate, in the app group. Presence needs the token and
+route in section 7a. Friend pictures mean new files and size limits, phase 4.
+
+**B12. Reminders are not reliable today, which affects "I'm here" pushes.** Between
+17 Sep and 8 Oct GitHub's scheduler never ran the dinner entries and ran the evening
+entries late, and the exact-hour gate then skipped every send for six days. That is
+fixed in `ce0fe34` by accepting any run inside a window. The lunch reminder runs on
+Vercel's cron and has not been confirmed arriving on a phone. "I'm here" pushes would
+be sent by the app's own route at the moment of the tap, so they do not depend on a
+scheduler, but they use the same APNs path, which is still unverified end to end.
 
 ### C. Safety, privacy and review
 
