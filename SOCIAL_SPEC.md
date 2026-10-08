@@ -3,6 +3,11 @@
 Status: design, checked against the code on 7 Oct 2026. Nothing is built.
 Supersedes the short design in `IOS_SPEC.md` section 11, which now points here.
 
+Phase 1 database work is written: `supabase/migrations/043_duo_foundation.sql`,
+tested by `scripts/test-duo-sql.mjs` (29 checks on a real Postgres engine, run with
+`npm i --no-save @electric-sql/pglite && node scripts/test-duo-sql.mjs`). It has not
+been run on the live database. The app, push route and screens are not started.
+
 ## 1. What this is
 
 Friends can connect, see each other's "I'm here", keep a shared streak, do paired
@@ -55,7 +60,7 @@ friendships
   id uuid pk
   user_a uuid, user_b uuid      -- stored ordered, a < b, unique pair
   requested_by uuid
-  status text                   -- 'pending' | 'active' | 'ended' | 'blocked'
+  status text                   -- 'active' | 'ended' | 'blocked' (a redeemed code is the acceptance, so no pending state)
   blocked_by uuid null
   started_at, ended_at timestamptz
   share_here_a boolean, share_here_b boolean   -- per-friend "I'm here" switch
@@ -99,7 +104,7 @@ policy should be added to change that**. Everything a friend may see goes throug
 | `duo_friends()` | friend id, display name, status, duo streak | caller is a party |
 | `duo_pair_progress(friend, week)` | counts per quest | active friendship |
 | `duo_friend_outfit(friend)` | outfit id | active twin day only |
-| `duo_create_invite()` / `duo_redeem(code)` | code / new friendship | limits in section 9 |
+| `duo_create_invite()` / `duo_redeem(code)` | code / status row (`ok`, `invalid_code`, `too_many_attempts`, `friend_limit`) | limits in section 9. Redeem returns a status instead of raising, because a raised error rolls back the attempt count |
 | `duo_ping_here(hall, meal, friends[])` | rows written | friends are active |
 | `duo_end(friend)` / `duo_block(friend)` | none | caller is a party |
 
