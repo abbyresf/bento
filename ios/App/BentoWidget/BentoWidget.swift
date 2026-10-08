@@ -309,7 +309,225 @@ extension View {
     }
 }
 
-@main
+// MARK: - Buddies at the hall
+//
+// A second widget: the buddies who have tapped "I'm here", with the hall and the time.
+// Unlike the plate it fetches its own list, because a buddy can arrive while the app is
+// closed. It carries a read-only token (made by duo_widget_token, migration 046) that can
+// do one thing, read this list, and the app puts it in the shared group. The last answer
+// is kept so the widget still shows something with no signal, and every row drops out at
+// the moment its tap ends, even if no new answer has arrived.
+
+private let buddyTokenKey = "buddy_token_v1"
+private let buddyLastKey = "buddy_last_v1"
+private let buddiesURL = URL(string: "https://www.bentodining.com/api/duo-widget")!
+
+struct Buddy: Codable, Identifiable {
+    let name: String
+    let hall: String
+    let meal: String
+    let at: Date
+    let until: Date
+    let outfit: String?
+    let color: String?
+
+    var id: String { "\(name)-\(at.timeIntervalSince1970)" }
+    /// The picture file for this buddy's Bento, written by the app (see setBuddyMascot).
+    var pictureKey: String { "\(outfit ?? "none")_\(color ?? "classic")" }
+}
+
+struct BuddyAnswer: Codable {
+    let buddies: [Buddy]
+}
+
+enum BuddiesState {
+    case setup                 // no token yet, or it was revoked
+    case unavailable           // no answer and nothing saved
+    case list([Buddy])
+}
+
+struct BuddiesEntry: TimelineEntry {
+    let date: Date
+    let state: BuddiesState
+}
+
+/// The server sends ISO 8601 times, with fractional seconds.
+private func decodeBuddies(_ data: Data) -> [Buddy]? {
+    let withFraction = ISO8601DateFormatter()
+    withFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    let plain = ISO8601DateFormatter()
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .custom { d in
+        let text = try d.singleValueContainer().decode(String.self)
+        if let date = withFraction.date(from: text) ?? plain.date(from: text) { return date }
+        throw DecodingError.dataCorrupted(.init(codingPath: d.codingPath, debugDescription: "bad date"))
+    }
+    return (try? decoder.decode(BuddyAnswer.self, from: data))?.buddies
+}
+
+private func cachedBuddies() -> [Buddy]? {
+    guard let data = UserDefaults(suiteName: appGroup)?.data(forKey: buddyLastKey) else { return nil }
+    return decodeBuddies(data)
+}
+
+/// Buddies whose tap is still running at `date`, newest first.
+func liveBuddies(_ all: [Buddy], at date: Date) -> [Buddy] {
+    all.filter { $0.until > date }.sorted { $0.at > $1.at }
+}
+
+/// A buddy's Bento, or nil until the app has drawn it. A variable so a test can
+/// stand in an image.
+var loadBuddyPicture: (String) -> UIImage? = { key in
+    guard let url = FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: appGroup)?
+            .appendingPathComponent("buddy_\(key).png"),
+          let data = try? Data(contentsOf: url) else { return nil }
+    return UIImage(data: data)
+}
+
+struct BuddiesProvider: TimelineProvider {
+    private static let sample = [
+        Buddy(name: "Maya", hall: "Usdan", meal: "lunch", at: Date(), until: Date().addingTimeInterval(3000), outfit: nil, color: "cherry"),
+        Buddy(name: "Sam", hall: "Sherman", meal: "lunch", at: Date().addingTimeInterval(-600), until: Date().addingTimeInterval(2400), outfit: "scarf", color: nil),
+    ]
+
+    func placeholder(in context: Context) -> BuddiesEntry {
+        BuddiesEntry(date: Date(), state: .list(Self.sample))
+    }
+
+    func getSnapshot(in context: Context, completion: @escaping (BuddiesEntry) -> Void) {
+        if context.isPreview { completion(placeholder(in: context)); return }
+        let now = Date()
+        let saved = cachedBuddies()
+        completion(BuddiesEntry(date: now, state: saved.map { .list(liveBuddies($0, at: now)) } ?? .setup))
+    }
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<BuddiesEntry>) -> Void) {
+        let now = Date()
+        let retry = now.addingTimeInterval(15 * 60)
+        guard let token = UserDefaults(suiteName: appGroup)?.string(forKey: buddyTokenKey), !token.isEmpty else {
+            completion(Timeline(entries: [BuddiesEntry(date: now, state: .setup)], policy: .after(now.addingTimeInterval(30 * 60))))
+            return
+        }
+        var request = URLRequest(url: buddiesURL, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 10)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        URLSession.shared.dataTask(with: request) { data, response, _ in
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            if status == 401 {
+                completion(Timeline(entries: [BuddiesEntry(date: now, state: .setup)], policy: .after(retry)))
+                return
+            }
+            var list: [Buddy]? = nil
+            if status == 200, let data = data, let fresh = decodeBuddies(data) {
+                list = fresh
+                UserDefaults(suiteName: appGroup)?.set(data, forKey: buddyLastKey)
+            }
+            if list == nil { list = cachedBuddies() }       // no signal: the last answer, with ended taps dropped
+            guard let all = list else {
+                completion(Timeline(entries: [BuddiesEntry(date: now, state: .unavailable)], policy: .after(retry)))
+                return
+            }
+            // One entry now and one at each moment a tap ends, so a buddy leaves the
+            // list on time even if no new answer arrives.
+            var moments = [now]
+            moments += all.map { $0.until }.filter { $0 > now }
+            let unique = Array(Set(moments)).sorted().prefix(8)
+            let entries = unique.map { BuddiesEntry(date: $0, state: .list(liveBuddies(all, at: $0))) }
+            completion(Timeline(entries: Array(entries), policy: .after(retry)))
+        }.resume()
+    }
+}
+
+private func clockText(_ d: Date) -> String {
+    let f = DateFormatter()
+    f.locale = Locale(identifier: "en_US_POSIX")
+    f.dateFormat = "h:mm"
+    return f.string(from: d)
+}
+
+struct BuddiesView: View {
+    @Environment(\.widgetFamily) private var family
+    let entry: BuddiesEntry
+
+    private var small: Bool { family == .systemSmall }
+    private var limit: Int { small ? 2 : 4 }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: small ? 6 : 8) {
+            Text("At the hall")
+                .font(.caption.weight(.bold))
+                .foregroundColor(orange)
+                .lineLimit(1)
+            switch entry.state {
+            case .setup:
+                note("Open Bento to set this up.")
+            case .unavailable:
+                note("Can't check right now.")
+            case .list(let buddies):
+                if buddies.isEmpty {
+                    note("No buddies out right now.")
+                } else {
+                    ForEach(Array(buddies.prefix(limit))) { row($0) }
+                    if buddies.count > limit {
+                        Text("+\(buddies.count - limit) more")
+                            .font(.caption2)
+                            .foregroundColor(navy.opacity(0.6))
+                    }
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .widgetBackground()
+    }
+
+    private func note(_ text: String) -> some View {
+        Text(text).font(.footnote).foregroundColor(navy).lineLimit(3)
+    }
+
+    private func row(_ b: Buddy) -> some View {
+        HStack(spacing: 8) {
+            avatar(b, size: small ? 28 : 34)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(b.name).font(.footnote.weight(.bold)).foregroundColor(navy).lineLimit(1)
+                Text("\(b.hall), \(b.meal), \(clockText(b.at))")
+                    .font(.caption2)
+                    .foregroundColor(navy.opacity(0.7))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func avatar(_ b: Buddy, size: CGFloat) -> some View {
+        if let image = loadBuddyPicture(b.pictureKey) {
+            Image(uiImage: image).resizable().scaledToFit().frame(height: size)
+        } else {
+            ZStack {
+                Circle().fill(orange)
+                Text(String(b.name.prefix(1)).uppercased())
+                    .font(.caption.weight(.heavy))
+                    .foregroundColor(.white)
+            }
+            .frame(width: size, height: size)
+        }
+    }
+}
+
+struct BentoBuddiesWidget: Widget {
+    let kind = "BentoBuddiesWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: BuddiesProvider()) { entry in
+            BuddiesView(entry: entry)
+        }
+        .configurationDisplayName("Buddies at the hall")
+        .description("Which buddies are at a dining hall right now.")
+        .supportedFamilies([.systemSmall, .systemMedium])
+    }
+}
+
 struct BentoPlateWidget: Widget {
     let kind = "BentoPlateWidget"
 
@@ -320,5 +538,13 @@ struct BentoPlateWidget: Widget {
         .configurationDisplayName("Today's plate")
         .description("Your next meal from Bento's plate.")
         .supportedFamilies([.systemSmall, .systemMedium])
+    }
+}
+
+@main
+struct BentoWidgets: WidgetBundle {
+    var body: some Widget {
+        BentoPlateWidget()
+        BentoBuddiesWidget()
     }
 }

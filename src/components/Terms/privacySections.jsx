@@ -52,7 +52,7 @@ const PRIVACY_SECTIONS = [
   {
     id: 'cookies',
     heading: 'Cookies and Local Storage',
-    body: 'Bento uses browser storage and sign-in tokens to keep you signed in and save your preferences. In the iOS app the same information is kept in the app\'s own storage, and the home-screen widget keeps a copy of today\'s plate on your device. We do not use third-party tracking cookies or advertising cookies. Clearing your browser storage or deleting the app signs you out.',
+    body: 'Bento uses browser storage and sign-in tokens to keep you signed in and save your preferences. In the iOS app the same information is kept in the app\'s own storage, and the home-screen widget keeps a copy of today\'s plate on your device. The buddy list widget also keeps a read-only access code that can only list which buddies are at a dining hall, and pictures of your buddies\' Bento. Signing out removes them. We do not use third-party tracking cookies or advertising cookies. Clearing your browser storage or deleting the app signs you out.',
   },
   {
     id: 'notifications',

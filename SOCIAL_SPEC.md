@@ -195,8 +195,12 @@ login safely, so:
   minutes behind. It shows the time of each ping so a stale row is obvious, and it
   drops any row older than 90 minutes by itself. The app also reloads the widget
   whenever it opens or receives a push.
-- Before the widget is built, check that the extension may make network calls from
-  a timeline and what refresh budget it gets.
+- Built 8 Oct 2026 as a second widget, "Buddies at the hall" (small and medium),
+  in `BentoWidget.swift`. Migration 046 holds the tokens, `api/duo-widget.js` answers
+  the widget, and the app writes the token and one picture per buddy outfit and color
+  into the app group. The widget keeps the last answer for no signal and adds a timeline
+  entry at each tap's end so a buddy leaves the list on time. Not yet seen on a phone.
+  WidgetKit decides how often it refreshes, so the list can be minutes behind.
 
 ## 8. Phases
 

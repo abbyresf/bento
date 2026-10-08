@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { getFriends, getMyDuo } from './duo';
+import { syncBuddyWidget } from './widget';
 
 /* The friend list, shared by every screen that shows it.
  *
@@ -26,6 +27,8 @@ export async function refreshFriends() {
     try {
       const [res, me] = await Promise.all([getFriends(), getMyDuo()]);
       emit({ status: res.status, friends: res.friends, me });
+      // The buddy list widget needs its token and a picture of each buddy's Bento.
+      if (res.status === 'ok') syncBuddyWidget(res.friends);
     } catch {
       emit({ status: 'offline' });
     } finally {

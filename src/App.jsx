@@ -31,6 +31,7 @@ import { loadOutfit, resetOutfit } from './lib/mascotOutfit';
 import { loadMascotColor, resetMascotColor } from './lib/mascotColor';
 import { initJoinLinks, peekJoinCode, forgetJoinCode } from './lib/joinLink';
 import { resetFriends } from './lib/friendsStore';
+import { revokeBuddyWidget } from './lib/widget';
 import JoinSheet from './components/Friends/JoinSheet';
 import FriendsTab from './components/Friends/FriendsTab';
 import './App.css';
@@ -256,6 +257,8 @@ function App() {
     if (readQueue().length > 0 && navigator.onLine !== false) {
       try { await withTimeout(flushPendingConfirms(), 6000); } catch { /* sign out anyway */ }
     }
+    // The buddy widget's token is revoked while the session still exists.
+    try { await withTimeout(revokeBuddyWidget(), 3000); } catch { /* sign out anyway */ }
     await signOut();
     clearAccountLocalData();
     resetOutfit();

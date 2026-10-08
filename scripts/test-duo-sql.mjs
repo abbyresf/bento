@@ -9,17 +9,17 @@ import assert from 'node:assert/strict';
 const dir = process.env.MIGRATIONS_DIR
   ? process.env.MIGRATIONS_DIR
   : new URL('../supabase/migrations/', import.meta.url).pathname;
-const migrations = ['043_duo_foundation.sql', '044_duo_here_duration.sql', '045_duo_quests_and_colors.sql']
+const migrations = ['043_duo_foundation.sql', '044_duo_here_duration.sql', '045_duo_quests_and_colors.sql', '046_duo_widget.sql']
   .map((f) => readFileSync(`${dir}/${f}`, 'utf8'));
 const db = new PGlite();
 
 await db.exec(`
-  create role anon nologin; create role authenticated nologin;
+  create role anon nologin; create role authenticated nologin; create role service_role nologin;
   create schema auth;
   create table auth.users (id uuid primary key default gen_random_uuid());
   create function auth.uid() returns uuid language sql stable as
     $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
-  grant usage on schema auth, public to anon, authenticated;
+  grant usage on schema auth, public to anon, authenticated, service_role;
   create table public.profiles (id uuid primary key references auth.users(id) on delete cascade, university text, mascot_outfit text);
   create table public.meal_history (id uuid primary key default gen_random_uuid(),
     user_id uuid references auth.users(id) on delete cascade, meal_date date, meal_type text);
@@ -378,6 +378,83 @@ await test('a claim stays when the buddy deletes their account', async () => {
   assert.equal(perks[0].claims, 1);
   const rows = (await db.query('select friend_id from public.duo_claims where user_id = $1', [qa])).rows;
   assert.equal(rows[0].friend_id, null);
+});
+
+// ── The widget token and list (migration 046) ────────────────────────────────
+const hashOf = async (t) => (await db.query(`select encode(sha256(convert_to($1, 'UTF8')), 'hex') h`, [t])).rows[0].h;
+const asService = async (sql, params = []) => {
+  await db.exec('reset role'); await db.exec('set role service_role');
+  try { return (await db.query(sql, params)).rows; } finally { await db.exec('reset role'); }
+};
+
+const wa = await user('WA'); const wb = await user('WB'); const wc = await user('WC');
+await makePair(wa, wb);
+await db.query(`update public.profiles set mascot_color = 'sky', mascot_outfit = 'chefhat' where id = $1`, [wb]);
+
+await test('a widget token is 64 hex characters and only its hash is stored', async () => {
+  const [{ t }] = await call(wa, 'select public.duo_widget_token() t');
+  assert.match(t, /^[0-9a-f]{64}$/);
+  const { rows } = await db.query('select token_hash from public.duo_widget_tokens where user_id = $1', [wa]);
+  assert.equal(rows.length, 1);
+  assert.notEqual(rows[0].token_hash, t);
+  assert.equal(rows[0].token_hash, await hashOf(t));
+});
+
+await test('the widget list shows the buddies at a hall, with their Bento, for the token owner only', async () => {
+  const [{ t }] = await call(wa, 'select public.duo_widget_token() t');
+  await call(wb, `select * from public.duo_ping_here('Usdan', 'lunch', null, 30)`);
+  const rows = await asService('select * from public.duo_widget_list($1)', [await hashOf(t)]);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].hall, 'Usdan'); assert.equal(rows[0].mascot_color, 'sky'); assert.equal(rows[0].mascot_outfit, 'chefhat');
+  assert.ok(new Date(rows[0].here_until) > new Date());
+  // wb has no pings aimed at wc, and wc has no buddies
+  const [{ t: tc }] = await call(wc, 'select public.duo_widget_token() t');
+  assert.deepEqual(await asService('select * from public.duo_widget_list($1)', [await hashOf(tc)]), []);
+});
+
+await test('an ended tap or an ended friendship is not listed', async () => {
+  const [{ t }] = await call(wa, 'select public.duo_widget_token() t');
+  await db.query(`update public.here_pings set expires_at = now() - interval '1 minute' where sender = $1`, [wb]);
+  assert.deepEqual(await asService('select * from public.duo_widget_list($1)', [await hashOf(t)]), []);
+  await call(wb, `select * from public.duo_ping_here('Usdan', 'lunch')`);
+  assert.equal((await asService('select * from public.duo_widget_list($1)', [await hashOf(t)])).length, 1);
+  await call(wb, 'select public.duo_end($1)', [wa]);
+  assert.deepEqual(await asService('select * from public.duo_widget_list($1)', [await hashOf(t)]), []);
+  await makePair(wa, wb);
+});
+
+await test('an unknown token is refused', async () => {
+  await assert.rejects(asService('select * from public.duo_widget_list($1)', ['0'.repeat(64)]), /invalid_token/);
+});
+
+await test('only the server can call the list, not a signed-in student or anon', async () => {
+  const [{ t }] = await call(wa, 'select public.duo_widget_token() t');
+  await assert.rejects(call(wa, 'select * from public.duo_widget_list($1)', [await hashOf(t)]), /permission denied/);
+  await db.exec('reset role'); await as(null); await db.exec('set role anon');
+  await assert.rejects(db.query('select * from public.duo_widget_list($1)', [await hashOf(t)]), /permission denied/);
+  await db.exec('reset role');
+});
+
+await test('signing out revokes the token, and nobody can revoke someone else\'s', async () => {
+  const [{ t }] = await call(wa, 'select public.duo_widget_token() t');
+  await call(wb, 'select public.duo_widget_revoke($1)', [t]);                   // not wb's token: no effect
+  await asService('select * from public.duo_widget_list($1)', [await hashOf(t)]);   // still valid: this throws if it was revoked
+  await call(wa, 'select public.duo_widget_revoke($1)', [t]);
+  await assert.rejects(asService('select * from public.duo_widget_list($1)', [await hashOf(t)]), /invalid_token/);
+});
+
+await test('a student keeps at most five tokens, newest first', async () => {
+  const mine = [];
+  for (let i = 0; i < 7; i++) mine.push((await call(wa, 'select public.duo_widget_token() t'))[0].t);
+  const { rows } = await db.query('select count(*)::int c from public.duo_widget_tokens where user_id = $1', [wa]);
+  assert.equal(rows[0].c, 5);
+  await assert.rejects(asService('select * from public.duo_widget_list($1)', [await hashOf(mine[0])]), /invalid_token/);
+  await asService('select * from public.duo_widget_list($1)', [await hashOf(mine[6])]);
+});
+
+await test('deleting an account removes its widget tokens', async () => {
+  await db.query('delete from auth.users where id = $1', [wa]);
+  assert.equal((await db.query('select count(*)::int c from public.duo_widget_tokens where user_id = $1', [wa])).rows[0].c, 0);
 });
 
 await test('deleting an account removes its rows', async () => {

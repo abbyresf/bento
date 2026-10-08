@@ -98,3 +98,64 @@ export async function clearWidget() {
   if (!Capacitor.isNativePlatform()) return;
   try { await WidgetBridge.clear(); } catch (e) { console.warn('widget clear failed:', e?.message ?? e); }
 }
+
+/* ── The buddy list widget ───────────────────────────────────────────────────────
+ *
+ * The widget fetches its own list from /api/duo-widget with a read-only token (made by
+ * duo_widget_token, migration 046), so the app only has to give it that token and a
+ * picture of each buddy's Bento. A picture is one file per outfit and color, so two
+ * buddies who look alike share one. */
+export function buddyKey(outfit, color) {
+  return `${outfit ?? 'none'}_${color ?? 'classic'}`;
+}
+
+const BUDDY_KEYS = 'bento_widget_buddy_keys';
+let buddyTried = false;
+
+function readKeys() {
+  try { const v = JSON.parse(localStorage.getItem(BUDDY_KEYS) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; }
+}
+
+/* Called with the friend list each time it refreshes. Best effort and quiet: a
+ * widget that is not set up yet shows "Open Bento" and fixes itself at the next try. */
+export async function syncBuddyWidget(friends = []) {
+  if (!Capacitor.isNativePlatform()) return;
+  try {
+    let { token } = await WidgetBridge.getBuddyToken();
+    if (!token && !buddyTried) {
+      buddyTried = true;   // once per launch, so a failing bridge cannot mint tokens in a loop
+      // Loaded when needed, so the tests that import this file need no Supabase settings.
+      const { supabase } = await import('./supabase');
+      const { data, error } = await supabase.rpc('duo_widget_token');
+      if (!error && typeof data === 'string') {
+        token = data;
+        await WidgetBridge.setBuddyToken({ token });
+      }
+    }
+    if (!token) return;
+    const have = new Set(readKeys());
+    const wanted = new Map();
+    for (const f of friends.slice(0, 20)) {
+      const key = buddyKey(f.mascot_outfit ?? null, f.mascot_color ?? null);
+      if (!have.has(key)) wanted.set(key, f);
+    }
+    for (const [key, f] of wanted) {
+      await WidgetBridge.setBuddyMascot({ key, base64: await drawMascotPng('happy', f.mascot_outfit ?? null, f.mascot_color ?? null) });
+      have.add(key);
+    }
+    if (wanted.size) { try { localStorage.setItem(BUDDY_KEYS, JSON.stringify([...have])); } catch { /* redrawn next time */ } }
+  } catch (e) { console.warn('buddy widget sync failed:', e?.message ?? e); }
+}
+
+/* Sign out: take the token away from the server before the session ends. */
+export async function revokeBuddyWidget() {
+  if (!Capacitor.isNativePlatform()) return;
+  try {
+    const { token } = await WidgetBridge.getBuddyToken();
+    if (token) {
+      const { supabase } = await import('./supabase');
+      await supabase.rpc('duo_widget_revoke', { p_token: token });
+    }
+  } catch (e) { console.warn('buddy widget revoke failed:', e?.message ?? e); }
+  buddyTried = false;
+}

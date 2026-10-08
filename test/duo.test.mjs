@@ -134,3 +134,17 @@ test('the server route words the push the same way the app does', async () => {
     assert.equal(server(n, h), pushText(n, h));
   }
 });
+
+test('the widget route returns only what the widget draws, with ISO times', async () => {
+  const { buddyJson } = await import('../api/duo-widget.js');
+  const out = buddyJson([{
+    display_name: 'Maya', hall: 'Usdan', meal: 'lunch',
+    here_at: '2026-10-08T16:12:34.567+00:00', here_until: '2026-10-08T17:12:34.567+00:00',
+    mascot_outfit: 'scarf', mascot_color: 'cherry', email: 'secret@example.com', user_id: 'x',
+  }, { display_name: 'Sam', hall: 'Sherman', meal: 'dinner', here_at: '2026-10-08T22:00:00Z', here_until: '2026-10-08T23:00:00Z' }]);
+  assert.deepEqual(out[0], { name: 'Maya', hall: 'Usdan', meal: 'lunch', at: '2026-10-08T16:12:34.567Z', until: '2026-10-08T17:12:34.567Z', outfit: 'scarf', color: 'cherry' });
+  assert.equal(out[1].outfit, null);
+  assert.equal(out[1].color, null);
+  assert.deepEqual(Object.keys(out[0]).sort(), ['at', 'color', 'hall', 'meal', 'name', 'outfit', 'until']);
+  assert.deepEqual(buddyJson(null), []);
+});
