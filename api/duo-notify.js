@@ -32,7 +32,7 @@ function cors(res) {
 const clean = (s) => String(s ?? '').replace(/\s+/g, ' ').trim();
 
 export function pushText(senderName, hall) {
-  const who = clean(senderName) || 'A friend';
+  const who = clean(senderName) || 'A buddy';
   return `${who} is at ${clean(hall) || 'the dining hall'}`;
 }
 

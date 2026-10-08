@@ -55,16 +55,16 @@ export default function InviteSheet({ onClose, initialCode = '' }) {
     const res = await redeemInvite(code);
     setBusy(false);
     if (!res.ok) { setMessage({ kind: 'error', text: res.message }); return; }
-    setMessage({ kind: 'ok', text: `You and ${res.friend.name} are friends.` });
+    setMessage({ kind: 'ok', text: `You and ${res.friend.name} are buddies.` });
     setCode('');
     await refreshFriends();
   };
 
   return (
     <div className="fr-overlay" onClick={onClose}>
-      <div className="fr-sheet" role="dialog" aria-modal="true" aria-label="Add a friend" onClick={(e) => e.stopPropagation()}>
+      <div className="fr-sheet" role="dialog" aria-modal="true" aria-label="Add a buddy" onClick={(e) => e.stopPropagation()}>
         <div className="fr-head">
-          <h3>Add a friend</h3>
+          <h3>Add a buddy</h3>
           <button className="fr-close" onClick={onClose} aria-label="Close">×</button>
         </div>
 
@@ -73,27 +73,27 @@ export default function InviteSheet({ onClose, initialCode = '' }) {
             <label className="fr-label" htmlFor="fr-name">Your name</label>
             <div className="fr-inline">
               <input id="fr-name" className="fr-input" value={name} maxLength={NAME_MAX + 5}
-                     onChange={(e) => setName(e.target.value)} placeholder="What friends call you" autoComplete="given-name" />
+                     onChange={(e) => setName(e.target.value)} placeholder="What your buddies call you" autoComplete="given-name" />
               <button className="fr-btn" onClick={saveName} disabled={savingName}>Save</button>
             </div>
             {nameError && <p className="fr-error">{nameError}</p>}
-            <p className="fr-note">Friends see this name. Nothing else about you.</p>
+            <p className="fr-note">Buddies see this name. Nothing else about you.</p>
           </>
         ) : (
           <>
             <p className="fr-note" style={{ marginTop: 0 }}>
-              Send a link in Messages. Your friend taps it and you are connected. Invites last 24 hours.
+              Send a link in Messages. Your buddy taps it and you are connected. Invites last 24 hours.
             </p>
             <div className="fr-actions">
               <button className="fr-btn" onClick={sendInvite} disabled={busy}>
-                {busy && !invite ? 'Making a link…' : 'Invite a friend'}
+                {busy && !invite ? 'Making a link…' : 'Invite a buddy'}
               </button>
             </div>
             {invite && (
               <>
                 <p className="fr-bigcode" aria-label="Your invite code">{formatCode(invite.code)}</p>
                 <p className="fr-note" style={{ textAlign: 'center', marginTop: 0 }}>
-                  Your friend can also type this code under Add a friend.
+                  Your buddy can also type this code under Add a buddy.
                 </p>
               </>
             )}

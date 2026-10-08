@@ -73,11 +73,11 @@ export default function HereSheet({ halls, friends, onClose, onSent }) {
           })}
         </div>
 
-        <p className="fr-note">Friends see the hall and the time for the next 90 minutes. Nothing else.</p>
+        <p className="fr-note">Buddies see the hall and the time for the next 90 minutes. Nothing else.</p>
         {error && <p className="fr-error">{error}</p>}
         <div className="fr-actions">
           <button className="fr-btn" onClick={send} disabled={busy || !hall || picked.size === 0}>
-            {busy ? 'Telling them…' : 'Tell friends'}
+            {busy ? 'Telling them…' : 'Tell buddies'}
           </button>
         </div>
       </div>

@@ -82,7 +82,7 @@ export default function FriendsTab() {
 
   return (
     <div className="ft-page">
-      <h2 className="ft-title">Friends</h2>
+      <h2 className="ft-title">Buddies</h2>
 
       {offline && <p className="fr-offline">No connection. Showing the last list.</p>}
 
@@ -90,11 +90,11 @@ export default function FriendsTab() {
         <section className="ft-card ft-first">
           <h3>Eat together</h3>
           <p>
-            Add a friend to see when they are at a dining hall, and keep a streak together.
+            Add a buddy to see when they are at a dining hall, and keep a streak together.
             You choose when to share where you are.
           </p>
           <div className="fr-actions">
-            <button className="fr-btn" onClick={() => setSheet('invite')} disabled={offline}>Invite a friend</button>
+            <button className="fr-btn" onClick={() => setSheet('invite')} disabled={offline}>Invite a buddy</button>
             <button className="fr-link" onClick={() => setSheet('invite')}>Have a code?</button>
           </div>
           {!isNative && <p className="fr-note">Invites are sent from the iPhone app.</p>}
@@ -120,14 +120,14 @@ export default function FriendsTab() {
             </button>
             {here && (
               <p className="fr-you">
-                You are at {here.hall}. {here.reached === 0 ? 'No one was told.' : `${here.reached} ${here.reached === 1 ? 'friend knows' : 'friends know'}.`}
+                You are at {here.hall}. {here.reached === 0 ? 'No one was told.' : `${here.reached} ${here.reached === 1 ? 'buddy knows' : 'buddies know'}.`}
                 <button className="fr-link" onClick={left}>I've left</button>
               </p>
             )}
           </section>
 
           <section className="ft-card">
-            <h3 className="ft-section">Your friends</h3>
+            <h3 className="ft-section">Your buddies</h3>
             <div className="fr-list" style={{ marginTop: 0 }}>
               {friends.map((f) => {
                 const n = streaks[f.friend_id];
@@ -181,7 +181,7 @@ export default function FriendsTab() {
               })}
             </div>
             <div className="fr-actions">
-              <button className="fr-btn-quiet" onClick={() => setSheet('invite')} disabled={offline}>Add a friend</button>
+              <button className="fr-btn-quiet" onClick={() => setSheet('invite')} disabled={offline}>Add a buddy</button>
             </div>
           </section>
         </>

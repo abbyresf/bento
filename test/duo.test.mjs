@@ -87,7 +87,7 @@ test('default meal by hour matches the rest of the app', () => {
 
 test('push text uses fixed wording', () => {
   assert.equal(pushText('Maya', 'Usdan'), 'Maya is at Usdan');
-  assert.equal(pushText('  ', 'Usdan'), 'A friend is at Usdan');
+  assert.equal(pushText('  ', 'Usdan'), 'A buddy is at Usdan');
   assert.equal(pushText('Maya', ''), 'Maya is at the dining hall');
 });
 
@@ -97,7 +97,7 @@ test('database errors become plain sentences', () => {
   assert.match(errorText('invalid_code'), /did not work/);
   assert.match(errorText(new Error('boom')), /Something went wrong/);
   assert.match(redeemText('too_many_attempts'), /Too many tries/);
-  assert.match(redeemText('friend_limit'), /20 friends/);
+  assert.match(redeemText('friend_limit'), /20 buddies/);
 });
 
 test('a missing migration is recognised', () => {

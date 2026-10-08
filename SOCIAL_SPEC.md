@@ -8,6 +8,9 @@ tested by `scripts/test-duo-sql.mjs` (29 checks on a real Postgres engine, run w
 `npm i --no-save @electric-sql/pglite && node scripts/test-duo-sql.mjs`). It has not
 been run on the live database. The app, push route and screens are not started.
 
+**Naming (decided 8 Oct 2026):** the feature is called **Buddies** in the app, after
+the Bento buddy mascot. Code and database names still say friends and duo.
+
 ## 1. What this is
 
 Friends can connect, see each other's "I'm here", keep a shared streak, do paired

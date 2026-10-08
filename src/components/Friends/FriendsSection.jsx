@@ -34,9 +34,9 @@ export default function FriendsSection({ remindersOn, onOpenFriends }) {
 
   return (
     <section className="settings-section">
-      <h3>Friends</h3>
+      <h3>Buddies</h3>
       <p className="settings-hint" style={{ marginTop: 0 }}>
-        Friends see your name, and your hall and meal only when you tap I'm here.
+        Buddies see your name, and your hall and meal only when you tap I'm here.
       </p>
 
       {!editingName ? (
@@ -58,13 +58,13 @@ export default function FriendsSection({ remindersOn, onOpenFriends }) {
       <label className="fr-switch">
         <input type="checkbox" checked={me?.socialPush === true} disabled={busy || !remindersOn}
                onChange={(e) => toggleAlerts(e.target.checked)} />
-        Tell me when a friend taps I'm here
+        Tell me when a buddy taps I'm here
       </label>
-      {!remindersOn && <p className="fr-note">Turn on Meal Reminders first. Friend alerts use the same notification permission.</p>}
+      {!remindersOn && <p className="fr-note">Turn on Meal Reminders first. Buddy alerts use the same notification permission.</p>}
 
       <p style={{ margin: '0.9rem 0 0' }}>
         <button className="fr-link" onClick={onOpenFriends}>
-          {friends.length === 0 ? 'Add a friend' : `Manage your ${friends.length} ${friends.length === 1 ? 'friend' : 'friends'}`}
+          {friends.length === 0 ? 'Add a buddy' : `Manage your ${friends.length} ${friends.length === 1 ? 'buddy' : 'buddies'}`}
         </button>
       </p>
     </section>

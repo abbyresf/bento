@@ -68,7 +68,7 @@ export function cleanName(raw) {
 /* Returns an error message, or null when the name is fine. */
 export function nameProblem(raw) {
   const n = cleanName(raw);
-  if (n.length === 0) return 'Add a name your friends will know.';
+  if (n.length === 0) return 'Add a name your buddies will know.';
   if (n.length > NAME_MAX) return `Keep it to ${NAME_MAX} characters.`;
   return null;
 }
@@ -120,7 +120,7 @@ export function mealForHour(hour) {
 
 /* What the push says. Fixed wording, so a friend's name is the only free text. */
 export function pushText(senderName, hall) {
-  const who = cleanName(senderName) || 'A friend';
+  const who = cleanName(senderName) || 'A buddy';
   return `${who} is at ${String(hall ?? '').trim() || 'the dining hall'}`;
 }
 
@@ -134,11 +134,11 @@ export function errorText(err) {
     too_many_invites: 'You have 5 open invites. Wait for one to expire or be used.',
     invalid_code: 'That code did not work. Check it and try again.',
     too_many_attempts: 'Too many tries. Wait an hour and try again.',
-    friend_limit: 'One of you has reached the limit of 20 friends.',
+    friend_limit: 'One of you has reached the limit of 20 buddies.',
     ping_limit: 'You have used all 6 of today’s "I’m here" taps.',
     invalid_hall: 'Pick a dining hall.',
     invalid_meal: 'Pick a meal.',
-    not_friends: 'You are not friends with this person.',
+    not_friends: 'You are not buddies with this person.',
   };
   for (const [k, v] of Object.entries(table)) if (code.includes(k)) return v;
   return 'Something went wrong. Try again.';

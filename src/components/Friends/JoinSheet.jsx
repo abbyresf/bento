@@ -28,16 +28,16 @@ export default function JoinSheet({ code, onClose }) {
     const res = await redeemInvite(code);
     setBusy(false);
     if (!res.ok) { setResult({ kind: 'error', text: res.message }); return; }
-    setResult({ kind: 'ok', text: `You and ${res.friend.name} are friends.` });
+    setResult({ kind: 'ok', text: `You and ${res.friend.name} are buddies.` });
     await refreshFriends();
   };
 
   const done = result?.kind === 'ok';
   return (
     <div className="fr-overlay" onClick={onClose}>
-      <div className="fr-sheet" role="dialog" aria-modal="true" aria-label="Friend invite" onClick={(e) => e.stopPropagation()}>
+      <div className="fr-sheet" role="dialog" aria-modal="true" aria-label="Buddy invite" onClick={(e) => e.stopPropagation()}>
         <div className="fr-head">
-          <h3>{done ? 'Friends' : 'Add a friend?'}</h3>
+          <h3>{done ? 'Buddies' : 'Add a buddy?'}</h3>
           <button className="fr-close" onClick={onClose} aria-label="Close">×</button>
         </div>
         {!done && (
@@ -45,16 +45,16 @@ export default function JoinSheet({ code, onClose }) {
             <p className="fr-note" style={{ marginTop: 0 }}>
               Someone invited you to share meals on Bento with the code {formatCode(code)}.
             </p>
-            <p className="fr-note">You are signed in as <strong>{me?.email || 'this account'}</strong>. Friends belong to this account.</p>
+            <p className="fr-note">You are signed in as <strong>{me?.email || 'this account'}</strong>. Buddies belong to this account.</p>
             {!hasName && (
               <>
                 <label className="fr-label" htmlFor="fr-join-name">Your name</label>
                 <input id="fr-join-name" className="fr-input" value={name} maxLength={NAME_MAX + 5}
-                       onChange={(e) => setName(e.target.value)} placeholder="What friends call you" />
+                       onChange={(e) => setName(e.target.value)} placeholder="What your buddies call you" />
               </>
             )}
             <div className="fr-actions">
-              <button className="fr-btn" onClick={accept} disabled={busy}>{busy ? 'Adding…' : 'Add friend'}</button>
+              <button className="fr-btn" onClick={accept} disabled={busy}>{busy ? 'Adding…' : 'Add buddy'}</button>
               <button className="fr-btn-quiet" onClick={onClose}>Not now</button>
             </div>
           </>

@@ -20,14 +20,14 @@ export default function BottomNav({ activeTab, onTabChange }) {
     },
     {
       id: 'friends',
-      label: 'Friends',
+      label: 'Buddies',
       dot: someoneOut,
       icon: () => (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="8.5" cy="8" r="3.5"/>
-          <path d="M2 20v-1.5a5 5 0 0 1 5-5h3a5 5 0 0 1 5 5V20"/>
-          <circle cx="17" cy="9" r="2.8"/>
-          <path d="M17.5 14a4.2 4.2 0 0 1 4.5 4.2V20"/>
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
         </svg>
       ),
     },
@@ -47,10 +47,7 @@ export default function BottomNav({ activeTab, onTabChange }) {
       label: 'Community',
       icon: () => (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-          <circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
         </svg>
       ),
     },
@@ -79,7 +76,7 @@ export default function BottomNav({ activeTab, onTabChange }) {
               if (!active) haptics.selection();
               onTabChange(tab.id);
             }}
-            aria-label={tab.dot ? `${tab.label}, a friend is at a dining hall` : tab.label}
+            aria-label={tab.dot ? `${tab.label}, a buddy is at a dining hall` : tab.label}
           >
             {tab.icon(active)}
             {tab.dot && !active ? <span className="bottom-nav-dot" aria-hidden="true" /> : null}
