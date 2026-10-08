@@ -1,0 +1,103 @@
+/* Friends and "I'm here". Colors come from tokens only, so dark mode follows. */
+
+.fr-row {
+  margin: 0 0 0.9rem;
+  padding: 0.7rem 0.8rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  color: var(--text-primary);
+}
+.fr-row-head { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+.fr-row-title { margin: 0; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-secondary); }
+.fr-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.55rem; }
+.fr-chip {
+  display: flex; flex-direction: column; gap: 0.05rem;
+  padding: 0.35rem 0.6rem; border-radius: 10px;
+  background: var(--surface-sunk); border: 1px solid var(--border);
+  font-size: 0.82rem; line-height: 1.25;
+}
+.fr-chip-name { font-weight: 700; color: var(--text-primary); }
+.fr-chip-line { color: var(--fern-text); font-weight: 600; font-size: 0.76rem; }
+.fr-chip.is-here { background: var(--fern-tint); border-color: var(--fern-border); }
+.fr-chip-quiet { color: var(--text-secondary); font-size: 0.76rem; }
+.fr-offline { margin: 0.5rem 0 0; font-size: 0.76rem; color: var(--text-secondary); }
+.fr-you { margin: 0.55rem 0 0; font-size: 0.82rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+
+.fr-btn {
+  font-family: inherit; font-size: 0.85rem; font-weight: 700;
+  padding: 0.5rem 0.9rem; border-radius: 10px; cursor: pointer;
+  background: var(--btn-bg); color: var(--btn-fg); border: 1px solid transparent;
+}
+.fr-btn:hover { background: var(--btn-bg-hover); }
+.fr-btn:disabled { opacity: 0.55; cursor: default; }
+.fr-btn-quiet {
+  font-family: inherit; font-size: 0.82rem; font-weight: 600;
+  padding: 0.45rem 0.8rem; border-radius: 10px; cursor: pointer;
+  background: var(--surface-sunk); color: var(--text-primary); border: 1px solid var(--border);
+}
+.fr-btn-quiet:hover { background: var(--surface); }
+.fr-btn-danger { color: var(--danger-text); background: var(--danger-bg); border-color: var(--danger-btn-border, var(--border)); }
+.fr-link { background: none; border: none; padding: 0; font: inherit; font-weight: 700; color: var(--accent-text); cursor: pointer; }
+
+.fr-empty { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.fr-empty p { margin: 0; font-size: 0.88rem; color: var(--text-secondary); }
+
+/* Sheets */
+.fr-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--scrim, rgba(0, 0, 0, 0.4));
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.fr-sheet {
+  width: 100%; max-width: 520px; max-height: 88vh; overflow-y: auto;
+  background: var(--surface); color: var(--text-primary);
+  border: 1px solid var(--border); border-bottom: none;
+  border-radius: 18px 18px 0 0;
+  padding: 1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
+}
+@media (min-width: 640px) {
+  .fr-overlay { align-items: center; }
+  .fr-sheet { border-radius: 18px; border-bottom: 1px solid var(--border); }
+}
+.fr-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.9rem; }
+.fr-head h3 { margin: 0; font-size: 1.05rem; font-weight: 700; }
+.fr-close { background: none; border: none; font-size: 1.6rem; line-height: 1; cursor: pointer; color: var(--text-disabled); padding: 0 0.25rem; }
+.fr-close:hover { color: var(--text-primary); }
+.fr-label { display: block; margin: 0.9rem 0 0.35rem; font-size: 0.76rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-secondary); }
+.fr-input {
+  width: 100%; box-sizing: border-box; font-family: inherit; font-size: 1rem;
+  padding: 0.6rem 0.75rem; border-radius: 10px;
+  background: var(--bg-app); color: var(--text-primary); border: 1px solid var(--border);
+}
+.fr-input:focus { outline: 2px solid var(--accent-text); outline-offset: 1px; }
+.fr-code { letter-spacing: 0.18em; text-transform: uppercase; font-variant-numeric: tabular-nums; }
+.fr-inline { display: flex; gap: 0.5rem; }
+.fr-inline .fr-input { flex: 1; min-width: 0; }
+.fr-note { margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-secondary); }
+.fr-error { margin: 0.5rem 0 0; font-size: 0.84rem; color: var(--danger-text); }
+.fr-ok { margin: 0.5rem 0 0; font-size: 0.84rem; color: var(--success-text); font-weight: 600; }
+.fr-bigcode { margin: 0.75rem 0 0.25rem; font-size: 1.5rem; font-weight: 800; letter-spacing: 0.2em; text-align: center; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.fr-actions { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
+
+.fr-choices { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.fr-choice {
+  font-family: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+  padding: 0.5rem 0.85rem; border-radius: 999px;
+  background: var(--surface-sunk); color: var(--text-primary); border: 1px solid var(--border);
+}
+.fr-choice[aria-pressed="true"] { background: var(--accent-tint); border-color: var(--accent-text); color: var(--accent-text); }
+.fr-checks { display: flex; flex-direction: column; gap: 0.35rem; }
+.fr-check { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0.1rem; font-size: 0.95rem; }
+.fr-check input { width: 1.15rem; height: 1.15rem; accent-color: var(--btn-bg); }
+.fr-check.is-off { color: var(--text-disabled); }
+
+/* Settings */
+.fr-list { display: flex; flex-direction: column; gap: 0.55rem; margin-top: 0.75rem; }
+.fr-friend { padding: 0.65rem 0.75rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-sunk); }
+.fr-friend-top { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+.fr-friend-name { font-weight: 700; font-size: 0.95rem; }
+.fr-friend-sub { font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.1rem; }
+.fr-friend-tools { display: flex; gap: 0.4rem; margin-top: 0.55rem; flex-wrap: wrap; align-items: center; }
+.fr-switch { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
+.fr-switch input { width: 1.1rem; height: 1.1rem; accent-color: var(--btn-bg); }

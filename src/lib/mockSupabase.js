@@ -25,6 +25,7 @@ const FIXTURES = {
     age: 21, sex: 'female', activity_level: 'moderate', goal: 'maintain',
     university: 'brandeis', terms_accepted: true, push_enabled: false,
     show_calories: true, show_protein: true, show_carbs: true, show_fat: true,
+    display_name: 'Abby', push_social_enabled: false,
   }],
   nutrition_targets: [{ calories: 2000, protein: 110, carbs: 240, fat: 65 }],
   dietary_restrictions: [{
@@ -45,6 +46,21 @@ const FIXTURES = {
     { item_id: 'b', item_name: 'Brown rice', rating: 3, updated_at: new Date().toISOString() },
   ],
   quest_claims: [],
+};
+
+// Made-up friends for the Duo screens. One is at a hall right now.
+const minutesAgo = (m) => new Date(Date.now() - m * 60000).toISOString();
+const RPC = {
+  duo_friends: () => [
+    { friend_id: 'f1', display_name: 'Maya', started_at: minutesAgo(60 * 24 * 12), i_share: true,
+      here_hall: 'Usdan', here_meal: 'lunch', here_at: minutesAgo(12) },
+    { friend_id: 'f2', display_name: 'Sam', started_at: minutesAgo(60 * 24 * 5), i_share: true,
+      here_hall: null, here_meal: null, here_at: null },
+    { friend_id: 'f3', display_name: 'Rae', started_at: minutesAgo(60 * 24 * 2), i_share: false,
+      here_hall: null, here_meal: null, here_at: null },
+  ],
+  duo_create_invite: () => [{ code: 'K7QM2XAF', expires_at: minutesAgo(-60 * 24) }],
+  duo_redeem: () => [{ status: 'ok', friend_id: 'f9', display_name: 'Jo' }],
 };
 
 function query(name) {
@@ -75,7 +91,7 @@ export function createMock(mode = 'true') {
   return {
     __mock: 'BENTO_UI_MOCK_ACTIVE',
     from: query,
-    rpc: () => Promise.resolve({ data: null, error: null }),
+    rpc: (name) => Promise.resolve({ data: RPC[name]?.() ?? null, error: null }),
     auth: {
       getUser: () => Promise.resolve({ data: { user: USER }, error: null }),
       getSession: () => Promise.resolve({ data: { session }, error: null }),

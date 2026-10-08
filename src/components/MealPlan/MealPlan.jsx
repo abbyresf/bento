@@ -41,6 +41,7 @@ import Closet from '../Mascot/Closet';
 import { useOutfit } from '../../lib/mascotOutfit';
 import '../Mascot/Mascot.css';
 import { bentoSays } from '../../utils/bentoSays';
+import FriendsRow from '../Friends/FriendsRow';
 import StreakCelebration from '../Streak/StreakCelebration';
 import BadgeCelebration from '../Badges/BadgeCelebration';
 import RatingSheet from './RatingSheet';
@@ -949,6 +950,14 @@ export default function MealPlan({ settingsVersion = 0 }) {
           </div>
         );
       })()}
+
+      {isViewingToday && !dateLoading && mealPlan && (
+        <FriendsRow
+          halls={Object.values(menu?.locations ?? {})
+            .map((l) => ({ id: l.shortName ?? l.name, name: l.shortName ?? l.name }))
+            .filter((h) => h.name)}
+        />
+      )}
 
       {!dateLoading && mealPlan && targets && (
         <DailySummary totals={dayTotals} targets={targets} />

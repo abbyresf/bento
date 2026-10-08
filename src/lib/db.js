@@ -1014,6 +1014,9 @@ const ACCOUNT_LOCAL_KEYS = [
   'bento_profile_cache_v1',
   'bento_widget_mascot_sig',
   'bento_pending_confirms_v1',
+  'bento_duo_friends_v1',
+  'bento_duo_join_code',
+  'bento_duo_here',
 ];
 
 export function clearAccountLocalData() {

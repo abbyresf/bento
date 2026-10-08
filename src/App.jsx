@@ -28,6 +28,9 @@ import SplashScreen from './components/Splash/SplashScreen';
 import UpdatePrompt from './components/common/UpdatePrompt';
 import { syncNativePushToken } from './lib/push';
 import { loadOutfit, resetOutfit } from './lib/mascotOutfit';
+import { initJoinLinks, peekJoinCode, forgetJoinCode } from './lib/joinLink';
+import { resetFriends } from './lib/friendsStore';
+import JoinSheet from './components/Friends/JoinSheet';
 import './App.css';
 import BentoLogo from './components/common/BentoLogo';
 
@@ -70,6 +73,9 @@ function App() {
 
   // All hooks must be called unconditionally before any early returns
   const [session, setSession] = useState(undefined);
+  // A friend's invite code, kept from the moment a link opened the app until the
+  // person is signed in and can answer it.
+  const [joinCode, setJoinCode] = useState(() => peekJoinCode());
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(null);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(null);
   const [showLanding, setShowLanding] = useState(false);
@@ -209,6 +215,12 @@ function App() {
     if (session && isNative) syncNativePushToken();
   }, [session, isNative]);
 
+  // Invite links: /join/CODE on the web, and the https link in the app.
+  useEffect(() => { initJoinLinks(setJoinCode); }, []);
+  useEffect(() => {
+    if (location.pathname.startsWith('/join/')) navigate('/app', { replace: true });
+  }, [location.pathname, navigate]);
+
   // The piece Bento is wearing follows the student, so ask for it once signed in.
   useEffect(() => {
     if (session) loadOutfit();
@@ -245,6 +257,8 @@ function App() {
     await signOut();
     clearAccountLocalData();
     resetOutfit();
+    resetFriends();
+    setJoinCode(null);
     setHasCompletedOnboarding(null);
     setHasAcceptedTerms(null);
     setActiveTab('today');
@@ -410,6 +424,9 @@ function App() {
         {/* Outside every gate on purpose: a stale build is worth flagging
             whatever screen someone is on. */}
         <UpdatePrompt />
+        {joinCode && (
+          <JoinSheet code={joinCode} onClose={() => { forgetJoinCode(); setJoinCode(null); }} />
+        )}
         {hasCompletedOnboarding && hasAcceptedTerms && !showTutorial && !showInstallPrompt && <NotifPrompt />}
 
         {/* Queued behind every other prompt on purpose. A student meeting the

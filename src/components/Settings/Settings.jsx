@@ -18,6 +18,7 @@ import { pushSupport, subscribeToPush, unsubscribeFromPush, getPushEnabled, deta
 
 const isNative = Capacitor.isNativePlatform();
 import ThemePreview from './ThemePreview';
+import FriendsSection from '../Friends/FriendsSection';
 import './Settings.css';
 
 export default function Settings({ onClose, onReset, onSave, onGoContact, tabMode = false }) {
@@ -426,6 +427,8 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
             );
           })()}
         </section>
+
+        <FriendsSection remindersOn={pushOn} />
 
         <section className="settings-section">
           <h3>Appearance</h3>
