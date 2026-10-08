@@ -18,14 +18,15 @@ const TOPICS = [
   'Feature request',
   'Allergen or dietary issue',
   'Account help',
+  'Report a buddy',
   'Something else',
 ];
 
 const MAX = 4000;
 
-export default function FeedbackSheet({ onClose }) {
-  const [topic, setTopic] = useState(TOPICS[0]);
-  const [message, setMessage] = useState('');
+export default function FeedbackSheet({ onClose, initialTopic = null, initialMessage = '' }) {
+  const [topic, setTopic] = useState(TOPICS.includes(initialTopic) ? initialTopic : TOPICS[0]);
+  const [message, setMessage] = useState(initialMessage);
   const [replyEmail, setReplyEmail] = useState('');
   const [status, setStatus] = useState('idle'); // idle | sending | sent | error
   const [note, setNote] = useState(null);

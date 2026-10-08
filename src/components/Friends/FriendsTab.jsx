@@ -4,6 +4,8 @@ import { useFriends, refreshFriends } from '../../lib/friendsStore';
 import { clearHere, setSharing, endFriend, blockFriend, getDuoStreak } from '../../lib/duo';
 import { hereNow, presenceLine, minutesLeft, clock, durationLabel } from '../../data/duo';
 import { getUniversityConfig, getSelectableLocations } from '../../services/menuFetcher';
+import FeedbackSheet from '../Feedback/FeedbackSheet';
+import '../Feedback/FeedbackSheet.css';
 import InviteSheet from './InviteSheet';
 import HereSheet from './HereSheet';
 import './Friends.css';
@@ -42,6 +44,7 @@ export default function FriendsTab() {
   const [open, setOpen] = useState(null);         // friend id with tools showing
   const [confirm, setConfirm] = useState(null);   // { id, kind }
   const [busy, setBusy] = useState(false);
+  const [report, setReport] = useState(null);     // a friend row being reported
 
   // Keeps "12:42" rows and the 90 minute window honest without a refresh.
   useEffect(() => {
@@ -179,6 +182,7 @@ export default function FriendsTab() {
                           <div className="fr-friend-tools">
                             <button className="fr-btn-quiet" disabled={offline} onClick={() => setConfirm({ id: f.friend_id, kind: 'end' })}>Remove</button>
                             <button className="fr-btn-quiet" disabled={offline} onClick={() => setConfirm({ id: f.friend_id, kind: 'block' })}>Block</button>
+                            <button className="fr-btn-quiet" onClick={() => setReport(f)}>Report</button>
                           </div>
                         )}
                       </>
@@ -194,6 +198,13 @@ export default function FriendsTab() {
         </>
       )}
 
+      {report && (
+        <FeedbackSheet
+          onClose={() => setReport(null)}
+          initialTopic="Report a buddy"
+          initialMessage={`Buddy: ${report.display_name}\nWhat happened: `}
+        />
+      )}
       {sheet === 'invite' && <InviteSheet onClose={() => setSheet(null)} />}
       {sheet === 'here' && <HereSheet halls={halls} friends={friends} onClose={() => setSheet(null)} onSent={sent} />}
     </div>

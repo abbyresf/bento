@@ -353,7 +353,10 @@ Keep Duo about confirming and showing up, never amounts. The nudge uses fixed,
 friendly phrases and no countdown language. Someone who ends a friendship must not
 be asked why.
 
-**C4. App Store.** The Social Media answer in `APP_STORE_ANSWERS.md` flips from No.
+**C4. App Store.** *Done 8 Oct 2026 in `APP_STORE_ANSWERS.md`, the privacy policy page and
+`PrivacyInfo.xcprivacy` (Name added). A Report button on each buddy opens the feedback sheet
+with the name filled in. The demo pair of accounts for review is still to do.*
+ The Social Media answer in `APP_STORE_ANSWERS.md` flips from No.
 The privacy labels gain Name (linked, app functionality) and the policy needs a
 Friends section. "I'm here" shares a hall name the person chose, not GPS, so no
 location permission and no Location label. Reviewers need a pair of accounts, so

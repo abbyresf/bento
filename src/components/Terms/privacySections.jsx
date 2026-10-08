@@ -7,17 +7,22 @@ const PRIVACY_SECTIONS = [
   {
     id: 'what-we-collect',
     heading: 'Information We Collect',
-    body: 'You give us your email address and password when you register. If you sign in with Google or Apple, we receive your email and an account ID from them instead, and Apple can hide your email behind a relay address. You also give us your age, sex, height, weight, activity level and goal, which we use to work out calorie and macro targets. You give us your dietary restrictions, food allergies and the ingredients you avoid. As you use Bento, we store the meals you confirm, the dishes you rate, your favorites, your streak, the quests you claim and the piece Bento wears. We store your answers to surveys, the suggestions you post and the feedback you send. If you turn on reminders, we store a notification token for your device. We also receive technical data when you use Bento, including your IP address and device type, which our infrastructure providers handle. We do not collect your name, phone number, contacts, photos, location or payment information.',
+    body: 'You give us your email address and password when you register. If you sign in with Google or Apple, we receive your email and an account ID from them instead, and Apple can hide your email behind a relay address. You also give us your age, sex, height, weight, activity level and goal, which we use to work out calorie and macro targets. You give us your dietary restrictions, food allergies and the ingredients you avoid. As you use Bento, we store the meals you confirm, the dishes you rate, your favorites, your streak, the quests you claim and the piece Bento wears. We store your answers to surveys, the suggestions you post and the feedback you send. If you turn on reminders, we store a notification token for your device. If you use Buddies, we store the display name you choose, your links to other students, the invites you create and the I\'m here taps you send. We also receive technical data when you use Bento, including your IP address and device type, which our infrastructure providers handle. We do not collect your legal name, phone number, contacts, photos, GPS location or payment information.',
   },
   {
     id: 'health-data',
     heading: 'Dietary and Health-Related Data',
-    body: 'Your restrictions, allergies, body measurements and nutrition goals are sensitive. We use them only to build your plate and your reminders. We do not sell them and we do not share them with advertisers. We never disclose them to your university, dining staff or anyone else in a form that identifies you.',
+    body: 'Your restrictions, allergies, body measurements and nutrition goals are sensitive. We use them only to build your plate and your reminders. We do not sell them and we do not share them with advertisers. We never disclose them to your university, dining staff, your buddies or anyone else in a form that identifies you.',
   },
   {
     id: 'how-we-use',
     heading: 'How We Use Your Information',
     body: 'We use your information to run Bento. That means building your plate from your goals, restrictions and the dining hall menu, keeping your streak and quests, and sending the reminders you turn on. We combine information from many students into counts, such as how many students have a gluten restriction, and share those counts with university dining teams and research partners who work with BentoPulse. Those reports never contain individual records, names or emails. We may use your email to send service messages such as account verification or policy updates. We do not send marketing email without your consent.',
+  },
+  {
+    id: 'buddies',
+    heading: 'Buddies',
+    body: 'Buddies lets you connect with other students at your university. You pick a display name of up to 20 characters. Your buddies see that name and never your email. One of you sends an invite code or link and the other accepts it. Buddies see only what you choose to share. When you tap I\'m here, you pick the dining hall, the meal, how long it lasts (30, 60 or 90 minutes) and which buddies to tell. They see that hall, that meal and the time you tapped until it ends or you tap I\'ve left. Bento does not use GPS or your phone\'s location. We delete each tap a day after it ends. A shared streak counts the days you both confirmed a meal. Your buddies never see what you ate, your restrictions, allergies, measurements, goals or ratings. You can stop sharing with one buddy, remove a buddy or block someone at any time. Removing or blocking ends the shared streak. University dining teams and research partners never see who your buddies are. If you delete your account, your buddy links, invites and taps are deleted and your buddies simply stop seeing you.',
   },
   {
     id: 'sharing',
@@ -32,7 +37,7 @@ const PRIVACY_SECTIONS = [
   {
     id: 'retention',
     heading: 'Data Retention',
-    body: 'We keep your account data while your account is active. You can delete your account in Settings and it takes effect at once. Deleting removes your profile, restrictions, meal history, ratings, favorites, streak, quests, survey answers and notification settings. Some things stay. Suggestions are anonymous and not tied to your account, so we cannot find and remove yours. Feedback messages and requests to add a university stay with the link to your account removed. Email bentodining@gmail.com and we will delete one of these within 30 days. Counts that combine many students cannot be traced to you and may remain.',
+    body: 'We keep your account data while your account is active. You can delete your account in Settings and it takes effect at once. Deleting removes your profile, restrictions, meal history, ratings, favorites, streak, quests, buddy links, invites, I\'m here taps, survey answers and notification settings. Some things stay. Suggestions are anonymous and not tied to your account, so we cannot find and remove yours. Feedback messages and requests to add a university stay with the link to your account removed. Email bentodining@gmail.com and we will delete one of these within 30 days. Counts that combine many students cannot be traced to you and may remain.',
   },
   {
     id: 'your-rights',
@@ -52,7 +57,7 @@ const PRIVACY_SECTIONS = [
   {
     id: 'notifications',
     heading: 'Notifications',
-    body: 'If you turn on reminders, we store a token for your device or browser so we can send them. Apple or your browser\'s push service delivers each notification. We use it only for the reminders you chose, such as meal and streak reminders. You can turn them off in Settings or in your phone\'s settings, and signing out stops reminders on that device.',
+    body: 'If you turn on reminders, we store a token for your device or browser so we can send them. Apple or your browser\'s push service delivers each notification. We use it only for the notifications you chose, such as meal and streak reminders and, if you turn on buddy alerts, a note that a buddy tapped I\'m here. That note shows the buddy\'s name and the dining hall. You can turn them off in Settings or in your phone\'s settings, and signing out stops reminders on that device.',
   },
   {
     id: 'children',

@@ -27,8 +27,8 @@ before a version can be submitted for review.
 | Age Assurance | No | Age is asked for calorie math, not to gate anything |
 | Unrestricted Web Access | No | The app opens fixed pages only |
 | User-Generated Content | **Yes** | Students post suggestions that other students see |
-| Social Media | No | No profiles, feeds of people or following. **Revisit if friends or communities ship** |
-| Messaging and Chat | No | No student to student messages |
+| Social Media | **Yes** | Buddies: students connect with a display name and see when a buddy is at a dining hall. No feed, no public profiles, no search, no following. Changed 8 Oct 2026 when Buddies shipped |
+| Messaging and Chat | No | No student to student messages. A buddy alert is fixed wording ("Maya is at Usdan"), not a message |
 | Advertising | No | No ads |
 | Profanity or Crude Humor | None | |
 | Horror or Fear Themes | None | |
@@ -59,6 +59,13 @@ details. Today there is a flag button on suggestions and a support page.
 Suggestions are anonymous, so blocking a user does not apply to them. Be ready
 to explain that. Communities with replies would raise the bar a lot.
 
+**Buddies add a second 1.2 question: display names are free text.** Be ready to
+show a reviewer: a Report button on every buddy (opens the feedback sheet with the
+buddy's name filled in), a Block button, and the published contact address. There
+are no buddy-to-buddy messages, no photos and no public profiles, so the risk is
+limited to a name and a hall. Apple's reviewers need two accounts that already
+have a buddy, so seed a demo pair before submitting (see SOCIAL_SPEC.md).
+
 ## Privacy labels
 
 "Collect data" is the first question. Answer **Yes**.
@@ -70,14 +77,16 @@ BentoPulse clients see aggregates only, so nothing is "shared with third parties
 | Data type | Category in the form | Purposes |
 | --- | --- | --- |
 | Email address | Contact Info, Email Address | App Functionality |
+| Buddy display name | Contact Info, Name | App Functionality |
 | User ID | Identifiers, User ID | App Functionality |
 | Push token | Identifiers, Device ID | App Functionality |
 | Dietary restrictions, allergies, weight, height, age, sex, nutrition targets | Health & Fitness, Health | App Functionality, Product Personalization |
 | Meal confirmations, ratings, streaks, quests | Usage Data, Product Interaction | App Functionality, Analytics |
 | Suggestions, survey answers | User Content, Other User Content | App Functionality, Analytics |
+| Buddy links, invites, I'm here taps (hall, meal, time) | not a separate type: the hall is a name the student picks, not GPS. Covered by Name and User ID | App Functionality |
 | Feedback messages with an optional reply email | User Content, Customer Support | App Functionality |
 
-Not collected, so leave unticked: name, phone, address, location, contacts,
+Not collected, so leave unticked: precise or coarse location (the hall is chosen by hand), phone, address, location, contacts,
 photos, search history, purchases, financial info, sensitive info, advertising
 data, crash logs and diagnostics.
 
