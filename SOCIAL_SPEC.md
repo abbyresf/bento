@@ -273,14 +273,16 @@ link only opens the app if the app has the associated-domains setup it lacks tod
 The typed code stays as a fallback. The existing `send-invite` and `redeem-invite`
 functions are for Pulse admins, so do not reuse them.
 
-**B13. Two accounts under one email.** The live database already shows one person
-with two accounts on the same email, one used on the web with a web push
-subscription and one used in the iOS app. Friendships belong to an account, so an
-invite accepted on the wrong account looks lost. About 60 web accounts exist and
-those people will likely sign in on iOS. Auth offers email and password, Google and
-Apple, and an Apple sign-in can hide the real email, so the same person can arrive
-as a different account. Needed before Duo ships:
-- Find the cause for the existing duplicate (which providers, confirmed or not).
+**B13. Two accounts for one person is a risk, not a current fact.** An earlier
+version of this note said the live database had one person on two accounts. That was
+a misreading: the push table showed two subscriptions (web and iOS) under one account,
+and a check on 8 Oct 2026 found no email that appears twice in `auth.users`.
+Friendships belong to an account, so if it did happen, an invite accepted on the wrong
+account would look lost. About 60 web accounts exist and those people will likely sign
+in on iOS. Auth offers email and password, Google and Apple, and an Apple sign-in can
+hide the real email, so the same person could still arrive as a different account.
+Needed before Duo ships:
+- Re-run the duplicate-email check before launch, and again after the web users move.
 - Tell web users to sign in the way they did before, so the iOS app opens their
   existing account, with its streak, ratings and history.
 - Settings shows which account is signed in (email) and the join screen says
