@@ -46,9 +46,9 @@ export async function getMyDuo() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
   const { data, error } = await supabase
-    .from('profiles').select('display_name, push_social_enabled').eq('id', user.id).maybeSingle();
+    .from('profiles').select('display_name, push_social_enabled, university').eq('id', user.id).maybeSingle();
   if (error || !data) return null;
-  return { name: data.display_name ?? '', socialPush: data.push_social_enabled === true, email: user.email ?? '' };
+  return { name: data.display_name ?? '', socialPush: data.push_social_enabled === true, email: user.email ?? '', university: data.university ?? null };
 }
 
 export async function setDisplayName(name) {

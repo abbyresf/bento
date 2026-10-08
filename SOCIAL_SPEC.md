@@ -126,11 +126,16 @@ to other tables; do not copy that pattern (issue D1).
 
 ## 7. App changes
 
-- **Today:** a friends row under the header. A friend with a live ping shows
-  "Maya, Usdan, lunch". An "I'm here" button appears on the meal being confirmed.
-- **Settings:** Friends section for invites, the friend list, per-friend sharing,
-  block, remove, and the social push switch.
-- **Quests card:** a Duo tab beside the personal quests. Claims write `duo_claims`.
+Decided 8 Oct 2026: Friends is its own tab, second after Today. Today stays free of
+friends content for now (no slim line).
+
+- **Friends tab** (`src/components/Friends/FriendsTab.jsx`): "Out now" (who is at a
+  hall, with hall, meal and time), a full-width "I'm here" button, then every friend
+  with the streak you share and a Manage button for sharing, remove and block. With no
+  friends it is one invitation: "Invite a friend" and "Have a code?". A dot appears on
+  the tab when a friend is out. The tab is hidden until migration 043 exists.
+- **Settings:** your name, the friend-alert switch, and a link to the tab.
+- **Quests:** a Duo section on the Friends tab, with claims in `duo_claims`.
 - **Closet:** a new unlock type `duo` in `src/data/mascotOutfits.js`, derived from
   how many `duo_claims` rows exist, alongside `streak`, `rated`, `quests`, `quest`.
   `unlockProgress` and `closetOrder` must handle it.

@@ -31,6 +31,7 @@ import { loadOutfit, resetOutfit } from './lib/mascotOutfit';
 import { initJoinLinks, peekJoinCode, forgetJoinCode } from './lib/joinLink';
 import { resetFriends } from './lib/friendsStore';
 import JoinSheet from './components/Friends/JoinSheet';
+import FriendsTab from './components/Friends/FriendsTab';
 import './App.css';
 import BentoLogo from './components/common/BentoLogo';
 
@@ -455,6 +456,11 @@ function App() {
               <MealPlan settingsVersion={settingsVersion} />
             </div>
           )}
+          {visitedTabs.has('friends') && (
+            <div hidden={activeTab !== 'friends'}>
+              <FriendsTab />
+            </div>
+          )}
           {visitedTabs.has('ratings') && (
             <div hidden={activeTab !== 'ratings'}>
               <MyRatings tabMode />
@@ -510,6 +516,11 @@ function App() {
               setShowSettings(false);
             }}
             onClose={() => setShowSettings(false)}
+            onOpenFriends={() => {
+              setShowSettings(false);
+              setVisitedTabs((prev) => new Set(prev).add('friends'));
+              setActiveTab('friends');
+            }}
           />
         )}
 

@@ -21,7 +21,7 @@ import ThemePreview from './ThemePreview';
 import FriendsSection from '../Friends/FriendsSection';
 import './Settings.css';
 
-export default function Settings({ onClose, onReset, onSave, onGoContact, tabMode = false }) {
+export default function Settings({ onClose, onReset, onSave, onGoContact, onOpenFriends, tabMode = false }) {
   const display = useNutritionDisplay();
   const [pushOn, setPushOn] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
@@ -428,7 +428,7 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, tabMod
           })()}
         </section>
 
-        <FriendsSection remindersOn={pushOn} />
+        <FriendsSection remindersOn={pushOn} onOpenFriends={onOpenFriends} />
 
         <section className="settings-section">
           <h3>Appearance</h3>
