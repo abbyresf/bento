@@ -147,6 +147,24 @@ friends content for now (no slim line).
 - **Local caches** use the `bento_` prefix and must be added to
   `ACCOUNT_LOCAL_KEYS` in `src/lib/db.js` (issue B4).
 
+## 7b. Bento colors and buddy quests (decided 8 Oct 2026)
+
+- **Colors.** Claiming one buddy quest unlocks Bento's color schemes: classic (navy) plus
+  cherry, tangerine, sunny, matcha, sky, grape and bubblegum. A scheme recolors the body,
+  arms, feet, the two food shapes and the eye ink. Accessories are unchanged. The choice is
+  `profiles.mascot_color` (migration 045) and the schemes live in `src/data/mascotColors.js`.
+  Ids are never renamed, because a buddy's phone draws classic for an id it does not know.
+- **Buddies see your Bento.** `duo_friends` now returns each buddy's outfit and color, and the
+  Buddies tab draws them. This replaces the earlier rule that an outfit is visible only on Twin
+  day. The picture is cosmetic and carries nothing private.
+- **Starter quests, so the unlock is reachable now.** Daily duo (both confirm a meal on 4 days
+  in a week) and Week of dinners (both confirm dinner on 5 nights), per buddy. Progress is
+  derived from both people's meals by `duo_quests`. `duo_claim` re-checks it and stores a row
+  in `duo_claims`. A claim does not use a foreign key to the buddy, so a buddy deleting their
+  account cannot take a reward back. The week may be this one or the one before.
+- **Widget.** The student's own Bento on the widget is drawn in their color. A buddy list
+  widget is described in 7a.
+
 ## 7a. "I'm here": how a friend finds out
 
 Decided 8 Oct 2026. Tapping "I'm here" picks a hall and meal, then reaches the

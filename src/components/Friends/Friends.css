@@ -119,3 +119,12 @@
 .bottom-nav-tab { position: relative; }
 
 .ft-youhere { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-top: 0.75rem; padding: 0.65rem 0.75rem; border-radius: 12px; background: var(--surface-sunk); border: 1px solid var(--border); font-size: 0.9rem; }
+
+.ft-who { display: flex; align-items: center; gap: 0.6rem; }
+.ft-out li { flex-direction: row; align-items: center; gap: 0.6rem; }
+.ft-out li > div { display: flex; flex-direction: column; }
+.ft-quests { list-style: none; margin: 0.6rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.ft-quests li { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.5rem 0.65rem; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); }
+.ft-quests li > div { display: flex; flex-direction: column; min-width: 0; }
+.ft-quest-title { font-weight: 700; font-size: 0.88rem; }
+.ft-claimed { font-size: 0.78rem; font-weight: 700; color: var(--success-text); }

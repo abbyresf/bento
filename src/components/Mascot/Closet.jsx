@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import Mascot from './Mascot';
 import { OUTFITS, closetOrder, isUnlocked, unlockHint } from '../../data/mascotOutfits';
 import { setOutfit, useOutfit } from '../../lib/mascotOutfit';
+import { setMascotColor, useMascotColor } from '../../lib/mascotColor';
+import { getDuoPerks } from '../../lib/duo';
+import { COLORS, canWear } from '../../data/mascotColors';
 import { getStreak, getVoiceStats, getQuestsClaimed } from '../../lib/db';
 import { haptics } from '../../lib/haptics';
 import './Closet.css';
@@ -11,6 +14,8 @@ import './Closet.css';
  * Tapping the piece being worn takes it off. */
 export default function Closet({ onClose }) {
   const worn = useOutfit();
+  const color = useMascotColor();
+  const [perks, setPerks] = useState(undefined);   // buddy quests claimed, or null when Buddies is not there
   const [ctx, setCtx] = useState(null);
 
   useEffect(() => {
@@ -26,6 +31,14 @@ export default function Closet({ onClose }) {
     return () => { off = true; };
   }, []);
 
+  useEffect(() => { let off = false; getDuoPerks().then((n) => { if (!off) setPerks(n); }).catch(() => { if (!off) setPerks(null); }); return () => { off = true; }; }, []);
+
+  const chooseColor = (id) => {
+    if (!canWear(id, perks ?? 0)) { haptics.warning(); return; }
+    haptics.selection();
+    setMascotColor(id);
+  };
+
   const earned = ctx ? OUTFITS.filter((o) => isUnlocked(o, ctx)).length : 0;
 
   const choose = (item) => {
@@ -39,7 +52,7 @@ export default function Closet({ onClose }) {
       <div className="closet" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Bento's closet">
         <div className="closet-handle" />
         <div className="closet-stage">
-          <Mascot mood="cheer" size={120} outfit={worn} key={worn ?? 'none'} />
+          <Mascot mood="cheer" size={120} outfit={worn} key={`${worn ?? 'none'}-${color ?? 'classic'}`} />
         </div>
         <h3>Bento's closet</h3>
         <p className="closet-sub">{ctx ? `${earned} of ${OUTFITS.length} unlocked` : ' '}</p>
@@ -66,6 +79,34 @@ export default function Closet({ onClose }) {
             );
           })}
         </div>
+
+        {perks !== null && perks !== undefined && (
+          <>
+            <h3 className="closet-colors-title">Colors</h3>
+            <p className="closet-sub">{perks >= 1 ? 'Pick a color for Bento' : 'Claim a buddy quest to unlock colors'}</p>
+            <div className="closet-colors" role="radiogroup" aria-label="Bento color">
+              {COLORS.map((c) => {
+                const open = canWear(c.id, perks);
+                const on = (color ?? 'classic') === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    className={`closet-swatch${on ? ' on' : ''}${open ? '' : ' locked'}`}
+                    style={{ '--swatch': c.body, '--swatch-a': c.a, '--swatch-b': c.b }}
+                    role="radio"
+                    aria-checked={on}
+                    aria-label={open ? `${c.name}${on ? ', worn' : ''}` : `${c.name}, locked`}
+                    onClick={() => chooseColor(c.id)}
+                  >
+                    <span className="closet-swatch-dot" />
+                    <span className="closet-swatch-name">{c.name}</span>
+                    {!open && <span className="closet-lock" aria-hidden="true">🔒</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
 
         <button className="closet-done" onClick={onClose}>Done</button>
       </div>

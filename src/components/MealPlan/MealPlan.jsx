@@ -39,6 +39,7 @@ import DailySummary from './DailySummary';
 import Mascot from '../Mascot/Mascot';
 import Closet from '../Mascot/Closet';
 import { useOutfit } from '../../lib/mascotOutfit';
+import { useMascotColor } from '../../lib/mascotColor';
 import '../Mascot/Mascot.css';
 import { bentoSays } from '../../utils/bentoSays';
 import StreakCelebration from '../Streak/StreakCelebration';
@@ -82,6 +83,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
   // Meals confirmed with no signal, saved on the phone and waiting to be sent.
   const [pendingMeals, setPendingMeals] = useState(() => pendingMealsFor(localDateStr()));
   const outfit = useOutfit();
+  const mascotColor = useMascotColor();
   const [showCloset, setShowCloset] = useState(false);
   const [pendingBadge, setPendingBadge] = useState(null);
   const [newBadge, setNewBadge] = useState(null);
@@ -261,8 +263,8 @@ export default function MealPlan({ settingsVersion = 0 }) {
       meals[m] = { hall: menu.locations?.[loc]?.shortName ?? null, items, confirmed: !!confirmedMeals[m] };
     }
     syncWidget(buildPlatePayload({ date: today, streak: running ? streak.currentStreak : 0, meals }));
-    syncWidgetMascot(outfit);
-  }, [viewDate, mealPlan, menu, selectedLocation, customMeals, confirmedMeals, streak, outfit]);
+    syncWidgetMascot(outfit, mascotColor);
+  }, [viewDate, mealPlan, menu, selectedLocation, customMeals, confirmedMeals, streak, outfit, mascotColor]);
 
   useEffect(() => { viewDateRef.current = viewDate; });
   useEffect(() => { confirmedIdsRef.current = confirmedMealIds; });

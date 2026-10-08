@@ -163,3 +163,27 @@ export async function getDuoStreak(friendId) {
   if (!row) return null;
   return { streak: row.current_streak ?? 0, meToday: row.me_today === true, friendToday: row.friend_today === true };
 }
+
+/* Buddy quests for one buddy in one week: rows of { quest_id, progress, target, claimed },
+ * or null when it cannot be read. */
+export async function getDuoQuests(friendId, weekStart) {
+  const { data, error } = await supabase.rpc('duo_quests', { p_friend: friendId, p_week: weekStart });
+  if (error || !Array.isArray(data)) return null;
+  return data;
+}
+
+/* { ok: true } | { ok: false, status: 'not_met' | 'already' | 'error' } */
+export async function claimDuoQuest(friendId, questId, weekStart) {
+  const { data, error } = await supabase.rpc('duo_claim', { p_friend: friendId, p_quest: questId, p_week: weekStart });
+  if (error) return { ok: false, status: 'error' };
+  return data === 'ok' ? { ok: true } : { ok: false, status: data === 'already' ? 'already' : 'not_met' };
+}
+
+/* How many buddy quests this student has claimed, or null when Duo is not there yet.
+ * One is enough to unlock Bento's colors. */
+export async function getDuoPerks() {
+  const { data, error } = await supabase.rpc('duo_perks');
+  if (error) return null;
+  const row = Array.isArray(data) ? data[0] : data;
+  return typeof row?.claims === 'number' ? row.claims : null;
+}

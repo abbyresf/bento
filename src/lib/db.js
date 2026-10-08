@@ -1010,6 +1010,7 @@ const ACCOUNT_LOCAL_KEYS = [
   'bento_meal_plans_v3',
   'bento_custom_meals_v1',
   'bento_mascot_outfit',
+  'bento_mascot_color',
   'bento_gates_v1',
   'bento_profile_cache_v1',
   'bento_widget_mascot_sig',

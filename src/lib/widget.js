@@ -50,13 +50,13 @@ const SIG_KEY = 'bento_widget_mascot_sig';
 const VIEWBOX = '-8 -16 136 146';
 const W = 136, H = 146, SCALE = 3;   // drawn at 3x
 
-export async function drawMascotPng(mood, outfit) {
+export async function drawMascotPng(mood, outfit, color = null) {
   const [{ renderToStaticMarkup }, { default: Mascot }, { createElement }] = await Promise.all([
     import('react-dom/server'),
     import('../components/Mascot/Mascot'),
     import('react'),
   ]);
-  let svg = renderToStaticMarkup(createElement(Mascot, { mood, size: 124, hop: false, outfit }));
+  let svg = renderToStaticMarkup(createElement(Mascot, { mood, size: 124, hop: false, outfit, color }));
   // A standalone image needs its own namespace and size, and has no page CSS.
   svg = svg
     .replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"')
@@ -74,14 +74,15 @@ export async function drawMascotPng(mood, outfit) {
   return canvas.toDataURL('image/png').split(',')[1];
 }
 
-export async function syncWidgetMascot(outfit) {
+export async function syncWidgetMascot(outfit, color = null) {
   if (!Capacitor.isNativePlatform()) return;
-  // v2: the picture gained headroom, so pictures stored before it are redrawn.
-  const sig = 'v2:' + String(outfit ?? 'none');
+  // v2: the picture gained headroom. v3: it gained a color. Pictures stored before
+  // are redrawn.
+  const sig = 'v3:' + String(outfit ?? 'none') + ':' + String(color ?? 'classic');
   try { if (localStorage.getItem(SIG_KEY) === sig) return; } catch { /* storage unavailable */ }
   try {
     for (const mood of MOODS) {
-      await WidgetBridge.setMascot({ mood, base64: await drawMascotPng(mood, outfit ?? null) });
+      await WidgetBridge.setMascot({ mood, base64: await drawMascotPng(mood, outfit ?? null, color) });
     }
     try { localStorage.setItem(SIG_KEY, sig); } catch { /* redrawn next time */ }
   } catch (e) { console.warn('widget mascot failed:', e?.message ?? e); }

@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 const dir = process.env.MIGRATIONS_DIR
   ? process.env.MIGRATIONS_DIR
   : new URL('../supabase/migrations/', import.meta.url).pathname;
-const migrations = ['043_duo_foundation.sql', '044_duo_here_duration.sql']
+const migrations = ['043_duo_foundation.sql', '044_duo_here_duration.sql', '045_duo_quests_and_colors.sql']
   .map((f) => readFileSync(`${dir}/${f}`, 'utf8'));
 const db = new PGlite();
 
@@ -20,7 +20,7 @@ await db.exec(`
   create function auth.uid() returns uuid language sql stable as
     $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
   grant usage on schema auth, public to anon, authenticated;
-  create table public.profiles (id uuid primary key references auth.users(id) on delete cascade, university text);
+  create table public.profiles (id uuid primary key references auth.users(id) on delete cascade, university text, mascot_outfit text);
   create table public.meal_history (id uuid primary key default gen_random_uuid(),
     user_id uuid references auth.users(id) on delete cascade, meal_date date, meal_type text);
   create table public.dining_availability (date date primary key, any_open boolean);
@@ -306,6 +306,78 @@ await test('friend limit', async () => {
   const extra = await user('Extra');
   const [{ code: c }] = await call(hub, 'select * from public.duo_create_invite()');
   assert.equal((await redeem(extra, c)).status, 'friend_limit');
+});
+
+// ── Buddy quests, claims and colors (migration 045) ──────────────────────────
+const monday = (offsetWeeks = 0) => {
+  const base = new Date(etDate(0) + 'T12:00:00Z');
+  const back = (base.getUTCDay() + 6) % 7;
+  return new Date(base.getTime() - back * 864e5 + offsetWeeks * 7 * 864e5).toISOString().slice(0, 10);
+};
+const dayOf = (weekStart, i) => new Date(new Date(weekStart + 'T12:00:00Z').getTime() + i * 864e5).toISOString().slice(0, 10);
+const eat = (u, date, type) => db.query('insert into public.meal_history (user_id, meal_date, meal_type) values ($1,$2,$3)', [u, date, type]);
+
+await test('a color must look like an id, and buddies see each other\'s Bento', async () => {
+  await assert.rejects(db.query(`update public.profiles set mascot_color = 'Red!' where id = $1`, [sam]));
+  await db.query(`update public.profiles set mascot_color = 'cherry', mascot_outfit = 'scarf' where id = $1`, [sam]);
+  const mine = await call(maya, 'select * from public.duo_friends()').catch(() => []);
+  // maya was ended or blocked in earlier tests, so use a fresh pair for the check
+  const p = await user('P'); const q = await user('Q');
+  await makePair(p, q);
+  await db.query(`update public.profiles set mascot_color = 'matcha', mascot_outfit = 'bowtie' where id = $1`, [q]);
+  const seen = await call(p, 'select * from public.duo_friends()');
+  assert.equal(seen[0].mascot_color, 'matcha');
+  assert.equal(seen[0].mascot_outfit, 'bowtie');
+  void mine;
+});
+
+const qa = await user('QA'); const qb = await user('QB');
+await makePair(qa, qb); await startFriendshipDaysAgo(qa, qb, 60);
+const thisWeek = monday(0);
+const lastWeek = monday(-1);
+
+await test('quest progress counts days and dinners both confirmed, capped at the target', async () => {
+  for (let i = 0; i < 6; i++) { await eat(qa, dayOf(lastWeek, i), 'dinner'); await eat(qb, dayOf(lastWeek, i), 'dinner'); }
+  const rows = await call(qa, 'select * from public.duo_quests($1, $2)', [qb, lastWeek]);
+  const by = Object.fromEntries(rows.map((r) => [r.quest_id, r]));
+  assert.equal(by.daily_duo.progress, 4);  assert.equal(by.daily_duo.target, 4);
+  assert.equal(by.week_dinners.progress, 5); assert.equal(by.week_dinners.target, 5);
+  assert.equal(by.daily_duo.claimed, false);
+});
+
+await test('claiming needs the quest to be done, works once, and counts as a perk', async () => {
+  assert.equal((await call(qa, 'select public.duo_perks() p'))[0].p.replace?.(/[()]/g, '') ?? '0', '0');
+  assert.equal((await call(qa, 'select public.duo_claim($1, $2, $3) r', [qb, 'daily_duo', lastWeek]))[0].r, 'ok');
+  assert.equal((await call(qa, 'select public.duo_claim($1, $2, $3) r', [qb, 'daily_duo', lastWeek]))[0].r, 'already');
+  const perks = await call(qa, 'select * from public.duo_perks()');
+  assert.equal(perks[0].claims, 1);
+  // a week with no shared days is not met
+  assert.equal((await call(qa, 'select public.duo_claim($1, $2, $3) r', [qb, 'week_dinners', monday(-2)]))[0].r, 'not_met');
+});
+
+await test('only real weeks can be claimed', async () => {
+  await fails(qa, 'select public.duo_claim($1, $2, $3)', [qb, 'daily_duo', dayOf(lastWeek, 2)], 'invalid_week');   // not a Monday
+  await fails(qa, 'select public.duo_claim($1, $2, $3)', [qb, 'daily_duo', monday(1)], 'invalid_week');          // future
+  await fails(qa, 'select public.duo_claim($1, $2, $3)', [qb, 'daily_duo', monday(-8)], 'invalid_week');         // too old
+  await fails(qa, 'select public.duo_claim($1, $2, $3)', [qb, 'bogus', lastWeek], 'invalid_quest');
+});
+
+await test('a stranger cannot claim with someone they are not buddies with', async () => {
+  await fails(rae, 'select public.duo_claim($1, $2, $3)', [qb, 'daily_duo', lastWeek], 'not_friends');
+});
+
+await test('the friend sees their own claim state separately', async () => {
+  const rows = await call(qb, 'select * from public.duo_quests($1, $2)', [qa, lastWeek]);
+  assert.equal(rows.find((r) => r.quest_id === 'daily_duo').claimed, false);
+  assert.equal((await call(qb, 'select public.duo_claim($1, $2, $3) r', [qa, 'daily_duo', lastWeek]))[0].r, 'ok');
+});
+
+await test('a claim stays when the buddy deletes their account', async () => {
+  await db.query('delete from auth.users where id = $1', [qb]);
+  const perks = await call(qa, 'select * from public.duo_perks()');
+  assert.equal(perks[0].claims, 1);
+  const rows = (await db.query('select friend_id from public.duo_claims where user_id = $1', [qa])).rows;
+  assert.equal(rows[0].friend_id, null);
 });
 
 await test('deleting an account removes its rows', async () => {

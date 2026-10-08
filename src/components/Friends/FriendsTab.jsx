@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { useFriends, refreshFriends } from '../../lib/friendsStore';
-import { clearHere, setSharing, endFriend, blockFriend, getDuoStreak } from '../../lib/duo';
+import { clearHere, setSharing, endFriend, blockFriend, getDuoStreak, getDuoQuests, claimDuoQuest, getDuoPerks } from '../../lib/duo';
+import { claimWeeks, visibleQuests, progressLine } from '../../data/duoQuests';
+import Mascot from '../Mascot/Mascot';
 import { hereNow, presenceLine, minutesLeft, clock, durationLabel } from '../../data/duo';
 import { getUniversityConfig, getSelectableLocations } from '../../services/menuFetcher';
 import FeedbackSheet from '../Feedback/FeedbackSheet';
@@ -41,6 +43,8 @@ export default function FriendsTab() {
   const [here, setHere] = useState(readHere);
   const [now, setNow] = useState(() => Date.now());
   const [streaks, setStreaks] = useState({});     // friend id -> number
+  const [quests, setQuests] = useState({});       // friend id -> { [weekStart]: rows }
+  const [claimNote, setClaimNote] = useState(null);
   const [open, setOpen] = useState(null);         // friend id with tools showing
   const [confirm, setConfirm] = useState(null);   // { id, kind }
   const [busy, setBusy] = useState(false);
@@ -52,16 +56,44 @@ export default function FriendsTab() {
     return () => clearInterval(t);
   }, []);
 
-  // The shared streak for each friend. One small call each, only when the list
-  // changes, and never offline.
+  // The shared streak and the buddy quests for each friend. A few small calls each,
+  // only when the list changes, and never offline.
   const ids = friends.map((f) => f.friend_id).join(',');
+  const weeks = useMemo(() => claimWeeks(new Date(now)), [now]);
+  const loadFor = async (id) => {
+    const [s, cur, prev] = await Promise.all([
+      getDuoStreak(id), getDuoQuests(id, weeks.thisWeek), getDuoQuests(id, weeks.lastWeek),
+    ]);
+    return [id, s?.streak ?? 0, { [weeks.thisWeek]: cur ?? [], [weeks.lastWeek]: prev ?? [] }];
+  };
   useEffect(() => {
     if (!ids || status !== 'ok') return undefined;
     let stopped = false;
-    Promise.all(ids.split(',').map((id) => getDuoStreak(id).then((s) => [id, s?.streak ?? 0])))
-      .then((pairs) => { if (!stopped) setStreaks(Object.fromEntries(pairs)); });
+    Promise.all(ids.split(',').map(loadFor)).then((rows) => {
+      if (stopped) return;
+      setStreaks(Object.fromEntries(rows.map(([id, n]) => [id, n])));
+      setQuests(Object.fromEntries(rows.map(([id, , q]) => [id, q])));
+    });
     return () => { stopped = true; };
-  }, [ids, status]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ids, status, weeks.thisWeek]);
+
+  const claim = async (friendId, questId, week) => {
+    setBusy(true);
+    const res = await claimDuoQuest(friendId, questId, week);
+    if (res.ok) {
+      const [, n, q] = await loadFor(friendId);
+      setStreaks((p) => ({ ...p, [friendId]: n }));
+      setQuests((p) => ({ ...p, [friendId]: q }));
+      const total = await getDuoPerks();
+      setClaimNote(total === 1
+        ? "Claimed. Bento's colors are unlocked. Open Bento's closet on Today to pick one."
+        : 'Claimed.');
+    } else {
+      setClaimNote(res.status === 'already' ? 'Already claimed.' : 'That quest is not finished yet.');
+    }
+    setBusy(false);
+  };
 
   const halls = useMemo(() => hallsFor(me?.university), [me?.university]);
   const out = useMemo(() => hereNow(friends, now), [friends, now]);
@@ -113,8 +145,11 @@ export default function FriendsTab() {
               <ul className="ft-out">
                 {out.map((f) => (
                   <li key={f.friend_id}>
-                    <span className="fr-chip-name">{f.display_name}</span>
-                    <span className="fr-chip-line">{presenceLine(f, now)}</span>
+                    <Mascot mood="happy" size={34} hop={false} outfit={f.mascot_outfit ?? null} color={f.mascot_color ?? null} />
+                    <div>
+                      <span className="fr-chip-name">{f.display_name}</span>
+                      <span className="fr-chip-line">{presenceLine(f, now)}</span>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -145,10 +180,13 @@ export default function FriendsTab() {
                 return (
                   <div key={f.friend_id} className="fr-friend">
                     <div className="fr-friend-top">
-                      <div>
-                        <div className="fr-friend-name">{f.display_name}</div>
-                        <div className="fr-friend-sub">
-                          {n === undefined ? ' ' : n > 0 ? `${n}-day streak together` : 'No shared streak yet'}
+                      <div className="ft-who">
+                        <Mascot mood="happy" size={40} hop={false} outfit={f.mascot_outfit ?? null} color={f.mascot_color ?? null} />
+                        <div>
+                          <div className="fr-friend-name">{f.display_name}</div>
+                          <div className="fr-friend-sub">
+                            {n === undefined ? ' ' : n > 0 ? `${n}-day streak together` : 'No shared streak yet'}
+                          </div>
                         </div>
                       </div>
                       <button className="fr-btn-quiet" aria-expanded={isOpen}
@@ -156,6 +194,22 @@ export default function FriendsTab() {
                         {isOpen ? 'Done' : 'Manage'}
                       </button>
                     </div>
+                    {visibleQuests(quests[f.friend_id], weeks).length > 0 && (
+                      <ul className="ft-quests">
+                        {visibleQuests(quests[f.friend_id], weeks).map((v) => (
+                          <li key={`${v.week}-${v.quest.id}`}>
+                            <div>
+                              <span className="ft-quest-title">{v.quest.title}</span>
+                              <span className="fr-friend-sub">{v.label}. {v.quest.what}. {progressLine(v.quest, v.progress)}.</span>
+                            </div>
+                            {v.state === 'ready' && (
+                              <button className="fr-btn" disabled={busy || offline} onClick={() => claim(f.friend_id, v.quest.id, v.week)}>Claim</button>
+                            )}
+                            {v.state === 'claimed' && <span className="ft-claimed">Claimed</span>}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                     {isOpen && (
                       <>
                         <div className="fr-friend-tools">
@@ -191,6 +245,7 @@ export default function FriendsTab() {
                 );
               })}
             </div>
+            {claimNote && <p className="fr-ok">{claimNote}</p>}
             <div className="fr-actions">
               <button className="fr-btn-quiet" onClick={() => setSheet('invite')} disabled={offline}>Add a buddy</button>
             </div>
