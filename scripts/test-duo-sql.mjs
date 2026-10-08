@@ -6,7 +6,11 @@ import { PGlite } from '@electric-sql/pglite';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 
-const migration = readFileSync(process.env.MIGRATION ?? new URL('../supabase/migrations/043_duo_foundation.sql', import.meta.url), 'utf8');
+const dir = process.env.MIGRATIONS_DIR
+  ? process.env.MIGRATIONS_DIR
+  : new URL('../supabase/migrations/', import.meta.url).pathname;
+const migrations = ['043_duo_foundation.sql', '044_duo_here_duration.sql']
+  .map((f) => readFileSync(`${dir}/${f}`, 'utf8'));
 const db = new PGlite();
 
 await db.exec(`
@@ -23,8 +27,7 @@ await db.exec(`
   grant select, insert, update, delete on all tables in schema public to authenticated;
   grant execute on all functions in schema auth to authenticated;
 `);
-await db.exec(migration);
-await db.exec(migration); // safe to run twice
+for (const m of migrations) { await db.exec(m); await db.exec(m); } // each is safe to run twice
 
 const user = async (name, uni = 'brandeis', display = name) => {
   const { rows } = await db.query('insert into auth.users default values returning id');
@@ -138,9 +141,27 @@ await test('I\'m here reaches a friend, not a stranger, and expires', async () =
   assert.equal(seen[0].here_hall, 'Usdan');
   assert.equal(seen[0].here_meal, 'lunch');
   assert.deepEqual(await call(rae, 'select * from public.duo_friends()'), []);
-  await db.query(`update public.here_pings set created_at = now() - interval '91 minutes'`);
+  await db.query(`update public.here_pings set expires_at = now() - interval '1 minute'`);
   const later = await call(sam, 'select * from public.duo_friends()');
   assert.equal(later[0].here_hall, null);
+});
+
+await test('a tap lasts 60 minutes by default, and the sender can choose 15 to 120', async () => {
+  const lenOf = async () => (await db.query(
+    `select round(extract(epoch from (expires_at - created_at)) / 60)::int m from public.here_pings where sender = $1 and recipient = $2`, [maya, sam])).rows[0].m;
+  await call(maya, `select * from public.duo_ping_here('Usdan', 'lunch')`);
+  assert.equal(await lenOf(), 60);
+  await call(maya, `select * from public.duo_ping_here('Usdan', 'lunch', null, 30)`);
+  assert.equal(await lenOf(), 30);
+  await call(maya, `select * from public.duo_ping_here('Usdan', 'lunch', null, 5)`);
+  assert.equal(await lenOf(), 15);
+  await call(maya, `select * from public.duo_ping_here('Usdan', 'lunch', null, 500)`);
+  assert.equal(await lenOf(), 120);
+  // the friend list says when it ends
+  const seen = await call(sam, 'select * from public.duo_friends()');
+  assert.ok(new Date(seen[0].here_until) > new Date());
+  await call(maya, 'select public.duo_clear_here()');
+  await db.query('delete from public.duo_ping_log where user_id = $1', [maya]); // this test used up the daily taps
 });
 
 await test('a new tap replaces the old one, and I\'ve left clears it', async () => {

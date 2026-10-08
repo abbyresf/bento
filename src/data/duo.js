@@ -5,9 +5,13 @@
  * SOCIAL_SPEC.md. Copy follows the Bento voice: short, active, no exclamation
  * marks that overpromise, nothing about amounts eaten. */
 
-/* A live "I'm here" lasts this long. The database enforces the same number
- * (duo_limit 'ping_minutes'), this copy only decides what the screen shows. */
-export const PING_MINUTES = 90;
+/* How long an "I'm here" lasts is chosen by the sender and stored with each tap
+ * (here_until). The database accepts 15 to 120 minutes and defaults to 60. A server
+ * that has not run migration 044 sends no here_until, and then a tap is treated as
+ * the old fixed 90 minutes. */
+export const DEFAULT_MINUTES = 60;
+export const DURATIONS = [30, 60, 90];
+export const LEGACY_PING_MINUTES = 90;
 export const NAME_MAX = 20;
 
 /* Same alphabet the database uses to make a code: no I, L or O. */
@@ -73,22 +77,43 @@ export function nameProblem(raw) {
   return null;
 }
 
-/* Whether a ping is still live, and for how many more minutes. */
-export function minutesLeft(hereAt, now = Date.now()) {
-  if (!hereAt) return 0;
-  const t = typeof hereAt === 'number' ? hereAt : Date.parse(hereAt);
-  if (Number.isNaN(t)) return 0;
-  return Math.max(0, Math.ceil(PING_MINUTES - (now - t) / 60000));
+const toMs = (t) => (typeof t === 'number' ? t : Date.parse(t));
+
+/* When a friend's tap ends, as milliseconds, or null. */
+export function pingUntil(friend) {
+  if (!friend) return null;
+  if (friend.here_until) {
+    const u = toMs(friend.here_until);
+    return Number.isNaN(u) ? null : u;
+  }
+  if (friend.here_at) {
+    const t = toMs(friend.here_at);
+    return Number.isNaN(t) ? null : t + LEGACY_PING_MINUTES * 60000;
+  }
+  return null;
 }
 
-export function pingIsLive(hereAt, now = Date.now()) {
-  return minutesLeft(hereAt, now) > 0;
+/* Minutes left until an end time, rounded up, never below zero. */
+export function minutesLeft(until, now = Date.now()) {
+  if (!until) return 0;
+  const u = toMs(until);
+  if (Number.isNaN(u)) return 0;
+  return Math.max(0, Math.ceil((u - now) / 60000));
+}
+
+export function pingIsLive(until, now = Date.now()) {
+  return minutesLeft(until, now) > 0;
+}
+
+export function durationLabel(minutes) {
+  if (minutes === 60) return '1 hour';
+  return `${minutes} minutes`;
 }
 
 const MEAL_WORD = { breakfast: 'breakfast', lunch: 'lunch', dinner: 'dinner' };
 
-function clock(hereAt) {
-  const d = new Date(typeof hereAt === 'number' ? hereAt : Date.parse(hereAt));
+export function clock(at) {
+  const d = new Date(typeof at === 'number' ? at : Date.parse(at));
   const h = d.getHours();
   const m = String(d.getMinutes()).padStart(2, '0');
   return `${((h + 11) % 12) + 1}:${m}`;
@@ -98,7 +123,7 @@ function clock(hereAt) {
  * the time they tapped, so a row the phone has not refreshed is obvious. A friend
  * with no live ping gets null and is shown without a line. */
 export function presenceLine(friend, now = Date.now()) {
-  if (!friend?.here_hall || !pingIsLive(friend.here_at, now)) return null;
+  if (!friend?.here_hall || !pingIsLive(pingUntil(friend), now)) return null;
   const meal = MEAL_WORD[friend.here_meal];
   return [friend.here_hall, meal, clock(friend.here_at)].filter(Boolean).join(', ');
 }

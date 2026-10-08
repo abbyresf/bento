@@ -116,7 +116,7 @@ export { joinUrl };
  * limits and the per-friend switches still apply. Needs a connection: a ping
  * that arrives late says something untrue, so it is never queued.
  * Returns { ok, reached } or { ok: false, message, offline? }. */
-export async function pingHere({ hall, meal, friendIds = null }) {
+export async function pingHere({ hall, meal, friendIds = null, minutes = null }) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.access_token) return { ok: false, message: errorText('not_signed_in') };
   let res;
@@ -124,7 +124,7 @@ export async function pingHere({ hall, meal, friendIds = null }) {
     res = await fetch(`${API_BASE}/api/duo-notify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({ hall, meal, friends: friendIds }),
+      body: JSON.stringify({ hall, meal, friends: friendIds, minutes }),
     });
   } catch {
     return { ok: false, offline: true, message: 'You need a connection to tell friends where you are.' };

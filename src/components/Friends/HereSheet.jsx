@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { pingHere } from '../../lib/duo';
-import { mealForHour } from '../../data/duo';
+import { mealForHour, DURATIONS, DEFAULT_MINUTES, durationLabel } from '../../data/duo';
 import './Friends.css';
 
 /* "I'm here": pick the hall, the meal, and who hears about it.
@@ -11,6 +11,7 @@ export default function HereSheet({ halls, friends, onClose, onSent }) {
   const sharing = friends.filter((f) => f.i_share !== false);
   const [hall, setHall] = useState(halls.length === 1 ? halls[0].name : '');
   const [meal, setMeal] = useState(mealForHour(new Date().getHours()));
+  const [minutes, setMinutes] = useState(DEFAULT_MINUTES);
   const [picked, setPicked] = useState(() => new Set(sharing.map((f) => f.friend_id)));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -30,10 +31,10 @@ export default function HereSheet({ halls, friends, onClose, onSent }) {
   const send = async () => {
     if (!hall || picked.size === 0) return;
     setBusy(true); setError(null);
-    const res = await pingHere({ hall, meal, friendIds: [...picked] });
+    const res = await pingHere({ hall, meal, friendIds: [...picked], minutes });
     setBusy(false);
     if (!res.ok) { setError(res.message); return; }
-    onSent({ hall, meal, reached: res.reached });
+    onSent({ hall, meal, reached: res.reached, minutes });
   };
 
   return (
@@ -60,6 +61,13 @@ export default function HereSheet({ halls, friends, onClose, onSent }) {
           ))}
         </div>
 
+        <span className="fr-label">For how long</span>
+        <div className="fr-choices">
+          {DURATIONS.map((m) => (
+            <button key={m} className="fr-choice" aria-pressed={minutes === m} onClick={() => setMinutes(m)}>{durationLabel(m)}</button>
+          ))}
+        </div>
+
         <span className="fr-label">Tell</span>
         <div className="fr-checks">
           {friends.map((f) => {
@@ -73,7 +81,7 @@ export default function HereSheet({ halls, friends, onClose, onSent }) {
           })}
         </div>
 
-        <p className="fr-note">Buddies see the hall and the time for the next 90 minutes. Nothing else.</p>
+        <p className="fr-note">Buddies see the hall and the time. It ends by itself after {durationLabel(minutes)}, or when you tap I've left.</p>
         {error && <p className="fr-error">{error}</p>}
         <div className="fr-actions">
           <button className="fr-btn" onClick={send} disabled={busy || !hall || picked.size === 0}>

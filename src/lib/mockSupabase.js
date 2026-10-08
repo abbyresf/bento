@@ -53,7 +53,7 @@ const minutesAgo = (m) => new Date(Date.now() - m * 60000).toISOString();
 const RPC = {
   duo_friends: () => [
     { friend_id: 'f1', display_name: 'Maya', started_at: minutesAgo(60 * 24 * 12), i_share: true,
-      here_hall: 'Usdan', here_meal: 'lunch', here_at: minutesAgo(12) },
+      here_hall: 'Usdan', here_meal: 'lunch', here_at: minutesAgo(12), here_until: minutesAgo(-48) },
     { friend_id: 'f2', display_name: 'Sam', started_at: minutesAgo(60 * 24 * 5), i_share: true,
       here_hall: null, here_meal: null, here_at: null },
     { friend_id: 'f3', display_name: 'Rae', started_at: minutesAgo(60 * 24 * 2), i_share: false,

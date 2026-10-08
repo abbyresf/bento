@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {
   normalizeCode, isValidCode, formatCode, joinUrl, parseJoinLink, inviteMessage,
   nameProblem, minutesLeft, pingIsLive, presenceLine, hereNow, mealForHour,
-  pushText, errorText, redeemText, isMissingFeature, PING_MINUTES,
+  pushText, errorText, redeemText, isMissingFeature, pingUntil, durationLabel,
+  DEFAULT_MINUTES, DURATIONS, LEGACY_PING_MINUTES,
 } from '../src/data/duo.js';
 
 const NOW = Date.parse('2026-10-08T16:00:00-04:00');
@@ -45,33 +46,52 @@ test('names', () => {
   assert.equal(nameProblem('x'.repeat(20)), null);
 });
 
-test('a ping is live for 90 minutes and not after', () => {
-  assert.equal(PING_MINUTES, 90);
-  assert.equal(minutesLeft(ago(0), NOW), 90);
-  assert.equal(minutesLeft(ago(30), NOW), 60);
-  assert.equal(minutesLeft(ago(89), NOW), 1);
-  assert.equal(minutesLeft(ago(90), NOW), 0);
-  assert.equal(minutesLeft(ago(500), NOW), 0);
+const inMin = (min) => new Date(NOW + min * 60000).toISOString();
+
+test('the choices and the default', () => {
+  assert.equal(DEFAULT_MINUTES, 60);
+  assert.deepEqual(DURATIONS, [30, 60, 90]);
+  assert.equal(durationLabel(60), '1 hour');
+  assert.equal(durationLabel(30), '30 minutes');
+  assert.equal(durationLabel(90), '90 minutes');
+});
+
+test('a tap is live until the time it carries, and not after', () => {
+  assert.equal(minutesLeft(inMin(60), NOW), 60);
+  assert.equal(minutesLeft(inMin(30), NOW), 30);
+  assert.equal(minutesLeft(inMin(0.4), NOW), 1);
+  assert.equal(minutesLeft(inMin(0), NOW), 0);
+  assert.equal(minutesLeft(inMin(-10), NOW), 0);
   assert.equal(minutesLeft(null, NOW), 0);
   assert.equal(minutesLeft('garbage', NOW), 0);
-  assert.ok(pingIsLive(ago(10), NOW));
-  assert.ok(!pingIsLive(ago(95), NOW));
+  assert.ok(pingIsLive(inMin(5), NOW));
+  assert.ok(!pingIsLive(inMin(-5), NOW));
+});
+
+test('the end time comes from here_until, and falls back to the old 90 minutes', () => {
+  assert.equal(pingUntil({ here_until: inMin(30), here_at: ago(5) }), Date.parse(inMin(30)));
+  assert.equal(pingUntil({ here_at: ago(10) }), Date.parse(ago(10)) + LEGACY_PING_MINUTES * 60000);
+  assert.equal(pingUntil({}), null);
+  assert.equal(pingUntil(null), null);
 });
 
 test('presence line shows hall, meal and the time they tapped', () => {
-  const f = { here_hall: 'Usdan', here_meal: 'lunch', here_at: ago(5) };
+  const f = { here_hall: 'Usdan', here_meal: 'lunch', here_at: ago(5), here_until: inMin(55) };
   assert.match(presenceLine(f, NOW), /^Usdan, lunch, \d{1,2}:\d\d$/);
   assert.equal(presenceLine({ here_hall: null }, NOW), null);
-  assert.equal(presenceLine({ here_hall: 'Usdan', here_meal: 'lunch', here_at: ago(120) }, NOW), null);
+  assert.equal(presenceLine({ ...f, here_until: inMin(-1) }, NOW), null);        // ended
+  assert.equal(presenceLine({ here_hall: 'Usdan', here_meal: 'lunch', here_at: ago(120) }, NOW), null); // old server, 90 min passed
+  assert.ok(presenceLine({ here_hall: 'Usdan', here_meal: 'lunch', here_at: ago(30) }, NOW));            // old server, still live
   assert.equal(presenceLine(null, NOW), null);
 });
 
 test('hereNow keeps live friends only, newest first', () => {
   const friends = [
-    { display_name: 'A', here_hall: 'Usdan', here_meal: 'lunch', here_at: ago(40) },
+    { display_name: 'A', here_hall: 'Usdan', here_meal: 'lunch', here_at: ago(40), here_until: inMin(20) },
     { display_name: 'B', here_hall: null },
-    { display_name: 'C', here_hall: 'Sherman', here_meal: 'lunch', here_at: ago(5) },
-    { display_name: 'D', here_hall: 'Usdan', here_meal: 'lunch', here_at: ago(200) },
+    { display_name: 'C', here_hall: 'Sherman', here_meal: 'lunch', here_at: ago(5), here_until: inMin(55) },
+    { display_name: 'D', here_hall: 'Usdan', here_meal: 'lunch', here_at: ago(200), here_until: inMin(-100) },
+    { display_name: 'E', here_hall: 'Usdan', here_meal: 'lunch', here_at: ago(65), here_until: inMin(-5) },
   ];
   assert.deepEqual(hereNow(friends, NOW).map((f) => f.display_name), ['C', 'A']);
 });

@@ -56,8 +56,13 @@ export default async function handler(req, res) {
   const hall = clean(body?.hall);
   const meal = body?.meal;
   const friends = body?.friends ?? null;
+  const minutes = body?.minutes ?? null;
   if (!hall || hall.length > 40) return res.status(400).json({ error: 'invalid_hall' });
   if (!MEALS.includes(meal)) return res.status(400).json({ error: 'invalid_meal' });
+  // How long the tap lasts. The database clamps it to 15 to 120 as well.
+  if (minutes !== null && !(Number.isInteger(minutes) && minutes >= 1 && minutes <= 1000)) {
+    return res.status(400).json({ error: 'Bad duration' });
+  }
   if (friends !== null && !(Array.isArray(friends) && friends.length <= 20 && friends.every((f) => UUID.test(f)))) {
     return res.status(400).json({ error: 'Bad friends list' });
   }
@@ -71,7 +76,7 @@ export default async function handler(req, res) {
   if (whoErr || !who?.user) return res.status(401).json({ error: 'not_signed_in' });
 
   const { data: reached, error: pingErr } = await asUser.rpc('duo_ping_here', {
-    p_hall: hall, p_meal: meal, p_friends: friends,
+    p_hall: hall, p_meal: meal, p_friends: friends, p_minutes: minutes,
   });
   if (pingErr) {
     // The function raises short codes (ping_limit, invalid_hall, ...). Anything

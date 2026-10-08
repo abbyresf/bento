@@ -159,7 +159,10 @@ friends you have switched on in three ways:
 
 Rules:
 - It shares a hall name the person chose, never GPS. No location permission.
-- It expires after 90 minutes, and "I've left" clears it sooner.
+- The sender chooses how long it lasts: 30 minutes, 1 hour (the default) or 90
+  minutes. The database accepts 15 to 120. It ends by itself at that time, with
+  nobody doing anything, and "I've left" ends it sooner. The sender sees "You are at
+  Usdan until 1:45" with the button next to it. Added in migration 044.
 - It is sent per friend. Nothing goes to someone you did not switch on.
 - No history is shown, and pings are deleted after 24 hours.
 - Limit: 6 pings a day, so it cannot be used to watch someone.
@@ -179,7 +182,7 @@ login safely, so:
 
 ## 8. Phases
 
-**Phase 1: foundation.** Migration (friendships, invites, pings, `display_name`,
+**Phase 1: foundation.** Migrations 043 and 044 (friendships, invites, pings, `display_name`,
 `push_social_enabled`). Functions in section 5. Invite by code. Friends list,
 block, remove. "I'm here" with per-friend switch, shown on Today and by push. Duo
 streak, Daily duo, Week of dinners. Privacy policy and App Store answer updates.

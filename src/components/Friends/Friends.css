@@ -117,3 +117,5 @@
 /* A dot on the Friends tab when someone is at a hall. */
 .bottom-nav-dot { position: absolute; top: 7px; left: calc(50% + 6px); width: 9px; height: 9px; border-radius: 50%; background: var(--fern-fill); border: 2px solid var(--surface); }
 .bottom-nav-tab { position: relative; }
+
+.ft-youhere { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-top: 0.75rem; padding: 0.65rem 0.75rem; border-radius: 12px; background: var(--surface-sunk); border: 1px solid var(--border); font-size: 0.9rem; }

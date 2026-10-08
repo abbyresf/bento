@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { useFriends, refreshFriends } from '../../lib/friendsStore';
 import { clearHere, setSharing, endFriend, blockFriend, getDuoStreak } from '../../lib/duo';
-import { hereNow, presenceLine, minutesLeft } from '../../data/duo';
+import { hereNow, presenceLine, minutesLeft, clock, durationLabel } from '../../data/duo';
 import { getUniversityConfig, getSelectableLocations } from '../../services/menuFetcher';
 import InviteSheet from './InviteSheet';
 import HereSheet from './HereSheet';
@@ -20,7 +20,7 @@ const HERE_KEY = 'bento_duo_here';
 function readHere() {
   try {
     const h = JSON.parse(localStorage.getItem(HERE_KEY) || 'null');
-    return h && minutesLeft(h.at) > 0 ? h : null;
+    return h && minutesLeft(h.until) > 0 ? h : null;
   } catch { return null; }
 }
 
@@ -65,8 +65,9 @@ export default function FriendsTab() {
 
   if (status === 'idle') return <div className="ft-page"><p className="fr-note">Loading…</p></div>;
 
-  const sent = ({ hall, meal, reached }) => {
-    const h = { hall, meal, at: Date.now(), reached };
+  const sent = ({ hall, meal, reached, minutes }) => {
+    const at = Date.now();
+    const h = { hall, meal, at, until: at + minutes * 60000, reached };
     try { localStorage.setItem(HERE_KEY, JSON.stringify(h)); } catch { /* ignore */ }
     setHere(h); setSheet(null);
   };
@@ -119,10 +120,16 @@ export default function FriendsTab() {
               I'm here
             </button>
             {here && (
-              <p className="fr-you">
-                You are at {here.hall}. {here.reached === 0 ? 'No one was told.' : `${here.reached} ${here.reached === 1 ? 'buddy knows' : 'buddies know'}.`}
-                <button className="fr-link" onClick={left}>I've left</button>
-              </p>
+              <div className="ft-youhere">
+                <div>
+                  <strong>You are at {here.hall}</strong>
+                  <div className="fr-friend-sub">
+                    Until {clock(here.until)} ({durationLabel(Math.round((here.until - here.at) / 60000))}).{' '}
+                    {here.reached === 0 ? 'No one was told.' : `${here.reached} ${here.reached === 1 ? 'buddy knows' : 'buddies know'}.`}
+                  </div>
+                </div>
+                <button className="fr-btn-quiet" onClick={left}>I've left</button>
+              </div>
             )}
           </section>
 
