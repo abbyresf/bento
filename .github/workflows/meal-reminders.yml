@@ -37,6 +37,11 @@ on:
     - cron: '30 0 * * *'    # 20:30 EDT, 19:30 EST
     - cron: '0 1 * * *'     # 21:00 EDT, 20:00 EST
   workflow_dispatch:        # lets you fire one by hand to test
+    inputs:
+      test_user_id:
+        description: 'Send one test push to this user id only, and skip the real dinner and streak sends'
+        required: false
+        default: ''
 
 # A queued run must never overlap one already sending.
 concurrency:
@@ -44,7 +49,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # One test push to one account. Prints what Apple and the browser push service
+  # answered, with no tokens in it. Runs only when test_user_id is given.
+  test:
+    if: github.event_name == 'workflow_dispatch' && inputs.test_user_id != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send a test push to one account
+        env:
+          TEST_USER_ID: ${{ inputs.test_user_id }}
+        run: |
+          code=$(curl -sS -o /tmp/out.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://www.bentodining.com/api/send-reminders?meal=lunch&only=${TEST_USER_ID}")
+          echo "HTTP $code"
+          cat /tmp/out.json
+          test "$code" = "200"
+
   dinner:
+    if: github.event_name != 'workflow_dispatch' || inputs.test_user_id == ''
     runs-on: ubuntu-latest
     steps:
       - name: Skip runs outside 16:00 to 17:59 Eastern
@@ -77,6 +100,7 @@ jobs:
           test "$code" = "200"
 
   streak:
+    if: github.event_name != 'workflow_dispatch' || inputs.test_user_id == ''
     runs-on: ubuntu-latest
     steps:
       - name: Skip runs outside 19:00 to 20:59 Eastern

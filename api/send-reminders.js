@@ -52,6 +52,12 @@ export default async function handler(req, res) {
   // Escape hatch for testing a send by hand. Still behind CRON_SECRET.
   const force = params.get('force') === '1';
 
+  // A test aimed at one account, so checking delivery does not notify everyone
+  // who is opted in. Implies force, so it also skips the once-a-day claim, and it
+  // adds what each provider answered to the response. Still behind CRON_SECRET.
+  const only = params.get('only');
+  const testOnly = Boolean(only && /^[0-9a-f-]{36}$/i.test(only));
+
   const admin = getSupabaseAdmin();
   if (!admin) return res.status(500).json({ error: 'Supabase not configured' });
 
@@ -67,7 +73,7 @@ export default async function handler(req, res) {
   // replayed by hand. Relying on the notification `tag` to hide that was wrong:
   // a tag replaces a notification still sitting in the tray, so a second send an
   // hour later arrives as a brand new alert.
-  if (!force) {
+  if (!force && !testOnly) {
     const { error: claimErr } = await admin
       .from('reminder_sends')
       .insert({ meal, send_date: day });
@@ -103,9 +109,9 @@ export default async function handler(req, res) {
   const { data: optedIn } = await admin
     .from('profiles').select('id, university').eq('push_enabled', true);
 
-  let ids = (optedIn ?? []).map(p => p.id);
+  let ids = (optedIn ?? []).map(p => p.id).filter(id => !testOnly || id === only.toLowerCase());
   if (ids.length === 0) {
-    return res.status(200).json({ sent: 0, note: 'nobody opted in' });
+    return res.status(200).json({ sent: 0, note: testOnly ? 'that account is not opted in' : 'nobody opted in', ...(testOnly ? { test: true } : {}) });
   }
 
   // For the streak nudge, narrow to students whose streak is running and who
@@ -185,6 +191,7 @@ export default async function handler(req, res) {
   // Native app. The title carries the message, as with web push, and iOS shows
   // the app name above it.
   let nativeSent = 0, nativePruned = 0, nativeFailed = 0, nativeNote;
+  let nativeDetail = null;
   if (nativeSubs.length) {
     const apns = apnsConfigFromEnv();
     if (!apns) {
@@ -213,6 +220,14 @@ export default async function handler(req, res) {
         console.error('APNs rejected the provider token:', fatal);
         nativeNote = `APNs rejected the key: ${fatal}`;
       }
+      // What Apple said for each device, with no token in it. Only returned for a
+      // test aimed at one account.
+      nativeDetail = nativeSubs.map(sub => {
+        const r = results.find(x => x.token === sub.apns_token);
+        return r
+          ? { status: r.status, reason: r.reason ?? null, env: r.env, ok: r.ok }
+          : { status: null, reason: 'no result recorded' };
+      });
       const byToken = new Map(results.map(r => [r.token, r]));
       await Promise.all(nativeSubs.map(async (sub) => {
         const r = byToken.get(sub.apns_token);
@@ -237,7 +252,7 @@ export default async function handler(req, res) {
 
   // Recorded for the daily report. Best effort: the claim row already exists,
   // and failing to annotate it must not turn a successful send into an error.
-  if (!force) {
+  if (!force && !testOnly) {
     await admin.from('reminder_sends')
       .update({ recipients: sent + nativeSent })
       .eq('meal', meal).eq('send_date', day);
@@ -246,5 +261,6 @@ export default async function handler(req, res) {
   res.status(200).json({
     meal, date: day, line, sent, pruned, failed, recipients: subs.length,
     native: { sent: nativeSent, pruned: nativePruned, failed: nativeFailed, ...(nativeNote ? { note: nativeNote } : {}) },
+    ...(testOnly ? { test: true, nativeDetail, apnsConfigured: Boolean(apnsConfigFromEnv()) } : {}),
   });
 }
