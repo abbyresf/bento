@@ -25,9 +25,12 @@ git worktree add /tmp/bento-deploy <sha> --detach
 cd /tmp/bento-deploy && cp -r /path/to/Bento/.vercel . && npm ci && npx vercel --prod --yes
 ```
 
-Unfinished work in the checkout has shipped to production before. The badge
-work in `src/data/badges.js` and `src/components/Badges/BentoBadge.jsx` is
-parked and unfinished: never commit or deploy it.
+Unfinished work in the checkout has shipped to production before. Stage files
+by explicit path, never `git add src` or `-A`, and read the whole `git status`
+before committing. The bento box streak badges shipped on 8 Oct 2026 (art in
+`src/data/badgeArt.js`, built by `scripts/build-badge-art.py`). The untracked
+`src/components/Badges/BentoBadge.jsx` is an abandoned first draft and is not
+used: never commit it.
 
 **Verify on the live domain after deploying.** Compare the served bundle hash
 to the local build. Do not trust the deploy message.

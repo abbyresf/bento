@@ -240,7 +240,10 @@
    this is their entry point now. */
 .streak-badges-btn {
   flex-shrink: 0;
-  padding: 0.4rem 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0.8rem 0.3rem 0.5rem;
   background: transparent;
   border: 1.5px solid var(--border);
   border-radius: 50px;

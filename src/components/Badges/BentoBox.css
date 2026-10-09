@@ -1,0 +1,26 @@
+/* The box's glow in dark mode comes from a token, so the box does not melt into a navy ground. */
+.bb, .bb-thumb { display: block; overflow: visible; filter: var(--box-glow); }
+
+/* The next piece, faint, so the box shows what is coming. */
+.bb-ghost { opacity: 0.3; filter: grayscale(1); }
+
+/* The newest piece drops in and settles. */
+.bb-new { animation: bb-drop 620ms cubic-bezier(0.34, 1.56, 0.64, 1) both; transform-box: fill-box; transform-origin: center; }
+@keyframes bb-drop {
+  0%   { opacity: 0; transform: translateY(-40px) scale(0.86); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Steam drifts. Under reduced motion it holds still. */
+.bb-steam { animation: bb-steam 3.2s ease-in-out infinite; transform-box: fill-box; transform-origin: bottom center; }
+@keyframes bb-steam {
+  0%, 100% { opacity: 1; transform: translateY(0); }
+  50%      { opacity: 0.55; transform: translateY(-6px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bb-new, .bb-steam { animation: none; }
+}
+
+/* A tier you have not reached yet, shown in gray. */
+.bb-locked { filter: grayscale(1) brightness(0.85) opacity(0.7); }

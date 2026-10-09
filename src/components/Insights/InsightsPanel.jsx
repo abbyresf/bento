@@ -10,7 +10,8 @@ import '../Mascot/Mascot.css';
 import WeeklySummaryCard from './WeeklySummaryCard';
 import DailyBreakdown from './DailyBreakdown';
 import BadgesPanel from '../Badges/BadgesPanel';
-import { BADGES, getEarnedBadges } from '../../data/badges';
+import { BADGES, getEarnedBadges, fillForStreak } from '../../data/badges';
+import BentoBoxThumb from '../Badges/BentoBoxThumb';
 import './InsightsPanel.css';
 
 function formatWeekRange(weekStart) {
@@ -160,7 +161,8 @@ function CurrentStreak({ streak, onOpenBadges }) {
         </div>
       </div>
       <button className="streak-badges-btn" onClick={onOpenBadges}>
-        {earned} / {BADGES.length} badges
+        <BentoBoxThumb level={fillForStreak(streak.longestStreak ?? 0)} size={28} />
+        <span>{earned} / {BADGES.length} badges</span>
       </button>
     </div>
   );

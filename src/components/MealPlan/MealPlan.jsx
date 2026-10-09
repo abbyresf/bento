@@ -944,9 +944,19 @@ export default function MealPlan({ settingsVersion = 0 }) {
         // Keyed on the line, so the bubble pops again when the line changes.
         return (
           <div className="bento-says" key={say.text}>
-            <button className="bento-says-mascot" onClick={() => setShowCloset(true)} aria-label="Open Bento's closet">
-              <Mascot mood={say.mood} size={60} outfit={outfit} />
-            </button>
+            <div className="bento-says-side">
+              <button className="bento-says-mascot" onClick={() => setShowCloset(true)} aria-label="Open Bento's closet">
+                <Mascot mood={say.mood} size={60} outfit={outfit} />
+              </button>
+              {/* Tapping Bento always opened the closet, with nothing to say so. The pill says it. */}
+              <button className="closet-pill" onClick={() => setShowCloset(true)}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 8.2a2.4 2.4 0 1 0-2.4-2.4" />
+                  <path d="M12 8.2v1.6L3.6 15.4a1.4 1.4 0 0 0 .8 2.6h15.2a1.4 1.4 0 0 0 .8-2.6L12 9.8" />
+                </svg>
+                Closet
+              </button>
+            </div>
             <div className="bento-says-bubble">{say.text}</div>
           </div>
         );
