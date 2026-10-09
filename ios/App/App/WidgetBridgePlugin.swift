@@ -18,6 +18,7 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "setBuddyToken", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getBuddyToken", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setBuddyMascot", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "listBuddyPictures", returnType: CAPPluginReturnPromise),
     ]
 
     static let group = "group.com.bentodining.app"
@@ -135,6 +136,16 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         } catch {
             call.reject("could not store the picture")
         }
+    }
+
+    /// The picture keys that exist on disk right now. The web layer asks this instead of
+    /// remembering what it drew: signing out deletes the files, and a memory that outlived
+    /// them left the widget with no picture.
+    @objc func listBuddyPictures(_ call: CAPPluginCall) {
+        let keys = Self.buddyFiles().map {
+            String($0.deletingPathExtension().lastPathComponent.dropFirst(Self.buddyFilePrefix.count))
+        }
+        call.resolve(["keys": keys])
     }
 
     /// Called on sign out so one student's plate never shows for the next.

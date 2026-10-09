@@ -109,12 +109,7 @@ export function buddyKey(outfit, color) {
   return `${outfit ?? 'none'}_${color ?? 'classic'}`;
 }
 
-const BUDDY_KEYS = 'bento_widget_buddy_keys';
 let buddyTried = false;
-
-function readKeys() {
-  try { const v = JSON.parse(localStorage.getItem(BUDDY_KEYS) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; }
-}
 
 /* Called with the friend list each time it refreshes. Best effort and quiet: a
  * widget that is not set up yet shows "Open Bento" and fixes itself at the next try. */
@@ -133,7 +128,10 @@ export async function syncBuddyWidget(friends = []) {
       }
     }
     if (!token) return;
-    const have = new Set(readKeys());
+    // What is on disk now. Signing out deletes the files, so this is asked every time
+    // and nothing is remembered here.
+    const { keys = [] } = await WidgetBridge.listBuddyPictures();
+    const have = new Set(keys);
     const wanted = new Map();
     for (const f of friends.slice(0, 20)) {
       const key = buddyKey(f.mascot_outfit ?? null, f.mascot_color ?? null);
@@ -143,7 +141,6 @@ export async function syncBuddyWidget(friends = []) {
       await WidgetBridge.setBuddyMascot({ key, base64: await drawMascotPng('happy', f.mascot_outfit ?? null, f.mascot_color ?? null) });
       have.add(key);
     }
-    if (wanted.size) { try { localStorage.setItem(BUDDY_KEYS, JSON.stringify([...have])); } catch { /* redrawn next time */ } }
   } catch (e) { console.warn('buddy widget sync failed:', e?.message ?? e); }
 }
 

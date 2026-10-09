@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { pingHere } from '../../lib/duo';
+import { pingHere, setSharing } from '../../lib/duo';
+import { refreshFriends } from '../../lib/friendsStore';
 import { mealForHour, DURATIONS, DEFAULT_MINUTES, durationLabel } from '../../data/duo';
 import './Friends.css';
 
@@ -21,6 +22,17 @@ export default function HereSheet({ halls, friends, onClose, onSent }) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
+
+  // Sharing switched off for a buddy used to be a dead end here. Ticking them now turns it
+  // back on for them, then adds them to this tap.
+  const turnOn = async (id) => {
+    setBusy(true); setError(null);
+    const res = await setSharing(id, true);
+    if (!res.ok) { setBusy(false); setError('Could not turn sharing on. Try again.'); return; }
+    await refreshFriends();
+    setPicked((prev) => new Set(prev).add(id));
+    setBusy(false);
+  };
 
   const toggle = (id) => setPicked((prev) => {
     const next = new Set(prev);
@@ -74,8 +86,8 @@ export default function HereSheet({ halls, friends, onClose, onSent }) {
             const off = f.i_share === false;
             return (
               <label key={f.friend_id} className={`fr-check${off ? ' is-off' : ''}`}>
-                <input type="checkbox" disabled={off} checked={!off && picked.has(f.friend_id)} onChange={() => toggle(f.friend_id)} />
-                <span>{f.display_name}{off ? ' (sharing is off)' : ''}</span>
+                <input type="checkbox" disabled={busy} checked={!off && picked.has(f.friend_id)} onChange={() => (off ? turnOn(f.friend_id) : toggle(f.friend_id))} />
+                <span>{f.display_name}{off ? ' (sharing is off, tick to turn it on)' : ''}</span>
               </label>
             );
           })}

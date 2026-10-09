@@ -64,7 +64,9 @@ export default function FriendsTab() {
     const [s, cur, prev] = await Promise.all([
       getDuoStreak(id), getDuoQuests(id, weeks.thisWeek), getDuoQuests(id, weeks.lastWeek),
     ]);
-    return [id, s?.streak ?? 0, { [weeks.thisWeek]: cur ?? [], [weeks.lastWeek]: prev ?? [] }];
+    // null means the quests could not be read at all, which is shown, not hidden.
+    const unreadable = cur === null && prev === null;
+    return [id, s?.streak ?? 0, unreadable ? null : { [weeks.thisWeek]: cur ?? [], [weeks.lastWeek]: prev ?? [] }];
   };
   useEffect(() => {
     if (!ids || status !== 'ok') return undefined;
@@ -194,6 +196,14 @@ export default function FriendsTab() {
                         {isOpen ? 'Done' : 'Manage'}
                       </button>
                     </div>
+                    {quests[f.friend_id] === null && (
+                      <p className="fr-note">Quests could not load. Pull down to try again, or reopen the app.</p>
+                    )}
+                    {visibleQuests(quests[f.friend_id], weeks).length > 0 && (
+                      <p className="ft-quests-head">
+                        Quests with {f.display_name}. Finish one together and tap Claim. Your first claim unlocks Bento's colors.
+                      </p>
+                    )}
                     {visibleQuests(quests[f.friend_id], weeks).length > 0 && (
                       <ul className="ft-quests">
                         {visibleQuests(quests[f.friend_id], weeks).map((v) => (

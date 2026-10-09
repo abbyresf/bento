@@ -90,7 +90,7 @@
 .fr-checks { display: flex; flex-direction: column; gap: 0.35rem; }
 .fr-check { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0.1rem; font-size: 0.95rem; }
 .fr-check input { width: 1.15rem; height: 1.15rem; accent-color: var(--btn-bg); }
-.fr-check.is-off { color: var(--text-disabled); }
+.fr-check.is-off { color: var(--text-secondary); }
 
 /* Settings */
 .fr-list { display: flex; flex-direction: column; gap: 0.55rem; margin-top: 0.75rem; }
@@ -128,3 +128,5 @@
 .ft-quests li > div { display: flex; flex-direction: column; min-width: 0; }
 .ft-quest-title { font-weight: 700; font-size: 0.88rem; }
 .ft-claimed { font-size: 0.78rem; font-weight: 700; color: var(--success-text); }
+
+.ft-quests-head { margin: 0.7rem 0 0; font-size: 0.8rem; line-height: 1.4; color: var(--text-secondary); }
