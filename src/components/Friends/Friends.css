@@ -130,3 +130,13 @@
 .ft-claimed { font-size: 0.78rem; font-weight: 700; color: var(--success-text); }
 
 .ft-quests-head { margin: 0.7rem 0 0; font-size: 0.8rem; line-height: 1.4; color: var(--text-secondary); }
+
+/* Breathing room on the Buddies tab */
+.ft-card .fr-note + .ft-here { margin-top: 0.9rem; }
+.ft-out + .ft-here { margin-top: 0.4rem; }
+.ft-youhere { margin-top: 0.9rem; }
+.ft-quests-head { margin: 0.9rem 0 0.6rem; }
+.ft-quests { gap: 0.6rem; }
+.fr-friend { padding: 0.8rem 0.85rem; }
+.ft-card .fr-ok { margin: 1rem 0 0; line-height: 1.45; }
+.ft-card .fr-actions { margin-top: 1.1rem; }

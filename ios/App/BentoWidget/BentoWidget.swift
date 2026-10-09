@@ -441,8 +441,9 @@ struct BuddiesProvider: TimelineProvider {
 private func clockText(_ d: Date) -> String {
     let f = DateFormatter()
     f.locale = Locale(identifier: "en_US_POSIX")
-    f.dateFormat = "h:mm"
-    return f.string(from: d)
+    f.dateFormat = "h:mma"
+    // "1:00PM" reads as "1pm"
+    return f.string(from: d).replacingOccurrences(of: ":00", with: "").replacingOccurrences(of: "AM", with: "am").replacingOccurrences(of: "PM", with: "pm")
 }
 
 struct BuddiesView: View {
@@ -490,11 +491,11 @@ struct BuddiesView: View {
             avatar(b, size: small ? 28 : 34)
             VStack(alignment: .leading, spacing: 0) {
                 Text(b.name).font(.footnote.weight(.bold)).foregroundColor(navy).lineLimit(1)
-                Text("\(b.hall), \(b.meal), \(clockText(b.at))")
+                Text("At \(b.hall) until \(clockText(b.until))")
                     .font(.caption2)
                     .foregroundColor(navy.opacity(0.7))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }

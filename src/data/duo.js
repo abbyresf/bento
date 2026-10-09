@@ -119,13 +119,20 @@ export function clock(at) {
   return `${((h + 11) % 12) + 1}:${m}`;
 }
 
-/* One line for a friend on the Today screen: "Usdan, lunch, 12:42". The time is
- * the time they tapped, so a row the phone has not refreshed is obvious. A friend
- * with no live ping gets null and is shown without a line. */
+/* "1pm" or "1:15pm", the way a person says it. */
+export function clockSpoken(at) {
+  const d = new Date(typeof at === 'number' ? at : Date.parse(at));
+  const h = d.getHours();
+  const m = d.getMinutes();
+  return `${((h + 11) % 12) + 1}${m ? `:${String(m).padStart(2, '0')}` : ''}${h < 12 ? 'am' : 'pm'}`;
+}
+
+/* One line for a friend: "At Usdan until 1pm". It says when they leave, not when they
+ * came, which is what a buddy deciding whether to go wants to know. A friend with no
+ * live ping gets null and is shown without a line. */
 export function presenceLine(friend, now = Date.now()) {
   if (!friend?.here_hall || !pingIsLive(pingUntil(friend), now)) return null;
-  const meal = MEAL_WORD[friend.here_meal];
-  return [friend.here_hall, meal, clock(friend.here_at)].filter(Boolean).join(', ');
+  return `At ${friend.here_hall} until ${clockSpoken(pingUntil(friend))}`;
 }
 
 /* Friends who are at a hall now, newest first. */

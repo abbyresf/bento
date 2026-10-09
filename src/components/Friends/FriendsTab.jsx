@@ -4,7 +4,7 @@ import { useFriends, refreshFriends } from '../../lib/friendsStore';
 import { clearHere, setSharing, endFriend, blockFriend, getDuoStreak, getDuoQuests, claimDuoQuest, getDuoPerks } from '../../lib/duo';
 import { claimWeeks, visibleQuests, progressLine } from '../../data/duoQuests';
 import Mascot from '../Mascot/Mascot';
-import { hereNow, presenceLine, minutesLeft, clock, durationLabel } from '../../data/duo';
+import { hereNow, presenceLine, minutesLeft, clockSpoken, durationLabel } from '../../data/duo';
 import { getUniversityConfig, getSelectableLocations } from '../../services/menuFetcher';
 import FeedbackSheet from '../Feedback/FeedbackSheet';
 import '../Feedback/FeedbackSheet.css';
@@ -164,7 +164,7 @@ export default function FriendsTab() {
                 <div>
                   <strong>You are at {here.hall}</strong>
                   <div className="fr-friend-sub">
-                    Until {clock(here.until)} ({durationLabel(Math.round((here.until - here.at) / 60000))}).{' '}
+                    Until {clockSpoken(here.until)} ({durationLabel(Math.round((here.until - here.at) / 60000))}).{' '}
                     {here.reached === 0 ? 'No one was told.' : `${here.reached} ${here.reached === 1 ? 'buddy knows' : 'buddies know'}.`}
                   </div>
                 </div>

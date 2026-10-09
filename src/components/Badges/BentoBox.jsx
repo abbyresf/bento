@@ -57,7 +57,11 @@ function Piece({ name, ids }) {
     case 'rice':
       return <g clipPath={`url(#${ids.left})`}><RiceBody ids={ids} /></g>;
     case 'nori':
-      return <g clipPath={`url(#${ids.left})`}><rect x="150" y="668" width="360" height="99" fill="#2D292D" /><Paths group="nori" /></g>;
+      return <g clipPath={`url(#${ids.left})`}>
+          {/* The traced nori was a few loose scraps, so the band is drawn clean: a dark strip with a thin outline and a soft sheen. */}
+          <rect x="130" y="662" width="392" height="112" fill="#2D292D" stroke={DARK} strokeWidth={OUTLINE} />
+          <rect x="130" y="676" width="392" height="10" fill="#3A353A" />
+        </g>;
     case 'tamago':
       return (
         <g>

@@ -75,9 +75,9 @@ test('the end time comes from here_until, and falls back to the old 90 minutes',
   assert.equal(pingUntil(null), null);
 });
 
-test('presence line shows hall, meal and the time they tapped', () => {
+test('presence line shows the hall and when they leave', () => {
   const f = { here_hall: 'Usdan', here_meal: 'lunch', here_at: ago(5), here_until: inMin(55) };
-  assert.match(presenceLine(f, NOW), /^Usdan, lunch, \d{1,2}:\d\d$/);
+  assert.match(presenceLine(f, NOW), /^At Usdan until \d{1,2}(:\d\d)?(am|pm)$/);
   assert.equal(presenceLine({ here_hall: null }, NOW), null);
   assert.equal(presenceLine({ ...f, here_until: inMin(-1) }, NOW), null);        // ended
   assert.equal(presenceLine({ here_hall: 'Usdan', here_meal: 'lunch', here_at: ago(120) }, NOW), null); // old server, 90 min passed
