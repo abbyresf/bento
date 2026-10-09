@@ -1,8 +1,8 @@
 /* Buddy quests: two starter goals you reach together with one buddy.
  *
  * Progress is worked out in the database from both students' confirmed meals
- * (duo_quests, migration 045). Nothing here counts calories, amounts or what anyone
- * ate. The targets below must match duo_quest_target in the latest migration that defines it (047),
+ * (duo_quests, migrations 045 and 048). Nothing here counts calories, amounts or what anyone
+ * ate. The targets below must match duo_quest_target in the latest migration that defines it (048),
  * and a test reads that migration to hold them together.
  *
  * Weeks run Monday to Sunday, the same weeks as the personal quests. A quest can be
@@ -14,6 +14,8 @@ import { weekStartOf } from './quests.js';
 export const DUO_QUESTS = [
   { id: 'daily_duo',    title: 'Daily duo',       what: 'Both confirm a meal on the same day', target: 2, unit: 'days' },
   { id: 'week_dinners', title: 'Week of dinners', what: 'Both confirm dinner on the same night', target: 5, unit: 'nights' },
+  { id: 'review_duo',   title: 'Review duo',      what: 'Both rate 3 dishes', target: 3, unit: 'dishes' },
+  { id: 'taste_test',   title: 'Taste test',      what: 'Both rate the same dish', target: 1, unit: 'dish' },
 ];
 
 /* 'claimed' after the tap, 'ready' once met, otherwise 'open'. */

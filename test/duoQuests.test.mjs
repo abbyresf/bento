@@ -5,7 +5,7 @@ import { DUO_QUESTS, duoQuestState, progressLine, claimWeeks, visibleQuests } fr
 
 test('the targets match the database function', () => {
   // the latest migration that defines duo_quest_target decides the numbers
-  const sql = readFileSync(new URL('../supabase/migrations/047_duo_daily_target.sql', import.meta.url), 'utf8');
+  const sql = readFileSync(new URL('../supabase/migrations/048_duo_rating_quests.sql', import.meta.url), 'utf8');
   for (const q of DUO_QUESTS) {
     const m = new RegExp(`when '${q.id}' then (\\d+)`).exec(sql);
     assert.ok(m, `${q.id} is in duo_quest_target`);
@@ -27,6 +27,7 @@ test('progress line never goes above the target', () => {
   assert.equal(progressLine(DUO_QUESTS[0], 7), '2 of 2 days');
   assert.equal(progressLine(DUO_QUESTS[1], 9), '5 of 5 nights');
   assert.equal(progressLine(DUO_QUESTS[1], undefined), '0 of 5 nights');
+  assert.equal(progressLine(DUO_QUESTS[3], 4), '1 of 1 dish');
 });
 
 test('this week and last week are consecutive Mondays', () => {

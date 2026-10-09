@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 const dir = process.env.MIGRATIONS_DIR
   ? process.env.MIGRATIONS_DIR
   : new URL('../supabase/migrations/', import.meta.url).pathname;
-const migrations = ['043_duo_foundation.sql', '044_duo_here_duration.sql', '045_duo_quests_and_colors.sql', '046_duo_widget.sql', '047_duo_daily_target.sql']
+const migrations = ['043_duo_foundation.sql', '044_duo_here_duration.sql', '045_duo_quests_and_colors.sql', '046_duo_widget.sql', '047_duo_daily_target.sql', '048_duo_rating_quests.sql']
   .map((f) => readFileSync(`${dir}/${f}`, 'utf8'));
 const db = new PGlite();
 
@@ -23,6 +23,7 @@ await db.exec(`
   create table public.profiles (id uuid primary key references auth.users(id) on delete cascade, university text, mascot_outfit text);
   create table public.meal_history (id uuid primary key default gen_random_uuid(),
     user_id uuid references auth.users(id) on delete cascade, meal_date date, meal_type text);
+  create table public.item_ratings (user_id uuid references auth.users(id) on delete cascade, item_id text, item_name text, rating smallint, updated_at timestamptz default now(), primary key (user_id, item_id));
   create table public.dining_availability (date date primary key, any_open boolean);
   grant select, insert, update, delete on all tables in schema public to authenticated;
   grant execute on all functions in schema auth to authenticated;
@@ -343,6 +344,25 @@ await test('quest progress counts days and dinners both confirmed, capped at the
   assert.equal(by.daily_duo.progress, 2);  assert.equal(by.daily_duo.target, 2);   // 6 shared days, capped at the target of 2
   assert.equal(by.week_dinners.progress, 5); assert.equal(by.week_dinners.target, 5);
   assert.equal(by.daily_duo.claimed, false);
+});
+
+const rate = (u, item) => db.query(`insert into public.item_ratings (user_id, item_id, item_name, rating) values ($1,$2,$2,4)`, [u, item]);
+await test('rating quests: review duo is the smaller count, taste test is the shared dishes', async () => {
+  const ra = await user('RA'); const rb = await user('RB');
+  await makePair(ra, rb); await startFriendshipDaysAgo(ra, rb, 60);
+  const row = async (id) => Object.fromEntries((await call(ra, 'select * from public.duo_quests($1, $2)', [rb, thisWeek])).map((r) => [r.quest_id, r]))[id];
+  for (const i of ['a', 'b', 'c', 'd']) await rate(ra, i);        // one student alone cannot finish
+  assert.equal((await row('review_duo')).progress, 0);
+  assert.equal((await row('taste_test')).progress, 0);
+  await rate(rb, 'a'); await rate(rb, 'x');
+  assert.equal((await row('review_duo')).progress, 2);            // the smaller of 4 and 2
+  assert.equal((await row('taste_test')).progress, 1);            // only "a" is on both lists
+  await rate(rb, 'y');
+  assert.equal((await row('review_duo')).progress, 3);
+  assert.equal((await row('review_duo')).target, 3);
+  // ratings from before the friendship do not count
+  await db.query(`update public.item_ratings set updated_at = now() - interval '90 days' where user_id = $1`, [rb]);
+  assert.equal((await row('review_duo')).progress, 0);
 });
 
 await test('claiming needs the quest to be done, works once, and counts as a perk', async () => {
