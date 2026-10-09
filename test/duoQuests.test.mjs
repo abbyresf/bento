@@ -4,7 +4,8 @@ import { readFileSync } from 'node:fs';
 import { DUO_QUESTS, duoQuestState, progressLine, claimWeeks, visibleQuests } from '../src/data/duoQuests.js';
 
 test('the targets match the database function', () => {
-  const sql = readFileSync(new URL('../supabase/migrations/045_duo_quests_and_colors.sql', import.meta.url), 'utf8');
+  // the latest migration that defines duo_quest_target decides the numbers
+  const sql = readFileSync(new URL('../supabase/migrations/047_duo_daily_target.sql', import.meta.url), 'utf8');
   for (const q of DUO_QUESTS) {
     const m = new RegExp(`when '${q.id}' then (\\d+)`).exec(sql);
     assert.ok(m, `${q.id} is in duo_quest_target`);
@@ -22,7 +23,8 @@ test('states', () => {
 });
 
 test('progress line never goes above the target', () => {
-  assert.equal(progressLine(DUO_QUESTS[0], 2), '2 of 4 days');
+  assert.equal(progressLine(DUO_QUESTS[0], 1), '1 of 2 days');
+  assert.equal(progressLine(DUO_QUESTS[0], 7), '2 of 2 days');
   assert.equal(progressLine(DUO_QUESTS[1], 9), '5 of 5 nights');
   assert.equal(progressLine(DUO_QUESTS[1], undefined), '0 of 5 nights');
 });
@@ -37,10 +39,10 @@ test('this week and last week are consecutive Mondays', () => {
 
 test('last week shows only when finished and unclaimed', () => {
   const weeks = { thisWeek: '2026-10-05', lastWeek: '2026-09-28' };
-  const row = (id, progress, claimed = false) => ({ quest_id: id, progress, target: id === 'daily_duo' ? 4 : 5, claimed });
+  const row = (id, progress, claimed = false) => ({ quest_id: id, progress, target: id === 'daily_duo' ? 2 : 5, claimed });
   const byWeek = {
-    '2026-10-05': [row('daily_duo', 2), row('week_dinners', 5)],
-    '2026-09-28': [row('daily_duo', 4), row('week_dinners', 5, true)],
+    '2026-10-05': [row('daily_duo', 1), row('week_dinners', 5)],
+    '2026-09-28': [row('daily_duo', 2), row('week_dinners', 5, true)],
   };
   const shown = visibleQuests(byWeek, weeks).map((v) => `${v.label}:${v.quest.id}:${v.state}`);
   assert.deepEqual(shown, ['Last week:daily_duo:ready', 'This week:daily_duo:open', 'This week:week_dinners:ready']);

@@ -2,8 +2,8 @@
  *
  * Progress is worked out in the database from both students' confirmed meals
  * (duo_quests, migration 045). Nothing here counts calories, amounts or what anyone
- * ate. The targets below must match duo_quest_target in that migration, and a test
- * reads the migration to hold them together.
+ * ate. The targets below must match duo_quest_target in the latest migration that defines it (047),
+ * and a test reads that migration to hold them together.
  *
  * Weeks run Monday to Sunday, the same weeks as the personal quests. A quest can be
  * claimed for the current week or the one before, so finishing on Sunday night is not
@@ -12,7 +12,7 @@
 import { weekStartOf } from './quests.js';
 
 export const DUO_QUESTS = [
-  { id: 'daily_duo',    title: 'Daily duo',       what: 'Both confirm a meal on the same day', target: 4, unit: 'days' },
+  { id: 'daily_duo',    title: 'Daily duo',       what: 'Both confirm a meal on the same day', target: 2, unit: 'days' },
   { id: 'week_dinners', title: 'Week of dinners', what: 'Both confirm dinner on the same night', target: 5, unit: 'nights' },
 ];
 

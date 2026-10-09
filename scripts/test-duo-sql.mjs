@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 const dir = process.env.MIGRATIONS_DIR
   ? process.env.MIGRATIONS_DIR
   : new URL('../supabase/migrations/', import.meta.url).pathname;
-const migrations = ['043_duo_foundation.sql', '044_duo_here_duration.sql', '045_duo_quests_and_colors.sql', '046_duo_widget.sql']
+const migrations = ['043_duo_foundation.sql', '044_duo_here_duration.sql', '045_duo_quests_and_colors.sql', '046_duo_widget.sql', '047_duo_daily_target.sql']
   .map((f) => readFileSync(`${dir}/${f}`, 'utf8'));
 const db = new PGlite();
 
@@ -336,11 +336,11 @@ await makePair(qa, qb); await startFriendshipDaysAgo(qa, qb, 60);
 const thisWeek = monday(0);
 const lastWeek = monday(-1);
 
-await test('quest progress counts days and dinners both confirmed, capped at the target', async () => {
+await test('quest progress counts days and dinners both confirmed, capped at the target (2 days, 5 dinners)', async () => {
   for (let i = 0; i < 6; i++) { await eat(qa, dayOf(lastWeek, i), 'dinner'); await eat(qb, dayOf(lastWeek, i), 'dinner'); }
   const rows = await call(qa, 'select * from public.duo_quests($1, $2)', [qb, lastWeek]);
   const by = Object.fromEntries(rows.map((r) => [r.quest_id, r]));
-  assert.equal(by.daily_duo.progress, 4);  assert.equal(by.daily_duo.target, 4);
+  assert.equal(by.daily_duo.progress, 2);  assert.equal(by.daily_duo.target, 2);   // 6 shared days, capped at the target of 2
   assert.equal(by.week_dinners.progress, 5); assert.equal(by.week_dinners.target, 5);
   assert.equal(by.daily_duo.claimed, false);
 });

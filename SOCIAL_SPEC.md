@@ -157,8 +157,8 @@ friends content for now (no slim line).
 - **Buddies see your Bento.** `duo_friends` now returns each buddy's outfit and color, and the
   Buddies tab draws them. This replaces the earlier rule that an outfit is visible only on Twin
   day. The picture is cosmetic and carries nothing private.
-- **Starter quests, so the unlock is reachable now.** Daily duo (both confirm a meal on 4 days
-  in a week) and Week of dinners (both confirm dinner on 5 nights), per buddy. Progress is
+- **Starter quests, so the unlock is reachable now.** Daily duo (both confirm a meal on 2 days
+  in a week, lowered from 4 on 8 Oct 2026 by migration 047) and Week of dinners (both confirm dinner on 5 nights), per buddy. Progress is
   derived from both people's meals by `duo_quests`. `duo_claim` re-checks it and stores a row
   in `duo_claims`. A claim does not use a foreign key to the buddy, so a buddy deleting their
   account cannot take a reward back. The week may be this one or the one before.
