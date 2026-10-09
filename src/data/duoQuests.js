@@ -22,9 +22,11 @@ export function duoQuestState(quest, progress, claimed) {
   return (progress ?? 0) >= quest.target ? 'ready' : 'open';
 }
 
-export function progressLine(quest, progress) {
-  const n = Math.min(progress ?? 0, quest.target);
-  return `${n} of ${quest.target} ${quest.unit}`;
+/* `target` is the number the server counted against. It wins over the one written here, so changing a
+ * target in the database never needs a new build of the app. */
+export function progressLine(quest, progress, target = quest.target) {
+  const n = Math.min(progress ?? 0, target);
+  return `${n} of ${target} ${quest.unit}`;
 }
 
 /* This week's Monday and the one before it, as YYYY-MM-DD. */
@@ -41,13 +43,14 @@ export function visibleQuests(byWeek, weeks) {
   for (const q of DUO_QUESTS) {
     const cur = byWeek?.[weeks.thisWeek]?.find((r) => r.quest_id === q.id);
     const prev = byWeek?.[weeks.lastWeek]?.find((r) => r.quest_id === q.id);
-    if (prev && !prev.claimed && prev.progress >= q.target) {
-      out.push({ quest: q, week: weeks.lastWeek, label: 'Last week', progress: prev.progress, state: 'ready' });
+    const goal = (row) => row?.target ?? q.target;
+    if (prev && !prev.claimed && prev.progress >= goal(prev)) {
+      out.push({ quest: q, week: weeks.lastWeek, label: 'Last week', progress: prev.progress, target: goal(prev), state: 'ready' });
     }
     if (cur) {
       out.push({
-        quest: q, week: weeks.thisWeek, label: 'This week', progress: cur.progress,
-        state: duoQuestState(q, cur.progress, cur.claimed),
+        quest: q, week: weeks.thisWeek, label: 'This week', progress: cur.progress, target: goal(cur),
+        state: duoQuestState({ ...q, target: goal(cur) }, cur.progress, cur.claimed),
       });
     }
   }

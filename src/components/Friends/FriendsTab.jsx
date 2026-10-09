@@ -210,7 +210,7 @@ export default function FriendsTab() {
                           <li key={`${v.week}-${v.quest.id}`}>
                             <div>
                               <span className="ft-quest-title">{v.quest.title}</span>
-                              <span className="fr-friend-sub">{v.label}. {v.quest.what}. {progressLine(v.quest, v.progress)}.</span>
+                              <span className="fr-friend-sub">{v.label}. {v.quest.what}. {progressLine(v.quest, v.progress, v.target)}.</span>
                             </div>
                             {v.state === 'ready' && (
                               <button className="fr-btn" disabled={busy || offline} onClick={() => claim(f.friend_id, v.quest.id, v.week)}>Claim</button>

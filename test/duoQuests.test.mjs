@@ -52,3 +52,15 @@ test('nothing shows without data', () => {
   assert.deepEqual(visibleQuests({}, { thisWeek: 'a', lastWeek: 'b' }), []);
   assert.deepEqual(visibleQuests(undefined, { thisWeek: 'a', lastWeek: 'b' }), []);
 });
+
+test('the server\'s target wins over the one in the app', () => {
+  const weeks = { thisWeek: '2026-10-05', lastWeek: '2026-09-28' };
+  const byWeek = { '2026-10-05': [{ quest_id: 'daily_duo', progress: 3, target: 3, claimed: false }, { quest_id: 'week_dinners', progress: 4, target: 5, claimed: false }] };
+  const shown = visibleQuests(byWeek, weeks);
+  assert.equal(shown[0].target, 3);
+  assert.equal(shown[0].state, 'ready');                       // 3 of the server\'s 3, though the app's own number is 2
+  assert.equal(shown[1].state, 'open');
+  assert.equal(progressLine(DUO_QUESTS[0], 3, 3), '3 of 3 days');
+  // an old row with no target falls back to the app's number
+  assert.equal(visibleQuests({ '2026-10-05': [{ quest_id: 'daily_duo', progress: 2, claimed: false }] }, weeks)[0].target, 2);
+});
