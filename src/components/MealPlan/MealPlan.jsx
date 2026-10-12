@@ -25,6 +25,7 @@ function writePlanCache(date, meals) {
 }
 
 import { hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
+import { UNIVERSITIES } from '../../data/universities';
 import { fetchDiningMenu, getUniversityConfig, getSelectableLocations } from '../../services/menuFetcher';
 import { getUserProfile, getNutritionTargets, getDietaryRestrictions, getRecentItemIds, addMealToHistory, removeMealFromHistory, setCachedMenu, getCachedMenu, getCachedMenuAge, incrementStreak, incrementStreakForDate, getStreak, getConfirmedMealsForDate, fetchConfirmedMeals, recordDiningAvailability, flushPendingConfirms, getSession, setMealConsumption } from '../../lib/db';
 import { useRatings } from '../../context/RatingsContext';
@@ -101,6 +102,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
   });
   const [confirmedMealIds, setConfirmedMealIds] = useState({ breakfast: null, lunch: null, dinner: null });
   const [university, setUniversity] = useState('brandeis');
+  const [pausedSchool, setPausedSchool] = useState(null);   // a school Bento is not live at yet
   const universityRef = useRef('brandeis');
   const [viewDate, setViewDate] = useState(() => localDateStr());
   const [dateLoading, setDateLoading] = useState(false);
@@ -143,6 +145,14 @@ export default function MealPlan({ settingsVersion = 0 }) {
     }
     universityRef.current = uni;
     setUniversity(uni);
+    // A school that is listed but not live (its menu is paused) gets a notice, never a request.
+    const uniDef = UNIVERSITIES.find((u) => u.id === uni);
+    if (uniDef && uniDef.available === false) {
+      setPausedSchool(uniDef.name);
+      setLoading(false);
+      return;
+    }
+    setPausedSchool(null);
     const uniConfig = getUniversityConfig(uni);
 
     // Check menu cache
@@ -852,6 +862,14 @@ export default function MealPlan({ settingsVersion = 0 }) {
         <div className="spinner"></div>
         <p className="loading-message">Fetching today's menu…</p>
         <p className="loading-sub">Optimizing your meal plan</p>
+      </div>
+    );
+  }
+
+  if (pausedSchool) {
+    return (
+      <div className="meal-plan-error">
+        <p>Bento is not live at {pausedSchool} yet. Menus are coming soon. You can switch schools in Settings.</p>
       </div>
     );
   }
