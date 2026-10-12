@@ -32,6 +32,19 @@ function readColor() {
 }
 let current = read();
 
+/* A costume is an outfit worn for one day because of a Twin day or Outfit swap with a buddy. It changes how Bento is drawn
+ * on Today and in Insights, and nothing else: the closet, the saved choice and the widget keep the student's own piece. It
+ * is stored with the day it is for, so it is gone the next morning without anyone taking it off. */
+const COSTUME_KEY = 'bento_duo_costume';
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+function readCostume() {
+  try {
+    const v = JSON.parse(localStorage.getItem(COSTUME_KEY) || 'null');
+    return v && v.date === today() && OUTFIT_IDS.includes(v.outfit) ? v.outfit : null;
+  } catch { return null; }
+}
+let costume = readCostume();
+
 function emit(next) {
   current = next;
   listeners.forEach((l) => l());
@@ -70,13 +83,37 @@ export async function loadOutfit() {
   } catch { /* keep the local copy */ }
 }
 
+/* Asks the database whether a Twin day or Outfit swap is on for today. Call when signed in, and after agreeing to one. */
+export async function loadCostume() {
+  try {
+    const { data, error } = await supabase.rpc('duo_costumes');
+    if (error || !Array.isArray(data)) return;
+    const row = data.find((r) => OUTFIT_IDS.includes(r.outfit));
+    try {
+      if (row) localStorage.setItem(COSTUME_KEY, JSON.stringify({ date: today(), outfit: row.outfit }));
+      else localStorage.removeItem(COSTUME_KEY);
+    } catch { /* ignore */ }
+    const next = row?.outfit ?? null;
+    if (next !== costume) { costume = next; listeners.forEach((l) => l()); }
+  } catch { /* keep what is showing */ }
+}
+
 /* Called on sign out, after local storage has been cleared. */
-export function resetOutfit() { emit(null); }
+export function resetOutfit() { costume = null; emit(null); }
 
 export function useOutfit() {
   return useSyncExternalStore(
     (cb) => { listeners.add(cb); return () => listeners.delete(cb); },
     getOutfit,
+    () => null,
+  );
+}
+
+/* What to draw on Today and in Insights: today's costume if there is one, otherwise the student's own piece. */
+export function useDisplayOutfit() {
+  return useSyncExternalStore(
+    (cb) => { listeners.add(cb); return () => listeners.delete(cb); },
+    () => costume ?? current,
     () => null,
   );
 }

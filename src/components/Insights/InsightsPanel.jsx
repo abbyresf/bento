@@ -5,7 +5,7 @@ import { voiceMessage } from '../../utils/bentoSays';
 import Mascot from '../Mascot/Mascot';
 import Closet from '../Mascot/Closet';
 import QuestsCard from '../Quests/QuestsCard';
-import { useOutfit } from '../../lib/mascotOutfit';
+import { useDisplayOutfit } from '../../lib/mascotOutfit';
 import '../Mascot/Mascot.css';
 import WeeklySummaryCard from './WeeklySummaryCard';
 import DailyBreakdown from './DailyBreakdown';
@@ -103,7 +103,7 @@ function Callouts({ targets, goalHits }) {
 function VoiceCard() {
   const [stats, setStats] = useState(null);
   const [uni, setUni] = useState(null);
-  const outfit = useOutfit();
+  const outfit = useDisplayOutfit();   // today's Twin day costume, if any
   const [closet, setCloset] = useState(false);
   useEffect(() => {
     let off = false;

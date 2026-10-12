@@ -174,3 +174,8 @@
 .rb-color:hover:not(:disabled) { border-color: var(--rb); }
 .rb-color:disabled { opacity: 0.6; cursor: default; }
 .rb-dot { width: 2.4rem; height: 2.4rem; border-radius: 50%; background: var(--rb); box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.14); }
+
+/* Rating a buddy's pick right on the card */
+.qd-stars { display: flex; gap: 0.25rem; margin-top: 0.4rem; }
+.qd-stars button { font-family: inherit; font-size: 1.35rem; line-height: 1; padding: 0.15rem 0.2rem; background: none; border: none; cursor: pointer; color: var(--accent-text); }
+.qd-stars button:disabled { opacity: 0.5; cursor: default; }

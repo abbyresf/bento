@@ -120,9 +120,31 @@ const monday = () => {
   const d = new Date(); d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
+// One row of duo_quests. `o` sets what is going on for that quest with that buddy.
+const row = (quest_id, progress, target, o = {}) => ({
+  quest_id, progress, target, claimed: false, detail: null, acked: false, mine_detail: null, requested_by_me: false, detail_id: null, ...o,
+});
 const QUESTS = {
-  f1: [['rainbow_plate', 1, 2, false, 'Green', true], ['mystery_plate', 1, 2, false, 'Baked Salmon'], ['match_plate', 1, 1, false], ['taste_test', 1, 1, false], ['review_duo', 2, 3, false], ['daily_duo', 1, 2, false], ['week_dinners', 4, 5, false]],
-  f2: [['rainbow_plate', 0, 2, false, null], ['mystery_plate', 0, 2, false, null], ['match_plate', 0, 1, false], ['taste_test', 0, 1, false], ['review_duo', 1, 3, false], ['daily_duo', 1, 2, false], ['week_dinners', 2, 5, false]],
+  f1: [
+    row('mystery_plate', 1, 2, { detail: 'Baked Salmon', detail_id: 'demo_baked_salmon' }),
+    row('rainbow_plate', 1, 2, { detail: 'Green', acked: true }),
+    row('bento_plate', 1, 2, { detail: 'Bento plate' }),
+    row('plate_swap', 0, 2, { detail: 'Chicken Tikka Masala', detail_id: 'demo_chicken_tikka_masala' }),
+    row('match_plate', 1, 1),
+    row('pick_of_week', 0, 2, { detail: 'Chicken Tikka Masala', detail_id: 'demo_chicken_tikka_masala', mine_detail: 'Vegetable Sushi Roll' }),
+    row('taste_test', 1, 1),
+    row('review_duo', 2, 3),
+    row('twin_day', 1, 2, { detail: 'Twin day' }),
+    row('outfit_swap', 0, 2),
+    row('cover_me', 0, 1),
+    row('daily_duo', 1, 2),
+    row('week_dinners', 4, 5),
+  ],
+  f2: [
+    row('mystery_plate', 0, 2), row('rainbow_plate', 0, 2), row('bento_plate', 0, 2), row('plate_swap', 0, 2), row('match_plate', 0, 1),
+    row('pick_of_week', 0, 2), row('taste_test', 0, 1), row('review_duo', 1, 3), row('twin_day', 0, 2), row('outfit_swap', 0, 2),
+    row('cover_me', 0, 1), row('daily_duo', 1, 2), row('week_dinners', 2, 5),
+  ],
 };
 const STREAKS = { f1: 9, f2: 4, f3: 0 };
 const RPC = {
@@ -136,21 +158,23 @@ const RPC = {
       here_hall: null, here_meal: null, here_at: null, here_until: null, mascot_outfit: null, mascot_color: 'matcha' },
   ],
   duo_streak: (a) => [{ current_streak: STREAKS[a?.p_friend] ?? 0, me_today: true, friend_today: a?.p_friend === 'f1' }],
-  duo_quests: (a) => (QUESTS[a?.p_friend] ?? []).map(([quest_id, progress, target, claimed, detail = null]) => {
-    // the screenshot driver can ask for a week with no Mystery plate picked yet
-    if (quest_id === 'mystery_plate' && typeof window !== 'undefined' && window.__mockStartPlate) {
-      return { quest_id, progress: 0, target, detail: null, claimed: false };
+  duo_quests: (a) => (QUESTS[a?.p_friend] ?? []).map((r) => {
+    // the screenshot driver can ask for a week where nothing is begun yet
+    if (typeof window !== 'undefined' && window.__mockFresh && r.target > 1) {
+      return { ...r, progress: 0, detail: null, mine_detail: null, acked: false, requested_by_me: false, detail_id: null };
     }
-    if (quest_id === 'rainbow_plate' && typeof window !== 'undefined' && window.__mockStartRainbow) {
-      return { quest_id, progress: 0, target, detail: null, claimed: false };
-    }
-    return { quest_id, progress, target, detail, acked: quest_id === 'rainbow_plate', claimed: claimed || a?.p_week !== monday() };   // last week reads as already claimed
+    return { ...r, claimed: r.claimed || a?.p_week !== monday() };   // last week reads as already claimed
   }),
   duo_perks: () => [{ claims: 3 }],
   duo_compatible_items: (a) => (a?.p_items ?? []).map((i) => i.id),
   duo_plate_pick: () => 'ok',
   duo_rainbow_pick: () => 'ok',
   duo_plate_ack: () => 'ok',
+  duo_bento_pick: () => 'ok',
+  duo_swap_pick: () => 'ok',
+  duo_nominate: () => 'ok',
+  duo_twin_request: () => 'ok',
+  duo_costumes: () => [],
   duo_create_invite: () => [{ code: 'K7QM2XAF', expires_at: minutesAgo(-60 * 24) }],
   duo_redeem: () => [{ status: 'ok', friend_id: 'f9', display_name: 'Jo' }],
 };

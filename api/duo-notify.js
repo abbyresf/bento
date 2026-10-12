@@ -1,6 +1,6 @@
 // "I'm here": records the tap and tells the friends.
 //
-// Route: POST /api/duo-notify   body { hall, meal, friends? }
+// Route: POST /api/duo-notify   body { hall, meal, friends? }  or  { action: 'nudge', friend }
 //
 // The caller proves who they are with their Supabase session token. The tap is
 // recorded by calling the database function duo_ping_here AS THAT USER, so the
@@ -36,6 +36,89 @@ export function pushText(senderName, hall) {
   return `${who} is at ${clean(hall) || 'the dining hall'}`;
 }
 
+
+// Sends one fixed line to these students (already limited to those who switched friend alerts on) through
+// Apple push for the app and web push for the website. Returns how many it reached. Never throws.
+async function deliver(admin, ids, title, tag) {
+  const { data: subs } = await admin.from('push_subscriptions').select('*').in('user_id', ids);
+  if (!subs?.length) return 0;
+
+  let notified = 0;
+
+  const nativeSubs = subs.filter((s) => s.apns_token);
+  const webSubs = subs.filter((s) => !s.apns_token);
+
+  const apns = nativeSubs.length ? apnsConfigFromEnv() : null;
+  if (apns) {
+    const { results } = await sendApns({
+      tokens: nativeSubs.map((s) => s.apns_token), title, collapseId: tag, config: apns,
+    });
+    await Promise.all(nativeSubs.map(async (sub) => {
+      const r = results.find((x) => x.token === sub.apns_token);
+      if (r?.ok) {
+        notified++;
+        await admin.from('push_subscriptions')
+          .update({ last_sent_at: new Date().toISOString(), failure_count: 0 }).eq('id', sub.id);
+      } else if (r?.prune) {
+        await admin.from('push_subscriptions').delete().eq('id', sub.id);
+      } else {
+        await admin.from('push_subscriptions')
+          .update({ failure_count: (sub.failure_count ?? 0) + 1 }).eq('id', sub.id);
+      }
+    }));
+  }
+
+  const publicKey = process.env.VITE_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  if (webSubs.length && publicKey && privateKey) {
+    webpush.setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:hello@bentodining.com', publicKey, privateKey);
+    await Promise.all(webSubs.map(async (sub) => {
+      try {
+        await webpush.sendNotification(
+          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+          JSON.stringify({ title, body: '', tag, url: '/app' }),
+        );
+        notified++;
+      } catch (err) {
+        if (err.statusCode === 404 || err.statusCode === 410) {
+          await admin.from('push_subscriptions').delete().eq('id', sub.id);
+        }
+      }
+    }));
+  }
+  return notified;
+}
+
+export function nudgeText(senderName) {
+  return `${clean(senderName) || 'A buddy'} nudged you. Confirm your meal on Bento.`;
+}
+
+// Cover for me: records the nudge as the caller (all the rules run in duo_nudge: friends, before 8pm, the buddy has
+// not confirmed a meal, five a day) and, only when it was recorded, sends the buddy one fixed line.
+async function handleNudge(res, body, { url, anon, serviceKey, token }) {
+  const friend = body?.friend;
+  if (!UUID.test(String(friend ?? ''))) return res.status(400).json({ error: 'Bad friend' });
+  const asUser = createClient(url, anon, { global: { headers: { Authorization: `Bearer ${token}` } }, auth: { persistSession: false } });
+  const { data: who, error: whoErr } = await asUser.auth.getUser(token);
+  if (whoErr || !who?.user) return res.status(401).json({ error: 'not_signed_in' });
+  const { data: status, error } = await asUser.rpc('duo_nudge', { p_friend: friend });
+  if (error) return res.status(500).json({ error: 'failed' });
+  if (status !== 'ok') return res.status(200).json({ status, notified: 0 });
+  try {
+    const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
+    const [{ data: sender }, { data: willing }] = await Promise.all([
+      admin.from('profiles').select('display_name').eq('id', who.user.id).maybeSingle(),
+      admin.from('profiles').select('id').eq('id', friend).eq('push_social_enabled', true),
+    ]);
+    if (!willing?.length) return res.status(200).json({ status: 'ok', notified: 0 });
+    const notified = await deliver(admin, [friend], nudgeText(sender?.display_name), `bento-nudge-${who.user.id}`);
+    return res.status(200).json({ status: 'ok', notified });
+  } catch (err) {
+    console.error('duo-notify: nudge push failed after it was saved:', err?.message);
+    return res.status(200).json({ status: 'ok', notified: 0 });
+  }
+}
+
 export default async function handler(req, res) {
   cors(res);
   if (req.method === 'OPTIONS') return res.status(204).end();
@@ -53,6 +136,7 @@ export default async function handler(req, res) {
   if (typeof body === 'string') {
     try { body = JSON.parse(body); } catch { return res.status(400).json({ error: 'Bad JSON' }); }
   }
+  if (body?.action === 'nudge') return handleNudge(res, body, { url, anon, serviceKey, token });
   const hall = clean(body?.hall);
   const meal = body?.meal;
   const friends = body?.friends ?? null;
@@ -97,55 +181,9 @@ export default async function handler(req, res) {
     const ids = (willing ?? []).map((p) => p.id);
     if (ids.length === 0) return res.status(200).json({ reached: recipients.length, notified: 0 });
 
-    const { data: subs } = await admin.from('push_subscriptions').select('*').in('user_id', ids);
-    if (!subs?.length) return res.status(200).json({ reached: recipients.length, notified: 0 });
-
     const title = pushText(sender?.display_name, hall);
     const tag = `bento-here-${who.user.id}`;
-    let notified = 0;
-
-    const nativeSubs = subs.filter((s) => s.apns_token);
-    const webSubs = subs.filter((s) => !s.apns_token);
-
-    const apns = nativeSubs.length ? apnsConfigFromEnv() : null;
-    if (apns) {
-      const { results } = await sendApns({
-        tokens: nativeSubs.map((s) => s.apns_token), title, collapseId: tag, config: apns,
-      });
-      await Promise.all(nativeSubs.map(async (sub) => {
-        const r = results.find((x) => x.token === sub.apns_token);
-        if (r?.ok) {
-          notified++;
-          await admin.from('push_subscriptions')
-            .update({ last_sent_at: new Date().toISOString(), failure_count: 0 }).eq('id', sub.id);
-        } else if (r?.prune) {
-          await admin.from('push_subscriptions').delete().eq('id', sub.id);
-        } else {
-          await admin.from('push_subscriptions')
-            .update({ failure_count: (sub.failure_count ?? 0) + 1 }).eq('id', sub.id);
-        }
-      }));
-    }
-
-    const publicKey = process.env.VITE_VAPID_PUBLIC_KEY;
-    const privateKey = process.env.VAPID_PRIVATE_KEY;
-    if (webSubs.length && publicKey && privateKey) {
-      webpush.setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:hello@bentodining.com', publicKey, privateKey);
-      await Promise.all(webSubs.map(async (sub) => {
-        try {
-          await webpush.sendNotification(
-            { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-            JSON.stringify({ title, body: '', tag, url: '/app' }),
-          );
-          notified++;
-        } catch (err) {
-          if (err.statusCode === 404 || err.statusCode === 410) {
-            await admin.from('push_subscriptions').delete().eq('id', sub.id);
-          }
-        }
-      }));
-    }
-
+    const notified = await deliver(admin, ids, title, tag);
     return res.status(200).json({ reached: recipients.length, notified });
   } catch (err) {
     console.error('duo-notify: push failed after the ping was saved:', err?.message);

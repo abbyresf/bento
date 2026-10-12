@@ -38,7 +38,7 @@ import MealCard from './MealCard';
 import DailySummary from './DailySummary';
 import Mascot from '../Mascot/Mascot';
 import Closet from '../Mascot/Closet';
-import { useOutfit } from '../../lib/mascotOutfit';
+import { useOutfit, useDisplayOutfit } from '../../lib/mascotOutfit';
 import { useMascotColor } from '../../lib/mascotColor';
 import '../Mascot/Mascot.css';
 import { bentoSays } from '../../utils/bentoSays';
@@ -83,6 +83,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
   // Meals confirmed with no signal, saved on the phone and waiting to be sent.
   const [pendingMeals, setPendingMeals] = useState(() => pendingMealsFor(localDateStr()));
   const outfit = useOutfit();
+  const displayOutfit = useDisplayOutfit();   // today's Twin day costume, if any
   const mascotColor = useMascotColor();
   const [showCloset, setShowCloset] = useState(false);
   const [pendingBadge, setPendingBadge] = useState(null);
@@ -946,7 +947,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
           <div className="bento-says" key={say.text}>
             <div className="bento-says-side">
               <button className="bento-says-mascot" onClick={() => setShowCloset(true)} aria-label="Open Bento's closet">
-                <Mascot mood={say.mood} size={60} outfit={outfit} />
+                <Mascot mood={say.mood} size={60} outfit={displayOutfit} />
               </button>
               {/* Tapping Bento always opened the closet, with nothing to say so. The pill says it. */}
               <button className="closet-pill" onClick={() => setShowCloset(true)}>

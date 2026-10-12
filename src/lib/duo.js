@@ -220,10 +220,50 @@ export async function pickRainbowPlate(friendId, color) {
   return data === 'ok' ? { ok: true } : { ok: false, status: data };
 }
 
-/* "I did it" on a Rainbow plate. Honor system for the color, but the database wants a confirmed meal first.
- * { ok: true } or { ok: false, status: 'no_meal' | 'no_pick' | 'already' | 'error' }. */
-export async function ackRainbowPlate(friendId) {
-  const { data, error } = await supabase.rpc('duo_plate_ack', { p_friend: friendId });
+/* "I did it" for Rainbow plate and Bento plate (the database wants a confirmed meal first), and "Accept" for Twin day and
+ * Outfit swap. `quest` is the quest id. { ok: true } or { ok: false, status: 'no_meal' | 'no_pick' | 'already' | 'error' }. */
+export async function ackPlate(friendId, quest) {
+  const { data, error } = await supabase.rpc('duo_plate_ack', { p_friend: friendId, p_quest: quest });
   if (error) return { ok: false, status: 'error' };
   return data === 'ok' ? { ok: true } : { ok: false, status: data };
+}
+
+/* Starting each of the other quests. All return { ok: true } or { ok: false, status } where status is what the database said
+ * ('exists', 'not_friends', 'invalid', 'not_rated', ...) or 'error'. */
+async function startQuest(fn, args) {
+  const { data, error } = await supabase.rpc(fn, args);
+  if (error) return { ok: false, status: 'error' };
+  return data === 'ok' ? { ok: true } : { ok: false, status: data };
+}
+export const pickBentoPlate = (friendId) => startQuest('duo_bento_pick', { p_friend: friendId });
+export const pickSwapDish = (friendId, item, hall) =>
+  startQuest('duo_swap_pick', { p_friend: friendId, p_item_id: item.id, p_item_name: item.name, p_hall: hall ?? null });
+export const nominatePick = (friendId, item) =>
+  startQuest('duo_nominate', { p_friend: friendId, p_item_id: item.id, p_item_name: item.name });
+export const requestTwin = (friendId, mode) => startQuest('duo_twin_request', { p_friend: friendId, p_mode: mode });
+
+/* Cover for me. Goes through the server route so the buddy gets one fixed push line in the same step; the route runs the
+ * same database function as the caller, so every rule (before 8pm, not confirmed yet, five a day) still applies.
+ * { ok: true } or { ok: false, status } with 'too_late', 'already_confirmed', 'exists', 'limit', 'not_friends' or 'error'. */
+export async function sendNudge(friendId) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return { ok: false, status: 'error' };
+  try {
+    const res = await fetch(`${API_BASE}/api/duo-notify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ action: 'nudge', friend: friendId }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) return { ok: false, status: 'error' };
+    return body.status === 'ok' ? { ok: true } : { ok: false, status: body.status ?? 'error' };
+  } catch {
+    return { ok: false, status: 'offline' };
+  }
+}
+
+/* Outfits to wear today because of a Twin day or Outfit swap you both agreed: [{ friend_id, mode, outfit }]. */
+export async function getCostumes() {
+  const { data, error } = await supabase.rpc('duo_costumes');
+  return error || !Array.isArray(data) ? [] : data;
 }

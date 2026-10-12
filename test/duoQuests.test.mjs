@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { DUO_QUESTS, duoQuestState, progressLine, claimWeeks, visibleQuests, groupQuests, weeklyQuestIds } from '../src/data/duoQuests.js';
+import { DUO_QUESTS, duoQuestState, progressLine, claimWeeks, visibleQuests, groupQuests, weeklyQuestIds, questAction, questText } from '../src/data/duoQuests.js';
 
 test('the targets match the database function', () => {
   // the latest migration that defines duo_quest_target decides the numbers
-  const sql = readFileSync(new URL('../supabase/migrations/051_duo_rainbow_plate.sql', import.meta.url), 'utf8');
+  const sql = readFileSync(new URL('../supabase/migrations/052_duo_more_quests.sql', import.meta.url), 'utf8');
   for (const q of DUO_QUESTS) {
     const m = new RegExp(`when '${q.id}' then (\\d+)`).exec(sql);
     assert.ok(m, `${q.id} is in duo_quest_target`);
@@ -67,12 +67,14 @@ test('the server\'s target wins over the one in the app', () => {
   assert.equal(visibleQuests({ '2026-10-05': [{ quest_id: 'daily_duo', progress: 2, claimed: false }] }, weeks)[0].target, 2);
 });
 
-test('three quests a week, one of each kind, and the same for everybody', () => {
+test('three quests a week, one of each kind, the same for everybody, and every quest comes round', () => {
   assert.deepEqual(weeklyQuestIds('2026-10-12'), ['mystery_plate', 'taste_test', 'daily_duo']);
-  assert.deepEqual(weeklyQuestIds('2026-10-19'), ['match_plate', 'review_duo', 'week_dinners']);   // the next week rotates
-  assert.deepEqual(weeklyQuestIds('2026-10-26'), ['rainbow_plate', 'taste_test', 'daily_duo']);
-  assert.deepEqual(weeklyQuestIds('2026-11-02'), ['mystery_plate', 'review_duo', 'week_dinners']);
-  for (const w of ['2026-01-05', '2026-06-01', '2027-03-01']) assert.equal(weeklyQuestIds(w).length, 3);
+  assert.deepEqual(weeklyQuestIds('2026-10-19'), ['rainbow_plate', 'review_duo', 'cover_me']);
+  assert.deepEqual(weeklyQuestIds('2026-10-26'), ['match_plate', 'pick_of_week', 'twin_day']);
+  const seen = new Set();
+  const day = (i) => new Date(Date.parse('2026-01-05T12:00:00Z') + i * 7 * 86400000).toISOString().slice(0, 10);
+  for (let i = 0; i < 30; i++) { const ids = weeklyQuestIds(day(i)); assert.equal(ids.length, 3); ids.forEach((id) => seen.add(id)); }
+  assert.deepEqual([...seen].sort(), DUO_QUESTS.map((q) => q.id).sort());            // all thirteen turn up within 30 weeks
 });
 
 test('one list for the week, each quest with the buddy closest to finishing it', () => {
@@ -114,7 +116,7 @@ test('a plate quest with no pick yet is ready to start, and last week\'s finishe
 });
 
 test('a Rainbow plate carries the color and whether you have tapped', () => {
-  const weeks = { thisWeek: '2026-10-26', lastWeek: '2026-10-19' };            // a week that shows Rainbow plate
+  const weeks = { thisWeek: '2026-10-19', lastWeek: '2026-10-12' };            // a week that shows Rainbow plate
   const friends = [{ friend_id: 'a', display_name: 'Maya' }, { friend_id: 'b', display_name: 'Sam' }];
   const row = (quest_id, progress, target, claimed = false, detail = null, acked = false) => ({ quest_id, progress, target, claimed, detail, acked });
   const by = {
@@ -128,4 +130,72 @@ test('a Rainbow plate carries the color and whether you have tapped', () => {
   assert.equal(g.state, 'open');
   const none = groupQuests([friends[0]], { a: by.a }, weeks).find((x) => x.quest.id === 'rainbow_plate');
   assert.equal(none.state, 'start');                                             // no color picked yet
+});
+
+const row = (quest_id, progress, target, o = {}) => ({ quest_id, progress, target, claimed: false, detail: null, acked: false, mine_detail: null, requested_by_me: false, detail_id: null, ...o });
+const action = (id, r, state = 'open') => {
+  const quest = DUO_QUESTS.find((q) => q.id === id);
+  return questAction(quest, { state, detail: r.detail ?? null, mineDetail: r.mine_detail ?? null, acked: r.acked === true, requestedByMe: r.requested_by_me === true });
+};
+
+test('what each card offers', () => {
+  // nothing begun: start
+  for (const id of ['mystery_plate', 'rainbow_plate', 'bento_plate', 'plate_swap', 'pick_of_week', 'cover_me', 'twin_day', 'outfit_swap']) {
+    assert.equal(action(id, row(id, 0, 2)), 'start', id);
+  }
+  assert.equal(action('taste_test', row('taste_test', 0, 1)), null);                   // nothing to do but rate and eat
+  assert.equal(action('mystery_plate', row('mystery_plate', 1, 2, { detail: 'Salmon' })), null);
+  assert.equal(action('rainbow_plate', row('rainbow_plate', 0, 2, { detail: 'Green' })), 'tap');
+  assert.equal(action('rainbow_plate', row('rainbow_plate', 1, 2, { detail: 'Green', acked: true })), null);
+  assert.equal(action('bento_plate', row('bento_plate', 0, 2, { detail: 'Bento plate' })), 'tap');
+  // plate swap: start, then pick when the buddy went first, then wait or eat
+  assert.equal(action('plate_swap', row('plate_swap', 0, 2, { detail: 'Salmon' })), 'pick');
+  assert.equal(action('plate_swap', row('plate_swap', 0, 2, { mine_detail: 'Tofu' })), null);
+  assert.equal(action('plate_swap', row('plate_swap', 0, 2, { detail: 'Salmon', mine_detail: 'Tofu' })), null);
+  // pick of the week: nominate before you rate
+  assert.equal(action('pick_of_week', row('pick_of_week', 0, 2, { detail: 'Salmon' })), 'nominate');
+  assert.equal(action('pick_of_week', row('pick_of_week', 0, 2, { detail: 'Salmon', mine_detail: 'Tofu' })), 'rate');
+  assert.equal(action('pick_of_week', row('pick_of_week', 1, 2, { detail: 'Salmon', mine_detail: 'Tofu', acked: true })), null);
+  assert.equal(action('pick_of_week', row('pick_of_week', 0, 2, { mine_detail: 'Tofu' })), null);
+  // nudges and outfits
+  assert.equal(action('cover_me', row('cover_me', 0, 1, { detail: 'Nudge', requested_by_me: true })), null);
+  assert.equal(action('twin_day', row('twin_day', 1, 2, { detail: 'Twin day' })), 'approve');             // asked of you
+  assert.equal(action('twin_day', row('twin_day', 1, 2, { detail: 'Twin day', requested_by_me: true, acked: true })), null);
+  assert.equal(action('outfit_swap', row('outfit_swap', 1, 2, { detail: 'Outfit swap', acked: true })), null);
+  // finished and claimed override everything
+  assert.equal(action('rainbow_plate', row('rainbow_plate', 2, 2, { detail: 'Green' }), 'ready'), 'claim');
+  assert.equal(action('rainbow_plate', row('rainbow_plate', 2, 2, { detail: 'Green' }), 'claimed'), null);
+});
+
+test('the buddy with something for you to do is the one shown', () => {
+  const weeks = { thisWeek: '2026-10-26', lastWeek: '2026-10-19' };                      // Match the plate, Pick of the week, Twin day
+  const friends = [{ friend_id: 'a', display_name: 'Maya' }, { friend_id: 'b', display_name: 'Sam' }];
+  const by = {
+    a: { [weeks.thisWeek]: [row('twin_day', 1, 2, { detail: 'Twin day', requested_by_me: true, acked: true }), row('pick_of_week', 0, 2), row('match_plate', 0, 1)], [weeks.lastWeek]: [] },
+    b: { [weeks.thisWeek]: [row('twin_day', 1, 2, { detail: 'Twin day' }), row('pick_of_week', 0, 2, { detail: 'Salmon' })], [weeks.lastWeek]: [] },
+  };
+  const g = groupQuests(friends, by, weeks);
+  const twin = g.find((x) => x.quest.id === 'twin_day');
+  assert.equal(twin.friendName, 'Sam');                                                  // Sam asked, so you can accept
+  assert.equal(twin.action, 'approve');
+  assert.equal(g.find((x) => x.quest.id === 'pick_of_week').action, 'nominate');
+  assert.equal(g[g.length - 1].quest.id, 'match_plate');                                 // nothing to do on it, so last
+});
+
+test('card wording for each quest', () => {
+  const entry = (id, o = {}) => ({ quest: DUO_QUESTS.find((q) => q.id === id), friendName: 'Maya', progress: 0, target: 2, state: 'open', label: 'This week', detail: null, mineDetail: null, acked: false, requestedByMe: false, ...o });
+  assert.equal(questText(entry('mystery_plate', { detail: 'Baked Salmon', progress: 1 })).what, 'Baked Salmon, with Maya. Eat it today or tomorrow.');
+  assert.equal(questText(entry('mystery_plate')).meta, 'Pick a buddy and a dish');
+  assert.match(questText(entry('rainbow_plate', { detail: 'Green' })).what, /something green today or tomorrow, then tap I did it/);
+  assert.equal(questText(entry('rainbow_plate', { detail: 'Green', progress: 1, acked: true })).meta, '1 of 2 have done it, waiting for Maya');
+  assert.match(questText(entry('bento_plate', { detail: 'Bento plate' })).what, /protein, a vegetable and a grain/);
+  assert.equal(questText(entry('plate_swap', { detail: 'Salmon', mineDetail: 'Tofu' })).what, 'You eat Salmon. Maya eats Tofu. Today or tomorrow.');
+  assert.equal(questText(entry('plate_swap', { detail: 'Salmon' })).meta, 'Your turn to pick');
+  assert.equal(questText(entry('plate_swap', { mineDetail: 'Tofu' })).meta, 'Waiting for your buddy');
+  assert.equal(questText(entry('pick_of_week', { detail: 'Salmon', mineDetail: 'Tofu' })).what, 'Your pick: Tofu. Maya\'s pick: Salmon. Rate it to count.');
+  assert.match(questText(entry('cover_me', { requestedByMe: true, target: 1 })).what, /You nudged Maya/);
+  assert.equal(questText(entry('twin_day', { detail: 'Twin day' })).meta, 'Asked of you');
+  assert.equal(questText(entry('twin_day', { detail: 'Twin day', requestedByMe: true })).meta, 'Waiting for your buddy');
+  assert.equal(questText(entry('daily_duo', { progress: 1 })).meta, '1 of 2 days with Maya');
+  assert.match(questText(entry('daily_duo', { label: 'Last week' })).meta, /from last week/);
 });

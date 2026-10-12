@@ -10,7 +10,7 @@ const casesFile = process.env.CASES_FILE ?? new URL('../test/fixtures/restrictio
 const dir = process.env.MIGRATIONS_DIR
   ? process.env.MIGRATIONS_DIR
   : new URL('../supabase/migrations/', import.meta.url).pathname;
-const migrations = ['043_duo_foundation.sql', '044_duo_here_duration.sql', '045_duo_quests_and_colors.sql', '046_duo_widget.sql', '047_duo_daily_target.sql', '048_duo_rating_quests.sql', '049_duo_match_plate.sql', '050_duo_mystery_plate.sql', '051_duo_rainbow_plate.sql']
+const migrations = ['043_duo_foundation.sql', '044_duo_here_duration.sql', '045_duo_quests_and_colors.sql', '046_duo_widget.sql', '047_duo_daily_target.sql', '048_duo_rating_quests.sql', '049_duo_match_plate.sql', '050_duo_mystery_plate.sql', '051_duo_rainbow_plate.sql', '052_duo_more_quests.sql']
   .map((f) => readFileSync(`${dir}/${f}`, 'utf8'));
 const db = new PGlite();
 
@@ -23,7 +23,7 @@ await db.exec(`
   grant usage on schema auth, public to anon, authenticated, service_role;
   create table public.profiles (id uuid primary key references auth.users(id) on delete cascade, university text, mascot_outfit text);
   create table public.meal_history (id uuid primary key default gen_random_uuid(),
-    user_id uuid references auth.users(id) on delete cascade, meal_date date, meal_type text, items jsonb not null default '[]');
+    user_id uuid references auth.users(id) on delete cascade, meal_date date, meal_type text, items jsonb not null default '[]', confirmed_at timestamptz default now());
   create table public.dietary_restrictions (user_id uuid primary key references auth.users(id) on delete cascade, vegetarian boolean default false, vegan boolean default false, gluten_free boolean default false, kosher boolean default false, allergies jsonb default '[]');
   create table public.item_ratings (user_id uuid references auth.users(id) on delete cascade, item_id text, item_name text, rating smallint, updated_at timestamptz default now(), primary key (user_id, item_id));
   create table public.dining_availability (date date primary key, any_open boolean);
@@ -473,6 +473,130 @@ await test('rainbow plate: a color, honor system, a tap only after a confirmed m
   assert.equal(await pick(ra, rb, 'purple'), 'ok');
   assert.equal(await ack(ra, rb), 'ok');                                    // a new pick, a fresh tap (a meal is still on record)
   await fails(ra, 'select * from public.duo_plate_acks', [], 'permission denied');
+});
+
+const etHour = () => Number(new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hour12: false }).format(new Date()));
+const rowOf = async (as, other, id) => (await call(as, 'select * from public.duo_quests($1, $2)', [other, thisWeek])).find((r) => r.quest_id === id);
+const claimOf = async (as, other, id) => (await call(as, 'select public.duo_claim($1, $2, $3) r', [other, id, thisWeek]))[0].r;
+const mealToday = (u, ids = []) => db.query(`insert into public.meal_history (user_id, meal_date, meal_type, items) values ($1, (now() at time zone 'America/New_York')::date, 'lunch', $2::jsonb)`, [u, JSON.stringify(ids.map((id) => ({ id })))]);
+const pairUp = async (name) => { const a = await user(name + 'A'); const b = await user(name + 'B'); await makePair(a, b); await startFriendshipDaysAgo(a, b, 30); return [a, b]; };
+
+await test('bento plate: honor system, a tap needs a confirmed meal, both taps then claim', async () => {
+  const [a, b] = await pairUp('BP'); const s = await user('BPS');
+  const pick = async (as, o) => (await call(as, 'select public.duo_bento_pick($1) r', [o]))[0].r;
+  const ack = async (as, o) => (await call(as, `select public.duo_plate_ack($1, 'bento_plate') r`, [o]))[0].r;
+  assert.equal((await rowOf(a, b, 'bento_plate')).target, 2);
+  assert.equal(await ack(a, b), 'no_pick');
+  assert.equal(await pick(s, a), 'not_friends');
+  assert.equal(await pick(a, b), 'ok');
+  assert.equal(await pick(b, a), 'exists');
+  assert.equal((await rowOf(b, a, 'bento_plate')).detail, 'Bento plate');
+  assert.equal(await ack(a, b), 'no_meal');
+  await mealToday(a); await mealToday(b);
+  assert.equal(await ack(a, b), 'ok');
+  assert.equal(await ack(a, b), 'already');
+  assert.equal((await rowOf(a, b, 'bento_plate')).progress, 1);
+  assert.equal(await claimOf(a, b, 'bento_plate'), 'not_met');
+  assert.equal(await ack(b, a), 'ok');
+  assert.equal((await rowOf(a, b, 'bento_plate')).progress, 2);
+  assert.equal(await claimOf(a, b, 'bento_plate'), 'ok');
+});
+
+await test('plate swap: each picks a dish for the other, each receiver must eat theirs', async () => {
+  const [a, b] = await pairUp('PW');
+  const pick = async (as, o, id) => (await call(as, 'select public.duo_swap_pick($1, $2, $3, $4) r', [o, id, 'Dish ' + id, 'North Hall']))[0].r;
+  assert.equal(await pick(a, b, 'forB'), 'ok');
+  assert.equal(await pick(a, b, 'again'), 'exists');                          // one pick each
+  let r = await rowOf(a, b, 'plate_swap');
+  assert.equal(r.mine_detail, 'Dish forB'); assert.equal(r.detail, null);     // a picked, b has not
+  r = await rowOf(b, a, 'plate_swap');
+  assert.equal(r.detail, 'Dish forB'); assert.equal(r.mine_detail, null);     // b sees the dish picked for them
+  assert.equal(await pick(b, a, 'forA'), 'ok');
+  await db.query(`insert into public.meal_history (user_id, meal_date, meal_type, items) values ($1, current_date, 'dinner', '[{"id":"forB"}]'::jsonb)`, [b]);
+  assert.equal((await rowOf(a, b, 'plate_swap')).progress, 1);                // b ate what a picked
+  await db.query(`insert into public.meal_history (user_id, meal_date, meal_type, items) values ($1, current_date, 'dinner', '[{"id":"forA"}]'::jsonb)`, [a]);
+  assert.equal((await rowOf(a, b, 'plate_swap')).progress, 2);
+  assert.equal(await claimOf(a, b, 'plate_swap'), 'ok');
+});
+
+await test('pick of the week: nominate a favorite from your ratings, each rates the other\'s pick', async () => {
+  const [a, b] = await pairUp('PK');
+  const nominate = async (as, o, id) => (await call(as, 'select public.duo_nominate($1, $2, $3) r', [o, id, 'Dish ' + id]))[0].r;
+  const rate = (u, id, stars, ageHours = 0) => db.query(`insert into public.item_ratings (user_id, item_id, item_name, rating, updated_at) values ($1, $2, $2, $3, now() - ($4 || ' hours')::interval)
+     on conflict (user_id, item_id) do update set rating = excluded.rating, updated_at = excluded.updated_at`, [u, id, stars, String(ageHours)]);
+  assert.equal(await nominate(a, b, 'pa'), 'not_rated');                      // not in your ratings
+  await rate(a, 'pa', 3);
+  assert.equal(await nominate(a, b, 'pa'), 'not_rated');                      // 3 stars is not a favorite
+  await rate(a, 'pa', 5); await rate(b, 'pb', 4);
+  assert.equal(await nominate(a, b, 'pa'), 'ok');
+  assert.equal(await nominate(a, b, 'pa'), 'exists');                         // one pick each per week
+  assert.equal((await rowOf(b, a, 'pick_of_week')).detail, 'Dish pa');
+  assert.equal((await rowOf(a, b, 'pick_of_week')).mine_detail, 'Dish pa');
+  assert.equal(await nominate(b, a, 'pb'), 'ok');
+  await rate(b, 'pa', 5, 48);                                                 // an old rating of a's pick does not count
+  assert.equal((await rowOf(a, b, 'pick_of_week')).progress, 0);
+  await rate(b, 'pa', 5);                                                     // rated again after the pick
+  let r = await rowOf(b, a, 'pick_of_week'); assert.equal(r.progress, 1); assert.equal(r.acked, true);
+  assert.equal((await rowOf(a, b, 'pick_of_week')).acked, false);
+  assert.equal(await claimOf(a, b, 'pick_of_week'), 'not_met');
+  await rate(a, 'pb', 4);
+  assert.equal((await rowOf(a, b, 'pick_of_week')).progress, 2);
+  assert.equal(await claimOf(a, b, 'pick_of_week'), 'ok');
+});
+
+await test('cover for me: nudge a buddy before 8pm, counts when they confirm after it', async () => {
+  const [a, b] = await pairUp('CV'); const s = await user('CVS');
+  const nudge = async (as, o) => (await call(as, 'select public.duo_nudge($1) r', [o]))[0].r;
+  assert.equal(await nudge(s, a), 'not_friends');
+  if (etHour() >= 20) { assert.equal(await nudge(a, b), 'too_late'); console.log('   (after 8pm Eastern: only the too_late rule was checked)'); return; }
+  await mealToday(b);
+  assert.equal(await nudge(a, b), 'already_confirmed');                       // nothing to nudge about
+  await db.query('delete from public.meal_history where user_id = $1', [b]);
+  assert.equal(await nudge(a, b), 'ok');
+  assert.equal(await nudge(a, b), 'exists');
+  let r = await rowOf(a, b, 'cover_me'); assert.equal(r.progress, 0); assert.equal(r.requested_by_me, true);
+  assert.equal((await rowOf(b, a, 'cover_me')).requested_by_me, false);       // the nudged buddy gets no credit
+  await mealToday(b);
+  assert.equal((await rowOf(a, b, 'cover_me')).progress, 1);
+  assert.equal((await rowOf(b, a, 'cover_me')).progress, 0);
+  assert.equal(await claimOf(a, b, 'cover_me'), 'ok');
+  // five nudges a day at most
+  const sender = await user('CVN');
+  for (let i = 0; i < 5; i++) { const f = await user('CVF' + i); await makePair(sender, f); await startFriendshipDaysAgo(sender, f, 30); assert.equal(await nudge(sender, f), 'ok'); }
+  const sixth = await user('CVF6'); await makePair(sender, sixth); await startFriendshipDaysAgo(sender, sixth, 30);
+  assert.equal(await nudge(sender, sixth), 'limit');
+});
+
+await test('twin day and outfit swap: both must agree, then each wears the right outfit for the day', async () => {
+  const [a, b] = await pairUp('TW');
+  await db.query(`update public.profiles set mascot_outfit = 'scarf' where id = $1`, [a]);
+  await db.query(`update public.profiles set mascot_outfit = 'crown' where id = $1`, [b]);
+  const ask = async (as, o, mode) => (await call(as, 'select public.duo_twin_request($1, $2) r', [o, mode]))[0].r;
+  const accept = async (as, o, q) => (await call(as, 'select public.duo_plate_ack($1, $2) r', [o, q]))[0].r;
+  const costumes = async (as) => await call(as, 'select * from public.duo_costumes()');
+  assert.equal(await ask(a, b, 'party'), 'invalid');
+  assert.equal(await ask(a, b, 'twin'), 'ok');
+  assert.equal(await ask(b, a, 'twin'), 'exists');
+  let r = await rowOf(b, a, 'twin_day'); assert.equal(r.progress, 1); assert.equal(r.requested_by_me, false); assert.equal(r.acked, false);
+  assert.equal((await rowOf(a, b, 'twin_day')).requested_by_me, true);
+  assert.equal(await accept(a, b, 'twin_day'), 'already');                    // the asker agreed by asking
+  assert.deepEqual(await costumes(b), []);                                    // not both yet
+  assert.equal(await accept(b, a, 'twin_day'), 'ok');
+  assert.equal((await rowOf(a, b, 'twin_day')).progress, 2);
+  const tb = await costumes(b); const ta = await costumes(a);
+  assert.equal(tb[0].outfit, 'scarf'); assert.equal(ta[0].outfit, 'scarf');   // twins wear the asker's outfit
+  assert.equal(tb[0].mode, 'twin'); assert.equal(tb[0].friend_id, a);
+  assert.equal(await claimOf(a, b, 'twin_day'), 'ok');
+  // swap: each wears the other's
+  assert.equal(await ask(b, a, 'swap'), 'ok');
+  assert.equal(await accept(a, b, 'outfit_swap'), 'ok');
+  const sw = (await costumes(a)).find((c) => c.mode === 'swap'); const swb = (await costumes(b)).find((c) => c.mode === 'swap');
+  assert.equal(sw.outfit, 'crown');                                           // a wears b's outfit
+  assert.equal(swb.outfit, 'scarf');                                          // b wears a's outfit
+  // an ended day gives no costume
+  await db.query(`update public.duo_plate_picks set expires_at = now() - interval '1 minute' where quest_id in ('twin_day', 'outfit_swap')`);
+  assert.deepEqual(await costumes(a), []);
+  await fails(a, 'select * from public.duo_plate_picks', [], 'permission denied');
 });
 
 await test('claiming needs the quest to be done, works once, and counts as a perk', async () => {

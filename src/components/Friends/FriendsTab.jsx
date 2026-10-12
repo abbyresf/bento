@@ -1,8 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { useFriends, refreshFriends } from '../../lib/friendsStore';
-import { clearHere, setSharing, endFriend, blockFriend, getDuoStreak, getDuoQuests, claimDuoQuest, getDuoPerks, ackRainbowPlate } from '../../lib/duo';
-import { claimWeeks, groupQuests, progressLine } from '../../data/duoQuests';
+import { clearHere, setSharing, endFriend, blockFriend, getDuoStreak, getDuoQuests, claimDuoQuest, getDuoPerks, ackPlate } from '../../lib/duo';
+import { claimWeeks, groupQuests, questText } from '../../data/duoQuests';
+import { isBentoPlate } from '../../data/plateRoles';
+import { fetchConfirmedMeals } from '../../lib/db';
+import { loadCostume } from '../../lib/mascotOutfit';
+import { useRatings } from '../../context/RatingsContext';
 import Mascot from '../Mascot/Mascot';
 import { hereNow, presenceLine, minutesLeft, clockSpoken, durationLabel } from '../../data/duo';
 import { getUniversityConfig, getSelectableLocations } from '../../services/menuFetcher';
@@ -12,6 +16,8 @@ import InviteSheet from './InviteSheet';
 import HereSheet from './HereSheet';
 import MysteryPlateSheet from './MysteryPlateSheet';
 import RainbowPlateSheet from './RainbowPlateSheet';
+import SimpleQuestSheet from './SimpleQuestSheet';
+import NominateSheet from './NominateSheet';
 import './Friends.css';
 
 /* The Friends tab.
@@ -41,7 +47,9 @@ function hallsFor(university) {
 
 export default function FriendsTab() {
   const { status, friends, me } = useFriends();
-  const [sheet, setSheet] = useState(null);       // 'invite' | 'here' | 'plate' | 'rainbow'
+  const [sheet, setSheet] = useState(null);       // 'invite' | 'here'
+  const [questSheet, setQuestSheet] = useState(null);   // { kind, friend0 } for a quest that needs a buddy or a pick
+  const { rateItem } = useRatings();
   const [here, setHere] = useState(readHere);
   const [now, setNow] = useState(() => Date.now());
   const [streaks, setStreaks] = useState({});     // friend id -> number
@@ -104,11 +112,41 @@ export default function FriendsTab() {
 
   const reloadQuests = () => Promise.all(ids.split(',').map(loadFor))
     .then((rows) => setQuests(Object.fromEntries(rows.map(([id, , q]) => [id, q]))));
-  const tapRainbow = async (friendId) => {
-    setBusy(true);
-    const res = await ackRainbowPlate(friendId);
+  // Which sheet a quest opens, and which of them can start with the buddy already chosen.
+  const SHEET_FOR = {
+    mystery_plate: 'plate', rainbow_plate: 'rainbow', bento_plate: 'bento', plate_swap: 'swap',
+    pick_of_week: 'nominate', cover_me: 'cover', twin_day: 'twin', outfit_swap: 'outfit',
+  };
+  const openQuest = (g) => {
+    const withBuddy = g.action === 'pick' || g.action === 'nominate';           // your buddy went first
+    setQuestSheet({ kind: SHEET_FOR[g.quest.id], friend0: withBuddy ? friends.find((f) => f.friend_id === g.friendId) ?? null : null });
+  };
+  const say = (text) => setClaimNote(text);
+  // "I did it" for Rainbow plate and Bento plate. For Bento plate the dishes are checked here first, so the tap is honest.
+  const tapQuest = async (g) => {
+    setBusy(true); say(null);
+    if (g.quest.id === 'bento_plate') {
+      const days = [0, 1].map((n) => { const d = new Date(Date.now() - n * 86400000); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; });
+      const meals = await Promise.all(days.map((d) => fetchConfirmedMeals(d)));
+      const ok = meals.some((m) => m && Object.values(m).some((meal) => meal && isBentoPlate(meal.items)));
+      if (!ok) { say('Confirm a meal with a protein, a vegetable and a grain on Today first.'); setBusy(false); return; }
+    }
+    const res = await ackPlate(g.friendId, g.quest.id);
     if (res.ok) await reloadQuests();
-    setClaimNote(res.ok ? null : res.status === 'no_meal' ? 'Confirm a meal on Today first, then tap I did it.' : 'Could not save that. Try again.');
+    say(res.ok ? null : res.status === 'no_meal' ? 'Confirm a meal on Today first, then tap I did it.' : 'Could not save that. Try again.');
+    setBusy(false);
+  };
+  const approve = async (g) => {
+    setBusy(true); say(null);
+    const res = await ackPlate(g.friendId, g.quest.id);
+    if (res.ok) { await reloadQuests(); await loadCostume(); say('Agreed. Bento dresses up for the day.'); }
+    else say('Could not save that. Try again.');
+    setBusy(false);
+  };
+  const rate = async (g, stars) => {
+    setBusy(true); say(null);
+    await rateItem({ id: g.detailId, name: g.detail }, stars, null);
+    await reloadQuests();
     setBusy(false);
   };
 
@@ -201,40 +239,38 @@ export default function FriendsTab() {
                   {perks === 0 ? " Your first claim unlocks Bento's colors." : ''}
                 </p>
                 <ul className="qd-list">
-                  {questList.map((g) => (
-                    <li key={g.quest.id} className={`qd-card ${g.state}${g.quest.fun ? ' fun' : ''}`}>
+                  {questList.map((g) => {
+                    const t = questText(g);
+                    return (
+                    <li key={`${g.quest.id}-${g.week}`} className={`qd-card ${g.state}${g.quest.fun ? ' fun' : ''}`}>
                       <span className="qd-emoji" aria-hidden="true">{g.quest.emoji}</span>
                       <div className="qd-body">
                         <span className="qd-title">{g.quest.title}</span>
-                        <span className="qd-what">
-                          {g.quest.id === 'rainbow_plate' && g.detail
-                            ? `${g.detail}, with ${g.friendName}. Each of you eat something ${g.detail.toLowerCase()} today or tomorrow, then tap I did it.`
-                            : g.quest.needsPick && g.detail
-                              ? `${g.detail}, with ${g.friendName}. Eat it today or tomorrow.`
-                              : g.quest.what}
-                        </span>
+                        <span className="qd-what">{t.what}</span>
                         <span className="qd-bar" aria-hidden="true">
                           <i style={{ width: `${Math.round((Math.min(g.progress, g.target) / (g.target || 1)) * 100)}%` }} />
                         </span>
-                        <span className="qd-meta">
-                          {g.state === 'start' ? 'Pick a buddy and a dish' : progressLine(g.quest, g.progress, g.target)}
-                          {g.state !== 'start' && g.progress > 0 && !(g.quest.needsPick && g.detail) ? ` with ${g.friendName}` : ''}
-                          {g.quest.id === 'rainbow_plate' && g.acked && g.state === 'open' ? `, waiting for ${g.friendName}` : ''}
-                          {g.label === 'Last week' ? ', from last week' : ''}
-                        </span>
+                        <span className="qd-meta">{t.meta}</span>
+                        {g.action === 'rate' && (
+                          <span className="qd-stars" role="group" aria-label={`Rate ${g.detail}`}>
+                            {[1, 2, 3, 4, 5].map((n) => (
+                              <button key={n} disabled={busy || offline} onClick={() => rate(g, n)} aria-label={`${n} star${n > 1 ? 's' : ''}`}>★</button>
+                            ))}
+                          </span>
+                        )}
                       </div>
-                      {g.state === 'start' && (
-                        <button className="fr-btn" disabled={busy || offline} onClick={() => setSheet(g.quest.id === 'rainbow_plate' ? 'rainbow' : 'plate')}>Start</button>
+                      {(g.action === 'start' || g.action === 'pick' || g.action === 'nominate') && (
+                        <button className="fr-btn" disabled={busy || offline} onClick={() => openQuest(g)}>{g.action === 'start' ? 'Start' : 'Pick'}</button>
                       )}
-                      {g.state === 'open' && g.quest.id === 'rainbow_plate' && g.detail && !g.acked && (
-                        <button className="fr-btn" disabled={busy || offline} onClick={() => tapRainbow(g.friendId)}>I did it</button>
-                      )}
-                      {g.state === 'ready' && (
+                      {g.action === 'tap' && <button className="fr-btn" disabled={busy || offline} onClick={() => tapQuest(g)}>I did it</button>}
+                      {g.action === 'approve' && <button className="fr-btn" disabled={busy || offline} onClick={() => approve(g)}>Accept</button>}
+                      {g.action === 'claim' && (
                         <button className="fr-btn" disabled={busy || offline} onClick={() => claim(g.friendId, g.quest.id, g.week)}>Claim</button>
                       )}
                       {g.state === 'claimed' && <span className="ft-claimed">Claimed</span>}
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
                 {claimNote && <p className="fr-ok">{claimNote}</p>}
               </>
@@ -314,11 +350,19 @@ export default function FriendsTab() {
         />
       )}
       {sheet === 'invite' && <InviteSheet onClose={() => setSheet(null)} />}
-      {sheet === 'plate' && (
-        <MysteryPlateSheet friends={friends} university={me?.university ?? 'brandeis'} onClose={() => setSheet(null)} onPicked={reloadQuests} />
+      {questSheet?.kind === 'plate' && (
+        <MysteryPlateSheet friends={friends} university={me?.university ?? 'brandeis'} onClose={() => setQuestSheet(null)} onPicked={reloadQuests} />
       )}
-      {sheet === 'rainbow' && (
-        <RainbowPlateSheet friends={friends} onClose={() => setSheet(null)} onPicked={reloadQuests} />
+      {questSheet?.kind === 'swap' && (
+        <MysteryPlateSheet mode="swap" friend0={questSheet.friend0} friends={friends} university={me?.university ?? 'brandeis'}
+                           onClose={() => setQuestSheet(null)} onPicked={reloadQuests} />
+      )}
+      {questSheet?.kind === 'rainbow' && <RainbowPlateSheet friends={friends} onClose={() => setQuestSheet(null)} onPicked={reloadQuests} />}
+      {questSheet?.kind === 'nominate' && (
+        <NominateSheet friends={friends} friend0={questSheet.friend0} onClose={() => setQuestSheet(null)} onDone={reloadQuests} />
+      )}
+      {['bento', 'cover', 'twin', 'outfit'].includes(questSheet?.kind) && (
+        <SimpleQuestSheet kind={questSheet.kind} friends={friends} onClose={() => setQuestSheet(null)} onDone={reloadQuests} />
       )}
       {sheet === 'here' && <HereSheet halls={halls} friends={friends} onClose={() => setSheet(null)} onSent={sent} />}
     </div>

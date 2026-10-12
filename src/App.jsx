@@ -27,7 +27,7 @@ import SurveyPopup from './components/Survey/SurveyPopup';
 import SplashScreen from './components/Splash/SplashScreen';
 import UpdatePrompt from './components/common/UpdatePrompt';
 import { syncNativePushToken } from './lib/push';
-import { loadOutfit, resetOutfit } from './lib/mascotOutfit';
+import { loadOutfit, loadCostume, resetOutfit } from './lib/mascotOutfit';
 import { loadMascotColor, resetMascotColor } from './lib/mascotColor';
 import { initJoinLinks, peekJoinCode, forgetJoinCode } from './lib/joinLink';
 import { resetFriends } from './lib/friendsStore';
@@ -226,7 +226,7 @@ function App() {
 
   // The piece Bento is wearing follows the student, so ask for it once signed in.
   useEffect(() => {
-    if (session) { loadOutfit(); loadMascotColor(); }
+    if (session) { loadOutfit(); loadMascotColor(); loadCostume(); }
   }, [session]);
 
   // ── Computed values & handlers ────────────────────────────────────────────────

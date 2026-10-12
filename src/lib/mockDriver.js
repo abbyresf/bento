@@ -23,22 +23,18 @@ const waitFor = async (fn, tries = 60) => { for (let i = 0; i < tries; i++) { if
   document.head.appendChild(st);
   await waitFor(() => document.querySelector('.bottom-nav-tab, nav button'));
   await sleep(1200);
-  if (shot === 'plate') window.__mockStartPlate = true;
-  if (shot === 'rainbow') window.__mockStartRainbow = true;
-  const tab = { buddies: 'Buddies', here: 'Buddies', plate: 'Buddies', rainbow: 'Buddies', insights: 'Insights', badges: 'Insights', community: 'Community', ratings: 'My Ratings' }[shot];
-  if (tab) { click('button', tab); await sleep(1200); }
+  const questTitle = shot.startsWith('quest:') ? shot.slice(6) : null;           // quest:Rainbow plate
+  if (questTitle) window.__mockFresh = true;
+  const tab = { buddies: 'Buddies', here: 'Buddies', insights: 'Insights', badges: 'Insights', community: 'Community', ratings: 'My Ratings' }[shot];
+  if (tab || questTitle) { click('button', tab ?? 'Buddies'); await sleep(1200); }
   if (shot === 'here') { click('button', "I'm here"); await sleep(800); }
-  if (shot === 'plate') {
-    await waitFor(() => click('button', 'Start'));
+  if (questTitle) {
+    await sleep(600);
+    const card = [...document.querySelectorAll('li.qd-card')].find((li) => li.textContent.includes(questTitle));
+    [...(card?.querySelectorAll('button') ?? [])].find((b) => b.textContent.trim() === 'Start')?.click();
     await sleep(800);
     await waitFor(() => click('button', 'Maya'));
     await sleep(2500);
-  }
-  if (shot === 'rainbow') {
-    await waitFor(() => click('button', 'Start'));
-    await sleep(800);
-    await waitFor(() => click('button', 'Maya'));
-    await sleep(800);
   }
   if (shot === 'badges') { await waitFor(() => click('button', 'badges', false)); await sleep(1200); }
   if (shot === 'closet') { await waitFor(() => click('button', 'Closet')); await sleep(1000); }
