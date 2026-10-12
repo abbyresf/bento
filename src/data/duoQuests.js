@@ -1,8 +1,8 @@
 /* Buddy quests: two starter goals you reach together with one buddy.
  *
  * Progress is worked out in the database from both students' confirmed meals
- * (duo_quests, migrations 045, 048, 049 and 050). Nothing here counts calories, amounts or what anyone
- * ate. The targets below must match duo_quest_target in the latest migration that defines it (050),
+ * (duo_quests, migrations 045, 048, 049, 050 and 051). Nothing here counts calories, amounts or what anyone
+ * ate. The targets below must match duo_quest_target in the latest migration that defines it (051),
  * and a test reads that migration to hold them together.
  *
  * Weeks run Monday to Sunday, the same weeks as the personal quests. A quest can be
@@ -12,6 +12,7 @@
 import { weekStartOf } from './quests.js';
 
 export const DUO_QUESTS = [
+  { id: 'rainbow_plate', title: 'Rainbow plate', what: 'Pick a color together, then both eat something that color', target: 2, unit: 'have done it', emoji: '🌈', fun: true, needsPick: true, honor: true },
   { id: 'mystery_plate', title: 'Mystery plate', what: 'Pick a dish you both can eat, then both eat it', target: 2, unit: 'have eaten', emoji: '🎁', fun: true, needsPick: true },
   { id: 'match_plate',  title: 'Match the plate', what: 'Eat the same meal with two dishes in common', target: 1, unit: 'meal',   emoji: '🍱', fun: true },
   { id: 'taste_test',   title: 'Taste test',      what: 'Both rate the same dish',                      target: 1, unit: 'dish',   emoji: '🍜', fun: true },
@@ -49,11 +50,11 @@ export function visibleQuests(byWeek, weeks) {
     const prev = byWeek?.[weeks.lastWeek]?.find((r) => r.quest_id === q.id);
     const goal = (row) => row?.target ?? q.target;
     if (prev && !prev.claimed && prev.progress >= goal(prev)) {
-      out.push({ quest: q, week: weeks.lastWeek, label: 'Last week', progress: prev.progress, target: goal(prev), state: 'ready', detail: prev.detail ?? null });
+      out.push({ quest: q, week: weeks.lastWeek, label: 'Last week', progress: prev.progress, target: goal(prev), state: 'ready', detail: prev.detail ?? null, acked: prev.acked === true });
     }
     if (cur) {
       out.push({
-        quest: q, week: weeks.thisWeek, label: 'This week', progress: cur.progress, target: goal(cur), detail: cur.detail ?? null,
+        quest: q, week: weeks.thisWeek, label: 'This week', progress: cur.progress, target: goal(cur), detail: cur.detail ?? null, acked: cur.acked === true,
         state: duoQuestState({ ...q, target: goal(cur) }, cur.progress, cur.claimed),
       });
     }
@@ -62,10 +63,10 @@ export function visibleQuests(byWeek, weeks) {
 }
 
 /* Three quests a week, one of each kind, so the Buddies tab is never crowded. The week number picks which one of
- * each pair, and it is the same for everybody. Plate quests rotate Mystery plate and Match the plate, rating
+ * each pair, and it is the same for everybody. Plate quests rotate Rainbow plate, Mystery plate and Match the plate, rating
  * quests rotate Taste test and Review duo, habit quests rotate Daily duo and Week of dinners. */
 const SLOTS = [
-  ['mystery_plate', 'match_plate'],
+  ['rainbow_plate', 'mystery_plate', 'match_plate'],
   ['taste_test', 'review_duo'],
   ['daily_duo', 'week_dinners'],
 ];

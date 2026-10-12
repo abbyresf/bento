@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { useFriends, refreshFriends } from '../../lib/friendsStore';
-import { clearHere, setSharing, endFriend, blockFriend, getDuoStreak, getDuoQuests, claimDuoQuest, getDuoPerks } from '../../lib/duo';
+import { clearHere, setSharing, endFriend, blockFriend, getDuoStreak, getDuoQuests, claimDuoQuest, getDuoPerks, ackRainbowPlate } from '../../lib/duo';
 import { claimWeeks, groupQuests, progressLine } from '../../data/duoQuests';
 import Mascot from '../Mascot/Mascot';
 import { hereNow, presenceLine, minutesLeft, clockSpoken, durationLabel } from '../../data/duo';
@@ -11,6 +11,7 @@ import '../Feedback/FeedbackSheet.css';
 import InviteSheet from './InviteSheet';
 import HereSheet from './HereSheet';
 import MysteryPlateSheet from './MysteryPlateSheet';
+import RainbowPlateSheet from './RainbowPlateSheet';
 import './Friends.css';
 
 /* The Friends tab.
@@ -40,7 +41,7 @@ function hallsFor(university) {
 
 export default function FriendsTab() {
   const { status, friends, me } = useFriends();
-  const [sheet, setSheet] = useState(null);       // 'invite' | 'here' | 'plate'
+  const [sheet, setSheet] = useState(null);       // 'invite' | 'here' | 'plate' | 'rainbow'
   const [here, setHere] = useState(readHere);
   const [now, setNow] = useState(() => Date.now());
   const [streaks, setStreaks] = useState({});     // friend id -> number
@@ -98,6 +99,16 @@ export default function FriendsTab() {
     } else {
       setClaimNote(res.status === 'already' ? 'Already claimed.' : 'That quest is not finished yet.');
     }
+    setBusy(false);
+  };
+
+  const reloadQuests = () => Promise.all(ids.split(',').map(loadFor))
+    .then((rows) => setQuests(Object.fromEntries(rows.map(([id, , q]) => [id, q]))));
+  const tapRainbow = async (friendId) => {
+    setBusy(true);
+    const res = await ackRainbowPlate(friendId);
+    if (res.ok) await reloadQuests();
+    setClaimNote(res.ok ? null : res.status === 'no_meal' ? 'Confirm a meal on Today first, then tap I did it.' : 'Could not save that. Try again.');
     setBusy(false);
   };
 
@@ -196,9 +207,11 @@ export default function FriendsTab() {
                       <div className="qd-body">
                         <span className="qd-title">{g.quest.title}</span>
                         <span className="qd-what">
-                          {g.quest.needsPick && g.detail
-                            ? `${g.detail}, with ${g.friendName}. Eat it today or tomorrow.`
-                            : g.quest.what}
+                          {g.quest.id === 'rainbow_plate' && g.detail
+                            ? `${g.detail}, with ${g.friendName}. Each of you eat something ${g.detail.toLowerCase()} today or tomorrow, then tap I did it.`
+                            : g.quest.needsPick && g.detail
+                              ? `${g.detail}, with ${g.friendName}. Eat it today or tomorrow.`
+                              : g.quest.what}
                         </span>
                         <span className="qd-bar" aria-hidden="true">
                           <i style={{ width: `${Math.round((Math.min(g.progress, g.target) / (g.target || 1)) * 100)}%` }} />
@@ -206,11 +219,15 @@ export default function FriendsTab() {
                         <span className="qd-meta">
                           {g.state === 'start' ? 'Pick a buddy and a dish' : progressLine(g.quest, g.progress, g.target)}
                           {g.state !== 'start' && g.progress > 0 && !(g.quest.needsPick && g.detail) ? ` with ${g.friendName}` : ''}
+                          {g.quest.id === 'rainbow_plate' && g.acked && g.state === 'open' ? `, waiting for ${g.friendName}` : ''}
                           {g.label === 'Last week' ? ', from last week' : ''}
                         </span>
                       </div>
                       {g.state === 'start' && (
-                        <button className="fr-btn" disabled={busy || offline} onClick={() => setSheet('plate')}>Start</button>
+                        <button className="fr-btn" disabled={busy || offline} onClick={() => setSheet(g.quest.id === 'rainbow_plate' ? 'rainbow' : 'plate')}>Start</button>
+                      )}
+                      {g.state === 'open' && g.quest.id === 'rainbow_plate' && g.detail && !g.acked && (
+                        <button className="fr-btn" disabled={busy || offline} onClick={() => tapRainbow(g.friendId)}>I did it</button>
                       )}
                       {g.state === 'ready' && (
                         <button className="fr-btn" disabled={busy || offline} onClick={() => claim(g.friendId, g.quest.id, g.week)}>Claim</button>
@@ -298,8 +315,10 @@ export default function FriendsTab() {
       )}
       {sheet === 'invite' && <InviteSheet onClose={() => setSheet(null)} />}
       {sheet === 'plate' && (
-        <MysteryPlateSheet friends={friends} university={me?.university ?? 'brandeis'} onClose={() => setSheet(null)}
-                           onPicked={() => { loadFor && Promise.all(ids.split(',').map(loadFor)).then((rows) => setQuests(Object.fromEntries(rows.map(([id, , q]) => [id, q])))); }} />
+        <MysteryPlateSheet friends={friends} university={me?.university ?? 'brandeis'} onClose={() => setSheet(null)} onPicked={reloadQuests} />
+      )}
+      {sheet === 'rainbow' && (
+        <RainbowPlateSheet friends={friends} onClose={() => setSheet(null)} onPicked={reloadQuests} />
       )}
       {sheet === 'here' && <HereSheet halls={halls} friends={friends} onClose={() => setSheet(null)} onSent={sent} />}
     </div>

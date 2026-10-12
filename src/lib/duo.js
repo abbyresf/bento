@@ -212,3 +212,18 @@ export async function pickMysteryPlate(friendId, item, hall) {
   if (error) return { ok: false, status: 'error' };
   return data === 'ok' ? { ok: true } : { ok: false, status: data };
 }
+
+/* Rainbow plate: the pair's color, from red, orange, yellow, green and purple. Same results as pickMysteryPlate. */
+export async function pickRainbowPlate(friendId, color) {
+  const { data, error } = await supabase.rpc('duo_rainbow_pick', { p_friend: friendId, p_color: color });
+  if (error) return { ok: false, status: 'error' };
+  return data === 'ok' ? { ok: true } : { ok: false, status: data };
+}
+
+/* "I did it" on a Rainbow plate. Honor system for the color, but the database wants a confirmed meal first.
+ * { ok: true } or { ok: false, status: 'no_meal' | 'no_pick' | 'already' | 'error' }. */
+export async function ackRainbowPlate(friendId) {
+  const { data, error } = await supabase.rpc('duo_plate_ack', { p_friend: friendId });
+  if (error) return { ok: false, status: 'error' };
+  return data === 'ok' ? { ok: true } : { ok: false, status: data };
+}

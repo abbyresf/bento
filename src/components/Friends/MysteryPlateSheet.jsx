@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { getCachedMenu, getDietaryRestrictions } from '../../lib/db';
 import { fetchDiningMenu, getUniversityConfig } from '../../services/menuFetcher';
 import { getCompatibleItemIds, pickMysteryPlate } from '../../lib/duo';
 import { passesFailClosed } from '../../data/plateFilter';
 import { dishesFromMenu } from '../../data/plateDishes';
 import { STATIONS } from '../../data/mockMenu';
-import Mascot from '../Mascot/Mascot';
+import BuddyPick from './BuddyPick';
 import './Friends.css';
 
 /* Mystery plate: choose a buddy, then a dish that works for both of you.
@@ -15,12 +15,10 @@ import './Friends.css';
  * pass your buddy's. The server answers with ids only, so you never see what their settings are. If either check
  * cannot be done, no dish is shown. Dishes with no allergen or tag data are left out for anyone who needs it.
  * Labels only: Bento cannot see cross-contact in the kitchen. */
-const SEARCH_AT = 5;                 // a search box once there are more buddies than this
 
 export default function MysteryPlateSheet({ friends, university, onClose, onPicked }) {
   const [step, setStep] = useState('buddy');          // 'buddy' | 'dishes' | 'done'
   const [friend, setFriend] = useState(null);
-  const [query, setQuery] = useState('');
   const [dishQuery, setDishQuery] = useState('');
   const [dishes, setDishes] = useState(null);         // null while loading
   const [error, setError] = useState(null);
@@ -32,11 +30,6 @@ export default function MysteryPlateSheet({ friends, university, onClose, onPick
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
-
-  const shown = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return q ? friends.filter((f) => f.display_name.toLowerCase().includes(q)) : friends;
-  }, [friends, query]);
 
   const chooseFriend = async (f) => {
     setFriend(f); setStep('dishes'); setDishes(null); setError(null); setDishQuery('');
@@ -80,21 +73,7 @@ export default function MysteryPlateSheet({ friends, university, onClose, onPick
         {step === 'buddy' && (
           <>
             <p className="fr-note" style={{ marginTop: 0 }}>Who is it with? Bento finds dishes that work for you both.</p>
-            {friends.length >= SEARCH_AT && (
-              <input className="fr-input" type="search" placeholder="Search your buddies" value={query}
-                     onChange={(e) => setQuery(e.target.value)} aria-label="Search your buddies" autoFocus />
-            )}
-            <ul className="mp-list">
-              {shown.map((f) => (
-                <li key={f.friend_id}>
-                  <button className="mp-row" onClick={() => chooseFriend(f)}>
-                    <Mascot mood="happy" size={36} hop={false} outfit={f.mascot_outfit ?? null} color={f.mascot_color ?? null} />
-                    <span className="mp-name">{f.display_name}</span>
-                  </button>
-                </li>
-              ))}
-              {shown.length === 0 && <li className="fr-note">No buddy by that name.</li>}
-            </ul>
+            <BuddyPick friends={friends} onChoose={chooseFriend} />
           </>
         )}
 

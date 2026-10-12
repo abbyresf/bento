@@ -121,8 +121,8 @@ const monday = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 const QUESTS = {
-  f1: [['mystery_plate', 1, 2, false, 'Baked Salmon'], ['match_plate', 1, 1, false], ['taste_test', 1, 1, false], ['review_duo', 2, 3, false], ['daily_duo', 1, 2, false], ['week_dinners', 4, 5, false]],
-  f2: [['mystery_plate', 0, 2, false, null], ['match_plate', 0, 1, false], ['taste_test', 0, 1, false], ['review_duo', 1, 3, false], ['daily_duo', 1, 2, false], ['week_dinners', 2, 5, false]],
+  f1: [['rainbow_plate', 1, 2, false, 'Green', true], ['mystery_plate', 1, 2, false, 'Baked Salmon'], ['match_plate', 1, 1, false], ['taste_test', 1, 1, false], ['review_duo', 2, 3, false], ['daily_duo', 1, 2, false], ['week_dinners', 4, 5, false]],
+  f2: [['rainbow_plate', 0, 2, false, null], ['mystery_plate', 0, 2, false, null], ['match_plate', 0, 1, false], ['taste_test', 0, 1, false], ['review_duo', 1, 3, false], ['daily_duo', 1, 2, false], ['week_dinners', 2, 5, false]],
 };
 const STREAKS = { f1: 9, f2: 4, f3: 0 };
 const RPC = {
@@ -141,11 +141,16 @@ const RPC = {
     if (quest_id === 'mystery_plate' && typeof window !== 'undefined' && window.__mockStartPlate) {
       return { quest_id, progress: 0, target, detail: null, claimed: false };
     }
-    return { quest_id, progress, target, detail, claimed: claimed || a?.p_week !== monday() };   // last week reads as already claimed
+    if (quest_id === 'rainbow_plate' && typeof window !== 'undefined' && window.__mockStartRainbow) {
+      return { quest_id, progress: 0, target, detail: null, claimed: false };
+    }
+    return { quest_id, progress, target, detail, acked: quest_id === 'rainbow_plate', claimed: claimed || a?.p_week !== monday() };   // last week reads as already claimed
   }),
   duo_perks: () => [{ claims: 3 }],
   duo_compatible_items: (a) => (a?.p_items ?? []).map((i) => i.id),
   duo_plate_pick: () => 'ok',
+  duo_rainbow_pick: () => 'ok',
+  duo_plate_ack: () => 'ok',
   duo_create_invite: () => [{ code: 'K7QM2XAF', expires_at: minutesAgo(-60 * 24) }],
   duo_redeem: () => [{ status: 'ok', friend_id: 'f9', display_name: 'Jo' }],
 };

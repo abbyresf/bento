@@ -5,7 +5,7 @@ import { DUO_QUESTS, duoQuestState, progressLine, claimWeeks, visibleQuests, gro
 
 test('the targets match the database function', () => {
   // the latest migration that defines duo_quest_target decides the numbers
-  const sql = readFileSync(new URL('../supabase/migrations/050_duo_mystery_plate.sql', import.meta.url), 'utf8');
+  const sql = readFileSync(new URL('../supabase/migrations/051_duo_rainbow_plate.sql', import.meta.url), 'utf8');
   for (const q of DUO_QUESTS) {
     const m = new RegExp(`when '${q.id}' then (\\d+)`).exec(sql);
     assert.ok(m, `${q.id} is in duo_quest_target`);
@@ -70,7 +70,8 @@ test('the server\'s target wins over the one in the app', () => {
 test('three quests a week, one of each kind, and the same for everybody', () => {
   assert.deepEqual(weeklyQuestIds('2026-10-12'), ['mystery_plate', 'taste_test', 'daily_duo']);
   assert.deepEqual(weeklyQuestIds('2026-10-19'), ['match_plate', 'review_duo', 'week_dinners']);   // the next week rotates
-  assert.deepEqual(weeklyQuestIds('2026-10-26'), ['mystery_plate', 'taste_test', 'daily_duo']);
+  assert.deepEqual(weeklyQuestIds('2026-10-26'), ['rainbow_plate', 'taste_test', 'daily_duo']);
+  assert.deepEqual(weeklyQuestIds('2026-11-02'), ['mystery_plate', 'review_duo', 'week_dinners']);
   for (const w of ['2026-01-05', '2026-06-01', '2027-03-01']) assert.equal(weeklyQuestIds(w).length, 3);
 });
 
@@ -110,4 +111,21 @@ test('a plate quest with no pick yet is ready to start, and last week\'s finishe
   assert.equal(g[0].quest.id, 'week_dinners');                // last week's, ready, first
   assert.equal(g[0].label, 'Last week');
   assert.equal(g.length, 4);
+});
+
+test('a Rainbow plate carries the color and whether you have tapped', () => {
+  const weeks = { thisWeek: '2026-10-26', lastWeek: '2026-10-19' };            // a week that shows Rainbow plate
+  const friends = [{ friend_id: 'a', display_name: 'Maya' }, { friend_id: 'b', display_name: 'Sam' }];
+  const row = (quest_id, progress, target, claimed = false, detail = null, acked = false) => ({ quest_id, progress, target, claimed, detail, acked });
+  const by = {
+    a: { [weeks.thisWeek]: [row('rainbow_plate', 0, 2)], [weeks.lastWeek]: [] },
+    b: { [weeks.thisWeek]: [row('rainbow_plate', 1, 2, false, 'Green', true)], [weeks.lastWeek]: [] },
+  };
+  const g = groupQuests(friends, by, weeks).find((x) => x.quest.id === 'rainbow_plate');
+  assert.equal(g.friendName, 'Sam');
+  assert.equal(g.detail, 'Green');
+  assert.equal(g.acked, true);
+  assert.equal(g.state, 'open');
+  const none = groupQuests([friends[0]], { a: by.a }, weeks).find((x) => x.quest.id === 'rainbow_plate');
+  assert.equal(none.state, 'start');                                             // no color picked yet
 });

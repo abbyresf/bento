@@ -10,7 +10,7 @@ const casesFile = process.env.CASES_FILE ?? new URL('../test/fixtures/restrictio
 const dir = process.env.MIGRATIONS_DIR
   ? process.env.MIGRATIONS_DIR
   : new URL('../supabase/migrations/', import.meta.url).pathname;
-const migrations = ['043_duo_foundation.sql', '044_duo_here_duration.sql', '045_duo_quests_and_colors.sql', '046_duo_widget.sql', '047_duo_daily_target.sql', '048_duo_rating_quests.sql', '049_duo_match_plate.sql', '050_duo_mystery_plate.sql']
+const migrations = ['043_duo_foundation.sql', '044_duo_here_duration.sql', '045_duo_quests_and_colors.sql', '046_duo_widget.sql', '047_duo_daily_target.sql', '048_duo_rating_quests.sql', '049_duo_match_plate.sql', '050_duo_mystery_plate.sql', '051_duo_rainbow_plate.sql']
   .map((f) => readFileSync(`${dir}/${f}`, 'utf8'));
 const db = new PGlite();
 
@@ -440,6 +440,39 @@ await test('mystery plate: one open pick per pair, both must eat it, then it can
   assert.equal(await pick(pa, pb, 'dish3'), 'ok');
   // the picks table is not readable directly
   await fails(pa, 'select * from public.duo_plate_picks', [], 'permission denied');
+});
+
+await test('rainbow plate: a color, honor system, a tap only after a confirmed meal, both taps then claim', async () => {
+  const ra = await user('RA2'); const rb = await user('RB2'); const rs = await user('RS2');
+  await makePair(ra, rb); await startFriendshipDaysAgo(ra, rb, 30);
+  const row = async (as, other) => (await call(as, 'select * from public.duo_quests($1, $2)', [other, thisWeek])).find((r) => r.quest_id === 'rainbow_plate');
+  const pick = async (as, other, color) => (await call(as, 'select public.duo_rainbow_pick($1, $2) r', [other, color]))[0].r;
+  const ack = async (as, other) => (await call(as, 'select public.duo_plate_ack($1) r', [other]))[0].r;
+  assert.equal((await row(ra, rb)).target, 2);
+  assert.equal((await row(ra, rb)).detail, null);
+  assert.equal(await ack(ra, rb), 'no_pick');
+  assert.equal(await pick(rs, ra, 'green'), 'not_friends');
+  assert.equal(await pick(ra, rb, 'pink'), 'invalid');                      // only five colors
+  assert.equal(await pick(ra, rb, null), 'invalid');
+  assert.equal(await pick(ra, rb, 'green'), 'ok');
+  assert.equal(await pick(rb, ra, 'red'), 'exists');                        // one open pick per pair
+  assert.equal((await row(rb, ra)).detail, 'Green');                        // the buddy sees the color
+  assert.equal(await ack(ra, rb), 'no_meal');                               // honor system, but a confirmed meal is needed
+  await db.query(`insert into public.meal_history (user_id, meal_date, meal_type, items) values ($1, current_date, 'lunch', '[]'::jsonb)`, [ra]);
+  assert.equal(await ack(ra, rb), 'ok');
+  assert.equal(await ack(ra, rb), 'already');                               // one tap each
+  let r = await row(ra, rb); assert.equal(r.progress, 1); assert.equal(r.acked, true);
+  r = await row(rb, ra); assert.equal(r.progress, 1); assert.equal(r.acked, false);   // the buddy has not tapped yet
+  assert.equal((await call(ra, 'select public.duo_claim($1, $2, $3) r', [rb, 'rainbow_plate', thisWeek]))[0].r, 'not_met');
+  await db.query(`insert into public.meal_history (user_id, meal_date, meal_type, items) values ($1, current_date, 'dinner', '[]'::jsonb)`, [rb]);
+  assert.equal(await ack(rb, ra), 'ok');
+  assert.equal((await row(ra, rb)).progress, 2);
+  assert.equal((await call(ra, 'select public.duo_claim($1, $2, $3) r', [rb, 'rainbow_plate', thisWeek]))[0].r, 'ok');
+  // once it expires a new color can be picked, and the taps belong to the old pick
+  await db.query(`update public.duo_plate_picks set expires_at = now() - interval '1 hour' where quest_id = 'rainbow_plate' and user_a = least($1::uuid, $2::uuid) and user_b = greatest($1::uuid, $2::uuid)`, [ra, rb]);
+  assert.equal(await pick(ra, rb, 'purple'), 'ok');
+  assert.equal(await ack(ra, rb), 'ok');                                    // a new pick, a fresh tap (a meal is still on record)
+  await fails(ra, 'select * from public.duo_plate_acks', [], 'permission denied');
 });
 
 await test('claiming needs the quest to be done, works once, and counts as a perk', async () => {

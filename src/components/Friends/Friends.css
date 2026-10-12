@@ -167,3 +167,10 @@
 .mp-sub { font-size: 0.76rem; color: var(--text-secondary); }
 .mp-caveat { margin-top: 0.9rem; }
 .qd-card .fr-btn-quiet { flex: none; }
+
+/* Rainbow plate colors */
+.rb-colors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin-top: 0.9rem; }
+.rb-color { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; padding: 0.8rem 0.4rem; border-radius: 14px; font-family: inherit; font-weight: 800; font-size: 0.9rem; cursor: pointer; background: var(--surface-sunk); color: var(--text-primary); border: 2px solid var(--border); }
+.rb-color:hover:not(:disabled) { border-color: var(--rb); }
+.rb-color:disabled { opacity: 0.6; cursor: default; }
+.rb-dot { width: 2.4rem; height: 2.4rem; border-radius: 50%; background: var(--rb); box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.14); }
