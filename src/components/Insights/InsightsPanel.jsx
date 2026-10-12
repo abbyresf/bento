@@ -129,7 +129,7 @@ function VoiceCard() {
       <div className="voice-card-body">
         <h3>Your voice</h3>
         <div className="voice-stats">
-          <div className="voice-stat"><strong>{stats.mealsThisMonth}</strong><span>meals confirmed this month</span></div>
+          <div className="voice-stat"><strong>{stats.mealsThisMonth}</strong><span>meals this month</span></div>
           <div className="voice-stat"><strong>{stats.dishesRated}</strong><span>dishes rated</span></div>
         </div>
         <p className="voice-note">{msg}</p>

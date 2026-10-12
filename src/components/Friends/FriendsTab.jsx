@@ -45,6 +45,8 @@ export default function FriendsTab() {
   const [streaks, setStreaks] = useState({});     // friend id -> number
   const [quests, setQuests] = useState({});       // friend id -> { [weekStart]: rows }
   const [claimNote, setClaimNote] = useState(null);
+  const [perks, setPerks] = useState(null);
+  useEffect(() => { getDuoPerks().then(setPerks); }, []);
   const [open, setOpen] = useState(null);         // friend id with tools showing
   const [confirm, setConfirm] = useState(null);   // { id, kind }
   const [busy, setBusy] = useState(false);
@@ -88,6 +90,7 @@ export default function FriendsTab() {
       setStreaks((p) => ({ ...p, [friendId]: n }));
       setQuests((p) => ({ ...p, [friendId]: q }));
       const total = await getDuoPerks();
+      setPerks(total);
       setClaimNote(total === 1
         ? "Claimed. Bento's colors are unlocked. Open Bento's closet on Today to pick one."
         : 'Claimed.');
@@ -201,7 +204,7 @@ export default function FriendsTab() {
                     )}
                     {visibleQuests(quests[f.friend_id], weeks).length > 0 && (
                       <p className="ft-quests-head">
-                        Quests with {f.display_name}. Finish one together and tap Claim. Your first claim unlocks Bento's colors.
+                        Quests with {f.display_name}. Finish one together and tap Claim.{perks === 0 ? " Your first claim unlocks Bento's colors." : ''}
                       </p>
                     )}
                     {visibleQuests(quests[f.friend_id], weeks).length > 0 && (
