@@ -29,8 +29,8 @@ const DISHES = {
   ],
   lunch: [
     [item('l1', 'Grilled chicken breast', 280, 42, 0, 8, 'Grill'), item('l2', 'Brown rice', 215, 5, 45, 2, 'Global'), item('l3', 'Roasted broccoli', 70, 4, 10, 2, 'Global')],
-    [item('l4', 'Garden veg wrap', 360, 12, 48, 13, 'Deli'), item('l5', 'Tomato basil soup', 170, 4, 24, 6, 'Soups'), item('l6', 'Side salad', 60, 2, 8, 3, 'Salad Bar')],
-    [item('l7', 'Vegetable uramaki', 310, 9, 58, 5, 'Sushi'), item('l8', 'Edamame', 120, 11, 9, 5, 'Sushi'), item('l9', 'Miso soup', 40, 3, 4, 1, 'Soups')],
+    [item('l4', 'Garden veggie wrap', 360, 12, 48, 13, 'Deli'), item('l5', 'Tomato basil soup', 170, 4, 24, 6, 'Soups'), item('l6', 'Side salad', 60, 2, 8, 3, 'Salad Bar')],
+    [item('l7', 'Vegetable sushi roll', 310, 9, 58, 5, 'Sushi'), item('l8', 'Edamame', 120, 11, 9, 5, 'Sushi'), item('l9', 'Miso soup', 40, 3, 4, 1, 'Soups')],
     [item('l10', 'Turkey club', 420, 31, 38, 16, 'Deli'), item('l11', 'Kettle chips', 150, 2, 15, 10, 'Deli')],
   ],
   dinner: [
@@ -40,7 +40,7 @@ const DISHES = {
     [item('d10', 'Pasta primavera', 380, 14, 62, 9, 'Pasta'), item('d11', 'Garlic bread', 150, 4, 20, 6, 'Pasta'), item('d12', 'Caesar salad', 120, 4, 9, 8, 'Salad Bar')],
   ],
 };
-const HALLS = { breakfast: 'Sherman', lunch: 'Usdan', dinner: 'Sherman' };
+const HALLS = { breakfast: 'North Hall', lunch: 'Commons', dinner: 'North Hall' };
 const at = (offset, hour) => {
   const d = new Date(Date.now() + offset * 86400000);
   d.setHours(hour, 12, 0, 0);
@@ -48,8 +48,8 @@ const at = (offset, hour) => {
 };
 const HOURS = { breakfast: 8, lunch: 12, dinner: 18 };
 
-// Every day for 14 days back (today excluded): lunch and dinner, breakfast on most. Today: breakfast only, so the plates for
-// lunch and dinner are still open.
+// Every day for 14 days back (today excluded): lunch and dinner, breakfast on most. Today: breakfast and lunch, so tonight's
+// plate is still open.
 const HISTORY = [];
 for (let o = -1; o >= -14; o--) {
   const meals = ['lunch', 'dinner'];
@@ -62,11 +62,12 @@ for (let o = -1; o >= -14; o--) {
     });
   });
 }
-HISTORY.push({ id: 'm0b', meal_type: 'breakfast', meal_date: day(0), confirmed_at: at(0, 8), dining_hall: 'Sherman', items: DISHES.breakfast[0] });
+HISTORY.push({ id: 'm0l', meal_type: 'lunch', meal_date: day(0), confirmed_at: at(0, 12), dining_hall: 'Commons', items: DISHES.lunch[1] });
+HISTORY.push({ id: 'm0b', meal_type: 'breakfast', meal_date: day(0), confirmed_at: at(0, 8), dining_hall: 'North Hall', items: DISHES.breakfast[2] });
 
 const RATED = [
-  ['l1', 'Grilled chicken breast', 5], ['d1', 'Baked salmon', 5], ['l7', 'Vegetable uramaki', 5], ['d4', 'Chicken tikka masala', 5],
-  ['b6', 'Oatmeal', 4], ['l4', 'Garden veg wrap', 4], ['d7', 'Tofu stir fry', 4], ['b4', 'Greek yogurt parfait', 4],
+  ['l1', 'Grilled chicken breast', 5], ['d1', 'Baked salmon', 5], ['l7', 'Vegetable sushi roll', 5], ['d4', 'Chicken tikka masala', 5],
+  ['b6', 'Oatmeal', 4], ['l4', 'Garden veggie wrap', 4], ['d7', 'Tofu stir fry', 4], ['b4', 'Greek yogurt parfait', 4],
   ['l8', 'Edamame', 5], ['d2', 'Roasted sweet potatoes', 4], ['l5', 'Tomato basil soup', 4], ['d10', 'Pasta primavera', 3],
   ['l10', 'Turkey club', 4], ['b1', 'Scrambled eggs', 3], ['d12', 'Caesar salad', 4], ['l2', 'Brown rice', 3],
 ];
@@ -75,12 +76,12 @@ const FIXTURES = {
   profiles: [{
     id: USER.id, weight: 150, weight_unit: 'lb', height_feet: 5, height_inches: 7,
     age: 21, sex: 'female', activity_level: 'moderate', goal: 'maintain',
-    university: 'brandeis', terms_accepted: true, push_enabled: false,
+    university: 'demo', terms_accepted: true, push_enabled: false,
     show_calories: true, show_protein: true, show_carbs: true, show_fat: true,
     display_name: 'Abby', push_social_enabled: false,
     mascot_outfit: 'chefhat', mascot_color: null,
   }],
-  nutrition_targets: [{ calories: 2000, protein: 110, carbs: 240, fat: 65 }],
+  nutrition_targets: [{ calories: 2200, protein: 130, carbs: 250, fat: 85 }],
   dietary_restrictions: [{
     vegetarian: false, vegan: false, gluten_free: false, halal: false, kosher: false,
     allergies: [], avoid_ingredients: [],
@@ -88,7 +89,7 @@ const FIXTURES = {
   streaks: [{ current_streak: 14, longest_streak: 14, last_confirmed_date: day(0) }],
   meal_history: HISTORY,
   item_ratings: RATED.map(([item_id, item_name, rating], i) => ({
-    item_id, item_name, rating, updated_at: at(-(i % 6), 14), dining_hall: i % 2 ? 'Sherman' : 'Usdan',
+    item_id, item_name, rating, updated_at: at(-(i % 6), 14), dining_hall: i % 2 ? 'North Hall' : 'Commons',
   })),
   quest_claims: [['days4', 7], ['rate3', 14], ['twoMeals', 21]].map(([quest_id, back]) => ({
     quest_id, week_start: day(-((new Date().getDay() + 6) % 7) - back),
@@ -99,17 +100,17 @@ const FIXTURES = {
     top_foods: [{ name: 'Grilled chicken breast', count: 4 }, { name: 'Baked salmon', count: 3 }, { name: 'Brown rice', count: 3 }],
   }],
   item_rating_aggregates: [
-    ['a1', 'Crispy Chick\'n Tender', 4.8, 61, 'Sherman'], ['a2', 'Vegetable Uramaki', 4.7, 48, 'Usdan'], ['a3', 'Baked Salmon', 4.6, 39, 'Sherman'],
-    ['a4', 'Chicken Tikka Masala', 4.5, 52, 'Sherman'], ['a5', 'Garden Veg Wrap', 4.3, 33, 'Usdan'], ['a6', 'Tofu Stir Fry', 4.2, 27, 'Usdan'],
-  ].map(([item_id, item_name, avg_rating, rating_count, dining_hall]) => ({ item_id, item_name, avg_rating, rating_count, dining_hall, university: 'brandeis' })),
+    ['a1', 'Crispy Chick\'n Tender', 4.8, 61, 'North Hall'], ['a2', 'Vegetable Sushi Roll', 4.7, 48, 'Commons'], ['a3', 'Baked Salmon', 4.6, 39, 'North Hall'],
+    ['a4', 'Chicken Tikka Masala', 4.5, 52, 'North Hall'], ['a5', 'Garden Veggie Wrap', 4.3, 33, 'Commons'], ['a6', 'Tofu Stir Fry', 4.2, 27, 'Commons'],
+  ].map(([item_id, item_name, avg_rating, rating_count, dining_hall]) => ({ item_id, item_name, avg_rating, rating_count, dining_hall, university: 'demo' })),
   suggestions: [
-    ['Please bring back the build-your-own grain bowls at Sherman on weekdays.', 41, 1],
+    ['Please bring back the build-your-own grain bowls at North Hall on weekdays.', 41, 1],
     ['More halal options at dinner, especially a protein that is not chicken.', 33, 2],
     ['A gluten-free bread option at the deli at lunch.', 27, 3],
-    ['Label the spicy dishes at Usdan. I find out the hard way every time.', 19, 4],
+    ['Label the spicy dishes at Commons. I find out the hard way every time.', 19, 4],
     ['Keep the oat milk stocked at breakfast. It runs out by 9.', 12, 6],
   ].map(([content, emphasize_count, days], i) => ({
-    id: `s${i}`, content, emphasize_count, created_at: at(-days, 11), is_hidden: false, university: 'brandeis',
+    id: `s${i}`, content, emphasize_count, created_at: at(-days, 11), is_hidden: false, university: 'demo',
   })),
 };
 
@@ -127,7 +128,7 @@ const STREAKS = { f1: 9, f2: 4, f3: 0 };
 const RPC = {
   duo_friends: () => [
     { friend_id: 'f1', display_name: 'Maya', started_at: minutesAgo(60 * 24 * 12), i_share: true,
-      here_hall: 'Usdan', here_meal: 'lunch', here_at: minutesAgo(18), here_until: minutesAgo(-42),
+      here_hall: 'Commons', here_meal: 'lunch', here_at: minutesAgo(18), here_until: new Date(Math.ceil((Date.now() + 20 * 60000) / 1800000) * 1800000).toISOString(),
       mascot_outfit: 'sunglasses', mascot_color: 'cherry' },
     { friend_id: 'f2', display_name: 'Sam', started_at: minutesAgo(60 * 24 * 5), i_share: true,
       here_hall: null, here_meal: null, here_at: null, here_until: null, mascot_outfit: 'headband', mascot_color: 'sky' },

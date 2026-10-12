@@ -13,6 +13,17 @@ import ErrorBoundary from './components/common/ErrorBoundary.jsx'
 import { initNativeAuthLinks } from './lib/nativeAuth'
 import { initKeyboardInset } from './lib/keyboard'
 
+// Screenshot driver, design builds only. Removed from every release bundle.
+if (import.meta.env.VITE_UI_MOCK) {
+  try {
+    localStorage.setItem('bento_splash_ts', String(Date.now()));
+    localStorage.setItem('bento_install_prompted', '1');
+    localStorage.setItem('bento_tutorial_done', '1');
+  } catch { /* design build only */ }
+  window.__shotQuery = location.search;   // the router may rewrite the URL before the driver reads it
+  import('./lib/mockDriver.js');
+}
+
 /* HashRouter in the native shell, BrowserRouter on the web.
  *
  * The web keeps real paths. Switching it to hashes would turn every URL into

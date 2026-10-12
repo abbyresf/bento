@@ -95,6 +95,10 @@ function dedupeMeals(meals) {
 // dateStr — optional YYYY-MM-DD; defaults to today.
 // Throws if all fetches return empty menus — callers handle the fallback.
 export async function fetchDiningMenu(config, dateStr = null) {
+  if (DEMO_CONFIG && config === DEMO_CONFIG) {
+    const { mockCampusMenu } = await import('../lib/mockCampusMenu.js');
+    return mockCampusMenu(config);
+  }
   if (!dateStr) {
     const now = new Date();
     dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -362,7 +366,16 @@ export function getSelectableLocations(config) {
   );
 }
 
+// Design-only campus (see data/universities.js). Null in every release build.
+const DEMO_CONFIG = (typeof import.meta.env !== 'undefined' && import.meta.env.VITE_UI_MOCK) ? {
+  locations: {
+    north:   { id: 'north',   name: 'North Hall',  shortName: 'North Hall' },
+    commons: { id: 'commons', name: 'The Commons', shortName: 'Commons' },
+  },
+} : null;
+
 export function getUniversityConfig(universityId) {
+  if (DEMO_CONFIG && universityId === 'demo') return DEMO_CONFIG;
   switch (universityId) {
     case 'tufts':    return TUFTS_CONFIG;
     case 'brandeis':

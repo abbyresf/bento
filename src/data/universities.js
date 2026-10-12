@@ -61,3 +61,13 @@ export const UNIVERSITIES = [
     aliases: ['ucb', 'berkeley', 'cal', 'uc berkeley'],
   },
 ];
+
+// A made-up campus for design work and App Store screenshots, so no real school is on show. It exists only in a
+// build made with VITE_UI_MOCK=true. Marker: BENTO_UI_MOCK_ACTIVE
+if (typeof import.meta.env !== 'undefined' && import.meta.env.VITE_UI_MOCK) {
+  UNIVERSITIES.push({
+    id: 'demo', name: 'Maple State University', abbreviation: 'Maple', location: 'Anytown, USA', available: true,
+    aliases: ['maple'], hasKosher: false, labelHalal: false, itemPrefix: 'demo_',
+    diningPartner: true, diningTeamName: 'Maple Dining',
+  });
+}
