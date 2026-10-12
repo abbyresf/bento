@@ -126,10 +126,9 @@ const row = (quest_id, progress, target, o = {}) => ({
 });
 const QUESTS = {
   f1: [
-    row('mystery_plate', 1, 2, { detail: 'Baked Salmon', detail_id: 'demo_baked_salmon' }),
+    row('mystery_plate', 1, 2, { detail: 'Baked Salmon', detail_id: 'demo_baked_salmon', mine_detail: 'Veggie Egg White Scramble' }),
     row('rainbow_plate', 1, 2, { detail: 'Green', acked: true }),
     row('bento_plate', 1, 2, { detail: 'Bento plate' }),
-    row('plate_swap', 0, 2, { detail: 'Chicken Tikka Masala', detail_id: 'demo_chicken_tikka_masala' }),
     row('match_plate', 1, 1),
     row('pick_of_week', 0, 2, { detail: 'Chicken Tikka Masala', detail_id: 'demo_chicken_tikka_masala', mine_detail: 'Vegetable Sushi Roll' }),
     row('taste_test', 1, 1),
@@ -141,7 +140,7 @@ const QUESTS = {
     row('week_dinners', 4, 5),
   ],
   f2: [
-    row('mystery_plate', 0, 2), row('rainbow_plate', 0, 2), row('bento_plate', 0, 2), row('plate_swap', 0, 2), row('match_plate', 0, 1),
+    row('mystery_plate', 0, 2), row('rainbow_plate', 0, 2), row('bento_plate', 0, 2), row('match_plate', 0, 1),
     row('pick_of_week', 0, 2), row('taste_test', 0, 1), row('review_duo', 1, 3), row('twin_day', 0, 2), row('outfit_swap', 0, 2),
     row('cover_me', 0, 1), row('daily_duo', 1, 2), row('week_dinners', 2, 5),
   ],
@@ -171,10 +170,13 @@ const RPC = {
   duo_rainbow_pick: () => 'ok',
   duo_plate_ack: () => 'ok',
   duo_bento_pick: () => 'ok',
-  duo_swap_pick: () => 'ok',
   duo_nominate: () => 'ok',
   duo_twin_request: () => 'ok',
   duo_costumes: () => [],
+  duo_today_hints: () => [
+    { quest_id: 'mystery_plate', friend_name: 'Maya', detail: 'Baked Salmon' },
+    { quest_id: 'rainbow_plate', friend_name: 'Maya', detail: 'Green' },
+  ],
   duo_create_invite: () => [{ code: 'K7QM2XAF', expires_at: minutesAgo(-60 * 24) }],
   duo_redeem: () => [{ status: 'ok', friend_id: 'f9', display_name: 'Jo' }],
 };

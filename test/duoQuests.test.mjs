@@ -140,18 +140,17 @@ const action = (id, r, state = 'open') => {
 
 test('what each card offers', () => {
   // nothing begun: start
-  for (const id of ['mystery_plate', 'rainbow_plate', 'bento_plate', 'plate_swap', 'pick_of_week', 'cover_me', 'twin_day', 'outfit_swap']) {
+  for (const id of ['mystery_plate', 'rainbow_plate', 'bento_plate', 'pick_of_week', 'cover_me', 'twin_day', 'outfit_swap']) {
     assert.equal(action(id, row(id, 0, 2)), 'start', id);
   }
   assert.equal(action('taste_test', row('taste_test', 0, 1)), null);                   // nothing to do but rate and eat
-  assert.equal(action('mystery_plate', row('mystery_plate', 1, 2, { detail: 'Salmon' })), null);
+  // mystery plate: each picks for the other
+  assert.equal(action('mystery_plate', row('mystery_plate', 0, 2, { detail: 'Salmon' })), 'pick');                        // your buddy went first
+  assert.equal(action('mystery_plate', row('mystery_plate', 0, 2, { mine_detail: 'Tofu' })), null);                      // waiting
+  assert.equal(action('mystery_plate', row('mystery_plate', 1, 2, { detail: 'Salmon', mine_detail: 'Tofu' })), null);   // eat yours
   assert.equal(action('rainbow_plate', row('rainbow_plate', 0, 2, { detail: 'Green' })), 'tap');
   assert.equal(action('rainbow_plate', row('rainbow_plate', 1, 2, { detail: 'Green', acked: true })), null);
   assert.equal(action('bento_plate', row('bento_plate', 0, 2, { detail: 'Bento plate' })), 'tap');
-  // plate swap: start, then pick when the buddy went first, then wait or eat
-  assert.equal(action('plate_swap', row('plate_swap', 0, 2, { detail: 'Salmon' })), 'pick');
-  assert.equal(action('plate_swap', row('plate_swap', 0, 2, { mine_detail: 'Tofu' })), null);
-  assert.equal(action('plate_swap', row('plate_swap', 0, 2, { detail: 'Salmon', mine_detail: 'Tofu' })), null);
   // pick of the week: nominate before you rate
   assert.equal(action('pick_of_week', row('pick_of_week', 0, 2, { detail: 'Salmon' })), 'nominate');
   assert.equal(action('pick_of_week', row('pick_of_week', 0, 2, { detail: 'Salmon', mine_detail: 'Tofu' })), 'rate');
@@ -184,14 +183,14 @@ test('the buddy with something for you to do is the one shown', () => {
 
 test('card wording for each quest', () => {
   const entry = (id, o = {}) => ({ quest: DUO_QUESTS.find((q) => q.id === id), friendName: 'Maya', progress: 0, target: 2, state: 'open', label: 'This week', detail: null, mineDetail: null, acked: false, requestedByMe: false, ...o });
-  assert.equal(questText(entry('mystery_plate', { detail: 'Baked Salmon', progress: 1 })).what, 'Baked Salmon, with Maya. Eat it today or tomorrow.');
-  assert.equal(questText(entry('mystery_plate')).meta, 'Pick a buddy and a dish');
+  assert.equal(questText(entry('mystery_plate', { detail: 'Salmon', mineDetail: 'Tofu' })).what, 'You eat Salmon. Maya eats Tofu. Today or tomorrow.');
+  assert.equal(questText(entry('mystery_plate', { detail: 'Salmon' })).what, 'Maya picked a mystery dish for you: Salmon. Pick one for Maya.');
+  assert.equal(questText(entry('mystery_plate', { detail: 'Salmon' })).meta, 'Your turn to pick');
+  assert.equal(questText(entry('mystery_plate', { mineDetail: 'Tofu' })).meta, 'Waiting for your buddy');
+  assert.equal(questText(entry('mystery_plate')).meta, 'Pick a buddy and a mystery dish for them');
   assert.match(questText(entry('rainbow_plate', { detail: 'Green' })).what, /something green today or tomorrow, then tap I did it/);
   assert.equal(questText(entry('rainbow_plate', { detail: 'Green', progress: 1, acked: true })).meta, '1 of 2 have done it, waiting for Maya');
   assert.match(questText(entry('bento_plate', { detail: 'Bento plate' })).what, /protein, a vegetable and a grain/);
-  assert.equal(questText(entry('plate_swap', { detail: 'Salmon', mineDetail: 'Tofu' })).what, 'You eat Salmon. Maya eats Tofu. Today or tomorrow.');
-  assert.equal(questText(entry('plate_swap', { detail: 'Salmon' })).meta, 'Your turn to pick');
-  assert.equal(questText(entry('plate_swap', { mineDetail: 'Tofu' })).meta, 'Waiting for your buddy');
   assert.equal(questText(entry('pick_of_week', { detail: 'Salmon', mineDetail: 'Tofu' })).what, 'Your pick: Tofu. Maya\'s pick: Salmon. Rate it to count.');
   assert.match(questText(entry('cover_me', { requestedByMe: true, target: 1 })).what, /You nudged Maya/);
   assert.equal(questText(entry('twin_day', { detail: 'Twin day' })).meta, 'Asked of you');

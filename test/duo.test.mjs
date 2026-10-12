@@ -148,3 +148,16 @@ test('the widget route returns only what the widget draws, with ISO times', asyn
   assert.deepEqual(Object.keys(out[0]).sort(), ['at', 'color', 'hall', 'meal', 'name', 'outfit', 'until']);
   assert.deepEqual(buddyJson(null), []);
 });
+
+import { questSays } from '../src/utils/bentoSays.js';
+test('Bento says the quest lines first: the mystery dish, and the Rainbow plate color', () => {
+  assert.equal(questSays([]), null);
+  assert.equal(questSays(null), null);
+  const both = [{ quest_id: 'rainbow_plate', friend_name: 'Maya', detail: 'Green' }, { quest_id: 'mystery_plate', friend_name: 'Sam', detail: 'Baked Salmon' }];
+  assert.equal(questSays(both).text, 'Sam picked Baked Salmon for your mystery plate. Work it into a meal today. Rainbow plate with Maya: eat something green today.');   // both show, the dish first
+  assert.equal(questSays([both[0]]).text, 'Rainbow plate with Maya: eat something green today.');
+  assert.equal(questSays([{ quest_id: 'mystery_plate', friend_name: '  ', detail: 'Rice' }]).text, 'A buddy picked Rice for your mystery plate. Work it into a meal today.');
+  assert.equal(questSays([{ quest_id: 'mystery_plate', friend_name: 'Maya', detail: '' }]), null);                   // nothing to say without a dish
+  assert.ok(questSays([{ quest_id: 'mystery_plate', friend_name: 'M', detail: 'x'.repeat(200) }]).text.length < 120);  // kept short
+  assert.equal(questSays([{ quest_id: 'rainbow_plate', friend_name: 'Maya', detail: 'Green' }, { quest_id: 'rainbow_plate', friend_name: 'Sam', detail: 'Red' }]).text, 'Rainbow plate with Maya: eat something green today.');   // one line each
+});

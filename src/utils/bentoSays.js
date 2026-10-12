@@ -24,6 +24,20 @@ const pick = (list, seed) => list[Math.abs(seed) % list.length];
 // A number from a date string, so the line changes daily but not on every render.
 const seedOf = (iso) => [...iso].reduce((n, c) => n + c.charCodeAt(0), 0);
 
+/* The quest lines, when any are waiting: a mystery dish picked for you, and a Rainbow plate color. Both show if both are waiting.
+ * Returns null when there is nothing to say, so the usual line shows. Names and dishes are the ones the pair chose, so they are
+ * cleaned and kept short. */
+const tidy = (s, n = 40) => String(s ?? '').replace(/\s+/g, ' ').trim().slice(0, n);
+export function questSays(hints) {
+  const list = Array.isArray(hints) ? hints : [];
+  const lines = [];
+  const mystery = list.find((h) => h.quest_id === 'mystery_plate' && tidy(h.detail));
+  if (mystery) lines.push(`${tidy(mystery.friend_name, 20) || 'A buddy'} picked ${tidy(mystery.detail)} for your mystery plate. Work it into a meal today.`);
+  const rainbow = list.find((h) => h.quest_id === 'rainbow_plate' && tidy(h.detail));
+  if (rainbow) lines.push(`Rainbow plate with ${tidy(rainbow.friend_name, 20) || 'a buddy'}: eat something ${tidy(rainbow.detail, 12).toLowerCase()} today.`);
+  return lines.length ? { mood: 'cheer', text: lines.join(' ') } : null;
+}
+
 export function bentoSays({ hour, today, confirmed, streak }) {
   const done = ['breakfast', 'lunch', 'dinner'].filter((m) => confirmed?.[m]).length;
   const current = streak?.currentStreak ?? 0;

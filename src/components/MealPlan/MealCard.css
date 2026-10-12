@@ -779,3 +779,22 @@
   font-weight: 600;
   color: var(--text-secondary, #64748b);
 }
+
+/* The two switches about which meals Bento plans */
+.meal-header-extra { margin-top: 0.4rem; }
+.meal-chip {
+  font-family: inherit; font-size: 0.74rem; font-weight: 700; cursor: pointer;
+  padding: 0.25rem 0.65rem; border-radius: 999px;
+  background: var(--surface-sunk); color: var(--text-secondary); border: 1px solid var(--border);
+}
+.meal-chip:hover { color: var(--text-primary); border-color: var(--accent-text); }
+.meal-switch { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); cursor: pointer; }
+.meal-switch input { appearance: none; -webkit-appearance: none; width: 2rem; height: 1.15rem; border-radius: 999px; background: var(--border); position: relative; cursor: pointer; margin: 0; transition: background 0.15s ease; }
+.meal-switch input::after { content: ''; position: absolute; top: 0.15rem; left: 0.15rem; width: 0.85rem; height: 0.85rem; border-radius: 50%; background: #fff; transition: transform 0.15s ease; }
+.meal-switch input:checked { background: var(--accent-text); }
+.meal-switch input:checked::after { transform: translateX(0.85rem); }
+.meal-card.meal-out { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; padding: 1rem 1.1rem; background: var(--surface-sunk); border-style: dashed; }
+.meal-card.meal-out h3 { margin: 0; font-size: 1.05rem; }
+.meal-out-sub { display: block; margin-top: 0.15rem; font-size: 0.8rem; color: var(--text-secondary); }
+.meal-off-note { margin: 0 0 0.7rem; font-size: 0.82rem; color: var(--text-secondary); }
+.meal-off-note button { font: inherit; font-weight: 700; background: none; border: none; padding: 0; cursor: pointer; color: var(--accent-text); }

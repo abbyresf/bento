@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 
 // Local date (YYYY-MM-DD) — avoids UTC date rollover after 8pm Eastern
 const localDateStr = (d = new Date()) =>
@@ -42,7 +42,10 @@ import Closet from '../Mascot/Closet';
 import { useOutfit, useDisplayOutfit } from '../../lib/mascotOutfit';
 import { useMascotColor } from '../../lib/mascotColor';
 import '../Mascot/Mascot.css';
-import { bentoSays } from '../../utils/bentoSays';
+import { bentoSays, questSays } from '../../utils/bentoSays';
+import { loadHints, useQuestHints } from '../../lib/duoHints';
+import { mealShares, dayTargetsFor, replanMeals, activeMeals } from '../../utils/dayPlan';
+import { useSkipBreakfast, useDinnerOut, setSkipBreakfast, setDinnerOut, getSkipBreakfast, isDinnerOut } from '../../lib/mealPrefs';
 import StreakCelebration from '../Streak/StreakCelebration';
 import BadgeCelebration from '../Badges/BadgeCelebration';
 import RatingSheet from './RatingSheet';
@@ -85,6 +88,8 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const [pendingMeals, setPendingMeals] = useState(() => pendingMealsFor(localDateStr()));
   const outfit = useOutfit();
   const displayOutfit = useDisplayOutfit();   // today's Twin day costume, if any
+  const questHints = useQuestHints();
+  const skipBreakfast = useSkipBreakfast();        // a standing choice: no breakfast at the dining hall
   const mascotColor = useMascotColor();
   const [showCloset, setShowCloset] = useState(false);
   const [pendingBadge, setPendingBadge] = useState(null);
@@ -106,6 +111,21 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const [pausedSchool, setPausedSchool] = useState(null);   // a school Bento is not live at yet
   const universityRef = useRef('brandeis');
   const [viewDate, setViewDate] = useState(() => localDateStr());
+  // Which meals Bento plans for the day being viewed: breakfast is off for a student who skips it, and dinner is off on a day
+  // they are eating out. The day's targets are shared across the meals that are left.
+  const dinnerOut = useDinnerOut(viewDate);
+  const shares = useMemo(() => mealShares({ skipBreakfast, dinnerOut }), [skipBreakfast, dinnerOut]);
+  const planInputs = useRef(null);                  // what the last plan was built from, so the meals to come can be planned again
+  const replanApplied = useRef({ sig: null });
+  const freshPlans = useRef(new WeakSet());          // plans just built from the menu, as opposed to ones the student has tweaked
+  // Builds a day's plan, with the meals this student eats, and remembers the inputs for planning around a decided meal.
+  const planDay = useCallback((menuData, targets, fetchedRestrictions, recentItems, date) => {
+    planInputs.current = { menu: menuData, targets, restrictions: fetchedRestrictions, recent: recentItems };
+    const plan = optimizeDay(menuData, targets, fetchedRestrictions, recentItems,
+      mealShares({ skipBreakfast: getSkipBreakfast(), dinnerOut: isDinnerOut(date) }), ratingsByIdRef.current);
+    freshPlans.current.add(plan);
+    return plan;
+  }, []);
   const [dateLoading, setDateLoading] = useState(false);
   // The date whose menu failed to load, or null. Held as a date rather than a
   // boolean so a stale failure cannot leak onto a day that loaded fine.
@@ -207,13 +227,13 @@ export default function MealPlan({ settingsVersion = 0 }) {
       // allergen list is not an empty one.
       setPlanBlocked(!!fetchedRestrictions.__unknown);
       if (targets && !fetchedRestrictions.__unknown) {
-        const optimized = optimizeDay(menuData, targets, fetchedRestrictions, recentItems, undefined, ratingsByIdRef.current);
+        const optimized = planDay(menuData, targets, fetchedRestrictions, recentItems, localDateStr());
         setMealPlan(optimized);
       }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [planDay]);
 
   useEffect(() => {
     loadMenuAndOptimize();
@@ -258,6 +278,44 @@ export default function MealPlan({ settingsVersion = 0 }) {
     return () => { cancelled = true; document.removeEventListener('visibilitychange', onVisible); };
   }, [viewDate]);
 
+  // The quest lines at the top of Today: ask on opening, on returning to the app, every couple of minutes while it is open,
+  // and when a meal is confirmed, because that may have been the mystery dish.
+  useEffect(() => {
+    loadHints();
+    const onVisible = () => { if (document.visibilityState === 'visible') loadHints(); };
+    document.addEventListener('visibilitychange', onVisible);
+    const t = setInterval(loadHints, 120000);
+    return () => { document.removeEventListener('visibilitychange', onVisible); clearInterval(t); };
+  }, []);
+  useEffect(() => { loadHints(); }, [confirmedMeals]);
+
+  // Plan the meals still to come around the ones already decided. A plate built by hand, or a meal confirmed, takes its share of
+  // the day, and the others are planned for what is left: a big hand-built lunch gives a lighter dinner, a small one a bigger
+  // dinner. Meals that are decided are left exactly as they are. It only runs for today and days ahead, and only when something
+  // it depends on has changed, so it never loops on its own result.
+  useEffect(() => {
+    const inputs = planInputs.current;
+    if (!mealPlan || !inputs || !menu || inputs.restrictions?.__unknown) return;
+    if (viewDate < localDateStr()) return;
+    const fixed = {};
+    for (const m of activeMeals(shares)) {
+      const loc = selectedLocation[m];
+      if (customMeals[m]) fixed[m] = customMeals[m].totals;
+      else if (confirmedMeals[m] && mealPlan[loc]?.[m]) fixed[m] = mealPlan[loc][m].totals;
+    }
+    const r = (t) => ['calories', 'protein', 'carbs', 'fat'].map((f) => Math.round(t?.[f] ?? 0));
+    const sig = JSON.stringify([viewDate, shares, Object.fromEntries(Object.entries(fixed).map(([m, t]) => [m, r(t)]))]);
+    // A plan the student has only tweaked (a serving, say) keeps their change: only a new plan or a changed decision replans.
+    if (!freshPlans.current.has(mealPlan) && replanApplied.current.sig === sig) return;
+    const next = replanMeals({
+      menu: inputs.menu, daily: inputs.targets, shares, fixed, restrictions: inputs.restrictions,
+      recentIds: inputs.recent, ratingsById: ratingsByIdRef.current, prevPlan: mealPlan,
+    });
+    replanApplied.current = { sig };
+    setMealPlan(next);
+    setRecommendations({ breakfast: null, lunch: null, dinner: null });
+  }, [mealPlan, menu, viewDate, shares, customMeals, confirmedMeals, selectedLocation]);
+
   // Keep the home-screen widget showing today's plate. Only today: the widget
   // has no use for another day, and a student browsing tomorrow must not
   // overwrite it. A streak only counts as running if a meal was confirmed today
@@ -268,14 +326,14 @@ export default function MealPlan({ settingsVersion = 0 }) {
     const yesterday = localDateStr(new Date(Date.now() - 86400000));
     const running = streak.lastConfirmedDate === today || streak.lastConfirmedDate === yesterday;
     const meals = {};
-    for (const m of ['breakfast', 'lunch', 'dinner']) {
+    for (const m of activeMeals(shares)) {                 // a meal Bento is not planning is left off the widget
       const loc = selectedLocation[m];
       const items = customMeals[m]?.items ?? mealPlan[loc]?.[m]?.items ?? [];
       meals[m] = { hall: menu.locations?.[loc]?.shortName ?? null, items, confirmed: !!confirmedMeals[m] };
     }
     syncWidget(buildPlatePayload({ date: today, streak: running ? streak.currentStreak : 0, meals }));
     syncWidgetMascot(outfit, mascotColor);
-  }, [viewDate, mealPlan, menu, selectedLocation, customMeals, confirmedMeals, streak, outfit, mascotColor]);
+  }, [viewDate, mealPlan, menu, selectedLocation, customMeals, confirmedMeals, streak, outfit, mascotColor, shares]);
 
   useEffect(() => { viewDateRef.current = viewDate; });
   useEffect(() => { confirmedIdsRef.current = confirmedMealIds; });
@@ -380,7 +438,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
         if (fetchedRestrictions.__unknown) {
           setDateError({ date: capturedDate, kind: 'fetch' });
         } else if (targets) {
-          const optimized = optimizeDay(menuData, targets, fetchedRestrictions, recentItems, undefined, ratingsByIdRef.current);
+          const optimized = planDay(menuData, targets, fetchedRestrictions, recentItems, capturedDate);
           setMealPlan(optimized);
         } else {
           // Menu loaded, but there is nothing to build a plate against. Second
@@ -480,7 +538,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
       });
       if (targets && !fetchedRestrictions.__unknown) {
         if (cancelled) return;
-        const optimized = optimizeDay(menu, targets, fetchedRestrictions, recentItems, undefined, ratingsByIdRef.current);
+        const optimized = planDay(menu, targets, fetchedRestrictions, recentItems, viewDateRef.current);
         setMealPlan(optimized);
         setItemAlternatives({});
         setRecommendations({ breakfast: null, lunch: null, dinner: null });
@@ -837,7 +895,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
     if (!mealPlan) return { calories: 0, protein: 0, carbs: 0, fat: 0 };
 
     let totals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
-    ['breakfast', 'lunch', 'dinner'].forEach((meal) => {
+    activeMeals(shares).forEach((meal) => {
       const custom = customMeals[meal];
       if (custom) {
         totals.calories += custom.totals.calories;
@@ -954,7 +1012,8 @@ export default function MealPlan({ settingsVersion = 0 }) {
       )}
 
       {isViewingToday && !dateLoading && mealPlan && (() => {
-        const say = bentoSays({
+        // A quest waiting for you (a mystery dish, a Rainbow plate color) is what Bento says, ahead of the usual line.
+        const say = questSays(questHints) ?? bentoSays({
           hour: new Date().getHours(),
           today: localDateStr(),
           confirmed: confirmedMeals,
@@ -982,12 +1041,27 @@ export default function MealPlan({ settingsVersion = 0 }) {
       })()}
 
       {!dateLoading && mealPlan && targets && (
-        <DailySummary totals={dayTotals} targets={targets} />
+        <DailySummary totals={dayTotals} targets={dayTargetsFor(targets, shares)} />
       )}
 
       {!dateLoading && mealPlan && (
       <div className="meals-timeline">
-        {['breakfast', 'lunch', 'dinner'].map((meal) => (
+        {skipBreakfast && (
+          <p className="meal-off-note">
+            Breakfast is off, so Bento plans two larger meals.{' '}
+            <button type="button" onClick={() => setSkipBreakfast(false)}>Turn it back on</button>
+          </p>
+        )}
+        {['breakfast', 'lunch', 'dinner'].filter((meal) => meal !== 'breakfast' || !skipBreakfast).map((meal) => (
+          meal === 'dinner' && dinnerOut ? (
+            <div key="dinner-out" className="meal-card meal-out">
+              <div>
+                <h3>Dinner</h3>
+                <span className="meal-out-sub">Eating out. Bento leaves it off today's plan.</span>
+              </div>
+              <button type="button" className="meal-chip" onClick={() => setDinnerOut(viewDate, false)}>Back to the dining hall</button>
+            </div>
+          ) : (
           <MealCard
             key={meal}
             meal={meal}
@@ -1029,7 +1103,16 @@ export default function MealPlan({ settingsVersion = 0 }) {
             isConfirming={confirmingMeals[meal]}
             onConfirm={() => handleConfirmMeal(meal)}
             onUndo={() => handleUndo(meal)}
+            headerExtra={meal === 'breakfast' ? (
+              <button type="button" className="meal-chip" onClick={() => setSkipBreakfast(true)}>I skip breakfast</button>
+            ) : meal === 'dinner' ? (
+              <label className="meal-switch">
+                <input type="checkbox" role="switch" checked={false} onChange={() => setDinnerOut(viewDate, true)} />
+                <span>Eating out</span>
+              </label>
+            ) : null}
           />
+          )
         ))}
 
         <button className="fb-trigger" onClick={() => setShowFeedback(true)}>

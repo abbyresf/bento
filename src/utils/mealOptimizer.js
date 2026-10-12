@@ -657,6 +657,7 @@ export function findRecommendedAdditions(availableItems, mealTarget, currentTota
 
 // Optimize full day across all meals — works with any set of location IDs.
 export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds, mealDistribution = MEAL_DISTRIBUTION, ratingsById = new Map()) {
+  // A meal with no share (breakfast skipped, dinner eaten out) is not planned at all.
   const mealTargets  = calculateMealTargets(nutritionTargets, mealDistribution);
   const locationIds  = Object.keys(menu.locations ?? {});
 
@@ -680,7 +681,7 @@ export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds,
 
     for (const meal of ['breakfast', 'lunch', 'dinner']) {
       const locMeals = menu.locations[locId]?.meals;
-      if (!locMeals?.[meal]) continue;
+      if (!locMeals?.[meal] || !(mealDistribution[meal] > 0)) continue;
 
       const locResult = optimizeMeal(
         locMeals[meal],

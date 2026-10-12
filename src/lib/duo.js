@@ -236,8 +236,6 @@ async function startQuest(fn, args) {
   return data === 'ok' ? { ok: true } : { ok: false, status: data };
 }
 export const pickBentoPlate = (friendId) => startQuest('duo_bento_pick', { p_friend: friendId });
-export const pickSwapDish = (friendId, item, hall) =>
-  startQuest('duo_swap_pick', { p_friend: friendId, p_item_id: item.id, p_item_name: item.name, p_hall: hall ?? null });
 export const nominatePick = (friendId, item) =>
   startQuest('duo_nominate', { p_friend: friendId, p_item_id: item.id, p_item_name: item.name });
 export const requestTwin = (friendId, mode) => startQuest('duo_twin_request', { p_friend: friendId, p_mode: mode });

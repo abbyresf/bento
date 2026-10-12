@@ -6,6 +6,7 @@ import { claimWeeks, groupQuests, questText } from '../../data/duoQuests';
 import { isBentoPlate } from '../../data/plateRoles';
 import { fetchConfirmedMeals } from '../../lib/db';
 import { loadCostume } from '../../lib/mascotOutfit';
+import { loadHints } from '../../lib/duoHints';
 import { useRatings } from '../../context/RatingsContext';
 import Mascot from '../Mascot/Mascot';
 import { hereNow, presenceLine, minutesLeft, clockSpoken, durationLabel } from '../../data/duo';
@@ -111,10 +112,10 @@ export default function FriendsTab() {
   };
 
   const reloadQuests = () => Promise.all(ids.split(',').map(loadFor))
-    .then((rows) => setQuests(Object.fromEntries(rows.map(([id, , q]) => [id, q]))));
+    .then((rows) => { setQuests(Object.fromEntries(rows.map(([id, , q]) => [id, q]))); loadHints(); });
   // Which sheet a quest opens, and which of them can start with the buddy already chosen.
   const SHEET_FOR = {
-    mystery_plate: 'plate', rainbow_plate: 'rainbow', bento_plate: 'bento', plate_swap: 'swap',
+    mystery_plate: 'plate', rainbow_plate: 'rainbow', bento_plate: 'bento',
     pick_of_week: 'nominate', cover_me: 'cover', twin_day: 'twin', outfit_swap: 'outfit',
   };
   const openQuest = (g) => {
@@ -351,10 +352,7 @@ export default function FriendsTab() {
       )}
       {sheet === 'invite' && <InviteSheet onClose={() => setSheet(null)} />}
       {questSheet?.kind === 'plate' && (
-        <MysteryPlateSheet friends={friends} university={me?.university ?? 'brandeis'} onClose={() => setQuestSheet(null)} onPicked={reloadQuests} />
-      )}
-      {questSheet?.kind === 'swap' && (
-        <MysteryPlateSheet mode="swap" friend0={questSheet.friend0} friends={friends} university={me?.university ?? 'brandeis'}
+        <MysteryPlateSheet friend0={questSheet.friend0} friends={friends} university={me?.university ?? 'brandeis'}
                            onClose={() => setQuestSheet(null)} onPicked={reloadQuests} />
       )}
       {questSheet?.kind === 'rainbow' && <RainbowPlateSheet friends={friends} onClose={() => setQuestSheet(null)} onPicked={reloadQuests} />}

@@ -110,6 +110,7 @@ export default function MealCard({
   onUndo,
   isKosherUser,
   restrictions,
+  headerExtra,
 }) {
   const display = useNutritionDisplay();
   const [collapsed, setCollapsed] = useState(isPast);
@@ -226,6 +227,9 @@ export default function MealCard({
                 <button className="undo-btn" onClick={e => { e.stopPropagation(); setCollapsed(false); onUndo(); }}>Undo</button>
               )}
             </div>
+          )}
+          {headerExtra && !isConfirmed && (
+            <div className="meal-header-extra" onClick={(e) => e.stopPropagation()}>{headerExtra}</div>
           )}
         </div>
         <div className="meal-header-right">

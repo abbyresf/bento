@@ -1,7 +1,7 @@
 /* Buddy quests: two starter goals you reach together with one buddy.
  *
  * Progress is worked out in the database from both students' confirmed meals
- * (duo_quests, migrations 045, 048, 049, 050, 051 and 052). Nothing here counts calories, amounts or what anyone
+ * (duo_quests, migrations 045, 048, 049, 050, 051, 052 and 053). Nothing here counts calories, amounts or what anyone
  * ate. The targets below must match duo_quest_target in the latest migration that defines it (052),
  * and a test reads that migration to hold them together.
  *
@@ -13,9 +13,8 @@ import { weekStartOf } from './quests.js';
 
 export const DUO_QUESTS = [
   { id: 'rainbow_plate', title: 'Rainbow plate', what: 'Pick a color together, then both eat something that color', target: 2, unit: 'have done it', emoji: '🌈', fun: true, needsPick: true },
-  { id: 'mystery_plate', title: 'Mystery plate', what: 'Pick a dish you both can eat, then both eat it', target: 2, unit: 'have eaten', emoji: '🎁', fun: true, needsPick: true },
+  { id: 'mystery_plate', title: 'Mystery plate', what: 'Each pick a mystery dish for the other, then eat the one you get', target: 2, unit: 'have eaten', emoji: '🎁', fun: true, needsPick: true },
   { id: 'bento_plate',   title: 'Bento plate',   what: 'Both eat a plate with a protein, a vegetable and a grain', target: 2, unit: 'have done it', emoji: '🥗', fun: true, needsPick: true },
-  { id: 'plate_swap',    title: 'Plate swap',    what: 'Each pick a dish for the other, then both eat yours', target: 2, unit: 'have eaten', emoji: '🔄', fun: true, needsPick: true },
   { id: 'match_plate',   title: 'Match the plate', what: 'Eat the same meal with two dishes in common', target: 1, unit: 'meal', emoji: '🍱', fun: true },
   { id: 'pick_of_week',  title: 'Pick of the week', what: 'Each name a favorite, then rate each other\'s pick', target: 2, unit: 'have rated', emoji: '🏆', fun: true, needsPick: true },
   { id: 'taste_test',    title: 'Taste test',    what: 'Both rate the same dish', target: 1, unit: 'dish', emoji: '🍜', fun: true },
@@ -74,7 +73,7 @@ export function visibleQuests(byWeek, weeks) {
  * each group, and it is the same for everybody, so every quest comes round in turn. The three groups: a plate
  * quest, a rating or favorites quest, and an everyday quest (habits, nudges and outfits). */
 const SLOTS = [
-  ['mystery_plate', 'rainbow_plate', 'match_plate', 'bento_plate', 'plate_swap'],
+  ['mystery_plate', 'rainbow_plate', 'match_plate', 'bento_plate'],
   ['pick_of_week', 'taste_test', 'review_duo'],
   ['daily_duo', 'cover_me', 'twin_day', 'week_dinners', 'outfit_swap'],
 ];
@@ -87,7 +86,7 @@ export function weeklyQuestIds(weekStart) {
 /* What the card for this quest should offer, given the buddy's row. One of:
  *   'claim'    finished, tap Claim
  *   'start'    nothing begun with any buddy: open the sheet to pick a buddy
- *   'pick'     your buddy picked a dish for you (Plate swap) and you have not picked one for them
+ *   'pick'     your buddy picked a mystery dish for you and you have not picked one for them
  *   'nominate' your buddy nominated a favorite (Pick of the week) and you have not
  *   'tap'      tap "I did it" (Rainbow plate, Bento plate)
  *   'rate'     rate your buddy's nominated dish (Pick of the week)
@@ -98,10 +97,9 @@ export function questAction(quest, row) {
   if (state === 'claimed') return null;
   if (state === 'ready') return 'claim';
   switch (quest.id) {
-    case 'mystery_plate': return detail ? null : 'start';
+    case 'mystery_plate': return !detail && !mineDetail ? 'start' : detail && !mineDetail ? 'pick' : null;
     case 'rainbow_plate':
     case 'bento_plate': return !detail ? 'start' : acked ? null : 'tap';
-    case 'plate_swap': return !detail && !mineDetail ? 'start' : detail && !mineDetail ? 'pick' : null;
     case 'pick_of_week':
       if (!detail && !mineDetail) return 'start';
       if (!mineDetail) return 'nominate';
@@ -122,8 +120,10 @@ export function questText(g) {
   let meta = progressLine(q, g.progress, g.target);
   switch (q.id) {
     case 'mystery_plate':
-      if (g.detail) { what = `${g.detail}, with ${who}. Eat it today or tomorrow.`; }
-      else meta = 'Pick a buddy and a dish';
+      if (g.detail && g.mineDetail) what = `You eat ${g.detail}. ${who} eats ${g.mineDetail}. Today or tomorrow.`;
+      else if (g.detail) { what = `${who} picked a mystery dish for you: ${g.detail}. Pick one for ${who}.`; meta = 'Your turn to pick'; }
+      else if (g.mineDetail) { what = `You picked ${g.mineDetail} for ${who}. Waiting for ${who} to pick one for you.`; meta = 'Waiting for your buddy'; }
+      else meta = 'Pick a buddy and a mystery dish for them';
       break;
     case 'rainbow_plate':
       if (g.detail) {
@@ -136,12 +136,6 @@ export function questText(g) {
         what = `With ${who}. Each of you eat a plate with a protein, a vegetable and a grain today or tomorrow, then tap I did it.`;
         if (g.acked && g.state === 'open') meta += `, waiting for ${who}`;
       } else meta = 'Pick a buddy';
-      break;
-    case 'plate_swap':
-      if (g.detail && g.mineDetail) what = `You eat ${g.detail}. ${who} eats ${g.mineDetail}. Today or tomorrow.`;
-      else if (g.detail) { what = `${who} picked ${g.detail} for you. Pick a dish for ${who}.`; meta = 'Your turn to pick'; }
-      else if (g.mineDetail) { what = `You picked ${g.mineDetail} for ${who}. Waiting for ${who} to pick one for you.`; meta = 'Waiting for your buddy'; }
-      else meta = 'Pick a buddy and a dish for them';
       break;
     case 'pick_of_week':
       if (g.detail && g.mineDetail) what = `Your pick: ${g.mineDetail}. ${who}'s pick: ${g.detail}.${g.acked ? '' : ' Rate it to count.'}`;

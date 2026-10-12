@@ -10,7 +10,7 @@ const casesFile = process.env.CASES_FILE ?? new URL('../test/fixtures/restrictio
 const dir = process.env.MIGRATIONS_DIR
   ? process.env.MIGRATIONS_DIR
   : new URL('../supabase/migrations/', import.meta.url).pathname;
-const migrations = ['043_duo_foundation.sql', '044_duo_here_duration.sql', '045_duo_quests_and_colors.sql', '046_duo_widget.sql', '047_duo_daily_target.sql', '048_duo_rating_quests.sql', '049_duo_match_plate.sql', '050_duo_mystery_plate.sql', '051_duo_rainbow_plate.sql', '052_duo_more_quests.sql']
+const migrations = ['043_duo_foundation.sql', '044_duo_here_duration.sql', '045_duo_quests_and_colors.sql', '046_duo_widget.sql', '047_duo_daily_target.sql', '048_duo_rating_quests.sql', '049_duo_match_plate.sql', '050_duo_mystery_plate.sql', '051_duo_rainbow_plate.sql', '052_duo_more_quests.sql', '053_duo_mystery_swap_and_hints.sql']
   .map((f) => readFileSync(`${dir}/${f}`, 'utf8'));
 const db = new PGlite();
 
@@ -413,33 +413,51 @@ await test('the buddy dietary filter gives the same answers as the app, and neve
   await fails(viewer, 'select public.duo_compatible_items($1, $2::jsonb)', [buddy, '{}'], 'invalid_items');
 });
 
-await test('mystery plate: one open pick per pair, both must eat it, then it can be claimed', async () => {
-  const pa = await user('PA'); const pb = await user('PB'); const stranger = await user('PS');
+await test('mystery plate: each picks a mystery dish for the other, each receiver must eat theirs', async () => {
+  const pa = await user('MA2'); const pb = await user('MB2'); const stranger = await user('MS2');
   await makePair(pa, pb); await startFriendshipDaysAgo(pa, pb, 30);
   const row = async (as, other) => (await call(as, 'select * from public.duo_quests($1, $2)', [other, thisWeek])).find((r) => r.quest_id === 'mystery_plate');
-  const pick = async (as, other, id = 'dish1') => (await call(as, 'select public.duo_plate_pick($1, $2, $3, $4) r', [other, id, 'Baked Salmon', 'North Hall']))[0].r;
-  assert.equal((await row(pa, pb)).detail, null);                              // nothing picked yet
+  const pick = async (as, other, id) => (await call(as, 'select public.duo_plate_pick($1, $2, $3, $4) r', [other, id, 'Dish ' + id, 'North Hall']))[0].r;
+  const hints = async (as) => await call(as, 'select * from public.duo_today_hints()');
+  const claimOf = async (as, other, id) => (await call(as, 'select public.duo_claim($1, $2, $3) r', [other, id, thisWeek]))[0].r;
+  const meal = (u, id) => db.query(`insert into public.meal_history (user_id, meal_date, meal_type, items) values ($1, current_date, 'dinner', $2::jsonb)`, [u, JSON.stringify([{ id }])]);
   assert.equal((await row(pa, pb)).target, 2);
-  assert.equal(await pick(stranger, pa), 'not_friends');
-  assert.equal(await pick(pa, pb), 'ok');
-  assert.equal(await pick(pb, pa, 'dish2'), 'exists');                         // one open pick per pair
-  assert.equal((await row(pb, pa)).detail, 'Baked Salmon');                    // the buddy sees what was picked
-  assert.equal((await row(pa, pb)).progress, 0);
-  const meal = (u, items, daysAgo = 0) => db.query(`insert into public.meal_history (user_id, meal_date, meal_type, items) values ($1, (now() - ($2 || ' days')::interval)::date, 'dinner', $3::jsonb)`, [u, String(daysAgo), JSON.stringify(items.map((id) => ({ id })))]);
-  await meal(pa, ['dish1', 'rice']);
-  assert.equal((await row(pa, pb)).progress, 1);
-  assert.equal((await call(pa, 'select public.duo_claim($1, $2, $3) r', [pb, 'mystery_plate', thisWeek]))[0].r, 'not_met');
-  await meal(pb, ['other']);                                                   // a different dish does not count
-  assert.equal((await row(pa, pb)).progress, 1);
-  await meal(pb, ['dish1']);
+  assert.equal((await row(pa, pb)).detail, null);
+  assert.equal(await pick(stranger, pa, 'x'), 'not_friends');
+  assert.equal(await pick(pa, pb, 'forB'), 'ok');                              // a picks for b
+  assert.equal(await pick(pa, pb, 'again'), 'exists');                         // one pick each
+  let r = await row(pa, pb); assert.equal(r.mine_detail, 'Dish forB'); assert.equal(r.detail, null);
+  r = await row(pb, pa); assert.equal(r.detail, 'Dish forB'); assert.equal(r.detail_id, 'forB'); assert.equal(r.mine_detail, null);   // b sees the dish picked for them
+  assert.deepEqual((await hints(pb)).map((h) => [h.quest_id, h.detail]), [['mystery_plate', 'Dish forB']]);   // the home screen line, for b
+  assert.deepEqual(await hints(pa), []);                                       // not for the one who picked
+  assert.equal(await pick(pb, pa, 'forA'), 'ok');                              // b picks for a
+  assert.equal((await row(pa, pb)).detail, 'Dish forA');
+  await meal(pb, 'forB');
+  assert.equal((await row(pa, pb)).progress, 1);                               // b ate what a picked
+  assert.deepEqual(await hints(pb), []);                                       // eaten, so the line goes
+  assert.equal(await claimOf(pa, pb, 'mystery_plate'), 'not_met');
+  await meal(pa, 'forA');
   assert.equal((await row(pa, pb)).progress, 2);
-  assert.equal((await call(pa, 'select public.duo_claim($1, $2, $3) r', [pb, 'mystery_plate', thisWeek]))[0].r, 'ok');
-  assert.equal((await call(pa, 'select public.duo_claim($1, $2, $3) r', [pb, 'mystery_plate', thisWeek]))[0].r, 'already');
-  // once the pick expires a new one can be made
-  await db.query(`update public.duo_plate_picks set expires_at = now() - interval '1 hour' where user_a = least($1::uuid, $2::uuid) and user_b = greatest($1::uuid, $2::uuid)`, [pa, pb]);
-  assert.equal(await pick(pa, pb, 'dish3'), 'ok');
-  // the picks table is not readable directly
+  assert.equal(await claimOf(pa, pb, 'mystery_plate'), 'ok');
+  assert.equal(await claimOf(pa, pb, 'mystery_plate'), 'already');
+  await db.query(`update public.duo_plate_picks set expires_at = now() - interval '1 hour' where quest_id = 'mystery_plate' and picked_by = $1`, [pa]);
+  assert.equal(await pick(pa, pb, 'next'), 'ok');                              // once it expires a new one can be made
   await fails(pa, 'select * from public.duo_plate_picks', [], 'permission denied');
+});
+
+await test('today hints show a Rainbow plate color until you tap I did it', async () => {
+  const ha = await user('HA'); const hb = await user('HB');
+  await makePair(ha, hb); await startFriendshipDaysAgo(ha, hb, 30);
+  const hints = async (as) => await call(as, 'select * from public.duo_today_hints()');
+  assert.deepEqual(await hints(ha), []);
+  assert.equal((await call(ha, 'select public.duo_rainbow_pick($1, $2) r', [hb, 'green']))[0].r, 'ok');
+  assert.deepEqual((await hints(ha)).map((h) => [h.quest_id, h.friend_name, h.detail]), [['rainbow_plate', 'HB', 'Green']]);   // both of you see it
+  assert.deepEqual((await hints(hb)).map((h) => [h.quest_id, h.friend_name, h.detail]), [['rainbow_plate', 'HA', 'Green']]);
+  await db.query(`insert into public.meal_history (user_id, meal_date, meal_type, items) values ($1, current_date, 'lunch', '[]'::jsonb)`, [ha]);
+  assert.equal((await call(ha, 'select public.duo_plate_ack($1) r', [hb]))[0].r, 'ok');
+  assert.deepEqual(await hints(ha), []);                                        // a tapped, so a's line goes
+  assert.equal((await hints(hb)).length, 1);                                    // b has not
+  await fails(null, 'select * from public.duo_today_hints()', [], 'not_signed_in');
 });
 
 await test('rainbow plate: a color, honor system, a tap only after a confirmed meal, both taps then claim', async () => {

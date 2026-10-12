@@ -31,6 +31,8 @@ import { loadOutfit, loadCostume, resetOutfit } from './lib/mascotOutfit';
 import { loadMascotColor, resetMascotColor } from './lib/mascotColor';
 import { initJoinLinks, peekJoinCode, forgetJoinCode } from './lib/joinLink';
 import { resetFriends } from './lib/friendsStore';
+import { resetHints } from './lib/duoHints';
+import { loadMealPrefs, resetMealPrefs } from './lib/mealPrefs';
 import { revokeBuddyWidget } from './lib/widget';
 import JoinSheet from './components/Friends/JoinSheet';
 import FriendsTab from './components/Friends/FriendsTab';
@@ -226,7 +228,7 @@ function App() {
 
   // The piece Bento is wearing follows the student, so ask for it once signed in.
   useEffect(() => {
-    if (session) { loadOutfit(); loadMascotColor(); loadCostume(); }
+    if (session) { loadOutfit(); loadMascotColor(); loadCostume(); loadMealPrefs(); }
   }, [session]);
 
   // ── Computed values & handlers ────────────────────────────────────────────────
@@ -264,6 +266,8 @@ function App() {
     resetOutfit();
     resetMascotColor();
     resetFriends();
+    resetHints();
+    resetMealPrefs();
     setJoinCode(null);
     setHasCompletedOnboarding(null);
     setHasAcceptedTerms(null);

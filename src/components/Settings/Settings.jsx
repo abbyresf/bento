@@ -19,10 +19,12 @@ import { pushSupport, subscribeToPush, unsubscribeFromPush, getPushEnabled, deta
 const isNative = Capacitor.isNativePlatform();
 import ThemePreview from './ThemePreview';
 import FriendsSection from '../Friends/FriendsSection';
+import { useSkipBreakfast, setSkipBreakfast } from '../../lib/mealPrefs';
 import './Settings.css';
 
 export default function Settings({ onClose, onReset, onSave, onGoContact, onOpenFriends, tabMode = false }) {
   const display = useNutritionDisplay();
+  const skipBreakfast = useSkipBreakfast();
   const [pushOn, setPushOn] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushNote, setPushNote] = useState(null);
@@ -367,6 +369,20 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, onOpen
         </section>
 
         {/* Data Management Section */}
+        <section className="settings-section">
+          <h3>Meals</h3>
+          <p className="section-note">
+            Bento plans breakfast, lunch and dinner. If you never eat breakfast at the dining hall, turn it off and Bento plans
+            two larger meals instead. A day you eat dinner somewhere else, switch it off on that day's dinner card.
+          </p>
+          <div className="dietary-toggles">
+            <label className={`dietary-toggle ${skipBreakfast ? 'active' : ''}`}>
+              <input type="checkbox" checked={skipBreakfast} onChange={() => setSkipBreakfast(!skipBreakfast)} />
+              <span>I skip breakfast at the dining hall</span>
+            </label>
+          </div>
+        </section>
+
         <section className="settings-section">
           <h3>Meal Reminders</h3>
           <p className="section-note">
