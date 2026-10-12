@@ -5,11 +5,12 @@
 import { PGlite } from '@electric-sql/pglite';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
+const casesFile = process.env.CASES_FILE ?? new URL('../test/fixtures/restrictionCases.json', import.meta.url).pathname;
 
 const dir = process.env.MIGRATIONS_DIR
   ? process.env.MIGRATIONS_DIR
   : new URL('../supabase/migrations/', import.meta.url).pathname;
-const migrations = ['043_duo_foundation.sql', '044_duo_here_duration.sql', '045_duo_quests_and_colors.sql', '046_duo_widget.sql', '047_duo_daily_target.sql', '048_duo_rating_quests.sql', '049_duo_match_plate.sql']
+const migrations = ['043_duo_foundation.sql', '044_duo_here_duration.sql', '045_duo_quests_and_colors.sql', '046_duo_widget.sql', '047_duo_daily_target.sql', '048_duo_rating_quests.sql', '049_duo_match_plate.sql', '050_duo_mystery_plate.sql']
   .map((f) => readFileSync(`${dir}/${f}`, 'utf8'));
 const db = new PGlite();
 
@@ -23,6 +24,7 @@ await db.exec(`
   create table public.profiles (id uuid primary key references auth.users(id) on delete cascade, university text, mascot_outfit text);
   create table public.meal_history (id uuid primary key default gen_random_uuid(),
     user_id uuid references auth.users(id) on delete cascade, meal_date date, meal_type text, items jsonb not null default '[]');
+  create table public.dietary_restrictions (user_id uuid primary key references auth.users(id) on delete cascade, vegetarian boolean default false, vegan boolean default false, gluten_free boolean default false, kosher boolean default false, allergies jsonb default '[]');
   create table public.item_ratings (user_id uuid references auth.users(id) on delete cascade, item_id text, item_name text, rating smallint, updated_at timestamptz default now(), primary key (user_id, item_id));
   create table public.dining_availability (date date primary key, any_open boolean);
   grant select, insert, update, delete on all tables in schema public to authenticated;
@@ -378,6 +380,66 @@ await test('match the plate: same meal, at least two dishes in common, counted a
   await db.query(`update public.meal_history set items = '[{"id":"rice"},{"id":"broccoli"}]'::jsonb where user_id = $1 and meal_type = 'lunch'`, [mb]);
   assert.equal((await row()).progress, 1);                                // rice and broccoli, same lunch
   assert.equal((await row()).target, 1);
+});
+
+await test('the buddy dietary filter gives the same answers as the app, and never returns settings', async () => {
+  const viewer = await user('FV'); const buddy = await user('FB');
+  await makePair(viewer, buddy); await startFriendshipDaysAgo(viewer, buddy, 30);
+  const cases = JSON.parse(readFileSync(casesFile, 'utf8'));
+  for (const c of cases) {
+    const r = { vegetarian: false, vegan: false, gluten_free: false, kosher: false, allergies: [], ...c.row };
+    await db.query('delete from public.dietary_restrictions where user_id = $1', [buddy]);
+    await db.query('insert into public.dietary_restrictions (user_id, vegetarian, vegan, gluten_free, kosher, allergies) values ($1,$2,$3,$4,$5,$6::jsonb)',
+      [buddy, r.vegetarian, r.vegan, r.gluten_free, r.kosher, JSON.stringify(r.allergies)]);
+    const out = (await call(viewer, 'select public.duo_compatible_items($1, $2::jsonb) ids', [buddy, JSON.stringify([c.item])]))[0].ids;
+    assert.equal(out.includes(c.item.id), c.pass, c.name);
+  }
+  // fail closed: no allergen list for a buddy with an allergy, no tags for a buddy who is vegetarian
+  await db.query('delete from public.dietary_restrictions where user_id = $1', [buddy]);
+  await db.query(`insert into public.dietary_restrictions (user_id, allergies) values ($1, '["__allergen:milk"]'::jsonb)`, [buddy]);
+  const noList = (await call(viewer, 'select public.duo_compatible_items($1, $2::jsonb) ids', [buddy, JSON.stringify([{ id: 'n', tags: [] }])]))[0].ids;
+  assert.deepEqual(noList, []);
+  await db.query('delete from public.dietary_restrictions where user_id = $1', [buddy]);
+  await db.query('insert into public.dietary_restrictions (user_id, vegetarian) values ($1, true)', [buddy]);
+  const noTags = (await call(viewer, 'select public.duo_compatible_items($1, $2::jsonb) ids', [buddy, JSON.stringify([{ id: 'n', allergens: [] }])]))[0].ids;
+  assert.deepEqual(noTags, []);
+  // no saved row means no restrictions
+  await db.query('delete from public.dietary_restrictions where user_id = $1', [buddy]);
+  const none = (await call(viewer, 'select public.duo_compatible_items($1, $2::jsonb) ids', [buddy, JSON.stringify([{ id: 'n' }])]))[0].ids;
+  assert.deepEqual(none, ['n']);
+  // strangers and signed-out callers get nothing
+  await fails(rae, 'select public.duo_compatible_items($1, $2::jsonb)', [buddy, '[]'], 'not_friends');
+  await fails(null, 'select public.duo_compatible_items($1, $2::jsonb)', [buddy, '[]'], 'not_signed_in');
+  await fails(viewer, 'select public.duo_compatible_items($1, $2::jsonb)', [buddy, '{}'], 'invalid_items');
+});
+
+await test('mystery plate: one open pick per pair, both must eat it, then it can be claimed', async () => {
+  const pa = await user('PA'); const pb = await user('PB'); const stranger = await user('PS');
+  await makePair(pa, pb); await startFriendshipDaysAgo(pa, pb, 30);
+  const row = async (as, other) => (await call(as, 'select * from public.duo_quests($1, $2)', [other, thisWeek])).find((r) => r.quest_id === 'mystery_plate');
+  const pick = async (as, other, id = 'dish1') => (await call(as, 'select public.duo_plate_pick($1, $2, $3, $4) r', [other, id, 'Baked Salmon', 'North Hall']))[0].r;
+  assert.equal((await row(pa, pb)).detail, null);                              // nothing picked yet
+  assert.equal((await row(pa, pb)).target, 2);
+  assert.equal(await pick(stranger, pa), 'not_friends');
+  assert.equal(await pick(pa, pb), 'ok');
+  assert.equal(await pick(pb, pa, 'dish2'), 'exists');                         // one open pick per pair
+  assert.equal((await row(pb, pa)).detail, 'Baked Salmon');                    // the buddy sees what was picked
+  assert.equal((await row(pa, pb)).progress, 0);
+  const meal = (u, items, daysAgo = 0) => db.query(`insert into public.meal_history (user_id, meal_date, meal_type, items) values ($1, (now() - ($2 || ' days')::interval)::date, 'dinner', $3::jsonb)`, [u, String(daysAgo), JSON.stringify(items.map((id) => ({ id })))]);
+  await meal(pa, ['dish1', 'rice']);
+  assert.equal((await row(pa, pb)).progress, 1);
+  assert.equal((await call(pa, 'select public.duo_claim($1, $2, $3) r', [pb, 'mystery_plate', thisWeek]))[0].r, 'not_met');
+  await meal(pb, ['other']);                                                   // a different dish does not count
+  assert.equal((await row(pa, pb)).progress, 1);
+  await meal(pb, ['dish1']);
+  assert.equal((await row(pa, pb)).progress, 2);
+  assert.equal((await call(pa, 'select public.duo_claim($1, $2, $3) r', [pb, 'mystery_plate', thisWeek]))[0].r, 'ok');
+  assert.equal((await call(pa, 'select public.duo_claim($1, $2, $3) r', [pb, 'mystery_plate', thisWeek]))[0].r, 'already');
+  // once the pick expires a new one can be made
+  await db.query(`update public.duo_plate_picks set expires_at = now() - interval '1 hour' where user_a = least($1::uuid, $2::uuid) and user_b = greatest($1::uuid, $2::uuid)`, [pa, pb]);
+  assert.equal(await pick(pa, pb, 'dish3'), 'ok');
+  // the picks table is not readable directly
+  await fails(pa, 'select * from public.duo_plate_picks', [], 'permission denied');
 });
 
 await test('claiming needs the quest to be done, works once, and counts as a perk', async () => {

@@ -23,9 +23,16 @@ const waitFor = async (fn, tries = 60) => { for (let i = 0; i < tries; i++) { if
   document.head.appendChild(st);
   await waitFor(() => document.querySelector('.bottom-nav-tab, nav button'));
   await sleep(1200);
-  const tab = { buddies: 'Buddies', here: 'Buddies', insights: 'Insights', badges: 'Insights', community: 'Community', ratings: 'My Ratings' }[shot];
+  if (shot === 'plate') window.__mockStartPlate = true;
+  const tab = { buddies: 'Buddies', here: 'Buddies', plate: 'Buddies', insights: 'Insights', badges: 'Insights', community: 'Community', ratings: 'My Ratings' }[shot];
   if (tab) { click('button', tab); await sleep(1200); }
   if (shot === 'here') { click('button', "I'm here"); await sleep(800); }
+  if (shot === 'plate') {
+    await waitFor(() => click('button', 'Start'));
+    await sleep(800);
+    await waitFor(() => click('button', 'Maya'));
+    await sleep(2500);
+  }
   if (shot === 'badges') { await waitFor(() => click('button', 'badges', false)); await sleep(1200); }
   if (shot === 'closet') { await waitFor(() => click('button', 'Closet')); await sleep(1000); }
   const y = Number(query.get('y') || 0);

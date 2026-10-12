@@ -1,8 +1,8 @@
 /* Buddy quests: two starter goals you reach together with one buddy.
  *
  * Progress is worked out in the database from both students' confirmed meals
- * (duo_quests, migrations 045, 048 and 049). Nothing here counts calories, amounts or what anyone
- * ate. The targets below must match duo_quest_target in the latest migration that defines it (049),
+ * (duo_quests, migrations 045, 048, 049 and 050). Nothing here counts calories, amounts or what anyone
+ * ate. The targets below must match duo_quest_target in the latest migration that defines it (050),
  * and a test reads that migration to hold them together.
  *
  * Weeks run Monday to Sunday, the same weeks as the personal quests. A quest can be
@@ -12,6 +12,7 @@
 import { weekStartOf } from './quests.js';
 
 export const DUO_QUESTS = [
+  { id: 'mystery_plate', title: 'Mystery plate', what: 'Pick a dish you both can eat, then both eat it', target: 2, unit: 'have eaten', emoji: '🎁', fun: true, needsPick: true },
   { id: 'match_plate',  title: 'Match the plate', what: 'Eat the same meal with two dishes in common', target: 1, unit: 'meal',   emoji: '🍱', fun: true },
   { id: 'taste_test',   title: 'Taste test',      what: 'Both rate the same dish',                      target: 1, unit: 'dish',   emoji: '🍜', fun: true },
   { id: 'review_duo',   title: 'Review duo',      what: 'Both rate 3 dishes',                           target: 3, unit: 'dishes', emoji: '⭐', fun: true },
@@ -48,11 +49,11 @@ export function visibleQuests(byWeek, weeks) {
     const prev = byWeek?.[weeks.lastWeek]?.find((r) => r.quest_id === q.id);
     const goal = (row) => row?.target ?? q.target;
     if (prev && !prev.claimed && prev.progress >= goal(prev)) {
-      out.push({ quest: q, week: weeks.lastWeek, label: 'Last week', progress: prev.progress, target: goal(prev), state: 'ready' });
+      out.push({ quest: q, week: weeks.lastWeek, label: 'Last week', progress: prev.progress, target: goal(prev), state: 'ready', detail: prev.detail ?? null });
     }
     if (cur) {
       out.push({
-        quest: q, week: weeks.thisWeek, label: 'This week', progress: cur.progress, target: goal(cur),
+        quest: q, week: weeks.thisWeek, label: 'This week', progress: cur.progress, target: goal(cur), detail: cur.detail ?? null,
         state: duoQuestState({ ...q, target: goal(cur) }, cur.progress, cur.claimed),
       });
     }
@@ -60,23 +61,47 @@ export function visibleQuests(byWeek, weeks) {
   return out;
 }
 
-/* One list of quests for the top of the Buddies tab, not a list per buddy. Each quest shows the buddy who is
- * closest to finishing it: one that is ready to claim first, then the furthest along, then one already claimed.
- * `questsByFriend` is { [friendId]: { [weekStart]: rows } } or null for a friend whose quests could not load.
- * Returns the quests in the order to show them: ready, then in progress, then claimed. */
-const RANK = { ready: 0, open: 1, claimed: 2 };
+/* Three quests a week, one of each kind, so the Buddies tab is never crowded. The week number picks which one of
+ * each pair, and it is the same for everybody. Plate quests rotate Mystery plate and Match the plate, rating
+ * quests rotate Taste test and Review duo, habit quests rotate Daily duo and Week of dinners. */
+const SLOTS = [
+  ['mystery_plate', 'match_plate'],
+  ['taste_test', 'review_duo'],
+  ['daily_duo', 'week_dinners'],
+];
+const WEEK0 = Date.parse('2026-01-05T12:00:00Z');                       // a Monday, week zero
+export function weeklyQuestIds(weekStart) {
+  const n = Math.floor((Date.parse(`${weekStart}T12:00:00Z`) - WEEK0) / (7 * 86400000));
+  return SLOTS.map((pair) => pair[((n % pair.length) + pair.length) % pair.length]);
+}
+
+/* The quests to show at the top of the Buddies tab: this week's three, each with the buddy closest to finishing it,
+ * plus any quest finished last week and not yet claimed. For each quest the buddy shown is one ready to claim
+ * first, then one with a pick or progress, then one already claimed. A quest that needs a pick (Mystery plate)
+ * and has none yet has the state 'start'.
+ * `questsByFriend` is { [friendId]: { [weekStart]: rows } }, or null for a friend whose quests could not load. */
+const score = (c) => {
+  if (c.state === 'ready') return 0;
+  if (c.state === 'claimed') return 3;
+  if (c.quest.needsPick && !c.detail) return 2;
+  return 1;
+};
+const ratio = (x) => (x.target ? x.progress / x.target : 0);
 export function groupQuests(friends = [], questsByFriend = {}, weeks) {
+  const thisWeek = new Set(weeklyQuestIds(weeks.thisWeek));
   const best = new Map();
+  const carry = [];
   for (const f of friends) {
     for (const v of visibleQuests(questsByFriend?.[f.friend_id], weeks)) {
       const mine = { ...v, friendId: f.friend_id, friendName: f.display_name };
+      if (v.week === weeks.lastWeek) { carry.push(mine); continue; }
+      if (!thisWeek.has(v.quest.id)) continue;
       const cur = best.get(v.quest.id);
-      const ratio = (x) => (x.target ? x.progress / x.target : 0);
-      if (!cur || RANK[mine.state] < RANK[cur.state] || (RANK[mine.state] === RANK[cur.state] && ratio(mine) > ratio(cur))) {
-        best.set(v.quest.id, mine);
-      }
+      if (!cur || score(mine) < score(cur) || (score(mine) === score(cur) && ratio(mine) > ratio(cur))) best.set(v.quest.id, mine);
     }
   }
-  return DUO_QUESTS.map((q) => best.get(q.id)).filter(Boolean)
-    .sort((a, b) => RANK[a.state] - RANK[b.state] || Number(Boolean(b.quest.fun)) - Number(Boolean(a.quest.fun)));
+  const out = [...thisWeek].map((id) => best.get(id)).filter(Boolean)
+    .map((c) => (c.quest.needsPick && !c.detail && c.state === 'open' ? { ...c, state: 'start' } : c))
+    .sort((a, b) => score(a) - score(b));
+  return [...carry.sort((a, b) => ratio(b) - ratio(a)), ...out];
 }

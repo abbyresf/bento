@@ -187,3 +187,28 @@ export async function getDuoPerks() {
   const row = Array.isArray(data) ? data[0] : data;
   return typeof row?.claims === 'number' ? row.claims : null;
 }
+
+/* Which of these dishes pass this buddy's dietary settings. Sends only what the check needs, gets back ids and
+ * nothing else: the buddy's settings never reach this phone. Fails closed: an error is "none", never "all".
+ * Returns { ok: true, ids: Set } or { ok: false }. */
+export async function getCompatibleItemIds(friendId, items) {
+  const slim = items.map((i) => ({
+    id: i.id,
+    tags: Array.isArray(i.tags) ? i.tags : undefined,
+    allergens: Array.isArray(i.allergens) ? i.allergens : undefined,
+    ingredients: Array.isArray(i.ingredients) ? i.ingredients.slice(0, 40) : undefined,
+  }));
+  const { data, error } = await supabase.rpc('duo_compatible_items', { p_friend: friendId, p_items: slim });
+  if (error || !Array.isArray(data)) return { ok: false };
+  return { ok: true, ids: new Set(data) };
+}
+
+/* Records the dish a pair picked for Mystery plate. { ok: true } or { ok: false, status } where status is
+ * 'exists' (they already have an open pick), 'not_friends', 'invalid' or 'error'. */
+export async function pickMysteryPlate(friendId, item, hall) {
+  const { data, error } = await supabase.rpc('duo_plate_pick', {
+    p_friend: friendId, p_item_id: item.id, p_item_name: item.name, p_hall: hall ?? null,
+  });
+  if (error) return { ok: false, status: 'error' };
+  return data === 'ok' ? { ok: true } : { ok: false, status: data };
+}

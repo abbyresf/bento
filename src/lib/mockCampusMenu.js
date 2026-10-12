@@ -57,8 +57,8 @@ const COMMONS = {
 };
 
 const slug = (s) => s.toLowerCase().replace(/\W+/g, '_');
-const items = (rows, meal, hall) => rows.map(([name, station, calories, protein, carbs, fat, serving, tags]) => ({
-  id: `demo_${hall}_${slug(name)}`, name, station, meal, tags, serving,
+const items = (rows, meal) => rows.map(([name, station, calories, protein, carbs, fat, serving, tags]) => ({
+  id: `demo_${slug(name)}`, name, station, meal, tags, serving,
   nutrition: { calories, protein, carbs, fat, sodium: 380, fiber: 3, sugar: 4 },
   ingredients: [], allergens: [],
 }));
@@ -69,7 +69,7 @@ export function mockCampusMenu(config) {
   const build = (id, table) => ({
     ...config.locations[id],
     isOpen: true,
-    meals: Object.fromEntries(['breakfast', 'lunch', 'dinner'].map((m) => [m, items(table[m], m, id)])),
+    meals: Object.fromEntries(['breakfast', 'lunch', 'dinner'].map((m) => [m, items(table[m], m)])),
   });
   return { date: dateStr, locations: { north: build('north', NORTH), commons: build('commons', COMMONS) } };
 }

@@ -10,6 +10,7 @@ import FeedbackSheet from '../Feedback/FeedbackSheet';
 import '../Feedback/FeedbackSheet.css';
 import InviteSheet from './InviteSheet';
 import HereSheet from './HereSheet';
+import MysteryPlateSheet from './MysteryPlateSheet';
 import './Friends.css';
 
 /* The Friends tab.
@@ -39,7 +40,7 @@ function hallsFor(university) {
 
 export default function FriendsTab() {
   const { status, friends, me } = useFriends();
-  const [sheet, setSheet] = useState(null);       // 'invite' | 'here'
+  const [sheet, setSheet] = useState(null);       // 'invite' | 'here' | 'plate'
   const [here, setHere] = useState(readHere);
   const [now, setNow] = useState(() => Date.now());
   const [streaks, setStreaks] = useState({});     // friend id -> number
@@ -194,16 +195,23 @@ export default function FriendsTab() {
                       <span className="qd-emoji" aria-hidden="true">{g.quest.emoji}</span>
                       <div className="qd-body">
                         <span className="qd-title">{g.quest.title}</span>
-                        <span className="qd-what">{g.quest.what}</span>
+                        <span className="qd-what">
+                          {g.quest.needsPick && g.detail
+                            ? `${g.detail}, with ${g.friendName}. Eat it today or tomorrow.`
+                            : g.quest.what}
+                        </span>
                         <span className="qd-bar" aria-hidden="true">
                           <i style={{ width: `${Math.round((Math.min(g.progress, g.target) / (g.target || 1)) * 100)}%` }} />
                         </span>
                         <span className="qd-meta">
-                          {progressLine(g.quest, g.progress, g.target)}
-                          {g.progress > 0 ? ` with ${g.friendName}` : ''}
+                          {g.state === 'start' ? 'Pick a buddy and a dish' : progressLine(g.quest, g.progress, g.target)}
+                          {g.state !== 'start' && g.progress > 0 && !(g.quest.needsPick && g.detail) ? ` with ${g.friendName}` : ''}
                           {g.label === 'Last week' ? ', from last week' : ''}
                         </span>
                       </div>
+                      {g.state === 'start' && (
+                        <button className="fr-btn" disabled={busy || offline} onClick={() => setSheet('plate')}>Start</button>
+                      )}
                       {g.state === 'ready' && (
                         <button className="fr-btn" disabled={busy || offline} onClick={() => claim(g.friendId, g.quest.id, g.week)}>Claim</button>
                       )}
@@ -289,6 +297,10 @@ export default function FriendsTab() {
         />
       )}
       {sheet === 'invite' && <InviteSheet onClose={() => setSheet(null)} />}
+      {sheet === 'plate' && (
+        <MysteryPlateSheet friends={friends} university={me?.university ?? 'brandeis'} onClose={() => setSheet(null)}
+                           onPicked={() => { loadFor && Promise.all(ids.split(',').map(loadFor)).then((rows) => setQuests(Object.fromEntries(rows.map(([id, , q]) => [id, q])))); }} />
+      )}
       {sheet === 'here' && <HereSheet halls={halls} friends={friends} onClose={() => setSheet(null)} onSent={sent} />}
     </div>
   );

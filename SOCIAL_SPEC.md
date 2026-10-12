@@ -213,7 +213,7 @@ Reviewer demo pair. **Push must be verified first** (issue B3).
 **Phase 1b: widget presence.** Widget token, `api/duo-widget.js`, the friends list
 on the widget (section 7a).
 
-**Phase 2: plate and rating quests.** Rating quests done (migration 048): Review duo (both rate 3 dishes, smaller of the two counts) and Taste test (both rate the same dish). Match the plate added in migration 049. Buddy quests now show as one list at the top of the Buddies tab, each with the buddy closest to finishing it. Pick of the week, Mystery plate and Rainbow plate are not built. Still to do: the plate quests and the allergen check.
+**Phase 2: plate and rating quests.** Rating quests done (migration 048): Review duo (both rate 3 dishes, smaller of the two counts) and Taste test (both rate the same dish). Match the plate added in migration 049. Buddy quests now show as one list at the top of the Buddies tab, each with the buddy closest to finishing it. Mystery plate built (migration 050): pick a buddy, then a dish that passes both people's settings; your buddy's settings are checked on the server and never returned. Three quests a week, one plate, one rating, one habit, rotating by week number. Rainbow plate and Pick of the week are not built. Still to do: the plate quests and the allergen check.
 
 _Original scope:_ `duo_quests`, `duo_claims`, the plate flow,
 the rating quests, and the on-device allergen check (A1).
@@ -388,14 +388,15 @@ seed a demo friend with `scripts/seed-demo-user.mjs`.
 
 ### D. Existing issue found while checking
 
-**D1. Pulse admins can read raw student rows at the database level.** Migration 009
-gave any active admin `SELECT` on `profiles`, `meal_history` and
-`dietary_restrictions` for their university. The dashboard may only display
-aggregates, but the database permits more. The statement that clients see
-aggregates only, which the privacy labels and policy rely on, is true of the UI but
-not of the access rules. This is outside Duo, but Duo adds friend names and links to
-the same database, so decide whether to tighten it before Duo ships. Duo tables must
-not copy those policies.
+**D1. A Pulse admin login can read more columns than the dashboard asks for (narrow, low urgency).**
+Migration 009 gave any active admin `SELECT` on `profiles`, `meal_history` and `dietary_restrictions` for
+their university. Corrected 13 Oct 2026 after review: the Pulse dashboard never shows or requests
+weight, height, age, allergies or names. Its queries (src/lib/pulseDb.js) ask only for ids, counts, the
+dietary flags, and meal items, and Pulse has no access to the Buddies tables. The only gap is that the
+browser talks to Supabase with the admin's own login, so a person holding an admin login could
+ask the database for other columns of `profiles`. Nothing in the product does. If this is ever
+closed, the small fix is two views (profile id, university, installed; dietary flags only) that replace
+the profile and dietary policies. `meal_history` stays, because most-eaten food needs the items.
 
 ## 11. Test plan
 
