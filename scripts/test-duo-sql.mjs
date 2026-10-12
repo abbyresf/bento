@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 const dir = process.env.MIGRATIONS_DIR
   ? process.env.MIGRATIONS_DIR
   : new URL('../supabase/migrations/', import.meta.url).pathname;
-const migrations = ['043_duo_foundation.sql', '044_duo_here_duration.sql', '045_duo_quests_and_colors.sql', '046_duo_widget.sql', '047_duo_daily_target.sql', '048_duo_rating_quests.sql']
+const migrations = ['043_duo_foundation.sql', '044_duo_here_duration.sql', '045_duo_quests_and_colors.sql', '046_duo_widget.sql', '047_duo_daily_target.sql', '048_duo_rating_quests.sql', '049_duo_match_plate.sql']
   .map((f) => readFileSync(`${dir}/${f}`, 'utf8'));
 const db = new PGlite();
 
@@ -22,7 +22,7 @@ await db.exec(`
   grant usage on schema auth, public to anon, authenticated, service_role;
   create table public.profiles (id uuid primary key references auth.users(id) on delete cascade, university text, mascot_outfit text);
   create table public.meal_history (id uuid primary key default gen_random_uuid(),
-    user_id uuid references auth.users(id) on delete cascade, meal_date date, meal_type text);
+    user_id uuid references auth.users(id) on delete cascade, meal_date date, meal_type text, items jsonb not null default '[]');
   create table public.item_ratings (user_id uuid references auth.users(id) on delete cascade, item_id text, item_name text, rating smallint, updated_at timestamptz default now(), primary key (user_id, item_id));
   create table public.dining_availability (date date primary key, any_open boolean);
   grant select, insert, update, delete on all tables in schema public to authenticated;
@@ -363,6 +363,21 @@ await test('rating quests: review duo is the smaller count, taste test is the sh
   // ratings from before the friendship do not count
   await db.query(`update public.item_ratings set updated_at = now() - interval '90 days' where user_id = $1`, [rb]);
   assert.equal((await row('review_duo')).progress, 0);
+});
+
+await test('match the plate: same meal, at least two dishes in common, counted as meals', async () => {
+  const ma = await user('MA'); const mb = await user('MB');
+  await makePair(ma, mb); await startFriendshipDaysAgo(ma, mb, 60);
+  const row = async () => (await call(ma, 'select * from public.duo_quests($1, $2)', [mb, thisWeek])).find((r) => r.quest_id === 'match_plate');
+  const meal = (u, date, type, ids) => db.query('insert into public.meal_history (user_id, meal_date, meal_type, items) values ($1,$2,$3,$4::jsonb)', [u, date, type, JSON.stringify(ids.map((id) => ({ id })))]);
+  await meal(ma, thisWeek, 'lunch', ['rice', 'chicken', 'broccoli']);
+  await meal(mb, thisWeek, 'lunch', ['rice', 'tofu']);                    // one dish in common
+  assert.equal((await row()).progress, 0);
+  await meal(mb, thisWeek, 'dinner', ['rice', 'chicken']);                // different meal, same dishes
+  assert.equal((await row()).progress, 0);
+  await db.query(`update public.meal_history set items = '[{"id":"rice"},{"id":"broccoli"}]'::jsonb where user_id = $1 and meal_type = 'lunch'`, [mb]);
+  assert.equal((await row()).progress, 1);                                // rice and broccoli, same lunch
+  assert.equal((await row()).target, 1);
 });
 
 await test('claiming needs the quest to be done, works once, and counts as a perk', async () => {

@@ -213,7 +213,7 @@ Reviewer demo pair. **Push must be verified first** (issue B3).
 **Phase 1b: widget presence.** Widget token, `api/duo-widget.js`, the friends list
 on the widget (section 7a).
 
-**Phase 2: plate and rating quests.** Rating quests done (migration 048): Review duo (both rate 3 dishes, smaller of the two counts) and Taste test (both rate the same dish). Pick of the week not built. Still to do: the plate quests and the allergen check.
+**Phase 2: plate and rating quests.** Rating quests done (migration 048): Review duo (both rate 3 dishes, smaller of the two counts) and Taste test (both rate the same dish). Match the plate added in migration 049. Buddy quests now show as one list at the top of the Buddies tab, each with the buddy closest to finishing it. Pick of the week, Mystery plate and Rainbow plate are not built. Still to do: the plate quests and the allergen check.
 
 _Original scope:_ `duo_quests`, `duo_claims`, the plate flow,
 the rating quests, and the on-device allergen check (A1).

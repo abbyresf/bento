@@ -140,3 +140,19 @@
 .fr-friend { padding: 0.8rem 0.85rem; }
 .ft-card .fr-ok { margin: 1rem 0 0; line-height: 1.45; }
 .ft-card .fr-actions { margin-top: 1.1rem; }
+
+/* The quests card: one list for all buddies */
+.qd-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.7rem; }
+.qd-card { display: flex; align-items: center; gap: 0.8rem; padding: 0.8rem 0.9rem; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); }
+.qd-card.fun { background: var(--accent-tint); border-color: var(--accent-text); }
+.qd-card.claimed { opacity: 0.75; }
+.qd-emoji { flex: none; width: 2.6rem; height: 2.6rem; display: grid; place-items: center; font-size: 1.5rem; border-radius: 12px; background: var(--surface-sunk); }
+.qd-card.fun .qd-emoji { background: var(--surface); }
+.qd-body { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; flex: 1; }
+.qd-title { font-weight: 800; font-size: 0.95rem; color: var(--text-primary); }
+.qd-what { font-size: 0.8rem; line-height: 1.35; color: var(--text-secondary); }
+.qd-bar { display: block; height: 7px; margin: 0.35rem 0 0.1rem; border-radius: 99px; background: var(--border); overflow: hidden; }
+.qd-bar i { display: block; height: 100%; border-radius: 99px; background: var(--fern-fill, #4fae5b); }
+.qd-card.fun .qd-bar i { background: var(--accent-text); }
+.qd-meta { font-size: 0.76rem; font-weight: 700; color: var(--text-secondary); }
+.qd-card .ft-claimed { flex: none; }

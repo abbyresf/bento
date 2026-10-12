@@ -121,8 +121,8 @@ const monday = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 const QUESTS = {
-  f1: [['daily_duo', 2, 2, false], ['week_dinners', 4, 5, false], ['review_duo', 3, 3, false], ['taste_test', 1, 1, true]],
-  f2: [['daily_duo', 1, 2, false], ['week_dinners', 2, 5, false], ['review_duo', 1, 3, false], ['taste_test', 0, 1, false]],
+  f1: [['match_plate', 1, 1, false], ['taste_test', 1, 1, false], ['review_duo', 2, 3, false], ['daily_duo', 1, 2, false], ['week_dinners', 4, 5, false]],
+  f2: [['match_plate', 0, 1, false], ['taste_test', 0, 1, false], ['review_duo', 1, 3, false], ['daily_duo', 1, 2, false], ['week_dinners', 2, 5, false]],
 };
 const STREAKS = { f1: 9, f2: 4, f3: 0 };
 const RPC = {

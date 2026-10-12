@@ -1,8 +1,8 @@
 /* Buddy quests: two starter goals you reach together with one buddy.
  *
  * Progress is worked out in the database from both students' confirmed meals
- * (duo_quests, migrations 045 and 048). Nothing here counts calories, amounts or what anyone
- * ate. The targets below must match duo_quest_target in the latest migration that defines it (048),
+ * (duo_quests, migrations 045, 048 and 049). Nothing here counts calories, amounts or what anyone
+ * ate. The targets below must match duo_quest_target in the latest migration that defines it (049),
  * and a test reads that migration to hold them together.
  *
  * Weeks run Monday to Sunday, the same weeks as the personal quests. A quest can be
@@ -12,10 +12,11 @@
 import { weekStartOf } from './quests.js';
 
 export const DUO_QUESTS = [
-  { id: 'daily_duo',    title: 'Daily duo',       what: 'Both confirm a meal on the same day', target: 2, unit: 'days' },
-  { id: 'week_dinners', title: 'Week of dinners', what: 'Both confirm dinner on the same night', target: 5, unit: 'nights' },
-  { id: 'review_duo',   title: 'Review duo',      what: 'Both rate 3 dishes', target: 3, unit: 'dishes' },
-  { id: 'taste_test',   title: 'Taste test',      what: 'Both rate the same dish', target: 1, unit: 'dish' },
+  { id: 'match_plate',  title: 'Match the plate', what: 'Eat the same meal with two dishes in common', target: 1, unit: 'meal',   emoji: '🍱', fun: true },
+  { id: 'taste_test',   title: 'Taste test',      what: 'Both rate the same dish',                      target: 1, unit: 'dish',   emoji: '🍜', fun: true },
+  { id: 'review_duo',   title: 'Review duo',      what: 'Both rate 3 dishes',                           target: 3, unit: 'dishes', emoji: '⭐', fun: true },
+  { id: 'daily_duo',    title: 'Daily duo',       what: 'Both confirm a meal on the same day',          target: 2, unit: 'days',   emoji: '📅' },
+  { id: 'week_dinners', title: 'Week of dinners', what: 'Both confirm dinner on the same night',        target: 5, unit: 'nights', emoji: '🌙' },
 ];
 
 /* 'claimed' after the tap, 'ready' once met, otherwise 'open'. */
@@ -57,4 +58,25 @@ export function visibleQuests(byWeek, weeks) {
     }
   }
   return out;
+}
+
+/* One list of quests for the top of the Buddies tab, not a list per buddy. Each quest shows the buddy who is
+ * closest to finishing it: one that is ready to claim first, then the furthest along, then one already claimed.
+ * `questsByFriend` is { [friendId]: { [weekStart]: rows } } or null for a friend whose quests could not load.
+ * Returns the quests in the order to show them: ready, then in progress, then claimed. */
+const RANK = { ready: 0, open: 1, claimed: 2 };
+export function groupQuests(friends = [], questsByFriend = {}, weeks) {
+  const best = new Map();
+  for (const f of friends) {
+    for (const v of visibleQuests(questsByFriend?.[f.friend_id], weeks)) {
+      const mine = { ...v, friendId: f.friend_id, friendName: f.display_name };
+      const cur = best.get(v.quest.id);
+      const ratio = (x) => (x.target ? x.progress / x.target : 0);
+      if (!cur || RANK[mine.state] < RANK[cur.state] || (RANK[mine.state] === RANK[cur.state] && ratio(mine) > ratio(cur))) {
+        best.set(v.quest.id, mine);
+      }
+    }
+  }
+  return DUO_QUESTS.map((q) => best.get(q.id)).filter(Boolean)
+    .sort((a, b) => RANK[a.state] - RANK[b.state] || Number(Boolean(b.quest.fun)) - Number(Boolean(a.quest.fun)));
 }

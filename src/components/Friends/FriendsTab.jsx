@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { useFriends, refreshFriends } from '../../lib/friendsStore';
 import { clearHere, setSharing, endFriend, blockFriend, getDuoStreak, getDuoQuests, claimDuoQuest, getDuoPerks } from '../../lib/duo';
-import { claimWeeks, visibleQuests, progressLine } from '../../data/duoQuests';
+import { claimWeeks, groupQuests, progressLine } from '../../data/duoQuests';
 import Mascot from '../Mascot/Mascot';
 import { hereNow, presenceLine, minutesLeft, clockSpoken, durationLabel } from '../../data/duo';
 import { getUniversityConfig, getSelectableLocations } from '../../services/menuFetcher';
@@ -102,6 +102,8 @@ export default function FriendsTab() {
 
   const halls = useMemo(() => hallsFor(me?.university), [me?.university]);
   const out = useMemo(() => hereNow(friends, now), [friends, now]);
+  const questList = useMemo(() => groupQuests(friends, quests, weeks), [friends, quests, weeks]);
+  const questsUnreadable = friends.length > 0 && friends.every((f) => quests[f.friend_id] === null);
 
   if (status === 'idle') return <div className="ft-page"><p className="fr-note">Loading…</p></div>;
 
@@ -176,6 +178,44 @@ export default function FriendsTab() {
             )}
           </section>
 
+
+          <section className="ft-card">
+            <h3 className="ft-section">Quests</h3>
+            {questsUnreadable && <p className="fr-note">Quests could not load. Pull down to try again, or reopen the app.</p>}
+            {questList.length > 0 && (
+              <>
+                <p className="ft-quests-head">
+                  Finish one with a buddy, then tap Claim. Quests reset every Monday.
+                  {perks === 0 ? " Your first claim unlocks Bento's colors." : ''}
+                </p>
+                <ul className="qd-list">
+                  {questList.map((g) => (
+                    <li key={g.quest.id} className={`qd-card ${g.state}${g.quest.fun ? ' fun' : ''}`}>
+                      <span className="qd-emoji" aria-hidden="true">{g.quest.emoji}</span>
+                      <div className="qd-body">
+                        <span className="qd-title">{g.quest.title}</span>
+                        <span className="qd-what">{g.quest.what}</span>
+                        <span className="qd-bar" aria-hidden="true">
+                          <i style={{ width: `${Math.round((Math.min(g.progress, g.target) / (g.target || 1)) * 100)}%` }} />
+                        </span>
+                        <span className="qd-meta">
+                          {progressLine(g.quest, g.progress, g.target)}
+                          {g.progress > 0 ? ` with ${g.friendName}` : ''}
+                          {g.label === 'Last week' ? ', from last week' : ''}
+                        </span>
+                      </div>
+                      {g.state === 'ready' && (
+                        <button className="fr-btn" disabled={busy || offline} onClick={() => claim(g.friendId, g.quest.id, g.week)}>Claim</button>
+                      )}
+                      {g.state === 'claimed' && <span className="ft-claimed">Claimed</span>}
+                    </li>
+                  ))}
+                </ul>
+                {claimNote && <p className="fr-ok">{claimNote}</p>}
+              </>
+            )}
+          </section>
+
           <section className="ft-card">
             <h3 className="ft-section">Your buddies</h3>
             <div className="fr-list" style={{ marginTop: 0 }}>
@@ -199,30 +239,6 @@ export default function FriendsTab() {
                         {isOpen ? 'Done' : 'Manage'}
                       </button>
                     </div>
-                    {quests[f.friend_id] === null && (
-                      <p className="fr-note">Quests could not load. Pull down to try again, or reopen the app.</p>
-                    )}
-                    {visibleQuests(quests[f.friend_id], weeks).length > 0 && (
-                      <p className="ft-quests-head">
-                        Quests with {f.display_name}. Finish one together and tap Claim.{perks === 0 ? " Your first claim unlocks Bento's colors." : ''}
-                      </p>
-                    )}
-                    {visibleQuests(quests[f.friend_id], weeks).length > 0 && (
-                      <ul className="ft-quests">
-                        {visibleQuests(quests[f.friend_id], weeks).map((v) => (
-                          <li key={`${v.week}-${v.quest.id}`}>
-                            <div>
-                              <span className="ft-quest-title">{v.quest.title}</span>
-                              <span className="fr-friend-sub">{v.label}. {v.quest.what}. {progressLine(v.quest, v.progress, v.target)}.</span>
-                            </div>
-                            {v.state === 'ready' && (
-                              <button className="fr-btn" disabled={busy || offline} onClick={() => claim(f.friend_id, v.quest.id, v.week)}>Claim</button>
-                            )}
-                            {v.state === 'claimed' && <span className="ft-claimed">Claimed</span>}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
                     {isOpen && (
                       <>
                         <div className="fr-friend-tools">
@@ -258,7 +274,6 @@ export default function FriendsTab() {
                 );
               })}
             </div>
-            {claimNote && <p className="fr-ok">{claimNote}</p>}
             <div className="fr-actions">
               <button className="fr-btn-quiet" onClick={() => setSheet('invite')} disabled={offline}>Add a buddy</button>
             </div>
