@@ -134,11 +134,9 @@ export default async function handler(req, res) {
       .json({ status: db.status === 'ok' ? 'ok' : 'down', database: db });
   }
 
-  // Tufts is paused (13 Oct 2026, see data/universities.js), so its feed is not checked.
-  const TUFTS_PAUSED = true;
   const [brandeisResults, tuftsResults] = await Promise.all([
     Promise.all(BRANDEIS_LOCATIONS.map(l => checkBrandeis(l.slug, l.name, dateStr))),
-    TUFTS_PAUSED ? Promise.resolve([]) : Promise.all(TUFTS_LOCATIONS.map(l => checkTufts(l.slug, l.name, dateStr))),
+    Promise.all(TUFTS_LOCATIONS.map(l => checkTufts(l.slug, l.name, dateStr))),
   ]);
 
   const results = [...brandeisResults, ...tuftsResults];

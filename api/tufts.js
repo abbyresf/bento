@@ -53,13 +53,6 @@ async function pruneOldCache(admin, university) {
 }
 
 export default async function handler(req, res) {
-  // Paused 13 Oct 2026 until Tufts Dining agrees to Bento showing its menu. Remove this to turn Tufts back on.
-  res.setHeader('Cache-Control', 'no-store');
-  return res.status(503).json({ error: 'paused', message: 'Tufts menus are paused.' });
-}
-
-// The live handler, kept for when Tufts is switched back on: rename it to `handler` and delete the paused one above.
-async function LiveTuftsHandler(req, res) {
   const parsedUrl = new URL(req.url, 'http://localhost');
   const slug = parsedUrl.searchParams.get('slug');
   const dateParam = parsedUrl.searchParams.get('date') || new Date().toISOString().slice(0, 10);

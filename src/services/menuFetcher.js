@@ -95,8 +95,6 @@ function dedupeMeals(meals) {
 // dateStr — optional YYYY-MM-DD; defaults to today.
 // Throws if all fetches return empty menus — callers handle the fallback.
 export async function fetchDiningMenu(config, dateStr = null) {
-  // Tufts is paused (see data/universities.js). Stop here, so no screen or timer can reach its feed.
-  if (config === TUFTS_CONFIG) throw new Error('Tufts menus are paused');
   if (DEMO_CONFIG && config === DEMO_CONFIG) {
     const { mockCampusMenu } = await import('../lib/mockCampusMenu.js');
     return mockCampusMenu(config);

@@ -392,7 +392,7 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
         <div className="lh-hero-inner">
           <div className="lh-hero-copy-top">
             <div className="lh-social-row">
-              <span className="lh-rating-sub">Free for Brandeis students</span>
+              <span className="lh-rating-sub">Free for Brandeis &amp; Tufts students</span>
             </div>
 
             {/* The old headline was "Healthy eating made effortless", which could
@@ -560,7 +560,7 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
           <p className="lh-waitlist-eyebrow">Campus availability</p>
           <h2 className="lh-waitlist-hed">Is Bento at your school?</h2>
           <p className="lh-waitlist-sub">
-            Bento is live at Brandeis, Tufts is coming soon, and we're adding more campuses. Check
+            Bento is live at Brandeis and Tufts, and we're adding campuses. Check
             yours, then join the waitlist if it isn't there yet.
           </p>
           <SchoolCheck onGetStarted={onGetStarted} />
