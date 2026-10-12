@@ -20,7 +20,10 @@ export const UNIVERSITIES = [
     name:         'Tufts University',
     abbreviation: 'Tufts',
     location:     'Medford, MA',
-    available:    true,
+    // Paused 13 Oct 2026 until Tufts Dining agrees to Bento showing its menu. The menu feed
+    // (tufts.api.nutrislice.com) disallows crawlers in robots.txt. Set back to true to turn
+    // it on, and restore the Tufts lines in warm-menu-cache.yml and api/health.js.
+    available:    false,
     aliases:      ['tufts', 'jumbos'],
     hasKosher:    false,
     labelHalal:   false,
