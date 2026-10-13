@@ -49,3 +49,4 @@ export const addSchedule = (studyId, s, client) => call('research_add_schedule',
 }, client);
 export const addQuestion = (args, client) => call('research_add_question', args, client);
 export const setQuestion = (id, { active = null, position = null } = {}, client) => call('research_set_question', { p_id: id, p_active: active, p_position: position }, client);
+export const tagQuestion = (args, client) => call('research_tag_question', args, client);

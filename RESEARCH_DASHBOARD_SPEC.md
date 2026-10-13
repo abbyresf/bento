@@ -14,7 +14,7 @@ pool, in a way Bento can still use.
 
 | | |
 | --- | --- |
-| **Who runs what** | The researchers randomise students into groups and give Bento the list. Students sign the consent form in the researchers' Qualtrics survey. Bento does neither (13 Oct) |
+| **Who runs what** | Students sign the consent form in the researchers' Qualtrics survey, and the researchers give Bento the list of who may join. Bento randomises (13 Oct, migration 059) |
 | **Identity** | Emails, and names if the list has them, are stored in Bento and visible to researchers. Reverses the 28 Sep "participant code only" decision |
 | **Platform** | The student-facing research features are in the iOS app only. The PWA shows none of it. The researcher dashboard is a website and is the exception (13 Oct) |
 | **Wrong code vs not listed** | Told apart. A wrong code says so. A right code from an account that is not on the list gets its own message (13 Oct) |
@@ -175,9 +175,11 @@ enrolment and "Your study" afterwards.
 
 ### 3.2 The researchers' list
 
-The researchers consent and randomise students in Qualtrics, then give you the
-list. Being on it is Bento's proof of both. It lives in `research.roster`: one
-row per person, with the email, the group (S or L) and optionally a name.
+The researchers consent students in Qualtrics, then give you the list. Being on
+it is Bento's proof of that. It lives in `research.roster`: one row per person,
+with the email and optionally a name. It carries no group. The list is a
+reference for who may join and for who on it has not joined yet. Bento assigns
+the group at enrolment (3.5).
 
 - **Loading.** From a CSV, in the SQL editor:
   `node scripts/roster-to-sql.mjs <study-id> list.csv | pbcopy`, then paste and
@@ -185,12 +187,10 @@ row per person, with the email, the group (S or L) and optionally a name.
   list is names and emails and this repository is public. It checks every row
   first. Keep the CSV outside the repo too.
 - **Loading again.** Safe. New people are added, people who have not enrolled
-  are updated, and people who have are left alone. If the new list disagrees with
-  an enrolled person's group, the whole load stops with `claimed_group_differs`
-  and adds nothing, because that is a conflict with the researchers that a
-  person should look at.
+  are updated, and people who have are left alone. A `group` column in the CSV
+  is ignored and the script says so.
 - **Fixed once enrolled.** A list row that a student has enrolled against cannot
-  change group, change who it matches, or be released.
+  change who it matches or be released.
 - **Matching.** By the lower-cased email on the student's Bento account. A
   student who signed up with a different address will not match and is told
   they are not on the list, with the signed-in email shown. Ask the researchers which address they collect in
@@ -207,7 +207,7 @@ Built in `054_research_foundation.sql`. Two SECURITY DEFINER functions:
 1. `research_check_code(code)` returns `ok` and the study name if the code is
    right **and** the student is on the list. It records nothing about them.
 2. `research_enroll(code, acknowledged)` runs after the student taps the
-   acknowledgement. It takes the group from the list, issues the participant
+   acknowledgement. It assigns the group (3.5), issues the participant
    code and starts the window, in one step under a lock on the study row.
 
 The client never queries the study, list or code tables.
@@ -279,14 +279,30 @@ either group. The researchers need that fact in the data.
 
 ### 3.5 Group assignment and the participant code
 
-Bento does not randomise. The group comes from the researchers' list and is
-copied onto the participant row at enrolment. A database trigger refuses any
-later change to the group, the participant code, the user, the list row or the
-acknowledgement time. The group is never returned to the app.
+Bento randomises, at enrolment, in order of arrival. Every two people who join
+form a pair that gets one of each group, and which of the two gets which is
+random. A person with no partner yet (an odd one out) is assigned at random as
+if the groups were already even. This is the same as giving each new person the
+group with fewer participants so far, and choosing at random when the two are
+level, so it is done that way: count the participants in each group of the
+study and take the smaller, breaking a tie at random. The count includes
+everyone ever enrolled, whatever their status, so a withdrawal never skews the
+split. It runs under the lock on the study row, so two people enrolling at the
+same moment cannot both read the same count.
 
-Groups are S (snack) and L (loop and plan). The allowed list is in
-`studies.groups`, and loading a list with any other group stops with
-`unknown_group`, so a third group is a data change and not a code change.
+No pair is stored, shown or exported, because it is not useful to the researchers
+and the rule needs none. Nobody is told their group: the app never receives it,
+the enrolment answer does not carry it, and a student cannot read the participants
+table. The researchers see it in the dashboard, since they need it to analyse the
+data. If they should be blinded as well, that is a change to the views and not to
+this rule.
+
+The group is copied onto the participant row. A database trigger refuses any
+later change to the group, the participant code, the user, the list row or the
+acknowledgement time.
+
+Groups are S (snack) and L (loop and plan), held in `studies.groups`, so a third
+group is a data change and not a code change.
 
 The participant code (`P-001`, `P-002`, ...) is issued in the order students
 enrol and shown to the researchers beside the email. It is the key in every
@@ -486,7 +502,7 @@ materials arrive.
 | Table | Holds |
 | --- | --- |
 | `studies` | One row per study. Name, code hash, groups, `match_on`, cap, `is_open`, `is_test`, `window_days`, start and end dates |
-| `roster` | The researchers' list. Study, match key (lower-cased email), group, optional name, `claimed_by`, `claimed_at` |
+| `roster` | The researchers' list. Study, match key (lower-cased email), optional name, `claimed_by`, `claimed_at` |
 | `participants` | `user_id` (plain uuid, **no foreign key**, see 1.1), `participant_code`, `group` (S or L), `roster_id`, `full_name` (from the list, may be empty), `email`, `enrolled_at`, `window_ends_at`, `status` (active, completed, withdrawn), `withdrawn_at`, `acknowledged_at`, `platform`, `push_status`, `install_state` |
 | `reminder_schedules` | Study, group, send time, days, title, body, active |
 | `questions` | Study, version, text, format, options, `groups`, position, active, edited by, edited at |
@@ -740,8 +756,8 @@ same for research. The ones that matter:
 - A wrong code, a closed study and a full cap return the same message, and a right code from an unlisted student returns a different one
 - Only `'ios'` can check a code or enrol
 - Six wrong codes in an hour lock the sixth attempt
-- Every participant lands in exactly the group the list gave them
-- A list row can be taken once, and a taken row cannot change group
+- Each pair in order of arrival gets one of each, the first of a pair and the odd person out are random, withdrawn people still count, and a group on the list is ignored
+- A list row can be taken once, and a taken row cannot change who it matches
 - A list load that fails adds nothing
 - Deleting an auth user leaves every `research` row for that user intact
 - An active participant receives no meal reminder, streak nudge or Duo push
@@ -819,7 +835,7 @@ the questions must not be.
 
 Resolved: regular reminders are off for the window, account deletion leaves
 research rows alone, consent lives in the researchers' Qualtrics survey, the
-researchers randomise and supply the list,
+researchers supply the list and Bento randomises (pairs in order of arrival),
 group L's reminder time (same as group S), the window length (21 days from each
 person's enrolment, held as data), streaks (not frozen), and the number of
 groups (two, no control group). What is left:
@@ -872,3 +888,34 @@ groups (two, no control group). What is left:
     already records, per item, how much of a plate a student says they ate. That is in
     the meals sheet, so the survey question may be a second measure of the same thing.
 18. **Skip the lunch questions after No?** See section 4.3.
+
+## 10. The survey sheet in the researchers' format (migration 060)
+
+The researchers' May 2026 export (Qualtrics, one row per submission, one column per
+question, answers as numeric codes: `lunchYN`, `lunch_loop`, `lunch_waste` and the
+dinner twins) is the reference for how the data should look. The dashboard has a
+sheet, "Survey (research format)", in that shape. The long "Survey answers" sheet
+stays for reading the wording.
+
+- **Rows.** One per participant per day. Fixed columns: `ResponseId`, `id` (the
+  participant code, in place of the typed email prefix), `group`, `for_date`,
+  `RecordedDate`, `late`. Then one column per question, named by the question's
+  column name and filled with its code. Bento does not record a start time, a
+  duration, an IP address or a location, so those Qualtrics columns are not there.
+- **Column names and codes** are labels on a question (`questions.column_key` and
+  `questions.codes`), edited in Setup, and never need a database change. A pick-one
+  answer is its choice's code (the place from 1 when none is set), yes is 1 and no
+  is 0 unless set, a rating is its own number. A replacement question keeps the
+  column name and codes of the one it replaces, so a column carries on across a
+  wording change. Past rows are re-labelled when read.
+- **Built in the browser** from `grid_survey_wide` (each day's raw answers keyed by
+  question id) plus the questions, so a new question appears as a column with no
+  deploy. The data dictionary in an export has a line per column with the wording
+  and what each number means.
+- **Highlights** above the grid: submissions, participants answering, share late,
+  submissions per group and the average of each rating.
+- **Guessed, to confirm with the researchers.** The May `lunchYN` held 0, 1 and 2.
+  The seed assumes 1 Usdan, 2 Sherman, 0 No, and says so in the migration. Their
+  loop scale was 1 to 7 and Bento's rating is 1 to 5. Their "why leftover"
+  question (check all that apply, with an Other text column `_5_TEXT`) and "how
+  many plates" are not in the October draft and have no question type here.

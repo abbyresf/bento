@@ -37,7 +37,6 @@ export const SHEETS = [
     columns: [
       { field: 'email', header: 'Email', type: 'text', width: 260, pinned: true },
       { field: 'full_name', header: 'Name', type: 'text', width: 180 },
-      { field: 'grp', header: 'Group', type: 'text', width: 90 },
       { field: 'enrolled', header: 'Enrolled', type: 'bool', width: 110 },
       { field: 'participant_code', header: 'Participant', type: 'text', width: 120 },
       { field: 'participant_status', header: 'Status', type: 'text', width: 110 },
@@ -58,6 +57,22 @@ export const SHEETS = [
       { field: 'question_text', header: 'Question', type: 'text', width: 420 },
       { field: 'question_format', header: 'Format', type: 'text', width: 140 },
       { field: 'answer_text', header: 'Answer', type: 'text', width: 220 },
+    ],
+  },
+  {
+    // Built from the questions in the browser: see survey.js. These are the fixed
+    // columns. The question columns follow, named and coded as in the researchers'
+    // May export.
+    id: 'survey_wide', label: 'Survey (research format)', view: 'grid_survey_wide', order: 'participant_code', wide: true,
+    extraSelect: ['answers'],
+    watch: ['responses', 'survey_days', 'questions'],
+    columns: [
+      { field: 'row_id', header: 'ResponseId', type: 'text', width: 120, pinned: true },
+      { field: 'participant_code', header: 'id', type: 'text', width: 100 },
+      { field: 'grp', header: 'group', type: 'text', width: 80 },
+      { field: 'for_date', header: 'for_date', type: 'date', width: 120 },
+      { field: 'submitted_at', header: 'RecordedDate', type: 'datetime', width: 170 },
+      { field: 'late', header: 'late', type: 'bool', width: 80 },
     ],
   },
   {
@@ -186,5 +201,5 @@ export const AUDIT_SHEET = {
 export const sheetById = (id) => (id === AUDIT_SHEET.id ? AUDIT_SHEET : SHEETS.find((s) => s.id === id) ?? null);
 
 /* The columns a sheet's view must provide, for a select. row_id first. */
-export const selectList = (sheet) => [sheet.rowId ?? 'row_id', ...sheet.columns.map((c) => c.field)]
+export const selectList = (sheet) => [sheet.rowId ?? 'row_id', ...sheet.columns.map((c) => c.field), ...(sheet.extraSelect ?? [])]
   .filter((f, i, a) => a.indexOf(f) === i).join(',');

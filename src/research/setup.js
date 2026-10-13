@@ -296,6 +296,9 @@ const PROBLEMS = {
   cap_below_enrolled: 'More people than that have already enrolled.',
   code_in_use: 'Another study already uses that code. Pick a different one.',
   code_too_short: 'The code needs at least 6 letters or numbers.',
+  column_name_in_use: 'Another question being asked already uses that column name. Pick a different one.',
+  codes_need_one_per_choice: 'Give one number for each choice, in the same order as the choices.',
+  codes_not_for_this_question: 'Only a yes or no, or a pick-one question, has codes. A rating is written as its own number.',
   show_if_needs_an_earlier_question: 'A follow-up has to come after the question it follows. Give it a higher position.',
   questions_rating_labels: 'Give both end labels for the rating, or neither.',
   unknown_group: 'That group does not exist in this study.',
@@ -312,3 +315,33 @@ export function setupProblem(error) {
   if (/Failed to fetch|NetworkError|network/i.test(m)) return 'Could not reach the server. Nothing was changed. Try again.';
   return 'That did not save. Nothing was changed.';
 }
+
+/* The column name and codes of a question in the wide survey sheet. Codes are one
+ * whole number per choice (yes then no for a yes or no question), typed with
+ * commas. Blank codes mean the defaults: 1, 2, 3 ... for choices and 1, 0 for yes
+ * and no. */
+export const wantsCodes = (q) => q.format === 'yes_no' || q.format === 'multiple_choice';
+export const codesText = (q) => (Array.isArray(q.codes) ? q.codes.join(', ') : '');
+export const defaultCodesText = (q) => (q.format === 'yes_no' ? '1, 0' : (q.options ?? []).map((_, i) => i + 1).join(', '));
+
+export function validateColumn({ key, codes }, q) {
+  const out = [];
+  const k = String(key ?? '').trim();
+  if (k && !/^[A-Za-z][A-Za-z0-9_]{0,39}$/.test(k)) out.push('The column name starts with a letter and uses letters, numbers and underscores, up to 40.');
+  const text = String(codes ?? '').trim();
+  if (text) {
+    if (!wantsCodes(q)) { out.push('Only a yes or no, or a pick-one question, has codes.'); return out; }
+    const parts = text.split(',').map((x) => x.trim());
+    const want = q.format === 'yes_no' ? 2 : (q.options ?? []).length;
+    if (parts.length !== want) out.push(`Give ${want} numbers, one for each choice, separated by commas.`);
+    else if (!parts.every((x) => /^-?\d+$/.test(x))) out.push('Codes are whole numbers.');
+    else if (new Set(parts).size !== parts.length) out.push('Each choice needs a different number.');
+  }
+  return out;
+}
+
+export const columnArgs = ({ key, codes }, q) => ({
+  p_id: q.id,
+  p_key: String(key ?? '').trim() || null,
+  p_codes: String(codes ?? '').trim() ? String(codes).split(',').map((x) => Number(x.trim())) : null,
+});

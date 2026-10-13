@@ -298,7 +298,7 @@ function fakeClient(total, { failAt = null } = {}) {
 
 test('a sheet is read in pages until one comes back short, from the research schema', async () => {
   const client = fakeClient(2500);
-  const rows = await fetchSheet(SHEETS[3], { client });
+  const rows = await fetchSheet(sheetById('meals'), { client });
   assert.equal(rows.length, 2500);
   assert.deepEqual(client.calls.map((c) => [c.from, c.to]), [[0, 999], [1000, 1999], [2000, 2999]]);
   assert.ok(client.calls.every((c) => c.schema === 'research' && c.source === 'grid_meals'));
@@ -335,4 +335,103 @@ test('an export is logged, and refused when the log refuses', async () => {
   const broken = { rpc: async () => ({ data: null, error: { message: 'down' } }) };
   assert.equal(await logAction('export', {}, broken), false);
   assert.ok(MAX_ROWS > PAGE);
+});
+
+// ── The wide survey sheet ────────────────────────────────────────────────────
+
+import { columnName, codeFor, questionColumns, wideRows, withQuestions, highlights, columnMeaning } from '../src/research/survey.js';
+import { validateColumn, columnArgs, wantsCodes, codesText, defaultCodesText } from '../src/research/setup.js';
+
+const Q = (o) => ({ id: o.id, position: 10, text: 'Q', format: 'rating', options: [], grps: [], is_active: true, column_key: null, codes: null, created_at: '2026-10-01', ...o });
+const hall = Q({ id: 'h', position: 10, text: 'Which hall?', format: 'multiple_choice', options: ['Yes - in Usdan', 'Yes - in Sherman', 'No'], column_key: 'lunchYN', codes: [1, 2, 0] });
+const loop = Q({ id: 'l', position: 20, text: 'Loop?', format: 'rating', options: ['Not at all', 'Completely'], grps: ['L'], column_key: 'lunch_loop' });
+const snack = Q({ id: 's', position: 20, text: 'Snack?', format: 'yes_no', grps: ['S'] });
+const waste = Q({ id: 'w', position: 40, text: 'Left?', format: 'multiple_choice', options: ['Little or None', '1/4 plate', '1/2 plate'], column_key: 'lunch_waste' });
+const note = Q({ id: 'n', position: 50, text: 'Anything else?', format: 'short_answer', column_key: 'lunch_note' });
+
+test('a question is named by its column name, else by its position and group', () => {
+  assert.equal(columnName(hall), 'lunchYN');
+  assert.equal(columnName(snack), 'q20_s');
+  assert.equal(columnName(Q({ position: 7 })), 'q7');
+  assert.equal(columnName(Q({ position: 7, grps: ['S', 'L'] })), 'q7');
+});
+
+test('answers are written as codes: the choice code, its place from 1, yes 1 and no 0, a rating as itself', () => {
+  assert.equal(codeFor(hall, 'Yes - in Sherman'), 2);
+  assert.equal(codeFor(hall, 'No'), 0, 'the set code, not the place');
+  assert.equal(codeFor(waste, '1/4 plate'), 2, 'no codes set: the place from 1');
+  assert.equal(codeFor(snack, true), 1);
+  assert.equal(codeFor(snack, false), 0);
+  assert.equal(codeFor({ ...snack, codes: [1, 2] }, false), 2);
+  assert.equal(codeFor(loop, 4), 4);
+  assert.equal(codeFor(note, 'ran out of time'), 'ran out of time');
+  assert.equal(codeFor(hall, 'Somewhere else'), null, 'an unknown choice is empty, never a wrong number');
+  assert.equal(codeFor(loop, 'x'), null);
+  assert.equal(codeFor(hall, null), null);
+});
+
+test('questions that share a column name are one column, in the order they are asked', () => {
+  const reworded = Q({ id: 'h2', position: 10, text: 'Hall today?', format: 'multiple_choice', options: ['Usdan', 'Sherman', 'Neither'], column_key: 'LUNCHyn', codes: [1, 2, 0], created_at: '2026-10-05' });
+  const cols = questionColumns([waste, hall, reworded, loop, snack], []);
+  assert.deepEqual(cols.map((c) => c.field), ['lunchYN', 'lunch_loop', 'q20_s', 'lunch_waste']);
+  assert.equal(cols[0].questions.length, 2);
+  assert.equal(cols[0].type, 'number');
+  assert.equal(questionColumns([note], [])[0].type, 'text');
+});
+
+test('a retired question shows a column only when it has answers', () => {
+  const gone = { ...loop, is_active: false };
+  assert.deepEqual(questionColumns([gone], []), []);
+  assert.equal(questionColumns([gone], [{ answers: { l: 3 } }]).length, 1);
+});
+
+test('rows come out wide: one row per participant per day, one coded column per question', () => {
+  const raw = [
+    { row_id: 'r1', participant_code: 'P-001', grp: 'L', for_date: '2026-10-13', late: false, submitted_at: 'x', answers: { h: 'Yes - in Usdan', l: 5, w: '1/2 plate' } },
+    { row_id: 'r2', participant_code: 'P-002', grp: 'S', for_date: '2026-10-13', late: true, submitted_at: 'y', answers: { h: 'No', s: true, ghost: 9 } },
+  ];
+  const rows = wideRows(raw, [hall, loop, snack, waste]);
+  assert.deepEqual(rows[0], { row_id: 'r1', participant_code: 'P-001', grp: 'L', for_date: '2026-10-13', late: false, submitted_at: 'x', lunchYN: 1, lunch_loop: 5, lunch_waste: 3 });
+  assert.deepEqual([rows[1].lunchYN, rows[1].q20_s, rows[1].lunch_loop, 'ghost' in rows[1], 'answers' in rows[1]], [0, 1, undefined, false, false]);
+  assert.equal(raw[0].answers.l, 5, 'the input is not changed');
+});
+
+test('the sheet gets its question columns after the fixed ones, and a dictionary entry for each', () => {
+  const base = sheetById('survey_wide');
+  const sheet = withQuestions(base, [hall, loop], []);
+  assert.deepEqual(sheet.columns.map((c) => c.field), [...base.columns.map((c) => c.field), 'lunchYN', 'lunch_loop']);
+  assert.equal(base.columns.length, 6, 'the shared definition is not changed');
+  const [row] = dictionaryRows([sheet]).filter((r) => r[2] === 'lunchYN');
+  assert.match(row[5], /1 = Yes - in Usdan, 2 = Yes - in Sherman, 0 = No/);
+  assert.match(columnMeaning(questionColumns([loop])[0]), /group L only/);
+  assert.ok(dictionaryRows([sheet]).every((r) => r[5]), 'every column explains itself');
+  assert.deepEqual(base.columns.slice(0, 6).map((c) => c.header), ['ResponseId', 'id', 'group', 'for_date', 'RecordedDate', 'late']);
+});
+
+test('the highlights count submissions, people, late answers and the average of each rating', () => {
+  const raw = [
+    { participant_code: 'P-001', grp: 'L', late: false, answers: { l: 4 } },
+    { participant_code: 'P-001', grp: 'L', late: true, answers: { l: 5 } },
+    { participant_code: 'P-002', grp: 'S', late: false, answers: { s: true } },
+  ];
+  const h = Object.fromEntries(highlights(raw, [loop, snack]).map((x) => [x.label, x.value]));
+  assert.deepEqual([h.Submissions, h['Participants answering'], h['Answered late'], h['Group L'], h['Group S'], h['lunch_loop, average']], ['3', '2', '33%', '2', '1', '4.50']);
+  assert.equal(highlights([], []).find((x) => x.label === 'Answered late').value, '0%');
+});
+
+test('column names and codes are checked before they are sent', () => {
+  assert.deepEqual(validateColumn({ key: 'lunch_loop', codes: '' }, loop), []);
+  assert.equal(validateColumn({ key: '1bad', codes: '' }, loop).length, 1);
+  assert.equal(validateColumn({ key: 'x', codes: '1, 2' }, hall).length, 1, 'three choices need three codes');
+  assert.equal(validateColumn({ key: 'x', codes: '1, 2, 2' }, hall).length, 1);
+  assert.equal(validateColumn({ key: 'x', codes: '1, 2, a' }, hall).length, 1);
+  assert.deepEqual(validateColumn({ key: 'x', codes: '2, 1, 0' }, hall), []);
+  assert.deepEqual(validateColumn({ key: 'x', codes: '1, 0' }, snack), []);
+  assert.equal(validateColumn({ key: 'x', codes: '1, 2' }, loop).length, 1, 'a rating has no codes');
+  assert.deepEqual(columnArgs({ key: ' lunch_hall ', codes: '2, 1, 0' }, hall), { p_id: 'h', p_key: 'lunch_hall', p_codes: [2, 1, 0] });
+  assert.deepEqual(columnArgs({ key: '', codes: '' }, hall), { p_id: 'h', p_key: null, p_codes: null });
+  assert.equal(wantsCodes(loop), false);
+  assert.equal(codesText(hall), '1, 2, 0');
+  assert.equal(defaultCodesText(waste), '1, 2, 3');
+  assert.equal(defaultCodesText(snack), '1, 0');
 });

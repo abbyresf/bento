@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Grid from './Grid.jsx';
 import { useLiveSheet } from './useLiveSheet.js';
 import { SHEETS } from './sheets.js';
-import { fetchSheet, logAction } from './data.js';
+import { loadSheet, fetchQuestions, logAction } from './data.js';
+import { withQuestions, wideRows, highlights } from './survey.js';
 import { csvBlob, xlsxBlob, download, fileName, anyIdentity } from './exporting.js';
 
 /* One sheet: the grid, a search box, the column picker, the live indicator and the
@@ -15,8 +16,24 @@ import { csvBlob, xlsxBlob, download, fileName, anyIdentity } from './exporting.
 
 const seen = new Set();   // identity sheets already recorded in this session
 
-export default function SheetView({ sheet }) {
-  const { rows, error, loaded, updatedAt, status, reload } = useLiveSheet(sheet);
+export default function SheetView({ sheet: base }) {
+  const { rows: raw, error, loaded, updatedAt, status, reload } = useLiveSheet(base);
+  // The wide survey sheet gets its columns from the questions, read again whenever
+  // its rows are, so a renamed column or a new question shows up with the data.
+  const [questions, setQuestions] = useState(null);
+  useEffect(() => {
+    if (!base.wide || raw === null) return undefined;
+    let live = true;
+    fetchQuestions().then((q) => { if (live) setQuestions(q); }).catch(() => { if (live) setQuestions([]); });
+    return () => { live = false; };
+  }, [base, raw]);
+  const ready = !base.wide || questions !== null;
+  const sheet = useMemo(() => (base.wide && questions ? withQuestions(base, questions, raw ?? []) : base), [base, questions, raw]);
+  const rows = useMemo(() => {
+    if (raw === null || !ready) return null;
+    return base.wide ? wideRows(raw, questions ?? []) : raw;
+  }, [raw, base, questions, ready]);
+  const top = useMemo(() => (base.wide && raw && questions ? highlights(raw, questions) : []), [base, raw, questions]);
   const grid = useRef(null);
   const [search, setSearch] = useState('');
   const [counts, setCounts] = useState({ shown: 0, total: 0, filtered: false });
@@ -64,9 +81,9 @@ export default function SheetView({ sheet }) {
     let total = 0;
     for (const s of chosen) {
       setBusy(`Reading ${s.label}`);
-      const data = await fetchSheet(s);
-      entries.push({ sheet: s, rows: data });
-      total += data.length;
+      const loaded_ = await loadSheet(s);
+      entries.push(loaded_);
+      total += loaded_.rows.length;
     }
     const identities = anyIdentity(chosen);
     const ok = await logAction('export', { sheet: 'all', format: 'xlsx', sheets: chosen.map((s) => s.id), rows: total, filtered: false, identities });
@@ -131,10 +148,16 @@ export default function SheetView({ sheet }) {
       )}
       {note && <div className="rs-note" role="status">{note}</div>}
 
+      {top.length > 0 && (
+        <dl className="rs-highlights" aria-label="Survey highlights">
+          {top.map((h) => (<div key={h.label}><dt>{h.label}</dt><dd>{h.value}</dd></div>))}
+        </dl>
+      )}
+
       <div className="rs-body">
         {rows === null && !error && <div className="rs-loading">Reading {sheet.label.toLowerCase()}{loaded ? `, ${loaded.toLocaleString()} rows so far` : ''}…</div>}
         {rows !== null && (
-          <Grid key={sheet.id} ref={grid} sheet={sheet} rows={rows} quickFilter={search} onCounts={setCounts} />
+          <Grid key={`${sheet.id}:${sheet.columns.length}`} ref={grid} sheet={sheet} rows={rows} quickFilter={search} onCounts={setCounts} />
         )}
       </div>
 

@@ -146,7 +146,6 @@ select
   r.study_id,
   r.match_key      as email,
   r.full_name,
-  r.grp,
   r.added_at,
   (r.claimed_by is not null)  as enrolled,
   r.claimed_at,
@@ -252,7 +251,7 @@ select (f.participant_id::text || ':' || f.question_id::text || ':' || f.for_dat
 from research.responses_flat f;
 
 create or replace view research.grid_roster with (security_invoker = true) as
-select rs.roster_id::text as row_id, rs.email, rs.full_name, rs.grp, rs.enrolled, rs.participant_code,
+select rs.roster_id::text as row_id, rs.email, rs.full_name, rs.enrolled, rs.participant_code,
        rs.participant_status, rs.added_at, rs.claimed_at
 from research.roster_status rs;
 

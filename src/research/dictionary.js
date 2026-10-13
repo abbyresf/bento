@@ -6,7 +6,7 @@ import { SHEETS, AUDIT_SHEET } from './sheets.js';
  * that nothing here is left over from a column that was removed. */
 
 const CODE = { source: 'Bento, at enrolment', meaning: 'The participant code, P-001 onward, issued in the order students enrolled. The key in every sheet.' };
-const GRP = { source: "The researchers' list", meaning: 'S is the snack group (PRELOAD) and L is the loop and plan group. Set by the researchers and never changed by Bento.' };
+const GRP = { source: 'Bento, at enrolment', meaning: 'S is the snack group (PRELOAD) and L is the loop and plan group. Assigned by Bento when the person enrolled (each two people in order of arrival get one of each) and never changed.' };
 const DELETED = { source: 'App, when the student undoes a confirmation', meaning: 'When the student undid this confirmation. The row is kept and marked.' };
 
 export const DICTIONARY = {
@@ -26,7 +26,6 @@ export const DICTIONARY = {
   roster: {
     email: { source: "The researchers' list", meaning: 'The email the list matches a Bento account by.' },
     full_name: { source: "The researchers' list", meaning: 'The name on the list. May be empty.' },
-    grp: GRP,
     enrolled: { source: 'Bento', meaning: 'Whether this person has entered the code and enrolled.' },
     participant_code: CODE,
     participant_status: { source: 'Bento', meaning: 'Their status once enrolled. Empty if they have not.' },
@@ -120,6 +119,14 @@ export const DICTIONARY = {
     app_opens: { source: 'App', meaning: 'Times the app was opened, at most one every 20 minutes.' },
     push_status: { source: 'Bento', meaning: 'on if the device can receive the study reminders, off if not.' },
   },
+  survey_wide: {
+    row_id: { source: 'Bento', meaning: 'One survey day for one participant. Same as ResponseId in the researchers\' May export.' },
+    participant_code: { ...CODE, meaning: 'The participant code. Takes the place of the typed email prefix in the May export.' },
+    grp: GRP,
+    for_date: { source: 'Bento', meaning: 'The day the questions were for, in Eastern time.' },
+    submitted_at: { source: 'App', meaning: 'When the answers were sent.' },
+    late: { source: 'Bento', meaning: 'Answered on a later day than it was for.' },
+  },
   audit: {
     id: { source: 'Bento', meaning: 'Entry number. Entries cannot be changed or deleted.' },
     at: { source: 'Bento', meaning: 'When it happened.' },
@@ -135,7 +142,7 @@ export function dictionaryRows(sheets = SHEETS) {
   const rows = [];
   for (const sheet of sheets) {
     for (const col of sheet.columns) {
-      const d = DICTIONARY[sheet.id]?.[col.field];
+      const d = sheet.dictionary?.[col.field] ?? DICTIONARY[sheet.id]?.[col.field];
       rows.push([sheet.label, col.header, col.field, col.type, d?.source ?? '', d?.meaning ?? '']);
     }
   }

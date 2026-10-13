@@ -1,5 +1,6 @@
 import { supabase as defaultClient } from './supabase.js';
 import { selectList } from './sheets.js';
+import { withQuestions, wideRows } from './survey.js';
 import { PAGE, MAX_ROWS } from './rows.js';
 
 /* Reading sheets from the database. PostgREST returns at most 1000 rows a request,
@@ -35,4 +36,21 @@ export async function fetchStudy(client = defaultClient) {
 export async function logAction(action, detail = {}, client = defaultClient) {
   const { data, error } = await client.rpc('research_log_action', { p_action: action, p_detail: detail });
   return !error && data === true;
+}
+
+/* The questions, with the column name and codes each one carries. */
+export async function fetchQuestions(client = defaultClient) {
+  const { data, error } = await client.schema('research').from('questions')
+    .select('id,position,text,format,options,grps,is_active,column_key,codes,created_at').order('position').order('created_at');
+  if (error) throw new Error(error.message || 'Could not read the questions.');
+  return data ?? [];
+}
+
+/* A sheet ready to show or export: its rows, and for the wide survey sheet the
+ * question columns and coded answers too. */
+export async function loadSheet(sheet, opts = {}) {
+  const raw = await fetchSheet(sheet, opts);
+  if (!sheet.wide) return { sheet, rows: raw };
+  const questions = await fetchQuestions(opts.client);
+  return { sheet: withQuestions(sheet, questions, raw), rows: wideRows(raw, questions) };
 }

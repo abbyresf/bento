@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { loadSetup, saveStudy, saveStudyCode, saveSchedule, addSchedule, addQuestion, setQuestion } from './setupApi.js';
+import { loadSetup, saveStudy, saveStudyCode, saveSchedule, addSchedule, addQuestion, setQuestion, tagQuestion } from './setupApi.js';
 import {
   WEEKDAYS, FORMATS, FORMAT_LABEL, daysLabel, timeText, groupLabel, groupsLabel, kindLabel, lateText, enrolmentState,
   studyForm, validateStudyForm, studyChanges, scheduleForm, validateScheduleForm, scheduleChanges,
   emptyQuestionForm, formFromQuestion, validateQuestionForm, buildQuestionArgs, answerChoices, describeShowIf, changeWarning, retireWarning,
-  followUpsOf, changeBreaks,
+  followUpsOf, changeBreaks, wantsCodes, codesText, defaultCodesText, validateColumn, columnArgs,
 } from './setup.js';
 
 /* The Setup page: the study's settings, its reminder and survey times, and its
@@ -328,6 +328,36 @@ function QuestionForm({ initial, questions, groups, onSubmit, onCancel, submitLa
   );
 }
 
+/* Where this question lands in the survey (research format) sheet: its column name
+ * and what number each answer is written as. Labels only, so they can be changed
+ * at any time, and past rows are re-labelled when the sheet is read. */
+function ColumnEditor({ q, run, busy }) {
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ key: q.column_key ?? '', codes: codesText(q) });
+  const problems = validateColumn(form, q);
+  if (!open) {
+    return (
+      <div className="rs-sub">
+        Column in the research-format sheet: <code>{q.column_key || 'q' + q.position + (q.grps?.length === 1 ? '_' + q.grps[0].toLowerCase() : '')}</code>
+        {wantsCodes(q) && <> · codes {codesText(q) || defaultCodesText(q)}</>}{' '}
+        <button type="button" className="rs-link" onClick={() => setOpen(true)}>Edit</button>
+      </div>
+    );
+  }
+  return (
+    <div className="rs-field">
+      <label>Column name <input value={form.key} maxLength={40} placeholder="lunch_loop" onChange={(e) => setForm({ ...form, key: e.target.value })} /></label>
+      {wantsCodes(q) && (
+        <label>Codes, in order of the choices <input value={form.codes} placeholder={defaultCodesText(q)} onChange={(e) => setForm({ ...form, codes: e.target.value })} /></label>
+      )}
+      {problems.length > 0 && <ul className="rs-problems">{problems.map((p) => <li key={p}>{p}</li>)}</ul>}
+      <button type="button" className="rs-btn rs-primary" disabled={busy || problems.length > 0}
+              onClick={async () => { if (await run(() => tagQuestion(columnArgs(form, q)), 'Column saved.')) setOpen(false); }}>Save column</button>{' '}
+      <button type="button" className="rs-btn" onClick={() => setOpen(false)}>Cancel</button>
+    </div>
+  );
+}
+
 function QuestionRow({ q, data, byId, reload, onChange }) {
   const [state, run, reset] = useSave(reload);
   const answers = data.usage[q.id] ?? 0;
@@ -347,6 +377,7 @@ function QuestionRow({ q, data, byId, reload, onChange }) {
             {!q.is_active && <span className="rs-chip-static rs-chip-warn">Retired</span>}
           </div>
           {q.show_if && <div className="rs-sub">{describeShowIf(q, byId)}</div>}
+          <ColumnEditor key={`${q.column_key}|${codesText(q)}`} q={q} run={run} busy={state.busy} />
         </div>
         <div className="rs-actions">
           {q.is_active && <button type="button" className="rs-btn" onClick={() => onChange(q)}>Change</button>}

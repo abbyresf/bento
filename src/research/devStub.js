@@ -25,7 +25,7 @@ const addDays = (d, n) => new Date(d.getTime() + n * 86400000);
 function build(extraPlateRows) {
   const r = prng(7);
   const now = new Date();
-  const participants = [], roster = [], responses = [], meals = [], plate = [], events = [], snaps = [], prompts = [], activity = [];
+  const participants = [], roster = [], wide = [], responses = [], meals = [], plate = [], events = [], snaps = [], prompts = [], activity = [];
   let eventId = 1;
   for (let i = 0; i < 24; i++) {
     const code = `P-${String(i + 1).padStart(3, '0')}`;
@@ -39,7 +39,7 @@ function build(extraPlateRows) {
       acknowledged_at: iso(enrolled), platform: 'ios', push_status: i % 7 === 3 ? 'off' : 'on', install_state: null,
     };
     participants.push(p);
-    roster.push({ row_id: `r${i}`, email, full_name: p.full_name, grp, enrolled: true, participant_code: code, participant_status: status, added_at: iso(addDays(enrolled, -3)), claimed_at: iso(enrolled) });
+    roster.push({ row_id: `r${i}`, email, full_name: p.full_name, enrolled: true, participant_code: code, participant_status: status, added_at: iso(addDays(enrolled, -3)), claimed_at: iso(enrolled) });
     const days = Math.max(1, Math.floor((now - enrolled) / 86400000));
     let answered = 0, due = 0, plates = 0, reports = 0, opens = 0, claimed = 0, delivered = 0, undelivered = 0, late = 0;
     for (let d = 0; d < days; d++) {
@@ -53,6 +53,9 @@ function build(extraPlateRows) {
           [grp === 'S' ? 'Did you eat the snack given to you before lunch today?' : 'When having lunch at Usdan/Sherman, did you use the "loop and plan" strategy before getting food?', grp === 'S' ? 'yes_no' : 'rating', grp === 'S' ? 'Yes' : String(1 + Math.floor(r() * 5)), 20],
           ['To what extent were your lunch choices today consistent with your eating goals?', 'rating', String(1 + Math.floor(r() * 5)), 30],
           ['How much food was left at the end of your meal?', 'multiple_choice', ['Little or None', '1/4 plate', '1/2 plate', '3/4 plate'][Math.floor(r() * 4)], 40]];
+        const lastMeal = ['Little or None', '1/4 plate', '1/2 plate', '3/4 plate'][Math.floor(r() * 4)];
+        wide.push({ row_id: `w${i}-${d}`, participant_code: code, grp, for_date: date, late: isLate, submitted_at: `${date}T00:10:00Z`,
+          answers: { 'q-where': qa[0][2], [grp === 'S' ? 'q-snack' : 'q-loop']: grp === 'S' ? true : Number(qa[1][2]), 'q-goals': Number(qa[2][2]), 'q-left': lastMeal } });
         qa.forEach(([q, f, a, pos], k) => responses.push({ row_id: `a${i}-${d}-${k}`, participant_code: code, grp, for_date: date, late: isLate, submitted_at: `${date}T00:${String(10 + k).padStart(2, '0')}:00Z`, question_position: pos, question_text: q, question_format: f, answer_text: a }));
       }
       for (const type of ['lunch', 'dinner']) {
@@ -81,17 +84,17 @@ function build(extraPlateRows) {
     sch('sch-l', 'L', 'reminder', '10:30:00', 'Loop, plan, then plate', 'Walk the hall once and see what is offered. Decide what you want. Then fill your plate.', 30),
     sch('sch-q', null, 'survey', '20:00:00', "Today's questions", '', 180),
   ];
-  const Q = (id, text, format, options, grps, position, show_if = null) => ({ id, study_id: 'study-1', text, format, options, grps, position, is_active: true, replaces: null, show_if, created_at: iso(addDays(now, -20)) });
+  const Q = (id, text, format, options, grps, position, show_if = null, column_key = null, codes = null) => ({ id, study_id: 'study-1', text, format, options, grps, position, is_active: true, replaces: null, show_if, column_key, codes, created_at: iso(addDays(now, -20)) });
   const questions = [
-    Q('q-where', 'Did you eat lunch in Usdan or Sherman all-you-care-to-eat (AYCTE) dining hall today?', 'multiple_choice', ['Yes - in Usdan', 'Yes - in Sherman', 'No'], [], 10),
-    Q('q-loop', 'When having lunch at Usdan/Sherman, did you use the "loop and plan" strategy before getting food?', 'rating', ['Not at all', 'Completely'], ['L'], 20),
-    Q('q-snack', 'Did you eat the snack given to you before lunch today?', 'yes_no', [], ['S'], 20),
-    Q('q-how', 'How long before lunch did you eat the snack?', 'multiple_choice', ['0-20 min before lunch', '21-60 min before lunch', 'More than 1 hour before lunch'], ['S'], 21, { question: 'q-snack', any_of: [true] }),
-    Q('q-goals', 'To what extent were your lunch choices today consistent with your eating goals?', 'rating', ['Not at all', 'Completely'], [], 30),
-    Q('q-left', 'How much food was left at the end of your meal? Imagine you put all your leftover food on a single plate (think of the most common size plate), estimate about how much of the plate it would cover.', 'multiple_choice', ['Little or None', '1/4 plate', '1/2 plate', '3/4 plate', '1 plate', '1+ plate'], [], 40),
+    Q('q-where', 'Did you eat lunch in Usdan or Sherman all-you-care-to-eat (AYCTE) dining hall today?', 'multiple_choice', ['Yes - in Usdan', 'Yes - in Sherman', 'No'], [], 10, null, 'lunchYN', [1, 2, 0]),
+    Q('q-loop', 'When having lunch at Usdan/Sherman, did you use the "loop and plan" strategy before getting food?', 'rating', ['Not at all', 'Completely'], ['L'], 20, null, 'lunch_loop'),
+    Q('q-snack', 'Did you eat the snack given to you before lunch today?', 'yes_no', [], ['S'], 20, null, 'lunch_snack'),
+    Q('q-how', 'How long before lunch did you eat the snack?', 'multiple_choice', ['0-20 min before lunch', '21-60 min before lunch', 'More than 1 hour before lunch'], ['S'], 21, { question: 'q-snack', any_of: [true] }, 'lunch_snack_time'),
+    Q('q-goals', 'To what extent were your lunch choices today consistent with your eating goals?', 'rating', ['Not at all', 'Completely'], [], 30, null, 'lunch_goals'),
+    Q('q-left', 'How much food was left at the end of your meal? Imagine you put all your leftover food on a single plate (think of the most common size plate), estimate about how much of the plate it would cover.', 'multiple_choice', ['Little or None', '1/4 plate', '1/2 plate', '3/4 plate', '1 plate', '1+ plate'], [], 40, null, 'lunch_waste'),
   ];
   const usage = [{ question_id: 'q-where', answers: 150 }, { question_id: 'q-loop', answers: 74 }, { question_id: 'q-snack', answers: 76 }, { question_id: 'q-how', answers: 51 }, { question_id: 'q-goals', answers: 150 }, { question_id: 'q-left', answers: 150 }];
-  return { studies: [study], reminder_schedules: schedules, questions, question_usage: usage, grid_participants: participants, grid_roster: roster, grid_responses: responses, grid_meals: meals, grid_plate_items: plate, grid_events: events, grid_snapshots: snaps, grid_prompts: prompts, grid_activity: activity, audit_log: audit };
+  return { studies: [study], reminder_schedules: schedules, questions, question_usage: usage, grid_participants: participants, grid_roster: roster, grid_survey_wide: wide, grid_responses: responses, grid_meals: meals, grid_plate_items: plate, grid_events: events, grid_snapshots: snaps, grid_prompts: prompts, grid_activity: activity, audit_log: audit };
 }
 
 export function makeStub(mode = 'researcher') {
@@ -176,6 +179,13 @@ export function makeStub(mode = 'researcher') {
       const move = (oldId, newId) => { for (const f of tables.questions.filter((x) => x.is_active && x.show_if?.question === oldId)) { const copy = { ...f, id: `q-${tables.questions.length + 1}`, replaces: f.id, show_if: { ...f.show_if, question: newId }, created_at: iso(new Date()) }; f.is_active = false; tables.questions.push(copy); moved += 1; move(f.id, copy.id); } };
       if (old) { old.is_active = false; move(old.id, row.id); }
       audit(a.p_replaces ? 'question_replaced' : 'question_added', { question: row.id, follow_ups_moved: moved }); return { data: row.id, error: null };
+    }
+    if (name === 'research_tag_question') {
+      const row = tables.questions.find((x) => x.id === a.p_id);
+      if (!row) return bad('unknown_question');
+      if (a.p_key && tables.questions.some((x) => x.id !== row.id && x.is_active && x.column_key?.toLowerCase() === a.p_key.toLowerCase())) return bad('column_name_in_use');
+      row.column_key = a.p_key; row.codes = a.p_codes;
+      audit('question_columns', { question: row.id }); return { data: true, error: null };
     }
     if (name === 'research_set_question') {
       const row = tables.questions.find((x) => x.id === a.p_id);

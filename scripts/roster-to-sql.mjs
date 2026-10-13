@@ -3,7 +3,8 @@
 //   node scripts/roster-to-sql.mjs <study-id> path/to/list.csv | pbcopy
 //
 // Paste the result into the Supabase SQL editor and run it. The CSV needs a header
-// row with `email` and `group` columns, and may have a `name` column.
+// row with an `email` column, and may have a `name` column. A `group` column is
+// ignored: Bento assigns groups itself when people enrol.
 //
 // The output goes to the screen or the clipboard and is never written to a file,
 // because the list is names and emails and this repository is public. Keep the CSV
@@ -44,23 +45,21 @@ const rows = parse(readFileSync(path, 'utf8').replace(/^﻿/, ''));
 if (rows.length < 2) fail('the file has no data rows');
 const header = rows[0].map((h) => h.trim().toLowerCase());
 const col = (name) => header.indexOf(name);
-if (col('email') < 0 || col('group') < 0) fail(`the header needs "email" and "group" columns, found: ${header.join(', ')}`);
+if (col('email') < 0) fail(`the header needs an "email" column, found: ${header.join(', ')}`);
+if (col('group') >= 0) console.error('roster-to-sql: the group column is ignored. Bento assigns groups when people enrol.');
 
 const seen = new Set();
 const people = rows.slice(1).map((r, i) => {
   const email = (r[col('email')] ?? '').trim().toLowerCase();
-  const group = (r[col('group')] ?? '').trim();
   const name = col('name') >= 0 ? (r[col('name')] ?? '').trim() : '';
   const line = i + 2;
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) fail(`line ${line}: "${email}" is not an email address`);
-  if (!group) fail(`line ${line}: no group for ${email}`);
   if (seen.has(email)) fail(`line ${line}: ${email} appears twice`);
   seen.add(email);
-  return { email, group, ...(name ? { name } : {}) };
+  return { email, ...(name ? { name } : {}) };
 });
 
-const counts = people.reduce((m, p) => ({ ...m, [p.group]: (m[p.group] ?? 0) + 1 }), {});
-console.error(`roster-to-sql: ${people.length} people. Groups: ${Object.entries(counts).map(([g, c]) => `${g}=${c}`).join(', ')}`);
+console.error(`roster-to-sql: ${people.length} people.`);
 
 const json = JSON.stringify(people);
 if (json.includes('$roster$')) fail('the file contains the text $roster$, which this script uses as a delimiter');
