@@ -1,0 +1,29 @@
+/* The research study, iOS app only. Colors come from tokens, so dark mode follows.
+ * Buttons, inputs and sheets reuse the fr-* classes in Friends.css. */
+
+.rs-title { margin: 0 0 0.4rem; font-size: 1.05rem; font-weight: 800; color: var(--text-primary); }
+
+.rs-ask { margin-top: 1.25rem; }
+
+.rs-ack {
+  display: flex; align-items: flex-start; gap: 0.7rem;
+  margin-top: 1rem; padding: 0.8rem 0.9rem; border-radius: 12px;
+  background: var(--surface-sunk); border: 1px solid var(--border);
+  font-size: 0.95rem; line-height: 1.4; color: var(--text-primary); cursor: pointer;
+}
+.rs-ack input { flex: none; width: 1.25rem; height: 1.25rem; margin-top: 0.1rem; accent-color: var(--btn-bg); }
+
+.rs-facts {
+  list-style: none; margin: 0.6rem 0 0.4rem; padding: 0;
+  display: flex; flex-direction: column; gap: 0.35rem;
+  font-size: 0.92rem; line-height: 1.4; color: var(--text-primary);
+}
+.rs-facts strong { font-variant-numeric: tabular-nums; }
+
+/* The end-of-day questions. */
+.rs-q { margin: 0 0 1.1rem; padding: 0; border: none; min-width: 0; }
+.rs-q-text { padding: 0; margin: 0 0 0.55rem; font-size: 0.98rem; font-weight: 700; line-height: 1.35; color: var(--text-primary); }
+.rs-rate { min-width: 2.6rem; text-align: center; }
+.rs-text { resize: vertical; min-height: 4.5rem; line-height: 1.4; }
+.fr-note + .rs-q { margin-top: 1rem; }
+.rs-gap { margin-bottom: 0.7rem; }

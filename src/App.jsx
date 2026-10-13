@@ -9,6 +9,7 @@ import LandingContact from './components/Landing/LandingContact';
 import LandingRequestSchool from './components/Landing/LandingRequestSchool';
 import { Capacitor } from '@capacitor/core';
 import OnboardingWizard from './components/Onboarding/OnboardingWizard';
+import StudyHost from './components/Research/StudyHost';
 import MealPlan from './components/MealPlan/MealPlan';
 import Settings from './components/Settings/Settings';
 import InsightsPanel from './components/Insights/InsightsPanel';
@@ -393,35 +394,49 @@ function App() {
     );
   }
 
+  // Support paths, not marketing: the allergen "Contact us" link in onboarding and
+  // Settings, the study "contact us" link, and "request your school". On the web
+  // they arrive inside LandingPage, which brings its nav and footer with it. In
+  // the app that would put the whole marketing site one tap from Settings, so
+  // they render on their own behind a back button instead.
+  let landing = null;
   if (showLanding) {
-    // Support paths, not marketing: the allergen "Contact us" link in
-    // onboarding and Settings, and "request your school". On the web they
-    // arrive inside LandingPage, which brings its nav and footer with it. In
-    // the app that would put the whole marketing site one tap from Settings,
-    // so they render on their own behind a back button instead.
-    if (isNative) {
-      return (
-        <div className="native-subpage">
-          <button className="native-subpage-back" onClick={() => setShowLanding(false)}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-            Back
-          </button>
-          {landingInitialTab === 'request' ? <LandingRequestSchool /> : <LandingContact />}
-        </div>
-      );
-    }
-    return <LandingPage onGetStarted={() => setShowLanding(false)} initialTab={landingInitialTab} />;
+    landing = isNative ? (
+      <div className="native-subpage">
+        <button className="native-subpage-back" onClick={() => setShowLanding(false)}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+          Back
+        </button>
+        {landingInitialTab === 'request' ? <LandingRequestSchool /> : <LandingContact />}
+      </div>
+    ) : (
+      <LandingPage onGetStarted={() => setShowLanding(false)} initialTab={landingInitialTab} />
+    );
   }
 
   // Explicitly false, never merely falsy. null means the read failed, and
   // making someone redo onboarding because of a network blip is worse than
   // showing them the app and letting the next read settle it.
   if (hasCompletedOnboarding === false) {
-    return <OnboardingWizard onComplete={handleOnboardingComplete} onGoContact={handleGoContact} onRequestSchool={handleGoRequestSchool} />;
+    // The wizard stays mounted while a support page is open, hidden and not
+    // unmounted, so coming back from Contact lands on the same step with
+    // everything the student entered. Returning it early for the landing page
+    // threw all of that away. display:contents keeps the wrapper from adding a
+    // box of its own, so the wizard lays out as it always did.
+    return (
+      <>
+        <div style={{ display: showLanding ? 'none' : 'contents' }}>
+          <OnboardingWizard onComplete={handleOnboardingComplete} onGoContact={handleGoContact} onRequestSchool={handleGoRequestSchool} />
+        </div>
+        {landing}
+      </>
+    );
   }
+
+  if (landing) return landing;
 
   if (hasAcceptedTerms === false) {
     return <TermsGate onAccept={handleAcceptTerms} />;
@@ -438,6 +453,8 @@ function App() {
           <JoinSheet code={joinCode} onClose={() => { forgetJoinCode(); setJoinCode(null); }} />
         )}
         {hasCompletedOnboarding && hasAcceptedTerms && !showTutorial && !showInstallPrompt && <NotifPrompt />}
+        {/* The study's end-of-day questions. iOS app only: it renders nothing elsewhere. */}
+        {hasCompletedOnboarding && hasAcceptedTerms && !showTutorial && <StudyHost />}
 
         {/* Queued behind every other prompt on purpose. A student meeting the
             tutorial, the install prompt, the notification prompt and a survey

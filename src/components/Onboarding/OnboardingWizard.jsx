@@ -8,9 +8,15 @@ import BigTitle from './BigTitle';
 import StepArt from './StepArt';
 import { haptics } from '../../lib/haptics';
 import MenuRatingOnboarding from './MenuRatingOnboarding';
+import StudyJoin from '../Research/StudyJoin';
+import { researchEnabled } from '../../lib/research';
 import './OnboardingWizard.css';
 
-const STEPS = ['university', 'basics', 'activity', 'goals', 'dietary', 'numbers', 'swipe', 'review'];
+/* The study question is part of the iOS app only. On the web (the PWA) and on
+ * Android the step is not in the list at all. */
+const STEPS = researchEnabled()
+  ? ['university', 'basics', 'activity', 'goals', 'dietary', 'numbers', 'swipe', 'study', 'review']
+  : ['university', 'basics', 'activity', 'goals', 'dietary', 'numbers', 'swipe', 'review'];
 
 const SECTIONS = [
   { label: 'About You',   steps: ['university', 'basics'] },
@@ -20,6 +26,8 @@ const SECTIONS = [
 
 export default function OnboardingWizard({ onComplete, onGoContact, onRequestSchool }) {
   const [currentStep, setCurrentStep] = useState(0);
+  // The study step needs an answer, Yes or No, before Continue works.
+  const [studyAnswered, setStudyAnswered] = useState(false);
   // Which way the last move went, so the next step slides in from that side.
   const [direction, setDirection] = useState('fwd');
   // A full-screen colour panel that sweeps across between steps. The step
@@ -508,6 +516,17 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
     </div>
   );
 
+  const renderStudyStep = () => (
+    <div className="step-content">
+      <StudyJoin
+        startAt="ask"
+        onDone={() => { setStudyAnswered(true); handleNext(); }}
+        onEnrolled={() => setStudyAnswered(true)}
+        onGoContact={onGoContact}
+      />
+    </div>
+  );
+
   const renderStep = () => {
     switch (STEPS[currentStep]) {
       case 'university': return renderUniversityStep();
@@ -516,6 +535,7 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
       case 'goals':      return renderGoalsStep();
       case 'dietary':    return renderDietaryStep();
       case 'numbers':    return renderNumbersStep();
+      case 'study':      return renderStudyStep();
       case 'review':     return renderReviewStep();
       default:           return null;
     }
@@ -601,7 +621,12 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
             </button>
           )}
           {currentStep < STEPS.length - 1 ? (
-            <button type="button" className="btn-primary" onClick={handleNext}>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={handleNext}
+              disabled={STEPS[currentStep] === 'study' && !studyAnswered}
+            >
               Continue
             </button>
           ) : (

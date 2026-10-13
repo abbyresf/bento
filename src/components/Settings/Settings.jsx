@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   getUserProfile,
   setUserProfile,
@@ -19,12 +19,54 @@ import { pushSupport, subscribeToPush, unsubscribeFromPush, getPushEnabled, deta
 const isNative = Capacitor.isNativePlatform();
 import ThemePreview from './ThemePreview';
 import FriendsSection from '../Friends/FriendsSection';
+import StudySection from '../Research/StudySection';
+import { useStudyStatus } from '../../lib/useStudyStatus';
+import { DELETE_NOTE } from '../../data/research';
 import { useSkipBreakfast, setSkipBreakfast } from '../../lib/mealPrefs';
 import './Settings.css';
+
+/* Settings opens on a menu of sections. Tap one to open it, and Back returns to the
+ * menu. Profile and Food are the two with a Save button, because they edit a form.
+ * Everything else saves the moment you change it. Research is iOS only and is
+ * listed only once the study is available (see StudySection). */
+const SETTINGS_PAGES = [
+  { id: 'profile',   label: 'Profile',   hint: 'Body stats, goals and daily targets' },
+  { id: 'food',      label: 'Food',      hint: 'Dietary restrictions and meals' },
+  { id: 'reminders', label: 'Reminders', hint: 'Meal reminders and buddy alerts' },
+  { id: 'study',     label: 'Research',  hint: 'Join or leave a study' },
+  { id: 'display',   label: 'Display',   hint: 'Appearance and nutrition numbers' },
+  { id: 'account',   label: 'Account',   hint: 'Sign out and your data' },
+];
+const FORM_PAGES = ['profile', 'food'];
+const PAGE_KEY = 'bento_settings_page';
+
+// Settings always opens on the menu. The one exception is coming back from the
+// Contact page, which closes Settings on the way out: the page is saved just
+// before leaving and read once, here, so Back lands where the student was.
+function takeSavedPage() {
+  try {
+    const id = sessionStorage.getItem(PAGE_KEY);
+    sessionStorage.removeItem(PAGE_KEY);
+    return id || null;
+  } catch { return null; }
+}
+function savePage(id) {
+  try { if (id) sessionStorage.setItem(PAGE_KEY, id); } catch { /* the page just is not remembered */ }
+}
 
 export default function Settings({ onClose, onReset, onSave, onGoContact, onOpenFriends, tabMode = false }) {
   const display = useNutritionDisplay();
   const skipBreakfast = useSkipBreakfast();
+  // One status for the whole screen. On the web and Android the study does not
+  // exist: status is 'unavailable' and no request is made.
+  const studyState = useStudyStatus();
+  const { study, status: studyStatus } = studyState;
+  const pages = SETTINGS_PAGES.filter((p) => p.id !== 'study' || studyStatus === 'ok');
+  // null is the menu. A saved page that is not available (yet) shows the menu.
+  const [pageId, setPageId] = useState(takeSavedPage);
+  const current = pages.find((p) => p.id === pageId) ?? null;
+  const page = current?.id ?? null;
+  const contentRef = useRef(null);
   const [pushOn, setPushOn] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushNote, setPushNote] = useState(null);
@@ -60,6 +102,14 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, onOpen
     }
     load();
   }, []);
+
+  const openPage = (id) => {
+    setPageId(id);
+    contentRef.current?.scrollTo?.(0, 0);
+  };
+
+  // The Contact page replaces this screen, so remember where we were.
+  const goContact = () => { savePage(page); onGoContact?.(); };
 
   const handleProfileChange = (field, value) => {
     setProfile((prev) => ({ ...prev, [field]: value }));
@@ -171,12 +221,42 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, onOpen
 
   return (
     <div className={`settings${tabMode ? ' settings-page' : ''}`}>
-      <div className="settings-header">
-        <h2>Settings</h2>
-        <button className="close-btn" onClick={onClose}>&times;</button>
+      <div className={`settings-header${current ? ' is-detail' : ''}`}>
+        {current && (
+          <button type="button" className="settings-back" onClick={() => openPage(null)} aria-label="Back to Settings">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+            <span>Settings</span>
+          </button>
+        )}
+        <h2>{current ? current.label : 'Settings'}</h2>
+        <button className="close-btn" onClick={onClose} aria-label="Close settings">&times;</button>
       </div>
 
-      <div className="settings-content">
+      <div className="settings-content" ref={contentRef}>
+        {page === null && (
+          <nav aria-label="Settings sections">
+            <ul className="settings-menu">
+              {pages.map((p) => (
+                <li key={p.id}>
+                  <button type="button" className="settings-menu-row" onClick={() => openPage(p.id)}>
+                    <span className="settings-menu-text">
+                      <span className="settings-menu-label">{p.label}</span>
+                      <span className="settings-menu-hint">{p.hint}</span>
+                    </span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M9 18l6-6-6-6" />
+                    </svg>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
+        {page === 'profile' && (<>
         {/* Profile Section */}
         <section className="settings-section">
           <h3>Profile</h3>
@@ -304,7 +384,9 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, onOpen
           </div>
         </section>
         )}
+        </>)}
 
+        {page === 'food' && (<>
         {/* Dietary Restrictions Section */}
         <section className="settings-section">
           <h3>Dietary Restrictions</h3>
@@ -364,7 +446,7 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, onOpen
 
           <p className="allergen-contact-note">
             Is your allergen not listed?{' '}
-            <a href="#" className="allergen-contact-link" onClick={(e) => { e.preventDefault(); onGoContact?.(); }}>Contact us</a>
+            <a href="#" className="allergen-contact-link" onClick={(e) => { e.preventDefault(); goContact(); }}>Contact us</a>
           </p>
         </section>
 
@@ -383,6 +465,9 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, onOpen
           </div>
         </section>
 
+        </>)}
+
+        {page === 'reminders' && (<>
         <section className="settings-section">
           <h3>Meal Reminders</h3>
           <p className="section-note">
@@ -445,7 +530,13 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, onOpen
         </section>
 
         <FriendsSection remindersOn={pushOn} onOpenFriends={onOpenFriends} />
+        </>)}
 
+        {page === 'study' && (
+          <StudySection state={studyState} onGoContact={goContact} />
+        )}
+
+        {page === 'display' && (<>
         <section className="settings-section">
           <h3>Appearance</h3>
           <p className="section-note">
@@ -491,6 +582,9 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, onOpen
           </button>
         </section>
 
+        </>)}
+
+        {page === 'account' && (<>
         <section className="settings-section">
           <h3>Account</h3>
           <p className="section-note">
@@ -508,6 +602,7 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, onOpen
 
         <section className="settings-section">
           <h3>Data Management</h3>
+          {study.enrolled && <p className="section-note">{DELETE_NOTE}</p>}
           {actionError && <p className="settings-action-error">{actionError}</p>}
           <div className="data-actions">
 
@@ -549,14 +644,17 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, onOpen
 
           </div>
         </section>
+        </>)}
       </div>
 
-      <div className="settings-footer">
-        <button className="btn-secondary" onClick={onClose}>Cancel</button>
-        <button className="btn-primary" onClick={handleSave}>
-          {saved ? 'Saved!' : 'Save Changes'}
-        </button>
-      </div>
+      {FORM_PAGES.includes(page) && (
+        <div className="settings-footer">
+          <button className="btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn-primary" onClick={handleSave}>
+            {saved ? 'Saved!' : 'Save Changes'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -452,3 +452,61 @@
   border-radius: 8px;
   line-height: 1.5;
 }
+
+
+/* The menu: one row per section, with a chevron, like most apps' settings. */
+.settings-menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.settings-menu li + li { border-top: 1px solid var(--border); }
+
+.settings-menu-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.95rem 1rem;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+}
+.settings-menu-row:hover { background: var(--surface-sunk); }
+.settings-menu-row:focus-visible { outline: 2px solid var(--accent-text); outline-offset: -2px; }
+
+.settings-menu-text { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.settings-menu-label { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+.settings-menu-hint { font-size: 0.8rem; color: var(--text-secondary); }
+
+/* A section opened from the menu: Back on the left, its name in the middle. */
+.settings-header.is-detail {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+.settings-header.is-detail h2 { text-align: center; }
+.settings-header.is-detail .close-btn { justify-self: end; }
+.settings-back {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.25rem 0.5rem 0.25rem 0;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: var(--accent-text);
+}
+.settings-back:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }

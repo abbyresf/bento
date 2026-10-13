@@ -311,11 +311,31 @@ export async function setAdminActive(adminRowId, isActive) {
   if (error) throw new Error('Could not update that admin.');
 }
 
+/* Students who joined a research study are not dining customers for the purposes
+ * of these numbers, so every profile read here leaves them out. Migration 054 sets
+ * profiles.research_cohort at enrolment and never clears it, which keeps the rows
+ * they wrote during the study out for good. The database objects Pulse reads that
+ * do not go through this file (the ratings view and the survey results function)
+ * were changed to match in migration 055.
+ *
+ * A database that has not run migration 054 has no such column. It says so with
+ * 42703, and the read is repeated without the filter, so a missing migration
+ * leaves Pulse working as it was and not empty. */
+let cohortColumn = true;
+
+async function profilesFor(university, columns, options, narrow) {
+  for (const exclude of cohortColumn ? [true, false] : [false]) {
+    let q = supabase.from('profiles').select(columns, options).eq('university', university);
+    if (narrow) q = narrow(q);
+    if (exclude) q = q.eq('research_cohort', false);
+    const res = await q;
+    if (exclude && res.error?.code === '42703') { cohortColumn = false; continue; }
+    return res;
+  }
+}
+
 async function getUserIdsForUniversity(university) {
-  const { data } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('university', university);
+  const { data } = await profilesFor(university, 'id');
   return (data ?? []).map(p => p.id);
 }
 
@@ -379,11 +399,10 @@ export async function getPulseOverview(university, days = 30) {
   const userIds = await getUserIdsForUniversity(university);
 
   const [totalRes, installedRes, currActiveRes, currMealsRes, prevActiveRes, prevMealsRes] = await Promise.all([
-    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('university', university),
+    profilesFor(university, 'id', { count: 'exact', head: true }),
     // Home-screen installs. iOS delivers web push only to an installed app, so
     // this is the ceiling on how many students a notification can ever reach.
-    supabase.from('profiles').select('id', { count: 'exact', head: true })
-      .eq('university', university).eq('is_installed', true),
+    profilesFor(university, 'id', { count: 'exact', head: true }, (q) => q.eq('is_installed', true)),
     supabase.from('meal_history').select('user_id').gte('confirmed_at', periodStart).in('user_id', userIds),
     supabase.from('meal_history').select('id', { count: 'exact', head: true }).gte('confirmed_at', periodStart).in('user_id', userIds),
     supabase.from('meal_history').select('user_id').gte('confirmed_at', prevPeriodStart).lt('confirmed_at', periodStart).in('user_id', userIds),
