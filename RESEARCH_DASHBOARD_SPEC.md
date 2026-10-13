@@ -1,6 +1,6 @@
 # Bento research dashboard and enrolment: build spec
 
-Draft 8, 13 Oct 2026. Extends `RESEARCH_STUDY_PLAN.md`. Where the two disagree,
+Draft 9, 13 Oct 2026. Extends `RESEARCH_STUDY_PLAN.md`. Where the two disagree,
 this file wins, and the disagreements are listed in section 1.
 
 The researchers get their own secure dashboard. It shows every participant's
@@ -623,7 +623,7 @@ sheet. The stub is development only and is not in the production build.
 
 **Setting it up for real**
 
-1. Apply migration 057.
+1. Apply migrations 057 and 058.
 2. Supabase, Settings, API, Exposed schemas: add `research`. The dashboard reads the
    `research` schema directly, so without this every sheet fails.
 3. Supabase, Authentication, Sign In / Providers, Multi-Factor: turn on TOTP.
@@ -634,6 +634,55 @@ sheet. The stub is development only and is not in the production build.
 6. Add each researcher the same way, with `'researcher'`. To turn one off at once:
    `select research.remove_researcher('<email>');`
 7. Sign in, set up the authenticator app, and check Live, then Data.
+
+## 6b. The Setup page (phase 6)
+
+Built 13 Oct, in the dashboard under Setup. Researchers and owners both use it. It is
+migration 058, `src/research/SetupPage.jsx` and its logic in `setup.js`.
+
+| Part | What a researcher can do |
+| --- | --- |
+| The study | Open or close enrolment, the cap, the number of days in the study, an enrolment start and end date in Eastern time, and the line above the end-of-day questions |
+| Study code | Replace it. It is stored scrambled, so it cannot be shown back. The old one stops at once and people already in are unaffected |
+| Times | Edit a reminder or survey time, its days, how late it may arrive, and its words. Switch one off and on. Add a new one for a group or for everyone |
+| Questions | Add one, change one, retire and restore one. Follow-ups, scale labels and group limits are all there. Each question shows how many answers it has |
+| The list | Counts of who is on it, enrolled and not yet, with a link to the Roster sheet |
+
+**How it is protected.** A researcher cannot write to any research table. Every change
+goes through a database function that:
+
+- refuses anyone who is not an active researcher on a multi-factor session, by raising
+  an error, so a refusal is never mistaken for a save;
+- refuses the App Review test study, which researchers cannot see;
+- checks every value, so a bad one is an error and not a surprise mid-study;
+- writes one audit entry saying who changed what, from what, to what. A save that
+  changes nothing writes nothing. The study code is never written down, only the fact
+  that it changed, and neither is the text of the intro or a message body.
+
+**What cannot be changed here, on purpose:** the wording of a question that has been
+asked, a participant's group, the researchers' list, and which group or kind a time
+belongs to.
+
+**Changing a question never strands its follow-ups.** A follow-up that depends on a
+question which is no longer asked would simply never appear, and nothing would say so.
+Testing the page found this. So in the database:
+
+- changing a question adds a new one and retires the old, and its follow-ups, and
+  theirs, are copied to follow the new one in the same transaction;
+- retiring a question retires its follow-ups with it, and says how many;
+- a change the follow-ups could not survive is refused whole, with nothing saved: a
+  different kind of answer, a pick-one choice a follow-up names, or a position that
+  puts the question after its follow-up;
+- a follow-up cannot be brought back while its question is retired.
+
+The page says all of this before the change is made, including how many answers a
+wording has and how many follow-ups will move.
+
+**A mid-study edit mixes two questions in one column.** The page warns of that every
+time. It is the researchers' decision, and it is in the audit log.
+
+Not on this page: loading or editing the researchers' list (it is loaded from their
+file by whoever runs Bento), and creating a study.
 
 ## 7. Bento's own use of the data
 
@@ -675,7 +724,7 @@ Store, which depends on section 1.2.
 | 3 | **Built 13 Oct, not yet applied to Supabase.** `055_research_collection.sql`. Triggers copy meals (with consumption), profile snapshots and events for active participants only, and can never block a student's own write. `research.plate_items` flattens a plate to one row per item. Dining Pulse exclusion in three places (section 7). Column list is provisional until the researchers' materials arrive | Phase 1 |
 | 4 | **Built 13 Oct, not yet applied to Supabase.** `056_research_reminders_and_survey.sql`, `api/research-send.js`, `api/_research.js`, `.github/workflows/research-send.yml`, the survey screens and the check in the three existing senders. 79 SQL tests, 18 sender tests. Reminder wording for group L is a draft, and there are no survey questions or survey time yet (section 8a) | Phases 1 and 3 |
 | 5 | **Built 13 Oct, not yet applied or deployed.** `057_research_dashboard.sql`, `src/research/`, `vercel.research.json`. Sign in with MFA, Live, nine-sheet Data grid, Compensation, Audit, CSV and Excel export with audit, live updates. Researchers are added from SQL, not from the page (section 6a) | Phases 1 to 4 |
-| 6 | Setup page: editable questions, times, code, cap, and the list view | Phase 5 |
+| 6 | **Built 13 Oct, not yet applied.** `058_research_setup.sql`, `SetupPage.jsx`. Study settings and code, reminder and survey times, questions with follow-ups, the list summary. Every change is audited. 114 SQL tests, 28 for the page logic | Phase 5 |
 | 7 | App Store update: labels, manifest, reviewer notes, 5.1.3 | Phase 2 |
 | 8 | Launch checks: Pro plan, restore drill, dry run with test participants | All |
 

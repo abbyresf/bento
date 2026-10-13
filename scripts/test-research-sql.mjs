@@ -16,7 +16,7 @@ const dir = process.env.MIGRATIONS_DIR
   ? process.env.MIGRATIONS_DIR
   : new URL('../supabase/migrations/', import.meta.url).pathname;
 const migrations = ['054_research_foundation.sql', '055_research_collection.sql', '056_research_reminders_and_survey.sql',
-  '057_research_dashboard.sql']
+  '057_research_dashboard.sql', '058_research_setup.sql']
   .map((f) => readFileSync(`${dir}/${f}`, 'utf8'));
 const db = new PGlite();
 
@@ -1444,6 +1444,316 @@ await test('a researcher is added by the email of someone already invited, and c
     await assert.rejects(call(researcher, sql, [], aal2), /permission denied/, sql);
     await assert.rejects(call(owner1, sql, [], aal2), /permission denied/, 'not even an owner, from the browser');
   }
+});
+
+
+// ── Phase 6: researchers change the study from the dashboard ─────────────────
+
+const AAL2 = { aal: 'aal2' };
+const setup = (u, sql, params = [], opts = AAL2) => call(u, sql, params, opts);
+const audit = async (what) => (await owner(`select * from research.audit_log where action = 'setup_change' and detail ->> 'what' = $1 order by id`, [what]));
+const setupCount = async () => (await owner(`select count(*)::int c from research.audit_log where action = 'setup_change'`))[0].c;
+const study_ = (id, changes) => setup(researcher, 'select public.research_set_study($1, $2::jsonb) r', [id, JSON.stringify(changes)]).then((r) => r[0].r);
+
+await test('every setup function refuses anyone but a researcher on a multi-factor session', async () => {
+  const f = await fresh();
+  const q = await question(f.st, 'Q', 'yes_no');
+  const calls = [
+    ['select public.research_set_study($1, \'{"cap": 50}\')', [f.st]],
+    ['select public.research_set_study_code($1, \'ANOTHER-CODE\')', [f.st]],
+    ['select public.research_save_schedule($1, \'{"title": "x"}\')', [f.snack]],
+    [`select public.research_add_schedule($1, 'S', 'reminder', '11:00', 'x')`, [f.st]],
+    [`select public.research_add_question($1, 'New', 'yes_no')`, [f.st]],
+    ['select public.research_set_question($1, false)', [q]],
+  ];
+  const before = await setupCount();
+  for (const [sql, params] of calls) {
+    for (const [who, label, opts] of [[outsider, 'a signed-in non-researcher', AAL2], [researcher, 'a researcher without multi-factor', { aal: 'aal1' }],
+                                      [researcher, 'a researcher with no assurance level', {}], [null, 'nobody signed in', AAL2]]) {
+      await assert.rejects(setup(who, sql, params, opts), /not_authorised/, `${sql} as ${label}`);
+    }
+    await assert.rejects(setup(null, sql, params, { role: 'anon' }), /permission denied/, `${sql} as anon`);
+  }
+  assert.equal(await setupCount(), before, 'nothing was written');
+  assert.equal((await owner('select cap from research.studies where id = $1', [f.st]))[0].cap, 100, 'and nothing changed');
+});
+
+await test('the test study cannot be changed from the dashboard', async () => {
+  const t = await newStudy({ code: 'SETUPTEST-1', test: true });
+  await assert.rejects(setup(researcher, `select public.research_set_study($1, '{"cap": 5}')`, [t]), /unknown_study/);
+  await assert.rejects(setup(researcher, `select public.research_set_study_code($1, 'SOMETHING-ELSE')`, [t]), /unknown_study/);
+  await assert.rejects(setup(researcher, `select public.research_add_question($1, 'Q', 'yes_no')`, [t]), /unknown_study/);
+  await assert.rejects(setup(researcher, `select public.research_set_study('00000000-0000-0000-0000-000000000000', '{}')`), /unknown_study/);
+});
+
+await test('study settings change, are checked, and are written to the audit log once each', async () => {
+  const f = await fresh();
+  const before = await setupCount();
+  const diff = await study_(f.st, { cap: 60, window_days: 28, is_open: false });
+  assert.deepEqual(diff, { cap: { from: 100, to: 60 }, is_open: { from: true, to: false }, window_days: { from: 21, to: 28 } });
+  const [row] = await owner('select cap, window_days, is_open from research.studies where id = $1', [f.st]);
+  assert.deepEqual(row, { cap: 60, window_days: 28, is_open: false });
+  assert.equal(await setupCount(), before + 1, 'one entry for one save');
+  const [a] = (await audit('study')).slice(-1);
+  assert.equal(a.email, 'r@example.edu'); assert.equal(a.user_id, researcher);
+  assert.deepEqual(a.detail.changes.cap, { from: 100, to: 60 });
+  assert.deepEqual(await study_(f.st, { cap: 60, window_days: 28 }), {}, 'saving what is already there changes nothing');
+  assert.equal(await setupCount(), before + 1, 'and records nothing');
+  assert.deepEqual(await study_(f.st, {}), {});
+});
+
+await test('study settings refuse bad values, and a cap below the people already enrolled', async () => {
+  const f = await fresh();
+  const bad = async (changes, re) => assert.rejects(study_(f.st, changes), re, JSON.stringify(changes));
+  await bad({ cap: 2 }, /cap_below_enrolled/);
+  await bad({ cap: 0 }, /bad_value: cap/); await bad({ cap: 1001 }, /bad_value: cap/); await bad({ cap: 3.5 }, /bad_value: cap/); await bad({ cap: '40' }, /bad_value: cap/);
+  await bad({ window_days: 0 }, /bad_value: window_days/); await bad({ window_days: 121 }, /bad_value: window_days/); await bad({ window_days: 'x' }, /bad_value: window_days/);
+  await bad({ is_open: 'yes' }, /bad_value: is_open/);
+  await bad({ survey_intro: 5 }, /bad_value: survey_intro/); await bad({ survey_intro: 'x'.repeat(601) }, /bad_value: survey_intro/);
+  await bad({ starts_at: '2026-11-02T00:00:00Z', ends_at: '2026-11-01T00:00:00Z' }, /bad_value: ends_at/);
+  await bad({ name: 'Renamed' }, /unknown_setting: name/); await bad({ code_hash: 'x' }, /unknown_setting/); await bad({ is_test: true }, /unknown_setting/); await bad({ groups: ['A'] }, /unknown_setting/);
+  await assert.rejects(setup(researcher, `select public.research_set_study($1, '[1]')`, [f.st]), /bad_changes/);
+  assert.equal((await study_(f.st, { cap: 3 })).cap.to, 3, 'a cap equal to the number enrolled is fine');
+  assert.equal((await owner('select cap, window_days, is_open from research.studies where id = $1', [f.st]))[0].cap, 3, 'and a refused save left the rest untouched');
+});
+
+await test('dates and the survey intro can be set and cleared, and the intro text never reaches the audit log', async () => {
+  const f = await fresh();
+  await study_(f.st, { starts_at: '2026-10-12T04:00:00Z', ends_at: '2026-12-01T04:00:00Z', survey_intro: '  A private intro line.  ' });
+  let [r] = await owner('select starts_at, ends_at, survey_intro from research.studies where id = $1', [f.st]);
+  assert.equal(r.survey_intro, 'A private intro line.', 'trimmed');
+  assert.equal(new Date(r.ends_at).toISOString(), '2026-12-01T04:00:00.000Z');
+  await study_(f.st, { starts_at: null, ends_at: null, survey_intro: '   ' });
+  [r] = await owner('select starts_at, ends_at, survey_intro from research.studies where id = $1', [f.st]);
+  assert.deepEqual([r.starts_at, r.ends_at, r.survey_intro], [null, null, null]);
+  assert.ok(!JSON.stringify(await owner(`select detail from research.audit_log where action = 'setup_change'`)).includes('A private intro line'));
+});
+
+await test('closing the study and changing its cap take effect on enrolment at once', async () => {
+  const f = await fresh();
+  const u = await listed(f.st);
+  assert.equal((await check(u, f.code)).status, 'ok');
+  await study_(f.st, { is_open: false });
+  assert.equal((await check(u, f.code)).status, 'invalid_code', 'closed looks like a wrong code');
+  await study_(f.st, { is_open: true, cap: 3 });
+  assert.equal((await check(u, f.code)).status, 'invalid_code', 'full, with three already in');
+  await study_(f.st, { cap: 4 });
+  assert.equal((await enroll(u, f.code)).status, 'ok');
+});
+
+await test('the study code can be replaced: the old one stops, the new one works, and the audit log never has it', async () => {
+  const f = await fresh();
+  const u = await listed(f.st);
+  const before = await setupCount();
+  assert.equal((await setup(researcher, `select public.research_set_study_code($1, ' fresh code-77 ') r`, [f.st]))[0].r, true);
+  assert.equal(await setupCount(), before + 1);
+  assert.equal((await check(u, f.code)).status, 'invalid_code', 'the old code');
+  assert.equal((await check(u, 'FRESHCODE77')).status, 'ok', 'the new one, with spaces and dashes ignored');
+  assert.equal((await enroll(u, 'fresh code-77')).status, 'ok');
+  assert.equal((await status(f.s1)).status, 'active', 'people already in are unaffected');
+  const log = JSON.stringify(await owner(`select detail from research.audit_log where action = 'setup_change'`));
+  assert.ok(!/fresh ?code|FRESHCODE/i.test(log), 'the code is not in the log');
+  await assert.rejects(setup(researcher, `select public.research_set_study_code($1, 'abc')`, [f.st]), /code_too_short/);
+  await assert.rejects(setup(researcher, `select public.research_set_study_code($1, '  ---  ')`, [f.st]), /code_too_short/);
+  await assert.rejects(setup(researcher, `select public.research_set_study_code($1, $2)`, [f.st, CODE]), /code_in_use/, 'another study already uses it');
+  assert.equal((await check(await listed(f.st), 'FRESHCODE77')).status, 'ok', 'a refused change left the code as it was');
+});
+
+await test('a schedule can be edited, and the new time is what the sender uses', async () => {
+  const f = await fresh();
+  const save = (id, changes) => setup(researcher, 'select public.research_save_schedule($1, $2::jsonb) r', [id, JSON.stringify(changes)]).then((r) => r[0].r);
+  assert.equal((await claim(T.tue1030)).filter((r) => r.kind === 'reminder').length, 3);
+  const diff = await save(f.snack, { send_time: '11:15', title: ' Snack now ', body: 'Eat it.', late_minutes: 20, days: [5, 1, 3, 3] });
+  assert.deepEqual(diff.send_time, { from: '10:30:00', to: '11:15:00' });
+  assert.deepEqual(diff.days, { from: [1, 2, 3, 4, 5, 6, 7], to: [1, 3, 5] }, 'sorted, no repeats');
+  assert.deepEqual(diff.body, { changed: true }, 'the audit log says the body changed, not what it says');
+  const [row] = await owner('select send_time::text t, title, body, late_minutes, days from research.reminder_schedules where id = $1', [f.snack]);
+  assert.deepEqual(row, { t: '11:15:00', title: 'Snack now', body: 'Eat it.', late_minutes: 20, days: [1, 3, 5] });
+  // Tuesday is not a day any more, so nothing for S on Tuesday at the new time.
+  assert.equal((await claim('2026-10-13T15:20:00Z')).filter((r) => r.title === 'Snack now').length, 0);
+  // Wednesday 11:20 is inside the new window.
+  assert.equal((await claim('2026-10-14T15:20:00Z')).filter((r) => r.title === 'Snack now').length, 2);
+  assert.deepEqual(await save(f.snack, { send_time: '11:15' }), {}, 'no change, no entry');
+});
+
+await test('schedule edits are checked, and the group and the kind cannot be changed', async () => {
+  const f = await fresh();
+  const save = (changes) => setup(researcher, 'select public.research_save_schedule($1, $2::jsonb)', [f.loop, JSON.stringify(changes)]);
+  for (const [c, re] of [[{ send_time: '25:00' }, /send_time/], [{ send_time: '9:5' }, /send_time/], [{ send_time: 1030 }, /send_time/], [{ days: [] }, /days/], [{ days: [0] }, /days/],
+                         [{ days: [8] }, /days/], [{ days: [1.5] }, /days/], [{ days: 'all' }, /days/], [{ late_minutes: 0 }, /late_minutes/], [{ late_minutes: 1441 }, /late_minutes/],
+                         [{ title: '  ' }, /title/], [{ title: 'x'.repeat(81) }, /title/], [{ body: 'x'.repeat(201) }, /body/], [{ is_active: 'no' }, /is_active/],
+                         [{ grp: 'S' }, /unknown_setting: grp/], [{ kind: 'survey' }, /unknown_setting: kind/], [{ study_id: f.st }, /unknown_setting/]]) {
+    await assert.rejects(save(c), re, JSON.stringify(c));
+  }
+  await assert.rejects(setup(researcher, `select public.research_save_schedule('00000000-0000-0000-0000-000000000000', '{}')`), /unknown_schedule/);
+  const [row] = await owner('select grp, kind, title from research.reminder_schedules where id = $1', [f.loop]);
+  assert.deepEqual(row, { grp: 'L', kind: 'reminder', title: 'Loop' }, 'nothing moved');
+});
+
+await test('a schedule can be switched off and a new one added', async () => {
+  const f = await fresh();
+  await setup(researcher, `select public.research_save_schedule($1, '{"is_active": false}')`, [f.loop]);
+  assert.deepEqual((await claim(T.tue1030)).map((r) => r.title).sort(), ['Snack', 'Snack'], 'group L has no reminder now');
+  const id = (await setup(researcher, `select public.research_add_schedule($1, 'L', 'reminder', '10:30', ' Loop and plan ', 'Walk the hall once.') id`, [f.st]))[0].id;
+  const [row] = await owner('select grp, kind, send_time::text t, title, days, late_minutes from research.reminder_schedules where id = $1', [id]);
+  assert.deepEqual(row, { grp: 'L', kind: 'reminder', t: '10:30:00', title: 'Loop and plan', days: [1, 2, 3, 4, 5, 6, 7], late_minutes: 30 });
+  const a = (await audit('schedule_added')).at(-1);
+  assert.deepEqual([a.detail.kind, a.detail.group, a.detail.time], ['reminder', 'L', '10:30']);
+  await assert.rejects(setup(researcher, `select public.research_add_schedule($1, 'Z', 'reminder', '10:30', 'x')`, [f.st]), /unknown_group/);
+  await assert.rejects(setup(researcher, `select public.research_add_schedule($1, 'S', 'banana', '10:30', 'x')`, [f.st]), /bad_kind/);
+  await assert.rejects(setup(researcher, `select public.research_add_schedule($1, 'S', 'reminder', '10:99', 'x')`, [f.st]), /send_time/);
+  await assert.rejects(setup(researcher, `select public.research_add_schedule($1, 'S', 'reminder', '10:30', '   ')`, [f.st]));
+});
+
+await test('questions are added, replaced, retired and moved from the dashboard, and wording is never edited', async () => {
+  const f = await fresh();
+  const add = (text, format, extra = {}) => setup(researcher,
+    `select public.research_add_question($1,$2,$3,$4::jsonb,$5::text[],$6,$7,$8::jsonb) id`,
+    [f.st, text, format, JSON.stringify(extra.options ?? []), extra.grps ?? [], extra.position ?? 10, extra.replaces ?? null, extra.showIf ? JSON.stringify(extra.showIf) : null]).then((r) => r[0].id);
+  const a = await add(' How was lunch? ', 'rating', { options: ['Bad', 'Good'], position: 10 });
+  assert.equal((await owner('select text, options from research.questions where id = $1', [a]))[0].text, 'How was lunch?');
+  assert.deepEqual((await audit('question_added')).at(-1).detail.format, 'rating');
+  assert.equal(await submit(f.s1, '2026-10-13', { [a]: 4 }, T.tue2130), 'ok');
+  assert.equal((await owner('select answers from research.question_usage where question_id = $1', [a]))[0].answers, 1, 'the page can say how many answers a question has');
+
+  const b = await add('How was lunch today?', 'rating', { options: ['Bad', 'Good'], position: 10, replaces: a });
+  const rows = await owner('select id, is_active, replaces from research.questions where study_id = $1 order by created_at', [f.st]);
+  assert.deepEqual(rows.map((r) => r.is_active), [false, true]);
+  assert.equal(rows[1].replaces, a);
+  assert.equal((await audit('question_replaced')).at(-1).detail.replaces, a);
+  assert.equal((await owner('select question_id from research.responses limit 1'))[0].question_id !== b, true, 'the earlier answer still points at the old wording');
+  assert.equal((await pending(f.s2, T.wed2100)).questions[0].id, b);
+
+  const c = await add('Follow up?', 'yes_no', { position: 20, showIf: { question: b, any_of: [5] } });
+  assert.ok(c);
+  await assert.rejects(add('Bad', 'yes_no', { position: 5, showIf: { question: b, any_of: [5] } }), /show_if_needs_an_earlier_question/);
+  await assert.rejects(add('Bad', 'yes_no', { position: -1 }), /bad_value: position/);
+  await assert.rejects(add('Bad', 'yes_no', { position: 1001 }), /bad_value: position/);
+  await assert.rejects(add('   ', 'yes_no'));
+  await assert.rejects(add('Bad', 'rating', { options: ['one'] }), /questions_rating_labels/);
+
+  const set = (id, active, pos) => setup(researcher, 'select public.research_set_question($1,$2,$3) r', [id, active, pos]).then((r) => r[0].r);
+  assert.equal(await set(c, false, null), true);
+  assert.equal((await owner('select is_active from research.questions where id = $1', [c]))[0].is_active, false);
+  assert.equal(await set(c, false, null), false, 'already retired: no change, no entry');
+  assert.equal(await set(c, true, 30), true);
+  assert.deepEqual((await owner('select is_active, position from research.questions where id = $1', [c]))[0], { is_active: true, position: 30 });
+  await assert.rejects(set(c, null, 2000), /bad_value: position/);
+  await assert.rejects(set('00000000-0000-0000-0000-000000000000', false, null), /unknown_question/);
+  await assert.rejects(owner(`update research.questions set text = 'x' where id = $1`, [c]), /questions_are_never_edited/);
+});
+
+await test('every setup change leaves one audit entry that names who, and only an owner can read them', async () => {
+  const rows = await owner(`select * from research.audit_log where action = 'setup_change'`);
+  assert.ok(rows.length > 15);
+  assert.ok(rows.every((r) => r.email === 'r@example.edu' && r.user_id === researcher), 'every entry names the researcher');
+  assert.ok(rows.every((r) => ['study', 'code', 'schedule', 'schedule_added', 'question_added', 'question_replaced', 'question'].includes(r.detail.what)));
+  assert.equal((await setup(researcher, `select * from research.audit_log where action = 'setup_change'`)).length, 0, 'a researcher cannot read the log');
+  assert.ok((await setup(owner1, `select * from research.audit_log where action = 'setup_change'`)).length > 15);
+  assert.equal((await call(researcher, `select public.research_log_action('setup_change') r`, [], AAL2))[0].r, false, 'a client cannot write one by hand');
+});
+
+
+// ── Changing a question never strands its follow-ups ────────────────────────
+
+const replaceQ = (st, oldId, { text, format, options = [], grps = [], position, showIf = null }) => setup(researcher,
+  `select public.research_add_question($1,$2,$3,$4::jsonb,$5::text[],$6,$7,$8::jsonb) id`,
+  [st, text, format, JSON.stringify(options), grps, position, oldId, showIf ? JSON.stringify(showIf) : null]).then((r) => r[0].id);
+const activeQs = (st) => owner(`select id, text, position, show_if, replaces, grps, options from research.questions where study_id = $1 and is_active order by position, created_at`, [st]);
+const setQ = (id, active) => setup(researcher, 'select public.research_set_question($1,$2,null) r', [id, active]).then((r) => r[0].r);
+
+await test('changing a question moves its follow-ups to the new one, atomically, and old answers stay put', async () => {
+  const f = await seeded();
+  const base = { [f.q.where]: 'Yes - in Usdan', [f.q.goals]: 3, [f.q.left]: '1/4 plate' };
+  assert.equal(await submit(f.s1, '2026-10-13', { ...base, [f.q.snack]: true, [f.q.how]: '0-20 min before lunch' }, T.tue2130), 'ok');
+  const before = await setupCount();
+
+  const newSnack = await replaceQ(f.st, f.q.snack, { text: 'Did you eat the snack we gave you before lunch today?', format: 'yes_no', grps: ['S'], position: 20 });
+  const now = await activeQs(f.st);
+  const follow = now.find((x) => x.text === 'How long before lunch did you eat the snack?');
+  assert.ok(follow, 'the follow-up is still asked');
+  assert.notEqual(follow.id, f.q.how, 'as a new copy');
+  assert.deepEqual(follow.show_if, { question: newSnack, any_of: [true] }, 'that follows the NEW question');
+  assert.equal(follow.replaces, f.q.how);
+  assert.deepEqual([follow.position, follow.grps, follow.options.length], [21, ['S'], 3], 'same place, group and choices');
+  assert.equal(now.filter((x) => x.id === f.q.snack || x.id === f.q.how).length, 0, 'the old pair is retired');
+  assert.equal(await setupCount(), before + 1, 'one entry for the one change');
+  assert.equal((await audit('question_replaced')).at(-1).detail.follow_ups_moved, 1);
+
+  // The earlier answers still belong to the old wording.
+  const old = await owner(`select r.question_id from research.responses r join research.participants p on p.id = r.participant_id where p.user_id = $1`, [f.s1]);
+  assert.ok(old.some((r) => r.question_id === f.q.snack) && old.some((r) => r.question_id === f.q.how));
+
+  // And the survey works with the new pair: yes needs the follow-up, no forbids it.
+  const go = (u, a) => submit(u, '2026-10-14', a, '2026-10-15T01:30:00Z');
+  assert.equal(await go(f.s2, { ...base, [newSnack]: true }), 'invalid_answers', 'yes needs the follow-up');
+  assert.equal(await go(f.s2, { ...base, [newSnack]: true, [follow.id]: '21-60 min before lunch' }), 'ok');
+});
+
+await test('a chain of follow-ups moves all the way down', async () => {
+  const f = await fresh();
+  const mk = (text, position, showIf) => setup(researcher, `select public.research_add_question($1,$2,'yes_no','[]'::jsonb,'{}',$3,null,$4::jsonb) id`,
+    [f.st, text, position, showIf ? JSON.stringify(showIf) : null]).then((r) => r[0].id);
+  const a = await mk('A', 10, null);
+  const b = await mk('B', 20, { question: a, any_of: [true] });
+  const c = await mk('C', 30, { question: b, any_of: [true] });
+  const a2 = await replaceQ(f.st, a, { text: 'A, reworded', format: 'yes_no', position: 10 });
+  const now = await activeQs(f.st);
+  assert.deepEqual(now.map((x) => x.text), ['A, reworded', 'B', 'C']);
+  const [na, nb, nc] = now;
+  assert.equal(na.id, a2);
+  assert.deepEqual(nb.show_if, { question: na.id, any_of: [true] });
+  assert.deepEqual(nc.show_if, { question: nb.id, any_of: [true] }, 'the grandchild follows the new child');
+  assert.equal((await audit('question_replaced')).at(-1).detail.follow_ups_moved, 2);
+  assert.equal(await submit(f.s1, '2026-10-13', { [na.id]: true, [nb.id]: true, [nc.id]: false }, T.tue2130), 'ok');
+  assert.ok([a, b, c].every((id) => id), 'the old three are retired, not deleted');
+  assert.equal((await owner('select count(*)::int c from research.questions where study_id = $1 and not is_active', [f.st]))[0].c, 3);
+});
+
+await test('a change the follow-ups cannot survive is refused whole', async () => {
+  const f = await seeded();
+  const before = await setupCount();
+  const rowsBefore = (await owner('select count(*)::int c from research.questions where study_id = $1', [f.st]))[0].c;
+  await assert.rejects(replaceQ(f.st, f.q.snack, { text: 'How hungry were you?', format: 'rating', grps: ['S'], position: 20 }), /follow_ups_would_break/, 'a different kind of answer');
+  await assert.rejects(replaceQ(f.st, f.q.snack, { text: 'Snack?', format: 'yes_no', grps: ['S'], position: 21 }), /show_if_needs_an_earlier_question/, 'a position the follow-up cannot follow');
+  assert.equal(await setupCount(), before, 'nothing was recorded');
+  assert.equal((await owner('select count(*)::int c from research.questions where study_id = $1', [f.st]))[0].c, rowsBefore, 'and no question was added');
+  assert.equal((await owner('select is_active from research.questions where id = $1', [f.q.snack]))[0].is_active, true, 'the original is still in use');
+
+  const d = await seeded({ dinner: true });
+  const gate = await qAt(d.st, 50);
+  const opts = ['Yes - in Usdan', 'Yes - in Sherman', 'No'];
+  await assert.rejects(replaceQ(d.st, gate, { text: 'Dinner?', format: 'multiple_choice', options: ['Yes - in Usdan', 'Yes - in Sherman'], position: 50 }), /follow_ups_would_break/, 'the follow-ups name an answer that is gone');
+  const gate2 = await replaceQ(d.st, gate, { text: 'Did you eat dinner in a dining hall?', format: 'multiple_choice', options: [...opts, 'Somewhere else'], position: 50 });
+  const moved = (await activeQs(d.st)).filter((x) => x.show_if?.question === gate2);
+  assert.equal(moved.length, 3, 'with every answer still offered, all three move');
+  assert.ok(moved.every((x) => JSON.stringify(x.show_if.none_of) === '["No"]'));
+});
+
+await test('retiring a question retires its follow-ups, and a follow-up cannot return while its parent is retired', async () => {
+  const f = await seeded();
+  const before = await setupCount();
+  assert.equal(await setQ(f.q.snack, false), true);
+  const act = (await activeQs(f.st)).map((x) => x.id);
+  assert.ok(!act.includes(f.q.snack) && !act.includes(f.q.how), 'the follow-up goes with it');
+  assert.equal(await setupCount(), before + 1, 'one entry');
+  assert.deepEqual((await audit('question')).at(-1).detail.also_retired, [f.q.how]);
+  await assert.rejects(setQ(f.q.how, true), /parent_is_retired/);
+  assert.equal(await setQ(f.q.snack, true), true);
+  assert.equal(await setQ(f.q.how, true), true, 'now it can');
+  assert.equal((await owner('select is_active from research.questions where id = $1', [f.q.how]))[0].is_active, true);
+  // Nothing else was touched.
+  assert.ok((await activeQs(f.st)).map((x) => x.id).includes(f.q.where));
+});
+
+await test('changing a follow-up itself keeps its parent and moves nothing', async () => {
+  const f = await seeded();
+  const how2 = await replaceQ(f.st, f.q.how, { text: 'How many minutes before lunch did you eat it?', format: 'multiple_choice', options: ['0-20', '21-60', '60+'], grps: ['S'], position: 21, showIf: { question: f.q.snack, any_of: [true] } });
+  assert.equal((await audit('question_replaced')).at(-1).detail.follow_ups_moved, 0);
+  const now = await activeQs(f.st);
+  assert.deepEqual(now.find((x) => x.id === how2).show_if, { question: f.q.snack, any_of: [true] });
+  assert.ok(now.some((x) => x.id === f.q.snack), 'the parent is untouched');
+  assert.equal(now.filter((x) => x.id === f.q.how).length, 0);
 });
 
 console.log(`\nall ${n} research SQL tests passed`);

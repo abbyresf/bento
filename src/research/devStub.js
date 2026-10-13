@@ -74,7 +74,24 @@ function build(extraPlateRows) {
     { id: 2, at: iso(addDays(now, -1)), email: 'researcher@example.edu', user_id: '00000000-0000-0000-0000-000000000001', action: 'view_identities', detail: '{"sheet":"participants"}' },
     { id: 1, at: iso(addDays(now, -1)), email: 'researcher@example.edu', user_id: '00000000-0000-0000-0000-000000000001', action: 'sign_in', detail: '{}' },
   ];
-  return { grid_participants: participants, grid_roster: roster, grid_responses: responses, grid_meals: meals, grid_plate_items: plate, grid_events: events, grid_snapshots: snaps, grid_prompts: prompts, grid_activity: activity, audit_log: audit };
+  const study = { id: 'study-1', name: 'Fall 2026 study', cap: 40, is_open: true, window_days: 21, starts_at: null, ends_at: null, survey_intro: 'This is a 1-minute survey about your meal experiences today at Usdan and Sherman all-you-care-to-eat (AYCTE) dining halls. Please answer honestly and accurately, as best you can.', groups: ['S', 'L'], timezone: 'America/New_York', created_at: iso(addDays(now, -20)) };
+  const sch = (id, grp, kind, time, title, body, late) => ({ id, study_id: 'study-1', grp, kind, send_time: time, days: [1, 2, 3, 4, 5, 6, 7], late_minutes: late, title, body, is_active: true, created_at: iso(addDays(now, -20)) });
+  const schedules = [
+    sch('sch-s', 'S', 'reminder', '10:30:00', 'Snack time', 'Lunch opens at 11. Eat your snack now.', 30),
+    sch('sch-l', 'L', 'reminder', '10:30:00', 'Loop, plan, then plate', 'Walk the hall once and see what is offered. Decide what you want. Then fill your plate.', 30),
+    sch('sch-q', null, 'survey', '20:00:00', "Today's questions", '', 180),
+  ];
+  const Q = (id, text, format, options, grps, position, show_if = null) => ({ id, study_id: 'study-1', text, format, options, grps, position, is_active: true, replaces: null, show_if, created_at: iso(addDays(now, -20)) });
+  const questions = [
+    Q('q-where', 'Did you eat lunch in Usdan or Sherman all-you-care-to-eat (AYCTE) dining hall today?', 'multiple_choice', ['Yes - in Usdan', 'Yes - in Sherman', 'No'], [], 10),
+    Q('q-loop', 'When having lunch at Usdan/Sherman, did you use the "loop and plan" strategy before getting food?', 'rating', ['Not at all', 'Completely'], ['L'], 20),
+    Q('q-snack', 'Did you eat the snack given to you before lunch today?', 'yes_no', [], ['S'], 20),
+    Q('q-how', 'How long before lunch did you eat the snack?', 'multiple_choice', ['0-20 min before lunch', '21-60 min before lunch', 'More than 1 hour before lunch'], ['S'], 21, { question: 'q-snack', any_of: [true] }),
+    Q('q-goals', 'To what extent were your lunch choices today consistent with your eating goals?', 'rating', ['Not at all', 'Completely'], [], 30),
+    Q('q-left', 'How much food was left at the end of your meal? Imagine you put all your leftover food on a single plate (think of the most common size plate), estimate about how much of the plate it would cover.', 'multiple_choice', ['Little or None', '1/4 plate', '1/2 plate', '3/4 plate', '1 plate', '1+ plate'], [], 40),
+  ];
+  const usage = [{ question_id: 'q-where', answers: 150 }, { question_id: 'q-loop', answers: 74 }, { question_id: 'q-snack', answers: 76 }, { question_id: 'q-how', answers: 51 }, { question_id: 'q-goals', answers: 150 }, { question_id: 'q-left', answers: 150 }];
+  return { studies: [study], reminder_schedules: schedules, questions, question_usage: usage, grid_participants: participants, grid_roster: roster, grid_responses: responses, grid_meals: meals, grid_plate_items: plate, grid_events: events, grid_snapshots: snaps, grid_prompts: prompts, grid_activity: activity, audit_log: audit };
 }
 
 export function makeStub(mode = 'researcher') {
@@ -105,14 +122,82 @@ export function makeStub(mode = 'researcher') {
     ['meals', 'events'].forEach(window.__stubEmit);
   };
 
+  const bad = (message) => ({ data: null, error: { message } });
+  const audit = (what, detail) => {
+    tables.audit_log.unshift({ id: tables.audit_log.length + 1, at: iso(new Date()), email: state.session.user.email, user_id: state.session.user.id, action: 'setup_change', detail: JSON.stringify({ what, ...detail }) });
+  };
+  /* Stand-ins for the setup functions, with the same refusals, so the page can be
+   * tried. The real checks are in migration 058 and have their own tests. */
+  const setupRpc = (name, a) => {
+    if (!name.startsWith('research_set') && !name.startsWith('research_save') && !name.startsWith('research_add')) return null;
+    if (state.aal !== 'aal2' || mode === 'student') return bad('not_authorised');
+    const study = tables.studies[0];
+    if (name === 'research_set_study') {
+      const diff = {};
+      for (const [k, v] of Object.entries(a.p_changes)) {
+        if (!['cap', 'is_open', 'window_days', 'starts_at', 'ends_at', 'survey_intro'].includes(k)) return bad(`unknown_setting: ${k}`);
+        if (k === 'cap' && v < tables.grid_participants.length) return bad('cap_below_enrolled');
+        if (k === 'window_days' && (v < 1 || v > 120)) return bad('bad_value: window_days');
+        if (study[k] !== v) { diff[k] = { from: study[k], to: v }; study[k] = v; }
+      }
+      if (Object.keys(diff).length) audit('study', { study: study.id, changes: diff });
+      return { data: diff, error: null };
+    }
+    if (name === 'research_set_study_code') {
+      if (a.p_code.replace(/[^A-Za-z0-9]/g, '').length < 6) return bad('code_too_short');
+      if (/maple/i.test(a.p_code)) return bad('code_in_use');
+      audit('code', { study: study.id }); return { data: true, error: null };
+    }
+    if (name === 'research_save_schedule') {
+      const row = tables.reminder_schedules.find((x) => x.id === a.p_id);
+      if (!row) return bad('unknown_schedule');
+      const diff = {};
+      for (const [k, v] of Object.entries(a.p_changes)) {
+        if (!['send_time', 'days', 'late_minutes', 'title', 'body', 'is_active'].includes(k)) return bad(`unknown_setting: ${k}`);
+        const value = k === 'send_time' ? `${v}:00` : v;
+        if (JSON.stringify(row[k]) !== JSON.stringify(value)) { diff[k] = { from: row[k], to: value }; row[k] = value; }
+      }
+      if (Object.keys(diff).length) audit('schedule', { schedule: row.id, changes: diff });
+      return { data: diff, error: null };
+    }
+    if (name === 'research_add_schedule') {
+      const row = { id: `sch-${tables.reminder_schedules.length + 1}`, study_id: study.id, grp: a.p_grp, kind: a.p_kind, send_time: `${a.p_time}:00`, days: a.p_days, late_minutes: a.p_late, title: a.p_title, body: a.p_body, is_active: true, created_at: iso(new Date()) };
+      tables.reminder_schedules.push(row); audit('schedule_added', { schedule: row.id }); return { data: row.id, error: null };
+    }
+    if (name === 'research_add_question') {
+      if (a.p_show_if && !tables.questions.some((x) => x.id === a.p_show_if.question && x.position < a.p_position)) return bad('show_if_needs_an_earlier_question');
+      const old = a.p_replaces ? tables.questions.find((x) => x.id === a.p_replaces) : null;
+      const kids = old ? tables.questions.filter((x) => x.is_active && x.show_if?.question === old.id) : [];
+      if (kids.some((k) => old.format !== a.p_format || (a.p_format === 'multiple_choice' && (k.show_if.any_of ?? k.show_if.none_of).some((v) => !a.p_options.includes(v))))) return bad('follow_ups_would_break');
+      if (kids.some((k) => k.position <= a.p_position)) return bad('show_if_needs_an_earlier_question');
+      const row = { id: `q-${tables.questions.length + 1}`, study_id: study.id, text: a.p_text, format: a.p_format, options: a.p_options, grps: a.p_grps, position: a.p_position, is_active: true, replaces: a.p_replaces, show_if: a.p_show_if, created_at: iso(new Date()) };
+      tables.questions.push(row);
+      let moved = 0;
+      const move = (oldId, newId) => { for (const f of tables.questions.filter((x) => x.is_active && x.show_if?.question === oldId)) { const copy = { ...f, id: `q-${tables.questions.length + 1}`, replaces: f.id, show_if: { ...f.show_if, question: newId }, created_at: iso(new Date()) }; f.is_active = false; tables.questions.push(copy); moved += 1; move(f.id, copy.id); } };
+      if (old) { old.is_active = false; move(old.id, row.id); }
+      audit(a.p_replaces ? 'question_replaced' : 'question_added', { question: row.id, follow_ups_moved: moved }); return { data: row.id, error: null };
+    }
+    if (name === 'research_set_question') {
+      const row = tables.questions.find((x) => x.id === a.p_id);
+      if (!row) return bad('unknown_question');
+      if (a.p_active === true && row.show_if && !tables.questions.some((x) => x.id === row.show_if.question && x.is_active)) return bad('parent_is_retired');
+      if (a.p_active === false) { const down = (id) => tables.questions.filter((x) => x.is_active && x.show_if?.question === id).forEach((x) => { x.is_active = false; down(x.id); }); down(row.id); }
+      if (a.p_active !== null) row.is_active = a.p_active;
+      if (a.p_position !== null) row.position = a.p_position;
+      audit('question', { question: row.id }); return { data: true, error: null };
+    }
+    return null;
+  };
+
   const query = (source) => {
     const q = { orders: [], lim: null };
     q.select = () => q;
     q.order = (col, opts) => { q.orders.push([col, opts?.ascending !== false]); return q; };
     q.limit = (n) => { q.lim = n; return q; };
+    q.eqs = [];
+    q.eq = (col, val) => { q.eqs.push([col, val]); return q; };
     const rowsNow = () => {
-      if (source === 'studies') return [{ name: 'Fall 2026 study', cap: 40, window_days: 21, survey_intro: null }];
-      const data = [...(tables[source] ?? [])];
+      const data = (tables[source] ?? []).filter((row) => q.eqs.every(([col, val]) => row[col] === val));
       data.sort((a, b) => { for (const [col, asc] of q.orders) { const x = a[col], y = b[col]; if (x === y) continue; const c = x === null || x === undefined ? -1 : y === null || y === undefined ? 1 : x < y ? -1 : 1; return asc ? c : -c; } return 0; });
       return data;
     };
@@ -147,6 +232,8 @@ export function makeStub(mode = 'researcher') {
         window.__stubAudit = tables.audit_log;
         return { data: true, error: null };
       }
+      const setupOut = setupRpc(name, args);
+      if (setupOut) return setupOut;
       return { data: null, error: { message: `stub: unknown function ${name}` } };
     },
     schema: () => ({ from: (source) => query(source) }),

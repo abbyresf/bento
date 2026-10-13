@@ -95,3 +95,46 @@ a { color: var(--accent); }
 .rs-body { flex: 1; min-height: 320px; padding: 0 1rem; display: flex; flex-direction: column; }
 .rs-grid { flex: 1; min-height: 0; }
 .rs-foot { display: flex; justify-content: space-between; padding: 0.45rem 1rem 0.7rem; color: var(--muted); font-size: 0.85rem; }
+
+/* Setup */
+.rs-setup { padding-bottom: 3rem; max-width: 980px; }
+.rs-panel { margin: 0.9rem 1rem; padding: 1rem 1.1rem; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+.rs-panel h2 { font-size: 1rem; letter-spacing: 0; text-transform: none; color: var(--text); margin: 0 0 0.2rem; }
+.rs-panel h3 { font-size: 0.8rem; margin: 0.2rem 0 0.35rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.rs-panelintro { margin: 0 0 0.8rem; }
+.rs-flash { position: sticky; top: 0; z-index: 10; margin: 0.6rem 1rem 0; padding: 0.55rem 0.9rem; border-radius: 8px; background: var(--ok); color: #fff; font-weight: 600; }
+.rs-ok { color: var(--ok); margin: 0.5rem 0 0; }
+.rs-warn { margin: 0.8rem 0 0; padding: 0.6rem 0.8rem; border-radius: 8px; background: var(--accent-tint); color: var(--text); border-left: 3px solid var(--accent); }
+.rs-problems { margin: 0.6rem 0 0; padding-left: 1.2rem; color: var(--bad); }
+.rs-sep { border-top: 1px solid var(--border); margin: 1.1rem 0 0.8rem; }
+.rs-statusrow { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+.rs-pill { padding: 0.15rem 0.6rem; border-radius: 99px; font-weight: 700; font-size: 0.8rem; }
+.rs-pill-on { background: var(--ok); color: #fff; } .rs-pill-off { background: var(--sunk); color: var(--muted); }
+.rs-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.8rem 1rem; }
+.rs-panel label { display: block; }
+.rs-panel label > span, .rs-lbl { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.25rem; }
+.rs-panel input:not([type=checkbox]), .rs-panel textarea, .rs-panel select { width: 100%; font: inherit; padding: 0.45rem 0.6rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+.rs-panel textarea { resize: vertical; line-height: 1.4; }
+.rs-panel small { display: block; color: var(--muted); margin-top: 0.2rem; font-size: 0.8rem; }
+.rs-fullfield { margin-top: 0.8rem; }
+.rs-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-top: 0.9rem; }
+.rs-confirm { display: inline-flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; padding: 0.3rem 0.5rem; border-radius: 8px; background: var(--sunk); }
+.rs-danger { color: var(--bad); } .rs-danger-solid { background: var(--bad); border-color: var(--bad); color: #fff; }
+.rs-codebox { max-width: 460px; }
+.rs-list { list-style: none; margin: 0 0 0.8rem; padding: 0; display: grid; gap: 0.6rem; }
+.rs-item-card { padding: 0.75rem 0.9rem; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.rs-item-card.is-off { opacity: 0.7; }
+.rs-itemhead { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
+.rs-itemhead .rs-actions { margin-top: 0; }
+.rs-qtext { font-weight: 600; margin-bottom: 0.15rem; }
+.rs-meta { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.35rem; }
+.rs-chip-static { display: inline-block; padding: 0.05rem 0.55rem; border-radius: 99px; background: var(--sunk); color: var(--muted); font-size: 0.78rem; font-weight: 600; }
+.rs-chip-warn { background: var(--accent-tint); color: var(--accent); }
+.rs-chips { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.rs-chip { font: inherit; font-size: 0.85rem; font-weight: 600; padding: 0.3rem 0.7rem; border-radius: 99px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
+.rs-chip[aria-pressed="true"] { background: var(--accent-tint); border-color: var(--accent); color: var(--accent); }
+.rs-edit { margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px dashed var(--border); }
+.rs-follow { margin: 0.5rem 0 0 1.6rem; padding: 0.6rem 0.8rem; border-left: 3px solid var(--border); display: grid; gap: 0.6rem; }
+.rs-checkrow { display: flex !important; gap: 0.5rem; align-items: center; margin-top: 0.8rem; }
+.rs-checkrow span { margin: 0 !important; font-weight: 500 !important; }
+.rs-retired { margin-top: 0.8rem; }

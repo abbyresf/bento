@@ -8,6 +8,7 @@ import LivePage from './LivePage.jsx';
 import DataPage from './DataPage.jsx';
 import CompensationPage from './CompensationPage.jsx';
 import AuditPage from './AuditPage.jsx';
+import SetupPage from './SetupPage.jsx';
 
 /* The address after the # says where we are: #/live, #/data/meals, #/compensation,
  * #/audit. */
@@ -27,7 +28,7 @@ function Dashboard({ who }) {
   const leave = useCallback(async () => { setIdled(true); await signOut(); }, []);
   useIdleSignOut(true, leave);
 
-  const pages = [['live', 'Live'], ['data', 'Data'], ['compensation', 'Compensation'], ...(isOwner ? [['audit', 'Audit']] : [])];
+  const pages = [['live', 'Live'], ['data', 'Data'], ['compensation', 'Compensation'], ['setup', 'Setup'], ...(isOwner ? [['audit', 'Audit']] : [])];
   const page = pages.some(([k]) => k === route.page) ? route.page : 'live';
 
   return (
@@ -48,6 +49,7 @@ function Dashboard({ who }) {
         {page === 'live' && <LivePage />}
         {page === 'data' && <DataPage sheetId={route.arg} onPick={(id) => go(`/data/${id}`)} />}
         {page === 'compensation' && <CompensationPage />}
+        {page === 'setup' && <SetupPage />}
         {page === 'audit' && isOwner && <AuditPage />}
       </main>
     </div>
