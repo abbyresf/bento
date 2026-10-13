@@ -1,0 +1,1286 @@
+// Runs supabase/migrations/054_research_foundation.sql against a real Postgres (pglite)
+// with a stand-in for the Supabase pieces it relies on, then checks the rules in
+// RESEARCH_DASHBOARD_SPEC.md section 8.
+//
+//   npm i --no-save @electric-sql/pglite && node scripts/test-research-sql.mjs
+//
+// Not covered here: that a researcher sees only their own rows in the public
+// schema. That comes from the existing row-level security on those tables, which
+// this stand-in does not reproduce.
+import { PGlite } from '@electric-sql/pglite';
+import { readFileSync } from 'node:fs';
+import assert from 'node:assert/strict';
+
+const dir = process.env.MIGRATIONS_DIR
+  ? process.env.MIGRATIONS_DIR
+  : new URL('../supabase/migrations/', import.meta.url).pathname;
+const migrations = ['054_research_foundation.sql', '055_research_collection.sql', '056_research_reminders_and_survey.sql']
+  .map((f) => readFileSync(`${dir}/${f}`, 'utf8'));
+const db = new PGlite();
+
+await db.exec(`
+  create role anon nologin; create role authenticated nologin; create role service_role nologin;
+  create schema auth;
+  create table auth.users (id uuid primary key default gen_random_uuid(), email text);
+  create function auth.uid() returns uuid language sql stable as
+    $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+  create function auth.jwt() returns jsonb language sql stable as
+    $$ select coalesce(nullif(current_setting('request.jwt.claims', true), '')::jsonb, '{}'::jsonb) $$;
+  grant usage on schema auth, public to anon, authenticated, service_role;
+  create table public.profiles (id uuid primary key references auth.users(id) on delete cascade, university text,
+    weight numeric, weight_unit text, height_feet integer, height_inches integer, age integer, sex text,
+    activity_level text, goal text, skip_breakfast boolean default false, push_enabled boolean default false,
+    mascot_color text);
+  create table public.nutrition_targets (id uuid primary key default gen_random_uuid(),
+    user_id uuid unique references public.profiles(id) on delete cascade,
+    calories numeric, protein numeric, carbs numeric, fat numeric);
+  create table public.dietary_restrictions (id uuid primary key default gen_random_uuid(),
+    user_id uuid unique references public.profiles(id) on delete cascade,
+    vegetarian boolean default false, vegan boolean default false, halal boolean default false,
+    kosher boolean default false, allergies jsonb default '[]', updated_at timestamptz default now());
+  create table public.meal_history (id uuid primary key default gen_random_uuid(),
+    user_id uuid not null references public.profiles(id) on delete cascade,
+    confirmed_at timestamptz default now(), items jsonb not null default '[]',
+    meal_type text, meal_date date, dining_hall text, unique (user_id, meal_date, meal_type));
+  create table public.favorites (id uuid primary key default gen_random_uuid(),
+    user_id uuid not null references public.profiles(id) on delete cascade,
+    item_id text not null, name text, unique (user_id, item_id));
+  create table public.streaks (id uuid primary key default gen_random_uuid(),
+    user_id uuid unique not null references public.profiles(id) on delete cascade,
+    current_streak integer default 0, longest_streak integer default 0, last_confirmed_date date);
+  create table public.push_subscriptions (id uuid primary key default gen_random_uuid(),
+    user_id uuid not null, endpoint text unique not null, apns_token text);
+  create table public.item_ratings (user_id uuid not null references auth.users(id) on delete cascade,
+    item_id text not null, item_name text not null, rating smallint not null, university text,
+    dining_hall text, primary key (user_id, item_id));
+  create view public.item_rating_aggregates as
+    select item_id, min(item_name) as item_name, university, round(avg(rating)::numeric, 1) as avg_rating,
+      count(*)::integer as rating_count,
+      case when count(distinct dining_hall) filter (where dining_hall is not null) = 1
+           then min(dining_hall) filter (where dining_hall is not null) else null end as dining_hall
+    from public.item_ratings group by item_id, university;
+  create table public.admin_users (user_id uuid primary key, university text, is_super_admin boolean default false,
+    is_active boolean default true);
+  create table public.surveys (id uuid primary key default gen_random_uuid(), university text, question text,
+    format text, options jsonb default '[]', target_restrictions text[] default '{}',
+    published_at timestamptz default now(), closes_at timestamptz default now() + interval '7 days',
+    is_active boolean default true);
+  create table public.survey_responses (survey_id uuid references public.surveys(id), user_id uuid,
+    status text, choice text, text_answer text, answered_at timestamptz default now());
+  grant select, insert, update, delete on all tables in schema public to authenticated;
+  grant execute on all functions in schema auth to authenticated, anon;
+`);
+for (const m of migrations) { await db.exec(m); await db.exec(m); } // each is safe to run twice
+
+let seq = 0;
+const user = async (email) => {
+  seq++;
+  const { rows } = await db.query('insert into auth.users (email) values ($1) returning id',
+    [email ?? `student${seq}@example.edu`]);
+  const id = rows[0].id;
+  await db.query('insert into public.profiles (id, university) values ($1, $2)', [id, 'brandeis']);
+  return id;
+};
+const emailOf = async (id) => (await db.query('select email from auth.users where id = $1', [id])).rows[0].email;
+const as = async (id, aal) => {
+  await db.query(`select set_config('request.jwt.claim.sub', $1, false)`, [id ?? '']);
+  await db.query(`select set_config('request.jwt.claims', $1, false)`,
+    [JSON.stringify(id ? { sub: id, ...(aal ? { aal } : {}) } : {})]);
+};
+const call = async (id, sql, params = [], { aal, role = 'authenticated' } = {}) => {
+  await db.exec('reset role');
+  await as(id, aal);
+  await db.exec(`set role ${role}`);
+  try { return (await db.query(sql, params)).rows; } finally { await db.exec('reset role'); }
+};
+const check  = async (u, code, platform = 'ios') =>
+  (await call(u, 'select * from public.research_check_code($1,$2)', [code, platform]))[0];
+const enroll = async (u, code, ack = true, platform = 'ios') =>
+  (await call(u, 'select * from public.research_enroll($1,$2,$3)', [code, ack, platform]))[0];
+const status = async (u) => (await call(u, 'select * from public.research_my_status()'))[0];
+const owner = async (sql, params = []) => (await db.query(sql, params)).rows;
+
+let n = 0;
+const test = async (name, fn) => { await fn(); n++; console.log('ok', n, name); };
+
+const CODE = 'MAPLE-2026';
+const newStudy = async ({ code = CODE, cap = 40, open = true, test: isTest = false, window = 21 } = {}) => {
+  const [{ create_study: id }] = await owner(
+    'select research.create_study($1,$2,$3,array[\'S\',\'L\'],$4,$5)', ['Study', code, cap, window, isTest]);
+  if (open) await owner('update research.studies set is_open = true where id = $1', [id]);
+  return id;
+};
+// Puts a student on the researchers' list. Returns the user id.
+const listed = async (study, { grp = 'S', name, email } = {}) => {
+  const u = await user(email);
+  await owner('select research.add_roster($1,$2::jsonb)',
+    [study, JSON.stringify([{ email: await emailOf(u), group: grp, ...(name ? { name } : {}) }])]);
+  return u;
+};
+
+const study = await newStudy();
+
+await test('the code is stored as a hash and never in the clear', async () => {
+  const [row] = await owner('select * from research.studies where id = $1', [study]);
+  assert.notEqual(row.code_hash, CODE);
+  assert.equal(row.code_hash.length, 64);
+  assert.ok(!JSON.stringify(row).includes('MAPLE'));
+});
+
+await test('a code too short to be safe is refused', async () => {
+  await assert.rejects(owner(`select research.create_study('x','abc',10)`), /code_too_short/);
+});
+
+await test('clients cannot create studies or load the list', async () => {
+  const u = await user();
+  await assert.rejects(call(u, `select research.create_study('x','ABCDEFGH',10)`), /permission denied/);
+  await assert.rejects(call(u, `select research.add_roster($1,'[]'::jsonb)`, [study]), /permission denied/);
+});
+
+await test('anon cannot call the student functions', async () => {
+  await assert.rejects(call(null, `select * from public.research_check_code($1,'ios')`, [CODE], { role: 'anon' }), /permission denied/);
+  await assert.rejects(call(null, `select * from public.research_enroll($1,true,'ios')`, [CODE], { role: 'anon' }), /permission denied/);
+  await assert.rejects(call(null, 'select * from public.research_my_status()', [], { role: 'anon' }), /permission denied/);
+});
+
+await test('a signed-out call is refused', async () => {
+  await assert.rejects(call(null, `select * from public.research_check_code($1,'ios')`, [CODE]), /not_signed_in/);
+});
+
+await test('a closed, full, unstarted or ended study looks exactly like a wrong code', async () => {
+  const closed = await newStudy({ code: 'CLOSED-9999', open: false });
+  const full   = await newStudy({ code: 'FULLFULL-1', cap: 1 });
+  const early  = await newStudy({ code: 'EARLY-7777' });
+  await owner(`update research.studies set starts_at = now() + interval '1 day' where id = $1`, [early]);
+  const ended  = await newStudy({ code: 'ENDED-5555' });
+  await owner(`update research.studies set starts_at = now() - interval '2 days', ends_at = now() - interval '1 day' where id = $1`, [ended]);
+  assert.equal((await enroll(await listed(full), 'FULLFULL-1')).status, 'ok');
+
+  // Each probe is a student who IS on the list for the study they try, so the
+  // only difference between them is why the code fails.
+  const shape = async (code, study_) => JSON.stringify(await check(study_ ? await listed(study_) : await user(), code));
+  const wrong = await shape('NOPE-0000');
+  assert.equal(await shape('CLOSED-9999', closed), wrong);
+  assert.equal(await shape('FULLFULL-1', full), wrong);
+  assert.equal(await shape('EARLY-7777', early), wrong);
+  assert.equal(await shape('ENDED-5555', ended), wrong);
+  assert.equal(JSON.parse(wrong).status, 'invalid_code');
+  assert.equal(JSON.parse(wrong).study_name, null);
+});
+
+await test('the right code from someone not on the list is told so, apart from a wrong code', async () => {
+  const stranger = await user();
+  const r = await check(stranger, CODE);
+  assert.equal(r.status, 'not_on_list');
+  assert.equal(r.study_name, null);
+  assert.equal((await check(await user(), 'NOPE-0000')).status, 'invalid_code');
+  assert.equal((await enroll(stranger, CODE)).status, 'not_on_list');
+  assert.equal((await status(stranger)).enrolled, false);
+});
+
+await test('being off the list is not a wrong guess and never locks anyone out', async () => {
+  const u = await user();
+  for (let i = 0; i < 8; i++) assert.equal((await check(u, CODE)).status, 'not_on_list');
+  assert.equal((await owner(`select count(*)::int c from research.redeem_attempts where user_id = $1`, [u]))[0].c, 0);
+  // ...and the list is added to later, the same student gets in.
+  await owner('select research.add_roster($1,$2::jsonb)', [study, JSON.stringify([{ email: await emailOf(u), group: 'L' }])]);
+  assert.equal((await check(u, CODE)).status, 'ok');
+});
+
+await test('only the iOS app can check a code or enrol', async () => {
+  const u = await listed(study);
+  for (const platform of [null, 'web', 'android', 'IOS', '']) {
+    assert.equal((await check(u, CODE, platform)).status, 'ios_only', String(platform));
+    assert.equal((await enroll(u, CODE, true, platform)).status, 'ios_only', String(platform));
+  }
+  assert.equal((await owner(`select count(*)::int c from research.redeem_attempts where user_id = $1`, [u]))[0].c, 0, 'not a wrong guess');
+  assert.equal((await status(u)).enrolled, false);
+  assert.equal((await check(u, CODE, 'ios')).status, 'ok');
+});
+
+await test('being on the list for another study does not open this one', async () => {
+  const other = await newStudy({ code: 'OTHER-1234' });
+  const u = await listed(other);
+  assert.equal((await check(u, CODE)).status, 'not_on_list');
+  assert.equal((await check(u, 'OTHER-1234')).status, 'ok');
+});
+
+await test('the code ignores case, spaces and dashes', async () => {
+  assert.equal((await check(await listed(study), ' maple 2026 ')).status, 'ok');
+});
+
+await test('list matching ignores case in the email', async () => {
+  const u = await user('Maya.Cohen@Example.EDU');
+  await owner('select research.add_roster($1,$2::jsonb)', [study, JSON.stringify([{ email: ' maya.cohen@example.edu ', group: 'L' }])]);
+  assert.equal((await check(u, CODE)).status, 'ok');
+});
+
+await test('five wrong codes are allowed, the sixth attempt is locked', async () => {
+  const u = await listed(study);
+  for (let i = 0; i < 5; i++) assert.equal((await check(u, 'WRONG-' + i)).status, 'invalid_code');
+  assert.equal((await check(u, 'WRONG-6')).status, 'too_many_attempts');
+  assert.equal((await check(u, CODE)).status, 'too_many_attempts', 'the right code is locked out too');
+  assert.equal((await enroll(u, CODE)).status, 'too_many_attempts');
+  await owner(`update research.redeem_attempts set at = now() - interval '2 hours' where user_id = $1`, [u]);
+  assert.equal((await check(u, CODE)).status, 'ok', 'attempts expire after an hour');
+});
+
+await test('a listed student with the right code gets the study name and nothing about the group', async () => {
+  const r = await check(await listed(study, { grp: 'L' }), CODE);
+  assert.equal(r.status, 'ok');
+  assert.equal(r.study_name, 'Study');
+  assert.deepEqual(Object.keys(r).sort(), ['status', 'study_name']);
+});
+
+await test('checking a code records nothing about the student', async () => {
+  const u = await listed(study);
+  await check(u, CODE);
+  assert.equal((await owner('select count(*)::int c from research.participants where user_id = $1', [u]))[0].c, 0);
+  assert.equal((await owner(`select count(*)::int c from research.roster where claimed_by = $1`, [u]))[0].c, 0);
+  assert.equal((await status(u)).enrolled, false);
+});
+
+await test('enrolling needs the acknowledgement, and a missing one is not a wrong code', async () => {
+  const u = await listed(study);
+  assert.equal((await enroll(u, CODE, false)).status, 'acknowledgement_required');
+  assert.equal((await enroll(u, CODE, null)).status, 'acknowledgement_required');
+  assert.equal((await status(u)).enrolled, false);
+  assert.equal((await owner(`select count(*)::int c from research.redeem_attempts where user_id = $1`, [u]))[0].c, 0);
+});
+
+await test('enrolling takes the group and name from the list and starts the window', async () => {
+  const u = await listed(study, { grp: 'L', name: 'Maya Cohen' });
+  const r = await enroll(u, CODE);
+  assert.equal(r.status, 'ok');
+  assert.match(r.participant_code, /^P-\d{3}$/);
+  assert.deepEqual(Object.keys(r).sort(), ['participant_code', 'status', 'window_ends_at'], 'the group is never returned');
+  const [p] = await owner('select * from research.participants where user_id = $1', [u]);
+  assert.equal(p.grp, 'L');
+  assert.equal(p.full_name, 'Maya Cohen');
+  assert.equal(p.email, await emailOf(u));
+  assert.equal(p.status, 'active');
+  assert.equal(p.platform, 'ios');
+  assert.ok(p.acknowledged_at);
+  assert.equal((new Date(p.window_ends_at) - new Date(p.enrolled_at)) / 86400000, 21);
+  assert.equal((await owner('select research_cohort from public.profiles where id = $1', [u]))[0].research_cohort, true);
+  const [ro] = await owner('select * from research.roster where claimed_by = $1', [u]);
+  assert.ok(ro.claimed_at);
+  const s = await status(u);
+  assert.deepEqual([s.enrolled, s.status, s.days_left], [true, 'active', 21]);
+  assert.equal((await enroll(u, CODE)).status, 'already_enrolled');
+  assert.equal((await check(u, CODE)).status, 'already_enrolled');
+});
+
+await test('a list with no name enrols with no name', async () => {
+  const u = await listed(study);
+  assert.equal((await enroll(u, CODE)).status, 'ok');
+  assert.equal((await owner('select full_name from research.participants where user_id = $1', [u]))[0].full_name, null);
+});
+
+await test('every participant lands in exactly the group the list gave them', async () => {
+  const s = await newStudy({ code: 'GROUPS-0001' });
+  const want = new Map();
+  for (let i = 0; i < 10; i++) { const grp = i % 3 === 0 ? 'L' : 'S'; const u = await listed(s, { grp }); want.set(u, grp); }
+  for (const [u] of want) assert.equal((await enroll(u, 'GROUPS-0001')).status, 'ok');
+  for (const [u, grp] of want) {
+    assert.equal((await owner('select grp from research.participants where user_id = $1', [u]))[0].grp, grp);
+  }
+});
+
+await test('the window length is per study and read at enrolment', async () => {
+  const s = await newStudy({ code: 'SHORT-0001', window: 7 });
+  const u = await listed(s);
+  assert.equal((await enroll(u, 'SHORT-0001')).status, 'ok');
+  assert.equal((await status(u)).days_left, 7);
+});
+
+await test('40 enrolments are numbered in order and the 41st listed student is refused', async () => {
+  const s = await newStudy({ code: 'FORTY-4040', cap: 40 });
+  const codes = [];
+  for (let i = 0; i < 40; i++) {
+    const r = await enroll(await listed(s, { grp: i % 2 ? 'L' : 'S' }), 'FORTY-4040');
+    assert.equal(r.status, 'ok', `enrolment ${i + 1}`);
+    codes.push(r.participant_code);
+  }
+  assert.deepEqual(codes, Array.from({ length: 40 }, (_, i) => `P-${String(i + 1).padStart(3, '0')}`));
+  assert.equal((await enroll(await listed(s), 'FORTY-4040')).status, 'invalid_code');
+});
+
+await test('a list row can be taken only once', async () => {
+  const a = await user('shared@example.edu');
+  await owner('select research.add_roster($1,$2::jsonb)', [study, JSON.stringify([{ email: 'shared@example.edu', group: 'S' }])]);
+  assert.equal((await enroll(a, CODE)).status, 'ok');
+  // A second account that ends up with the same email still cannot take the row.
+  const b = await user('other@example.edu');
+  await owner(`update auth.users set email = 'shared@example.edu' where id = $1`, [b]);
+  assert.equal((await check(b, CODE)).status, 'not_on_list');
+  assert.equal((await enroll(b, CODE)).status, 'not_on_list');
+});
+
+await test('who, group and acknowledgement are fixed after enrolment', async () => {
+  const [p] = await owner(`select id from research.participants limit 1`);
+  for (const col of ["grp = 'X'", "participant_code = 'P-999'", "user_id = gen_random_uuid()",
+                     "roster_id = gen_random_uuid()", "acknowledged_at = now()", "enrolled_at = now()"]) {
+    await assert.rejects(owner(`update research.participants set ${col} where id = $1`, [p.id]), /participant_fixed_at_enrolment|violates foreign key/);
+  }
+  await owner(`update research.participants set full_name = 'Corrected Name' where id = $1`, [p.id]);
+});
+
+await test('an enrolled list row cannot move groups, change who it matches or be released', async () => {
+  const [r] = await owner(`select id from research.roster where claimed_by is not null limit 1`);
+  for (const set of ["grp = case grp when 'S' then 'L' else 'S' end", "match_key = 'x@example.edu'",
+                     "claimed_by = null, claimed_at = null"]) {
+    await assert.rejects(owner(`update research.roster set ${set} where id = $1`, [r.id]), /roster_entry_claimed/);
+  }
+});
+
+await test('loading the list adds, updates, skips the enrolled, and rolls back on a bad row', async () => {
+  const s = await newStudy({ code: 'LOADED-0001' });
+  const load = async (rows) => (await owner('select research.add_roster($1,$2::jsonb) r', [s, JSON.stringify(rows)]))[0].r;
+  assert.deepEqual(await load([{ email: 'a@example.edu', group: 'S' }, { email: 'b@example.edu', group: 'L', name: 'B' }]),
+    { added: 2, updated: 0, skipped_enrolled: 0 });
+  const a = await user('a@example.edu');
+  assert.equal((await enroll(a, 'LOADED-0001')).status, 'ok');
+  assert.deepEqual(await load([{ email: 'a@example.edu', group: 'S' }, { email: 'b@example.edu', group: 'S', name: 'B2' },
+                                { email: 'c@example.edu', group: 'L' }]),
+    { added: 1, updated: 1, skipped_enrolled: 1 });
+  assert.equal((await owner(`select grp from research.roster where match_key = 'b@example.edu' and study_id = $1`, [s]))[0].grp, 'S', 'an unenrolled row can change group');
+  await assert.rejects(load([{ email: 'd@example.edu', group: 'S' }, { email: 'a@example.edu', group: 'L' }]), /claimed_group_differs/);
+  await assert.rejects(load([{ email: 'e@example.edu', group: 'S' }, { email: 'f@example.edu', group: 'Z' }]), /unknown_group/);
+  await assert.rejects(load([{ email: 'not an email', group: 'S' }]), /bad_email/);
+  await assert.rejects(owner(`select research.add_roster($1,'{"a":1}'::jsonb)`, [s]), /rows_must_be_an_array/);
+  const rows = (await owner(`select match_key from research.roster where study_id = $1`, [s])).map((r) => r.match_key).sort();
+  assert.deepEqual(rows, ['a@example.edu', 'b@example.edu', 'c@example.edu'], 'failed loads added nothing, not even their good rows');
+});
+
+await test('a student cannot read or write any research table, including their own rows', async () => {
+  const u = await listed(study);
+  assert.equal((await enroll(u, CODE)).status, 'ok');
+  for (const t of ['participants', 'roster', 'researchers']) {
+    assert.equal((await call(u, `select * from research.${t}`)).length, 0, t);
+  }
+  assert.equal((await call(u, 'select id, name from research.studies')).length, 0);
+  await assert.rejects(call(u, 'select * from research.redeem_attempts'), /permission denied/);
+  await assert.rejects(call(u, 'select code_hash from research.studies'), /permission denied/);
+  await assert.rejects(call(u, `insert into research.roster (study_id, match_key, grp) values ($1, 'me@example.edu', 'S')`, [study]), /permission denied/);
+  await assert.rejects(call(u, `update research.roster set grp = 'L'`), /permission denied/);
+  await assert.rejects(call(u, `update research.participants set status = 'withdrawn'`), /permission denied/);
+});
+
+await test('a student cannot set or clear their own cohort flag', async () => {
+  const u = await listed(study);
+  await call(u, 'update public.profiles set research_cohort = true where id = $1', [u]);
+  assert.equal((await owner('select research_cohort from public.profiles where id = $1', [u]))[0].research_cohort, false);
+  assert.equal((await enroll(u, CODE)).status, 'ok');
+  await call(u, 'update public.profiles set research_cohort = false where id = $1', [u]);
+  assert.equal((await owner('select research_cohort from public.profiles where id = $1', [u]))[0].research_cohort, true);
+  const { rows } = await db.query('insert into auth.users (email) values (null) returning id');
+  await call(rows[0].id, 'insert into public.profiles (id, university, research_cohort) values ($1, $2, true)', [rows[0].id, 'tufts']);
+  assert.equal((await owner('select research_cohort from public.profiles where id = $1', [rows[0].id]))[0].research_cohort, false);
+});
+
+const researcher = await user();
+const outsider = await user();
+const owner1 = await user();
+await owner(`insert into research.researchers (user_id, email, role) values ($1,'r@example.edu','researcher'), ($2,'o@example.edu','owner')`, [researcher, owner1]);
+
+await test('a researcher needs a multi-factor session to see anything', async () => {
+  for (const t of ['participants', 'roster']) {
+    assert.equal((await call(researcher, `select * from research.${t}`)).length, 0, `${t}: no aal at all`);
+    assert.equal((await call(researcher, `select * from research.${t}`, [], { aal: 'aal1' })).length, 0, `${t}: aal1`);
+    assert.ok((await call(researcher, `select * from research.${t}`, [], { aal: 'aal2' })).length > 0, `${t}: aal2`);
+  }
+  const rows = await call(researcher, 'select * from research.participants where email is not null', [], { aal: 'aal2' });
+  assert.ok(rows[0].email, 'identity is visible');
+});
+
+await test('a signed-in user who is not a researcher sees nothing, even with aal2', async () => {
+  for (const t of ['participants', 'roster']) {
+    assert.equal((await call(outsider, `select * from research.${t}`, [], { aal: 'aal2' })).length, 0);
+  }
+});
+
+await test('a deactivated researcher sees nothing', async () => {
+  const gone = await user();
+  await owner(`insert into research.researchers (user_id, email, is_active) values ($1,'x@example.edu', false)`, [gone]);
+  assert.equal((await call(gone, 'select * from research.participants', [], { aal: 'aal2' })).length, 0);
+});
+
+await test('researchers cannot read the code hash or the attempt log, and cannot write', async () => {
+  const opt = { aal: 'aal2' };
+  assert.ok((await call(researcher, 'select id, name, cap, window_days from research.studies', [], opt)).length > 0);
+  await assert.rejects(call(researcher, 'select code_hash from research.studies', [], opt), /permission denied/);
+  await assert.rejects(call(researcher, 'select * from research.redeem_attempts', [], opt), /permission denied/);
+  await assert.rejects(call(researcher, `update research.studies set cap = 999`, [], opt), /permission denied/);
+  await assert.rejects(call(researcher, `update research.roster set grp = 'L'`, [], opt), /permission denied/);
+  await assert.rejects(call(researcher, `insert into research.roster (study_id, match_key, grp) values ($1, 'z@example.edu', 'S')`, [study], opt), /permission denied/);
+  await assert.rejects(call(researcher, `update research.participants set full_name = 'x'`, [], opt), /permission denied/);
+  await assert.rejects(call(researcher, `delete from research.participants`, [], opt), /permission denied/);
+});
+
+await test('only an owner sees the whole researcher list', async () => {
+  assert.equal((await call(researcher, 'select * from research.researchers', [], { aal: 'aal2' })).length, 1, 'just their own row');
+  const all = (await owner('select count(*)::int c from research.researchers'))[0].c;
+  assert.ok(all > 1);
+  assert.equal((await call(owner1, 'select * from research.researchers', [], { aal: 'aal2' })).length, all);
+});
+
+await test('test-study participants and list rows never appear in researcher views', async () => {
+  const t = await newStudy({ code: 'REVIEW-0001', test: true });
+  const rev = await listed(t, { name: 'App Reviewer' });
+  assert.equal((await enroll(rev, 'REVIEW-0001')).status, 'ok');
+  const opt = { aal: 'aal2' };
+  assert.equal((await call(researcher, `select * from research.participants where full_name = 'App Reviewer'`, [], opt)).length, 0);
+  assert.equal((await call(researcher, `select * from research.roster where study_id = $1`, [t], opt)).length, 0);
+  assert.equal((await call(researcher, `select id from research.studies where id = $1`, [t], opt)).length, 0);
+  assert.equal((await owner(`select count(*)::int c from research.participants where full_name = 'App Reviewer'`))[0].c, 1, 'the row exists');
+});
+
+await test('deleting an account leaves every research row in place', async () => {
+  const u = await listed(study, { name: 'Leaving Student' });
+  assert.equal((await enroll(u, CODE)).status, 'ok');
+  const before = (await owner('select count(*)::int c from research.participants'))[0].c;
+  const email = await emailOf(u);
+  await owner('delete from auth.users where id = $1', [u]);
+  assert.equal((await owner('select count(*)::int c from public.profiles where id = $1', [u]))[0].c, 0, 'profile gone');
+  assert.equal((await owner('select count(*)::int c from research.participants'))[0].c, before);
+  const [p] = await owner(`select full_name, email from research.participants where user_id = $1`, [u]);
+  assert.deepEqual([p.full_name, p.email], ['Leaving Student', email]);
+  assert.equal((await owner('select count(*)::int c from research.roster where claimed_by = $1', [u]))[0].c, 1);
+});
+
+await test('leaving keeps every row, ends the window and cannot be undone', async () => {
+  const u = await listed(study);
+  assert.equal((await enroll(u, CODE)).status, 'ok');
+  assert.equal((await call(u, 'select * from public.research_leave()'))[0].status, 'withdrawn');
+  const [p] = await owner('select * from research.participants where user_id = $1', [u]);
+  assert.equal(p.status, 'withdrawn');
+  assert.ok(p.withdrawn_at);
+  assert.equal((await status(u)).days_left, 0);
+  await assert.rejects(owner(`update research.participants set status = 'active', withdrawn_at = null where user_id = $1`, [u]), /status_final/);
+  assert.equal((await call(u, 'select * from public.research_leave()'))[0].status, 'withdrawn', 'leaving twice is harmless');
+  assert.equal((await call(await user(), 'select * from public.research_leave()'))[0].status, null, 'not enrolled');
+});
+
+await test('an expired window reads as completed, then the job closes it and keeps the row', async () => {
+  const u = await listed(study);
+  assert.equal((await enroll(u, CODE)).status, 'ok');
+  await owner(`update research.participants set window_ends_at = now() - interval '1 minute' where user_id = $1`, [u]);
+  assert.equal((await status(u)).status, 'completed');
+  assert.equal((await owner('select status from research.participants where user_id = $1', [u]))[0].status, 'active', 'not yet closed');
+  assert.equal((await call(u, 'select * from public.research_leave()'))[0].status, 'completed', 'too late to withdraw');
+  await assert.rejects(call(u, 'select research.close_expired_windows()'), /permission denied/);
+  const [{ close_expired_windows: closed }] = await owner('select research.close_expired_windows()');
+  assert.ok(closed >= 1);
+  assert.equal((await owner('select status from research.participants where user_id = $1', [u]))[0].status, 'completed');
+  assert.equal((await owner('select research.close_expired_windows()'))[0].close_expired_windows, 0, 'idempotent');
+});
+
+await test('researchers may extend a window and existing participants keep their own end date', async () => {
+  const s = await newStudy({ code: 'EXTEND-3333', window: 21 });
+  const u = await listed(s);
+  await enroll(u, 'EXTEND-3333');
+  await owner('update research.studies set window_days = 28 where id = $1', [s]);
+  assert.equal((await status(u)).days_left, 21, 'unchanged by a study setting');
+  const v = await listed(s);
+  await enroll(v, 'EXTEND-3333');
+  assert.equal((await status(v)).days_left, 28, 'new enrolments get the new length');
+  await owner(`update research.participants set window_ends_at = window_ends_at + interval '7 days' where user_id = $1`, [u]);
+  assert.equal((await status(u)).days_left, 28, 'a direct extension works');
+});
+
+
+// ── Phase 3: collecting what a participant does ──────────────────────────────
+
+const live = await newStudy({ code: 'LIVE-2026', cap: 300 });
+const joiner = async (grp = 'S', opts = {}) => {
+  const u = await listed(live, { grp, ...opts });
+  assert.equal((await enroll(u, 'LIVE-2026')).status, 'ok');
+  return u;
+};
+const TODAY = `(now() at time zone 'America/New_York')::date`;
+const RICE = { id: 'rice', name: 'Rice', servings: 1, nutrition: { calories: 200, protein: 4, carbs: 40, fat: 1 } };
+const meal = async (u, { type = 'lunch', dateSql = TODAY, items = [RICE] } = {}) =>
+  (await owner(`insert into public.meal_history (user_id, confirmed_at, meal_type, meal_date, dining_hall, items)
+                values ($1, now(), $2, ${dateSql}, 'Sherman', $3::jsonb) returning id`, [u, type, JSON.stringify(items)]))[0].id;
+const copies = (u) => owner(`select m.* from research.meals m join research.participants p on p.id = m.participant_id
+                              where p.user_id = $1 order by m.copied_at, m.source_id`, [u]);
+const snaps = (u) => owner(`select s.* from research.profile_snapshots s join research.participants p on p.id = s.participant_id
+                             where p.user_id = $1 order by s.id`, [u]);
+const events = (u, kind) => owner(`select e.* from research.events e join research.participants p on p.id = e.participant_id
+                                    where p.user_id = $1 and ($2::text is null or e.kind = $2) order by e.id`, [u, kind ?? null]);
+
+await test('a confirmed meal is copied for a participant and only a participant', async () => {
+  const u = await joiner();
+  const other = await user();
+  const id = await meal(u);
+  await meal(other);
+  const rows = await copies(u);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].source_id, id);
+  assert.deepEqual([rows[0].meal_type, rows[0].dining_hall], ['lunch', 'Sherman']);
+  assert.deepEqual(rows[0].items, [RICE]);
+  assert.equal(rows[0].consumption_reported_at, null);
+  assert.equal((await owner('select count(*)::int c from research.meals'))[0].c >= 1, true);
+  assert.equal((await owner(`select count(*)::int c from research.meals m join research.participants p on p.id = m.participant_id where p.user_id = $1`, [other]))[0].c, 0);
+});
+
+await test('reporting consumption updates the copy and stamps the first report once', async () => {
+  const u = await joiner();
+  const id = await meal(u);
+  await owner(`update public.meal_history set items = $2::jsonb where id = $1`, [id, JSON.stringify([{ ...RICE, consumed: 0.5 }])]);
+  const first = (await copies(u))[0];
+  assert.equal(first.items[0].consumed, 0.5);
+  assert.ok(first.consumption_reported_at);
+  await owner(`update public.meal_history set items = $2::jsonb where id = $1`, [id, JSON.stringify([{ ...RICE, consumed: 1 }])]);
+  const second = (await copies(u))[0];
+  assert.equal(second.items[0].consumed, 1);
+  assert.equal(new Date(second.consumption_reported_at).getTime(), new Date(first.consumption_reported_at).getTime());
+  assert.equal((await copies(u)).length, 1, 'an update is not a second row');
+});
+
+await test('undoing a confirmation marks the copy and keeps it, and a new confirmation is a new row', async () => {
+  const u = await joiner();
+  const id = await meal(u);
+  await owner('delete from public.meal_history where id = $1', [id]);
+  let rows = await copies(u);
+  assert.equal(rows.length, 1);
+  assert.ok(rows[0].deleted_at);
+  assert.deepEqual(rows[0].items, [RICE], 'the plate is still there');
+  const again = await meal(u);
+  rows = await copies(u);
+  assert.equal(rows.length, 2);
+  assert.equal(rows.find((r) => r.source_id === again).deleted_at, null);
+});
+
+await test('nothing from before enrolment is copied, even if edited afterwards', async () => {
+  const u = await joiner();
+  const old = await meal(u, { type: 'dinner', dateSql: `${TODAY} - 3` });
+  assert.equal((await copies(u)).length, 0);
+  await owner(`update public.meal_history set items = '[]'::jsonb where id = $1`, [old]);
+  assert.equal((await copies(u)).length, 0);
+});
+
+await test('collection stops at withdrawal and at the end of the window, and keeps what it had', async () => {
+  const a = await joiner();
+  await meal(a, { type: 'breakfast' });
+  assert.equal((await call(a, 'select * from public.research_leave()'))[0].status, 'withdrawn');
+  await meal(a, { type: 'lunch' });
+  await meal(a, { type: 'dinner' });
+  assert.equal((await copies(a)).length, 1, 'only the meal from before leaving');
+
+  const b = await joiner();
+  await meal(b, { type: 'breakfast' });
+  await owner(`update research.participants set window_ends_at = now() - interval '1 minute' where user_id = $1`, [b]);
+  await meal(b, { type: 'lunch' });
+  assert.equal((await copies(b)).length, 1);
+});
+
+await test('a broken research table never stops a student saving a meal', async () => {
+  const u = await joiner();
+  await owner('alter table research.meals rename to meals_broken');
+  try {
+    const id = await meal(u);
+    assert.ok(id, 'the meal saved');
+    assert.equal((await owner('select count(*)::int c from public.meal_history where id = $1', [id]))[0].c, 1);
+  } finally {
+    await owner('alter table research.meals_broken rename to meals');
+  }
+  assert.equal((await copies(u)).length, 0, 'and the research copy is simply missing');
+});
+
+await test('deleting an account is not an undo, so the copies are left exactly as they were', async () => {
+  const u = await joiner();
+  await meal(u);
+  await meal(u, { type: 'dinner' });
+  await owner('delete from auth.users where id = $1', [u]);
+  const rows = await copies(u);
+  assert.equal(rows.length, 2);
+  assert.ok(rows.every((r) => r.deleted_at === null));
+});
+
+await test('a snapshot is taken at enrolment with the profile, targets and every restriction', async () => {
+  const u = await listed(live);
+  await owner(`update public.profiles set weight = 150, weight_unit = 'lbs', height_feet = 5, height_inches = 6, age = 21,
+                 sex = 'female', activity_level = 'moderate', goal = 'maintain', university = 'brandeis' where id = $1`, [u]);
+  await owner(`insert into public.nutrition_targets (user_id, calories, protein, carbs, fat) values ($1, 2100, 110, 260, 70)`, [u]);
+  await owner(`insert into public.dietary_restrictions (user_id, vegetarian, halal) values ($1, true, true)`, [u]);
+  assert.equal((await enroll(u, 'LIVE-2026')).status, 'ok');
+  const [s1, ...rest] = await snaps(u);
+  assert.equal(rest.length, 0);
+  assert.equal(s1.reason, 'enrolment');
+  assert.deepEqual([s1.weight, s1.age, s1.sex, s1.goal, s1.calories, s1.protein], ['150', 21, 'female', 'maintain', '2100', '110']);
+  assert.equal(s1.restrictions.vegetarian, true);
+  assert.equal(s1.restrictions.halal, true, 'religious data is captured, so the consent must name it');
+  assert.equal(s1.restrictions.id, undefined);
+  assert.equal(s1.restrictions.user_id, undefined);
+});
+
+await test('changes add snapshots and keep the old ones, and nothing else does', async () => {
+  const u = await listed(live);
+  await owner(`update public.profiles set weight = 150, age = 21 where id = $1`, [u]);
+  await owner(`insert into public.nutrition_targets (user_id, calories) values ($1, 2000)`, [u]);
+  await owner(`insert into public.dietary_restrictions (user_id) values ($1)`, [u]);
+  await enroll(u, 'LIVE-2026');
+  assert.equal((await snaps(u)).length, 1);
+
+  await owner(`update public.profiles set push_enabled = true, mascot_color = 'blue' where id = $1`, [u]);
+  assert.equal((await snaps(u)).length, 1, 'an unrelated profile column is not a change');
+  await owner(`update public.profiles set weight = 150 where id = $1`, [u]);
+  assert.equal((await snaps(u)).length, 1, 'saving the same value again is not a change');
+
+  await owner(`update public.profiles set weight = 148 where id = $1`, [u]);
+  await owner(`update public.nutrition_targets set calories = 1900 where user_id = $1`, [u]);
+  await owner(`update public.dietary_restrictions set kosher = true where user_id = $1`, [u]);
+  const all = await snaps(u);
+  assert.deepEqual(all.map((x) => x.reason), ['enrolment', 'profile', 'targets', 'restrictions']);
+  assert.deepEqual(all.map((x) => x.weight), ['150', '148', '148', '148'], 'history keeps both weights');
+  assert.deepEqual(all.map((x) => x.calories), ['2000', '2000', '1900', '1900']);
+  assert.deepEqual(all.map((x) => x.restrictions.kosher), [false, false, false, true]);
+});
+
+await test('no snapshots for non-participants, and none after leaving', async () => {
+  const outsider2 = await user();
+  await owner(`update public.profiles set weight = 200 where id = $1`, [outsider2]);
+  assert.equal((await owner(`select count(*)::int c from research.profile_snapshots s join research.participants p on p.id = s.participant_id where p.user_id = $1`, [outsider2]))[0].c, 0);
+  const u = await joiner();
+  await call(u, 'select * from public.research_leave()');
+  await owner(`update public.profiles set weight = 111 where id = $1`, [u]);
+  assert.equal((await snaps(u)).length, 1, 'just the enrolment one');
+});
+
+await test('favorites, streaks and push registrations become events with nothing identifying', async () => {
+  const u = await joiner();
+  await owner(`insert into public.favorites (user_id, item_id, name) values ($1, 'bh_9', 'Pasta')`, [u]);
+  await owner(`delete from public.favorites where user_id = $1`, [u]);
+  await owner(`insert into public.streaks (user_id, current_streak, longest_streak) values ($1, 1, 1)`, [u]);
+  await owner(`update public.streaks set current_streak = 2, longest_streak = 2 where user_id = $1`, [u]);
+  await owner(`update public.streaks set last_confirmed_date = current_date where user_id = $1`, [u]);
+  await owner(`insert into public.push_subscriptions (user_id, endpoint, apns_token) values ($1, 'apns:SECRETTOKEN123', 'SECRETTOKEN123')`, [u]);
+  await owner(`insert into public.push_subscriptions (user_id, endpoint) values ($1, 'https://web.example/endpoint-xyz')`, [u]);
+  await owner(`delete from public.push_subscriptions where user_id = $1`, [u]);
+  const kinds = (await events(u)).map((e) => e.kind);
+  assert.deepEqual(kinds, ['favorite_added', 'favorite_removed', 'streak_updated', 'streak_updated',
+    'push_added', 'push_added', 'push_removed', 'push_removed']);
+  const all = JSON.stringify((await events(u)).map((e) => e.data));
+  assert.ok(!all.includes('SECRETTOKEN123') && !all.includes('endpoint-xyz'), 'no token or endpoint in research data');
+  assert.deepEqual((await events(u, 'push_added')).map((e) => e.data.platform), ['ios', 'web']);
+  assert.equal((await events(u, 'favorite_added'))[0].data.item_id, 'bh_9');
+  assert.equal((await events(u, 'streak_updated')).length, 2, 'a change that left the streak alone is not an event');
+});
+
+await test('the app open event is iOS only, throttled, and only for active participants', async () => {
+  const u = await joiner();
+  const outsider3 = await user();
+  assert.equal((await call(u, `select public.research_log_event('app_open','ios') r`))[0].r, true);
+  assert.equal((await call(u, `select public.research_log_event('app_open','ios') r`))[0].r, false, 'twice in 20 minutes is one open');
+  assert.equal((await call(u, `select public.research_log_event('app_open','web') r`))[0].r, false);
+  assert.equal((await call(u, `select public.research_log_event('app_open') r`))[0].r, false);
+  assert.equal((await call(u, `select public.research_log_event('favorite_added','ios') r`))[0].r, false, 'a client cannot write other kinds');
+  assert.equal((await call(outsider3, `select public.research_log_event('app_open','ios') r`))[0].r, false);
+  assert.equal((await events(u, 'app_open')).length, 1);
+  await owner(`update research.events set at = now() - interval '25 minutes' where participant_id = (select id from research.participants where user_id = $1)`, [u]);
+  assert.equal((await call(u, `select public.research_log_event('app_open','ios') r`))[0].r, true, 'a later open counts');
+  await assert.rejects(call(null, `select public.research_log_event('app_open','ios')`), /not_signed_in/);
+  await assert.rejects(call(null, `select public.research_log_event('app_open','ios')`, [], { role: 'anon' }), /permission denied/);
+  await call(u, 'select * from public.research_leave()');
+  assert.equal((await call(u, `select public.research_log_event('app_open','ios') r`))[0].r, false, 'not after leaving');
+});
+
+await test('researchers read the copies with a multi-factor session, students and others read nothing', async () => {
+  const u = await joiner();
+  await meal(u, { items: [{ id: 'a', name: 'Pasta', servings: 2, consumed: 0.25, nutrition: { calories: 300, protein: 10, carbs: 50, fat: 5 } },
+                          { id: 'b', name: 'Odd', servings: 'lots', consumed: 'most', nutrition: { calories: 'x' } }] });
+  await owner(`update public.profiles set weight = 130 where id = $1`, [u]);
+  const aal2 = { aal: 'aal2' };
+  for (const t of ['meals', 'profile_snapshots', 'events']) {
+    assert.ok((await call(researcher, `select * from research.${t}`, [], aal2)).length > 0, `${t} visible to a researcher`);
+    assert.equal((await call(researcher, `select * from research.${t}`, [], { aal: 'aal1' })).length, 0, `${t} aal1`);
+    assert.equal((await call(researcher, `select * from research.${t}`)).length, 0, `${t} no aal`);
+    assert.equal((await call(outsider, `select * from research.${t}`, [], aal2)).length, 0, `${t} not a researcher`);
+    assert.equal((await call(u, `select * from research.${t}`, [], aal2)).length, 0, `${t} the participant`);
+  }
+  const items = await call(researcher, `select * from research.plate_items where item_name in ('Pasta','Odd') order by item_position`, [], aal2);
+  assert.equal(items.length, 2);
+  assert.deepEqual([items[0].item_name, items[0].servings, items[0].consumed, items[0].calories, items[0].protein], ['Pasta', '2', '0.25', '300', '10']);
+  assert.deepEqual([items[1].servings, items[1].consumed, items[1].calories], ['1', null, null], 'odd values become empty cells, not errors');
+  assert.equal((await call(u, `select * from research.plate_items`, [], aal2)).length, 0);
+  await assert.rejects(call(researcher, `insert into research.events (participant_id, kind) values (gen_random_uuid(), 'app_open')`, [], aal2), /permission denied/);
+  await assert.rejects(call(researcher, `update research.meals set items = '[]'`, [], aal2), /permission denied/);
+});
+
+await test('test-study copies never reach researchers', async () => {
+  const t = await newStudy({ code: 'REVIEW-0002', test: true });
+  const rev = await listed(t);
+  assert.equal((await enroll(rev, 'REVIEW-0002')).status, 'ok');
+  await meal(rev);
+  assert.equal((await copies(rev)).length, 1, 'collected like any other');
+  const aal2 = { aal: 'aal2' };
+  for (const t2 of ['meals', 'profile_snapshots', 'events']) {
+    const rows = await call(researcher, `select participant_id from research.${t2}`, [], aal2);
+    const mine = await owner(`select id from research.participants where user_id = $1`, [rev]);
+    assert.ok(!rows.some((r) => r.participant_id === mine[0].id), t2);
+  }
+});
+
+await test('a participant is left out of the dining ratings', async () => {
+  const regular = await user();
+  const part = await joiner();
+  for (const [u, rating] of [[regular, 5], [part, 1]]) {
+    await owner(`insert into public.item_ratings (user_id, item_id, item_name, rating, university, dining_hall)
+                 values ($1, 'bh_1', 'Soup', $2, 'brandeis', 'Sherman')`, [u, rating]);
+  }
+  const [row] = await owner(`select * from public.item_rating_aggregates where item_id = 'bh_1'`);
+  assert.equal(row.rating_count, 1);
+  assert.equal(row.avg_rating, '5.0');
+  assert.equal(row.dining_hall, 'Sherman');
+  assert.deepEqual(Object.keys(row), ['item_id', 'item_name', 'university', 'avg_rating', 'rating_count', 'dining_hall']);
+});
+
+await test('a participant is left out of dining survey results', async () => {
+  const admin = await user();
+  await owner(`insert into public.admin_users (user_id, university) values ($1, 'brandeis')`, [admin]);
+  const regular = await user();
+  const part = await joiner();
+  const [{ id: sid }] = await owner(`insert into public.surveys (university, question, format) values ('brandeis', 'Good?', 'multiple_choice') returning id`);
+  await owner(`insert into public.survey_responses (survey_id, user_id, status, choice, text_answer) values
+    ($1, $2, 'answered', 'Yes', 'regular says hi'), ($1, $3, 'answered', 'No', 'participant says hi'), ($1, $3, 'dismissed', null, null)`, [sid, regular, part]);
+  const [r] = await call(admin, `select * from public.get_survey_results('brandeis') where id = $1`, [sid]);
+  assert.equal(String(r.answered), '1');
+  assert.equal(String(r.dismissed), '0');
+  assert.deepEqual(r.tally, [{ choice: 'Yes', count: 1 }]);
+  assert.deepEqual(r.text_answers, ['regular says hi']);
+  assert.equal((await owner('select count(*)::int c from public.survey_responses where survey_id = $1', [sid]))[0].c, 3, 'the answers are kept');
+});
+
+
+// ── Phase 4: study reminders and the end-of-day survey ───────────────────────
+// Times are fixed so the rules can be checked exactly. October 2026 is on EDT
+// (UTC minus 4) until 1 November. Monday 12 Oct is the first day.
+
+const ENROLLED = '2026-10-12T13:00:00Z';   // Mon 09:00 ET
+const WINDOW_END = '2026-11-02T14:00:00Z';
+const place = async (u, enrolled = ENROLLED, windowEnd = WINDOW_END) => {
+  await owner('alter table research.participants disable trigger participants_guard');
+  await owner('update research.participants set enrolled_at = $2, window_ends_at = $3 where user_id = $1', [u, enrolled, windowEnd]);
+  await owner('alter table research.participants enable trigger participants_guard');
+};
+const sched = async (study_, grp, kind, time, title, { days, late, body = '' } = {}) =>
+  (await owner('select research.add_schedule($1,$2,$3,$4::time,$5,$6,$7::int[],$8) id',
+    [study_, grp, kind, time, title, body, days ?? [1, 2, 3, 4, 5, 6, 7], late ?? null]))[0].id;
+const claim = (iso, limit = 1000) => owner('select * from research.claim_due_prompts($1::timestamptz, $2)', [iso, limit]);
+const pending = async (u, iso) => (await owner('select * from research.pending_survey($1,$2::timestamptz)', [u, iso]))[0];
+const submit = async (u, date, answers, iso) =>
+  (await owner('select research.submit_survey($1,$2::date,$3::jsonb,$4::timestamptz) r', [u, date, JSON.stringify(answers), iso]))[0].r;
+const question = async (study_, text, format, { options = [], grps = [], position = 0, replaces = null } = {}) =>
+  (await owner('select research.add_question($1,$2,$3,$4::jsonb,$5::text[],$6,$7) id', [study_, text, format, JSON.stringify(options), grps, position, replaces]))[0].id;
+// A fresh study with a snack reminder, a loop reminder and an evening survey,
+// plus one student in each group, all enrolled on Monday morning.
+let sc = 0;
+const fresh = async () => {
+  sc++;
+  const code = `SCHED-${String(sc).padStart(4, '0')}`;
+  const st = await newStudy({ code, cap: 100 });
+  // The claim is system-wide on purpose, so earlier tests' schedules would also be
+  // due. Each test study starts with everyone else's switched off.
+  await owner('update research.reminder_schedules set is_active = false');
+  const mk = async (grp) => { const u = await listed(st, { grp }); assert.equal((await enroll(u, code)).status, 'ok'); await place(u); return u; };
+  return { st, code, s1: await mk('S'), s2: await mk('S'), l1: await mk('L'),
+    snack: await sched(st, 'S', 'reminder', '10:30', 'Snack'), loop: await sched(st, 'L', 'reminder', '10:30', 'Loop'),
+    survey: await sched(st, null, 'survey', '20:00', 'Questions') };
+};
+const T = {
+  tue1029: '2026-10-13T14:29:00Z', tue1030: '2026-10-13T14:30:00Z', tue1050: '2026-10-13T14:50:00Z',
+  tue1059: '2026-10-13T14:59:59Z', tue1100: '2026-10-13T15:00:00Z', tue2000: '2026-10-14T00:00:00Z',
+  tue2130: '2026-10-14T01:30:00Z', wed1000: '2026-10-14T14:00:00Z', wed2100: '2026-10-15T01:00:00Z',
+  sat1030: '2026-10-17T14:30:00Z', mon1500: '2026-10-12T19:00:00Z',
+};
+
+await test('each group gets its own reminder at the send time and not a minute before', async () => {
+  const f = await fresh();
+  assert.equal((await claim(T.tue1029)).filter((r) => r.kind === 'reminder').length, 0, '10:29 is early');
+  const rows = await claim(T.tue1030);
+  const byTitle = Object.fromEntries(rows.map((r) => [r.user_id, r.title]));
+  assert.deepEqual([byTitle[f.s1], byTitle[f.s2], byTitle[f.l1]], ['Snack', 'Snack', 'Loop']);
+  assert.equal(rows.length, 3);
+  assert.deepEqual(rows.map((r) => r.grp).sort(), ['L', 'S', 'S']);
+});
+
+await test('a prompt is claimed once, however many times the sender runs', async () => {
+  const f = await fresh();
+  assert.equal((await claim(T.tue1030)).length, 3);
+  assert.equal((await claim(T.tue1030)).length, 0, 'same minute again');
+  assert.equal((await claim(T.tue1050)).length, 0, 'twenty minutes later');
+  assert.equal((await owner('select count(*)::int c from research.prompts p join research.reminder_schedules s on s.id = p.schedule_id where s.study_id = $1', [f.st]))[0].c, 3);
+  assert.equal((await claim('2026-10-14T14:30:00Z')).length, 3, 'the next day is a new prompt');
+});
+
+await test('a reminder that arrives after its window is dropped, not sent late', async () => {
+  await fresh();
+  assert.equal((await claim(T.tue1059)).length, 3, 'the last second of the window still sends');
+  const g = await fresh();
+  assert.equal((await claim(T.tue1100)).filter((r) => [g.s1, g.s2, g.l1].includes(r.user_id)).length, 0, '11:00 is past it');
+  const h = await fresh();
+  await owner('update research.reminder_schedules set late_minutes = 90 where study_id = $1', [h.st]);
+  assert.equal((await claim(T.tue1100)).filter((r) => [h.s1, h.l1].includes(r.user_id)).length, 2, 'the window is per schedule');
+});
+
+await test('the days of the week are respected', async () => {
+  const f = await fresh();
+  await owner('update research.reminder_schedules set days = $2 where id = $1', [f.snack, [1, 2, 3, 4, 5]]);
+  const sat = await claim(T.sat1030);
+  assert.deepEqual(sat.map((r) => r.title).sort(), ['Loop'], 'weekdays only for S, every day for L');
+});
+
+await test('nothing is sent for a time that had passed before the student enrolled', async () => {
+  const f = await fresh();
+  await place(f.s1, '2026-10-13T14:45:00Z');   // enrolled 10:45 ET, after the 10:30 send
+  await place(f.s2, '2026-10-13T14:00:00Z');   // enrolled 10:00 ET, before it
+  const users = (await claim(T.tue1050)).map((r) => r.user_id);
+  assert.ok(!users.includes(f.s1));
+  assert.ok(users.includes(f.s2));
+});
+
+await test('withdrawn, completed, expired and inactive-schedule students are not prompted', async () => {
+  const f = await fresh();
+  await owner(`update research.participants set status = 'withdrawn', withdrawn_at = now() where user_id = $1`, [f.s1]);
+  await owner(`update research.participants set status = 'completed' where user_id = $1`, [f.s2]);
+  await owner('update research.reminder_schedules set is_active = false where id = $1', [f.survey]);
+  assert.deepEqual((await claim(T.tue1030)).map((r) => r.user_id), [f.l1]);
+  const g = await fresh();
+  await place(g.l1, ENROLLED, '2026-10-13T14:00:00Z');   // window ended before the send
+  assert.equal((await claim(T.tue1030)).filter((r) => r.user_id === g.l1).length, 0);
+});
+
+await test('the limit holds and what it left behind is claimed on the next run', async () => {
+  const f = await fresh();
+  const first = await claim(T.tue1030, 2);
+  assert.equal(first.length, 2);
+  const rest = await claim(T.tue1030, 2);
+  assert.equal(rest.length, 1);
+  assert.equal(new Set([...first, ...rest].map((r) => r.prompt_id)).size, 3);
+  void f;
+});
+
+await test('the survey prompt reaches every group and the reminders reach only theirs', async () => {
+  const f = await fresh();
+  const rows = await claim(T.tue2000);
+  assert.deepEqual(rows.map((r) => r.kind), ['survey', 'survey', 'survey']);
+  assert.equal(new Set(rows.map((r) => r.user_id)).size, 3);
+  void f;
+});
+
+await test('the sender reports back, and only the three real outcomes are accepted', async () => {
+  const f = await fresh();
+  const rows = await claim(T.tue1030);
+  const [a, b, c] = rows;
+  const marked = (await owner(`select research.mark_prompts($1::jsonb) n`, [JSON.stringify([
+    { id: a.prompt_id, status: 'sent' }, { id: b.prompt_id, status: 'failed', error: 'x'.repeat(500) },
+    { id: c.prompt_id, status: 'no_device' }, { id: a.prompt_id, status: 'claimed' }, { id: a.prompt_id, status: 'banana' }])]))[0].n;
+  assert.equal(marked, 3);
+  const all = await owner('select id, status, sent_at, error from research.prompts where id = any($1::uuid[]) order by status', [rows.map((r) => r.prompt_id)]);
+  assert.deepEqual(all.map((r) => r.status).sort(), ['failed', 'no_device', 'sent']);
+  assert.ok(all.find((r) => r.status === 'sent').sent_at);
+  assert.equal(all.find((r) => r.status === 'failed').error.length, 200);
+  void f;
+});
+
+await test('the sender functions are for the service role only', async () => {
+  const u = await user();
+  for (const sql of ['select * from public.research_claim_due_prompts()', `select public.research_mark_prompts('[]')`,
+                     'select public.research_housekeeping()', 'select * from public.research_active_user_ids(array[gen_random_uuid()])']) {
+    await assert.rejects(call(u, sql), /permission denied/, sql);
+    await assert.rejects(call(null, sql, [], { role: 'anon' }), /permission denied/, sql);
+    await db.exec('reset role'); await db.exec('set role service_role');
+    try { await db.query(sql); } finally { await db.exec('reset role'); }
+  }
+  await assert.rejects(call(u, 'select research.claim_due_prompts()'), /permission denied/);
+});
+
+await test('questions are never edited, and replacing one keeps the old one and its answers', async () => {
+  const f = await fresh();
+  const q1 = await question(f.st, 'How was lunch?', 'rating');
+  await assert.rejects(owner(`update research.questions set text = 'changed' where id = $1`, [q1]), /questions_are_never_edited/);
+  await assert.rejects(owner(`update research.questions set options = '["a","b"]' where id = $1`, [q1]), /questions_are_never_edited/);
+  await assert.rejects(owner(`update research.questions set grps = '{S}' where id = $1`, [q1]), /questions_are_never_edited/);
+  assert.equal(await submit(f.s1, '2026-10-13', { [q1]: 4 }, T.tue2130), 'ok');
+  const q2 = await question(f.st, 'How was lunch today?', 'rating', { replaces: q1 });
+  const rows = await owner('select id, is_active, replaces from research.questions where study_id = $1 order by created_at', [f.st]);
+  assert.deepEqual(rows.map((r) => r.is_active), [false, true]);
+  assert.equal(rows[1].replaces, q1);
+  assert.equal((await pending(f.s2, T.wed2100)).questions[0].id, q2, 'new days use the new question');
+  const old = (await owner('select r.question_id, r.answer from research.responses r join research.participants p on p.id = r.participant_id where p.user_id = $1', [f.s1]))[0];
+  assert.equal(old.question_id, q1, 'the earlier answer still points at the question it answered');
+  assert.equal(old.answer, 4);
+  await assert.rejects(question(f.st, 'x', 'rating', { replaces: '00000000-0000-0000-0000-000000000000' }), /unknown_question/);
+  await assert.rejects(question(f.st, 'x', 'rating', { grps: ['Z'] }), /unknown_group/);
+  await assert.rejects(question(f.st, 'x', 'multiple_choice', { options: ['only one'] }));
+});
+
+await test('a question can be for one group, and everyone else never sees it', async () => {
+  const f = await fresh();
+  const all = await question(f.st, 'For all', 'yes_no', { position: 1 });
+  const onlyS = await question(f.st, 'For S', 'yes_no', { grps: ['S'], position: 2 });
+  const onlyL = await question(f.st, 'For L', 'short_answer', { grps: ['L'], position: 3 });
+  const ids = async (u) => (await pending(u, T.tue2130)).questions.map((q) => q.id);
+  assert.deepEqual(await ids(f.s1), [all, onlyS]);
+  assert.deepEqual(await ids(f.l1), [all, onlyL]);
+  assert.equal(await submit(f.l1, '2026-10-13', { [all]: true, [onlyS]: true, [onlyL]: 'hi' }, T.tue2130), 'invalid_answers', 'another group\'s question is not accepted');
+  assert.equal(await submit(f.l1, '2026-10-13', { [all]: true, [onlyL]: 'hi' }, T.tue2130), 'ok');
+});
+
+await test('no questions means no survey, and a survey is not waiting before its time', async () => {
+  const f = await fresh();
+  assert.equal(await pending(f.s1, T.tue2130), undefined, 'no questions');
+  await question(f.st, 'Q', 'yes_no');
+  const early = await pending(f.s1, T.mon1500);   // enrolled this morning, 20:00 has not come
+  assert.equal(early.for_date, null);
+  assert.equal(early.questions, null);
+  assert.equal(new Date(early.next_due_at).toISOString(), '2026-10-13T00:00:00.000Z', 'tells the app when it becomes due');
+  const due = await pending(f.s1, T.tue2000);
+  assert.equal(String(due.for_date.toISOString?.().slice(0, 10) ?? due.for_date).slice(0, 10), '2026-10-13');
+  assert.equal(due.late, false);
+  assert.equal(due.questions.length, 1);
+  assert.equal(await pending(await user(), T.tue2000), undefined, 'not a participant');
+});
+
+await test('an unanswered survey is offered once more the next day, marked late, then lapses', async () => {
+  const f = await fresh();
+  const q = await question(f.st, 'Q', 'yes_no');
+  const next = await pending(f.s1, T.wed1000);
+  assert.equal(String(next.for_date.toISOString().slice(0, 10)), '2026-10-13');
+  assert.equal(next.late, true);
+  assert.equal(await submit(f.s1, '2026-10-13', { [q]: true }, T.wed1000), 'ok');
+  assert.equal((await owner(`select late from research.survey_days d join research.participants p on p.id = d.participant_id where p.user_id = $1`, [f.s1]))[0].late, true);
+  const after = await pending(f.s1, T.wed1000);
+  assert.equal(after.for_date, null, 'today\'s is not due until 20:00');
+  assert.equal(new Date(after.next_due_at).toISOString(), '2026-10-15T00:00:00.000Z');
+  const lapsed = await pending(f.s2, '2026-10-15T14:00:00Z');   // Thursday morning, Tuesday's has lapsed
+  assert.equal(String(lapsed.for_date.toISOString().slice(0, 10)), '2026-10-14', 'Wednesday is what is waiting, not Tuesday');
+});
+
+await test('when today\'s survey comes due, yesterday\'s missed one lapses', async () => {
+  const f = await fresh();
+  const q = await question(f.st, 'Q', 'yes_no');
+  const morning = await pending(f.s1, T.tue1050);
+  assert.equal(String(morning.for_date.toISOString().slice(0, 10)), '2026-10-12', 'Monday\'s is offered on Tuesday morning');
+  assert.equal(morning.late, true);
+  const evening = await pending(f.s1, T.tue2130);
+  assert.equal(String(evening.for_date.toISOString().slice(0, 10)), '2026-10-13', 'by Tuesday evening it is Tuesday\'s');
+  assert.equal(evening.late, false);
+  assert.equal(await submit(f.s1, '2026-10-12', { [q]: true }, T.tue2130), 'not_pending', 'Monday has lapsed');
+  assert.equal(await submit(f.s1, '2026-10-13', { [q]: true }, T.tue2130), 'ok');
+  assert.equal((await pending(f.s1, T.tue2130)).for_date, null, 'answering today leaves nothing, and Monday does not come back');
+});
+
+await test('an on-time answer is not late, and a day can be answered only once', async () => {
+  const f = await fresh();
+  const q = await question(f.st, 'Q', 'yes_no');
+  assert.equal(await submit(f.s1, '2026-10-13', { [q]: false }, T.tue2130), 'ok');
+  assert.equal((await owner(`select late from research.survey_days d join research.participants p on p.id = d.participant_id where p.user_id = $1`, [f.s1]))[0].late, false);
+  assert.equal(await submit(f.s1, '2026-10-13', { [q]: true }, T.tue2130), 'not_pending');
+  assert.equal(await submit(f.s2, '2026-10-12', { [q]: true }, '2026-10-13T01:00:00Z'), 'ok', 'Monday evening, on time');
+  assert.equal(await submit(f.s2, '2026-10-20', { [q]: true }, T.tue2130), 'not_pending', 'a day that is not waiting');
+});
+
+await test('every answer is checked against its question', async () => {
+  const f = await fresh();
+  const yn = await question(f.st, 'yn', 'yes_no', { position: 1 });
+  const rt = await question(f.st, 'rt', 'rating', { position: 2 });
+  const mc = await question(f.st, 'mc', 'multiple_choice', { options: ['Good', 'Bad'], position: 3 });
+  const sa = await question(f.st, 'sa', 'short_answer', { position: 4 });
+  const good = { [yn]: true, [rt]: 3, [mc]: 'Good', [sa]: 'fine' };
+  const bad = async (patch) => assert.equal(await submit(f.s1, '2026-10-13', { ...good, ...patch }, T.tue2130), 'invalid_answers', JSON.stringify(patch));
+  await bad({ [yn]: 'yes' }); await bad({ [yn]: 1 }); await bad({ [yn]: null });
+  await bad({ [rt]: 0 }); await bad({ [rt]: 6 }); await bad({ [rt]: 2.5 }); await bad({ [rt]: '3' }); await bad({ [rt]: true });
+  await bad({ [mc]: 'Other' }); await bad({ [mc]: 1 }); await bad({ [mc]: ['Good'] });
+  await bad({ [sa]: 5 }); await bad({ [sa]: 'x'.repeat(501) });
+  const missing = { ...good }; delete missing[sa];
+  assert.equal(await submit(f.s1, '2026-10-13', missing, T.tue2130), 'invalid_answers', 'a missing answer');
+  assert.equal(await submit(f.s1, '2026-10-13', { ...good, [crypto.randomUUID()]: 1 }, T.tue2130), 'invalid_answers', 'an extra key');
+  assert.equal(await submit(f.s1, '2026-10-13', [1, 2, 3], T.tue2130), 'invalid_answers', 'not an object');
+  assert.equal((await owner('select count(*)::int c from research.survey_days d join research.participants p on p.id = d.participant_id where p.user_id = $1', [f.s1]))[0].c, 0, 'nothing was stored');
+  assert.equal(await submit(f.s1, '2026-10-13', { ...good, [sa]: '' }, T.tue2130), 'ok', 'an empty free-text answer is allowed');
+  const stored = await owner('select r.answer from research.responses r join research.participants p on p.id = r.participant_id where p.user_id = $1 order by r.question_id', [f.s1]);
+  assert.equal(stored.length, 4);
+});
+
+await test('the survey for withdrawn or expired students is not offered', async () => {
+  const f = await fresh();
+  const q = await question(f.st, 'Q', 'yes_no');
+  await owner(`update research.participants set status = 'withdrawn', withdrawn_at = now() where user_id = $1`, [f.s1]);
+  assert.equal(await pending(f.s1, T.tue2130), undefined);
+  assert.equal(await submit(f.s1, '2026-10-13', { [q]: true }, T.tue2130), 'not_pending');
+  await place(f.s2, ENROLLED, '2026-10-13T20:00:00Z');
+  assert.equal(await pending(f.s2, T.tue2130), undefined, 'the window has ended');
+});
+
+await test('a student with a survey for their own group uses it over the one for everyone', async () => {
+  const f = await fresh();
+  await sched(f.st, 'L', 'survey', '21:30', 'L only');
+  await question(f.st, 'Q', 'yes_no');
+  const l = await pending(f.l1, T.tue2000);
+  assert.equal(String(l.for_date.toISOString().slice(0, 10)), '2026-10-12', 'L has the 21:30 schedule, so at 20:00 only Monday\'s is waiting');
+  assert.equal(l.late, true);
+  assert.equal(new Date(l.next_due_at).toISOString(), '2026-10-14T01:30:00.000Z');
+  const sGroup = await pending(f.s1, T.tue2000);
+  assert.equal(String(sGroup.for_date.toISOString().slice(0, 10)), '2026-10-13', 'S has only the shared 20:00 one, which is due');
+  assert.equal(sGroup.late, false);
+});
+
+await test('the app functions are iOS only and need a signed-in participant', async () => {
+  const f = await fresh();
+  const q = await question(f.st, 'Q', 'yes_no');
+  const ask = (u, p = 'ios') => call(u, 'select * from public.research_pending_survey($1)', [p]);
+  assert.equal((await ask(f.s1, 'web'))[0].status, 'ios_only');
+  assert.equal((await ask(f.s1, null))[0].status, 'ios_only');
+  assert.equal((await ask(await user()))[0].status, 'none', 'not a participant');
+  await assert.rejects(call(null, `select * from public.research_pending_survey('ios')`), /not_signed_in/);
+  await assert.rejects(call(null, `select * from public.research_pending_survey('ios')`, [], { role: 'anon' }), /permission denied/);
+  const sub = (u, d, a, p = 'ios') => call(u, 'select * from public.research_submit_survey($1::date,$2::jsonb,$3)', [d, JSON.stringify(a), p]);
+  assert.equal((await sub(f.s1, '2026-10-13', { [q]: true }, 'web'))[0].status, 'ios_only');
+  assert.equal((await sub(await user(), '2026-10-13', { [q]: true }))[0].status, 'not_pending');
+  await assert.rejects(call(null, `select * from public.research_submit_survey('2026-10-13','{}','ios')`, [], { role: 'anon' }), /permission denied/);
+});
+
+await test('response counts: surveys due and answered, per participant', async () => {
+  const f = await fresh();
+  const q = await question(f.st, 'Q', 'yes_no');
+  await submit(f.s1, '2026-10-12', { [q]: true }, T.tue1050);
+  await submit(f.s1, '2026-10-13', { [q]: true }, T.tue2130);
+  const due = async (u, iso) => (await owner('select research.surveys_due((select id from research.participants where user_id = $1), $2::timestamptz) n', [u, iso]))[0].n;
+  assert.equal(await due(f.s1, T.tue2130), 2, 'Monday and Tuesday evenings have passed');
+  assert.equal(await due(f.s1, T.tue1050), 1, 'only Monday so far');
+  assert.equal(await due(f.s1, T.wed2100), 3);
+  await owner(`update research.participants set status = 'withdrawn', withdrawn_at = $2::timestamptz where user_id = $1`, [f.s2, '2026-10-13T12:00:00Z']);
+  assert.equal(await due(f.s2, T.wed2100), 1, 'stops counting when they leave');
+});
+
+await test('the participant is left alone by regular pushes, and only while they are active', async () => {
+  const a = await joiner();
+  const b = await joiner();
+  const c = await joiner();
+  const d = await joiner();
+  const e = await user();
+  await call(b, 'select * from public.research_leave()');
+  await owner(`update research.participants set status = 'completed' where user_id = $1`, [c]);
+  await owner(`update research.participants set window_ends_at = now() - interval '1 minute' where user_id = $1`, [d]);
+  const ask = async (ids) => {
+    await db.exec('reset role'); await db.exec('set role service_role');
+    try { return (await db.query('select * from public.research_active_user_ids($1::uuid[])', [ids])).rows.map((r) => r.research_active_user_ids); } finally { await db.exec('reset role'); }
+  };
+  assert.deepEqual(await ask([a, b, c, d, e]), [a]);
+  assert.deepEqual(await ask([]), []);
+});
+
+await test('housekeeping closes the finished windows and records who can be reached', async () => {
+  const on = await joiner();
+  const off = await joiner();
+  const old = await joiner();
+  await owner(`update public.profiles set push_enabled = true where id = $1`, [on]);
+  await owner(`insert into public.push_subscriptions (user_id, endpoint, apns_token) values ($1, 'apns:tok-on', 'tok-on')`, [on]);
+  await owner(`insert into public.push_subscriptions (user_id, endpoint) values ($1, 'https://web/only')`, [off]);
+  await owner(`update research.participants set window_ends_at = now() - interval '1 minute' where user_id = $1`, [old]);
+  await db.exec('set role service_role');
+  let out;
+  try { out = (await db.query('select public.research_housekeeping() r')).rows[0].r; } finally { await db.exec('reset role'); }
+  assert.ok(out.closed >= 1);
+  const row = async (u) => (await owner('select status, push_status from research.participants where user_id = $1', [u]))[0];
+  assert.deepEqual(await row(on), { status: 'active', push_status: 'on' });
+  assert.deepEqual(await row(off), { status: 'active', push_status: 'off' }, 'a web subscription cannot receive the study push');
+  assert.equal((await row(old)).status, 'completed');
+});
+
+await test('the default reminders are the two known ones, drafted, and only added once', async () => {
+  const st = await newStudy({ code: 'SEEDED-0001' });
+  assert.equal((await owner('select research.seed_default_reminders($1) n', [st]))[0].n, 2);
+  assert.equal((await owner('select research.seed_default_reminders($1) n', [st]))[0].n, 0);
+  const rows = await owner(`select grp, kind, send_time::text t, days, late_minutes, title, body from research.reminder_schedules where study_id = $1 order by grp`, [st]);
+  assert.deepEqual(rows.map((r) => [r.grp, r.kind, r.t, r.late_minutes]), [['L', 'reminder', '10:30:00', 30], ['S', 'reminder', '10:30:00', 30]]);
+  assert.deepEqual(rows[0].days, [1, 2, 3, 4, 5, 6, 7]);
+  for (const r of rows) assert.doesNotMatch(r.title + r.body, /[—;!]/);
+  assert.match(rows[1].body, /snack/i);
+  assert.match(rows[0].body, /walk the hall/i);
+  await assert.rejects(owner(`select research.add_schedule($1,'Z','reminder','10:30','x')`, [st]), /unknown_group/);
+  await assert.rejects(owner(`select research.add_schedule($1,'S','banana','10:30','x')`, [st]), /bad_kind/);
+  assert.equal((await owner(`select late_minutes from research.reminder_schedules where id = $1`, [await sched(st, null, 'survey', '20:00', 's')]))[0].late_minutes, 180, 'a survey defaults to a longer window');
+});
+
+await test('researchers read the schedules, questions, prompts and answers, and nobody else does', async () => {
+  const f = await fresh();
+  const q = await question(f.st, 'Q', 'yes_no');
+  await submit(f.s1, '2026-10-13', { [q]: true }, T.tue2130);
+  await claim(T.tue1030);
+  const aal2 = { aal: 'aal2' };
+  for (const t of ['reminder_schedules', 'questions', 'prompts', 'survey_days', 'responses', 'activity']) {
+    assert.ok((await call(researcher, `select * from research.${t}`, [], aal2)).length > 0, `${t} visible`);
+    assert.equal((await call(researcher, `select * from research.${t}`, [], { aal: 'aal1' })).length, 0, `${t} aal1`);
+    assert.equal((await call(outsider, `select * from research.${t}`, [], aal2)).length, 0, `${t} outsider`);
+    assert.equal((await call(f.s1, `select * from research.${t}`, [], aal2)).length, 0, `${t} participant`);
+  }
+  await assert.rejects(call(researcher, `update research.questions set is_active = false`, [], aal2), /permission denied/);
+  await assert.rejects(call(researcher, `insert into research.responses (survey_day_id, participant_id, question_id, answer) values (gen_random_uuid(), gen_random_uuid(), gen_random_uuid(), 'true')`, [], aal2), /permission denied/);
+});
+
+await test('the activity view has the compensation numbers and no food data', async () => {
+  const f = await fresh();
+  const q = await question(f.st, 'Q', 'yes_no');
+  const rows = await claim(T.tue1030);
+  await owner('select research.mark_prompts($1::jsonb)', [JSON.stringify(rows.map((r, i) => ({ id: r.prompt_id, status: i === 0 ? 'failed' : 'sent' })))]);
+  await submit(f.s1, '2026-10-13', { [q]: true }, T.tue2130);
+  const mid = await owner(`insert into public.meal_history (user_id, confirmed_at, meal_type, meal_date, dining_hall, items) values ($1, now(), 'lunch', ${TODAY}, 'Sherman', $2::jsonb) returning id`, [f.s1, JSON.stringify([{ ...RICE, consumed: 1 }])]);
+  void mid;
+  await owner(`update research.reminder_schedules set is_active = false where study_id = $1 and kind = 'reminder'`, [f.st]);
+  const [a] = await call(researcher, `select * from research.activity where participant_id = (select id from research.participants where user_id = $1)`, [f.s1], { aal: 'aal2' });
+  assert.equal(a.surveys_answered, 1);
+  assert.equal(a.plates_logged, 1);
+  assert.equal(a.consumption_reports, 1);
+  assert.ok(a.prompts_claimed >= 1);
+  assert.deepEqual(Object.keys(a).filter((k) => /meal|item|food|calor|name|email/.test(k)), [], 'no food or identity columns');
+  assert.ok(['S', 'L'].includes(a.grp));
+});
+
+
+// ── The researchers' daily survey, and follow-up questions ───────────────────
+
+const qAt = async (st, pos) => (await owner('select id from research.questions where study_id = $1 and position = $2 and is_active', [st, pos]))[0]?.id;
+const seeded = async ({ dinner = false } = {}) => {
+  const f = await fresh();
+  assert.equal((await owner('select research.seed_daily_survey($1,$2) n', [f.st, dinner]))[0].n, dinner ? 10 : 6);
+  const q = { where: await qAt(f.st, 10), loop: await qAt(f.st, 20), snack: null, how: await qAt(f.st, 21), goals: await qAt(f.st, 30), left: await qAt(f.st, 40) };
+  // Position 20 is both the L loop question and the S snack question.
+  const at20 = await owner(`select id, grps from research.questions where study_id = $1 and position = 20 order by grps`, [f.st]);
+  q.loop = at20.find((r) => r.grps[0] === 'L').id;
+  q.snack = at20.find((r) => r.grps[0] === 'S').id;
+  return { ...f, q };
+};
+const ids = async (u) => (await pending(u, T.tue2130)).questions.map((x) => x.id);
+
+await test('the researchers\' survey is loaded once, with their wording and their intro', async () => {
+  const f = await fresh();
+  assert.equal((await owner('select research.seed_daily_survey($1) n', [f.st]))[0].n, 6);
+  assert.equal((await owner('select research.seed_daily_survey($1) n', [f.st]))[0].n, 0, 'a second run adds nothing');
+  const rows = await owner('select position, grps, format, text, options, show_if from research.questions where study_id = $1 order by position, grps', [f.st]);
+  assert.equal(rows.length, 6);
+  assert.equal(rows[0].text, 'Did you eat lunch in Usdan or Sherman all-you-care-to-eat (AYCTE) dining hall today?');
+  assert.deepEqual(rows[0].options, ['Yes - in Usdan', 'Yes - in Sherman', 'No']);
+  assert.match(rows.find((r) => r.grps[0] === 'L').text, /^When having lunch at Usdan\/Sherman, did you use the "loop and plan" strategy/);
+  assert.deepEqual(rows.find((r) => r.grps[0] === 'L').options, ['Not at all', 'Completely']);
+  assert.equal(rows.find((r) => r.text.startsWith('Did you eat the snack')).format, 'yes_no');
+  assert.deepEqual(rows.find((r) => r.text.startsWith('How much food')).options, ['Little or None', '1/4 plate', '1/2 plate', '3/4 plate', '1 plate', '1+ plate']);
+  assert.deepEqual(rows.find((r) => r.text.startsWith('How long before lunch')).options, ['0-20 min before lunch', '21-60 min before lunch', 'More than 1 hour before lunch']);
+  const [{ survey_intro: intro }] = await owner('select survey_intro from research.studies where id = $1', [f.st]);
+  assert.match(intro, /^This is a 1-minute survey about your meal experiences today at Usdan and Sherman/);
+  assert.ok(!JSON.stringify(rows).toLowerCase().includes('email'), 'the email question is not loaded');
+});
+
+await test('each group sees its own questions from the draft and the shared ones', async () => {
+  const f = await seeded();
+  assert.deepEqual(await ids(f.l1), [f.q.where, f.q.loop, f.q.goals, f.q.left]);
+  assert.deepEqual(await ids(f.s1), [f.q.where, f.q.snack, f.q.how, f.q.goals, f.q.left], 'the follow-up is sent to the app, which decides when to show it');
+});
+
+await test('the snack follow-up is required after yes, refused after no, and the right rows are stored', async () => {
+  const f = await seeded();
+  const base = { [f.q.where]: 'Yes - in Sherman', [f.q.goals]: 4, [f.q.left]: '1/2 plate' };
+  const go = (u, a) => submit(u, '2026-10-13', a, T.tue2130);
+  assert.equal(await go(f.s1, { ...base, [f.q.snack]: true }), 'invalid_answers', 'yes needs the follow-up');
+  assert.equal(await go(f.s1, { ...base, [f.q.snack]: false, [f.q.how]: '0-20 min before lunch' }), 'invalid_answers', 'no must not carry one');
+  assert.equal(await go(f.s1, { ...base, [f.q.snack]: true, [f.q.how]: 'Yesterday' }), 'invalid_answers', 'not one of the choices');
+  assert.equal(await go(f.s1, { ...base, [f.q.snack]: true, [f.q.how]: '21-60 min before lunch' }), 'ok');
+  assert.equal(await go(f.s2, { ...base, [f.q.snack]: false }), 'ok');
+  const count = async (u) => (await owner('select count(*)::int c from research.responses r join research.participants p on p.id = r.participant_id where p.user_id = $1', [u]))[0].c;
+  assert.equal(await count(f.s1), 5, 'yes stores the follow-up');
+  assert.equal(await count(f.s2), 4, 'no stores no answer to a question that was not shown');
+});
+
+await test('group L answers four questions and may not answer the snack ones', async () => {
+  const f = await seeded();
+  const a = { [f.q.where]: 'No', [f.q.loop]: 5, [f.q.goals]: 1, [f.q.left]: 'Little or None' };
+  assert.equal(await submit(f.l1, '2026-10-13', { ...a, [f.q.snack]: true }, T.tue2130), 'invalid_answers');
+  assert.equal(await submit(f.l1, '2026-10-13', a, T.tue2130), 'ok');
+  assert.equal(await submit(f.l1, '2026-10-13', { ...a, [f.q.loop]: 6 }, T.tue2130), 'not_pending', 'already answered');
+});
+
+await test('everyone is asked the lunch questions even when they ate no lunch in a hall, as the draft says', async () => {
+  const f = await seeded();
+  assert.equal(await submit(f.l1, '2026-10-13', { [f.q.where]: 'No', [f.q.loop]: 1, [f.q.goals]: 1, [f.q.left]: '1+ plate' }, T.tue2130), 'ok');
+  assert.equal(await submit(f.s2, '2026-10-13', { [f.q.where]: 'No', [f.q.snack]: false, [f.q.goals]: 3, [f.q.left]: '1 plate' }, T.tue2130), 'ok');
+});
+
+await test('the dinner block is off by default and, when on, follows the dinner gate', async () => {
+  const off = await fresh();
+  await owner('select research.seed_daily_survey($1) n', [off.st]);
+  assert.equal((await owner('select count(*)::int c from research.questions where study_id = $1 and position >= 50', [off.st]))[0].c, 0);
+
+  const f = await seeded({ dinner: true });
+  const dq = { gate: await qAt(f.st, 50), goals: await qAt(f.st, 70), left: await qAt(f.st, 80) };
+  const loopDinner = (await owner(`select id from research.questions where study_id = $1 and position = 60`, [f.st]))[0].id;
+  assert.ok(!(await owner(`select text from research.questions where study_id = $1 and position >= 50`, [f.st])).some((r) => /snack/i.test(r.text)), 'the draft\'s dinner snack question is not loaded');
+  const lunch = { [f.q.where]: 'Yes - in Usdan', [f.q.goals]: 3, [f.q.left]: '1/4 plate' };
+  const sLunch = { ...lunch, [f.q.snack]: false };
+  const lLunch = { ...lunch, [f.q.loop]: 2 };
+  assert.equal(await submit(f.s1, '2026-10-13', { ...sLunch, [dq.gate]: 'No' }, T.tue2130), 'ok', 'no dinner, no dinner answers');
+  assert.equal(await submit(f.s2, '2026-10-13', { ...sLunch, [dq.gate]: 'No', [dq.goals]: 3 }, T.tue2130), 'invalid_answers', 'an answer to a hidden dinner question');
+  assert.equal(await submit(f.s2, '2026-10-13', { ...sLunch, [dq.gate]: 'Yes - in Sherman' }, T.tue2130), 'invalid_answers', 'dinner needs its follow-ups');
+  assert.equal(await submit(f.s2, '2026-10-13', { ...sLunch, [dq.gate]: 'Yes - in Sherman', [dq.goals]: 4, [dq.left]: '3/4 plate' }, T.tue2130), 'ok', 'S has no dinner loop question');
+  assert.equal(await submit(f.l1, '2026-10-13', { ...lLunch, [dq.gate]: 'Yes - in Usdan', [loopDinner]: 5, [dq.goals]: 4, [dq.left]: 'Little or None' }, T.tue2130), 'ok', 'L has one');
+});
+
+await test('a follow-up of a follow-up stays hidden when the first one is', async () => {
+  const f = await fresh();
+  const a = await question(f.st, 'A', 'yes_no', { position: 1 });
+  const b = (await owner(`select research.add_question($1,'B','yes_no','[]'::jsonb,'{}',2,null,$2::jsonb) id`, [f.st, JSON.stringify({ question: a, any_of: [true] })]))[0].id;
+  const c = (await owner(`select research.add_question($1,'C','yes_no','[]'::jsonb,'{}',3,null,$2::jsonb) id`, [f.st, JSON.stringify({ question: b, any_of: [true] })]))[0].id;
+  assert.equal(await submit(f.s1, '2026-10-13', { [a]: false, [c]: true }, T.tue2130), 'invalid_answers', 'C cannot be answered when A hid B');
+  assert.equal(await submit(f.s1, '2026-10-13', { [a]: false }, T.tue2130), 'ok');
+  assert.equal(await submit(f.s2, '2026-10-13', { [a]: true, [b]: true }, T.tue2130), 'invalid_answers', 'B shown, so C is needed');
+  assert.equal(await submit(f.s2, '2026-10-13', { [a]: true, [b]: true, [c]: false }, T.tue2130), 'ok');
+});
+
+await test('follow-up and scale-label rules are enforced where the questions are written', async () => {
+  const f = await fresh();
+  const a = await question(f.st, 'A', 'yes_no', { position: 5 });
+  const add = (pos, showIf, fmt = 'yes_no', opts = '[]') => owner(`select research.add_question($1,'x',$2,$3::jsonb,'{}',$4,null,$5::jsonb)`, [f.st, fmt, opts, pos, showIf === null ? null : JSON.stringify(showIf)]);
+  await assert.rejects(add(6, { question: '00000000-0000-0000-0000-000000000000', any_of: [true] }), /show_if_needs_an_earlier_question/);
+  await assert.rejects(add(5, { question: a, any_of: [true] }), /show_if_needs_an_earlier_question/, 'not before it, not at the same place');
+  await assert.rejects(add(4, { question: a, any_of: [true] }), /show_if_needs_an_earlier_question/);
+  await assert.rejects(add(6, { question: a }), /questions_show_if/, 'a condition with nothing to match');
+  await assert.rejects(add(6, { question: a, any_of: [true], none_of: [false] }), /questions_show_if/, 'both kinds at once');
+  await assert.rejects(add(6, { any_of: [true] }), /show_if_needs_an_earlier_question|questions_show_if/, 'no parent');
+  await assert.rejects(add(6, { question: a, any_of: 'yes' }), /questions_show_if/, 'not a list');
+  await add(6, { question: a, none_of: [false] });
+  await assert.rejects(add(7, null, 'rating', '["only one label"]'), /questions_rating_labels/);
+  await assert.rejects(add(7, null, 'rating', '["a","b","c"]'), /questions_rating_labels/);
+  await add(7, null, 'rating', '["Low","High"]');
+  await add(8, null, 'rating', '[]');
+  await assert.rejects(owner(`update research.questions set show_if = null where study_id = $1 and position = 6`, [f.st]), /questions_are_never_edited/);
+});
+
+await test('the app gets the intro and the follow-up conditions with the questions', async () => {
+  const f = await seeded();
+  const row = await pending(f.s1, T.tue2130);
+  assert.match(row.intro, /^This is a 1-minute survey/);
+  const how = row.questions.find((x) => x.id === f.q.how);
+  assert.deepEqual(how.show_if, { question: f.q.snack, any_of: [true] });
+  assert.equal(row.questions.find((x) => x.id === f.q.where).show_if, null);
+  const early = await pending(f.s1, T.mon1500);
+  assert.equal(early.questions, null, 'nothing waiting, so nothing to show before its time');
+  const wrapped = (await call(f.s1, 'select * from public.research_pending_survey($1)', ['ios']));
+  assert.equal(wrapped.length, 1);
+  assert.ok('intro' in wrapped[0]);
+  const noIntro = await fresh();
+  await question(noIntro.st, 'Q', 'yes_no');
+  assert.equal((await pending(noIntro.s1, T.tue2130)).intro, null, 'a study without one falls back to the app\'s wording');
+});
+
+await test('researchers can read the intro and the follow-up conditions', async () => {
+  const f = await seeded();
+  const aal2 = { aal: 'aal2' };
+  const rows = await call(researcher, `select survey_intro from research.studies where id = $1`, [f.st], aal2);
+  assert.match(rows[0].survey_intro, /1-minute survey/);
+  const qs = await call(researcher, `select show_if from research.questions where study_id = $1 and show_if is not null`, [f.st], aal2);
+  assert.equal(qs.length, 1);
+});
+
+console.log(`\nall ${n} research SQL tests passed`);
