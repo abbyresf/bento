@@ -1,0 +1,48 @@
+# Research study reminders and end-of-day survey prompts.
+#
+# Calls /api/research-send, which sends whatever the database says is due. What is
+# due, to whom and when lives in research.reminder_schedules, not here. This file
+# only decides how often to ask.
+#
+# Safe to run as often as you like, and alongside any other scheduler. What is due
+# is claimed in the database before anything is sent, so a second call in the same
+# minute, a replayed run, or this plus pg_cron cannot send anything twice.
+#
+# TIMING IS THE WEAK POINT. The snack reminder is meant to land at 10:30, thirty
+# minutes before lunch opens, and it is worthless much after 11:00. The database
+# drops a reminder that arrives more than its late window (30 minutes) after its
+# send time, so a late run costs a missed reminder and not a stale one. But GitHub's
+# scheduler is best effort: this repo's own notes (meal-reminders.yml) record runs
+# arriving minutes to hours late and some never arriving. Five minutes is the
+# shortest interval GitHub allows. For delivery that can be relied on, add the
+# pg_cron job described in RESEARCH_DASHBOARD_SPEC.md, "Scheduling". It fires on the
+# minute from inside Supabase and this workflow can stay as a backstop.
+#
+# The canonical host is used directly. The apex domain 308s to www, and curl strips
+# the Authorization header when a redirect changes host.
+name: Study reminders
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+# A queued run must never overlap one already sending.
+concurrency:
+  group: research-send
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send what is due
+        run: |
+          code=$(curl -sS -o /tmp/out.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://www.bentodining.com/api/research-send")
+          echo "HTTP $code"
+          # Counts only: the endpoint never returns a token, a user or a message.
+          cat /tmp/out.json
+          # Fail the run on a non-200 so a broken send is visible in Actions.
+          test "$code" = "200"

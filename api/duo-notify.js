@@ -17,6 +17,7 @@
 import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
 import { apnsConfigFromEnv, sendApns } from './_apns.js';
+import { withoutActiveParticipants } from './_research.js';
 
 const MEALS = ['breakfast', 'lunch', 'dinner'];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -40,6 +41,11 @@ export function pushText(senderName, hall) {
 // Sends one fixed line to these students (already limited to those who switched friend alerts on) through
 // Apple push for the app and web push for the website. Returns how many it reached. Never throws.
 async function deliver(admin, ids, title, tag) {
+  // A student in a research study gets only the study's own pushes while they are
+  // in it, so buddy alerts skip them. The tap itself is still saved and shows in
+  // their app.
+  ids = (await withoutActiveParticipants(admin, ids)).ids;
+  if (!ids.length) return 0;
   const { data: subs } = await admin.from('push_subscriptions').select('*').in('user_id', ids);
   if (!subs?.length) return 0;
 

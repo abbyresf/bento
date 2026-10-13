@@ -22,10 +22,15 @@ function fakeApple(behave) {
   const server = http2.createServer();
   server.on('stream', (stream, headers) => {
     const token = headers[':path'].split('/').pop();
-    seen.push({ token, headers });
-    const { status, reason } = behave(token);
-    stream.respond({ ':status': status, 'content-type': 'application/json' });
-    stream.end(reason ? JSON.stringify({ reason }) : '');
+    const entry = { token, headers, body: '' };
+    seen.push(entry);
+    stream.setEncoding('utf8');
+    stream.on('data', (c) => { entry.body += c; });
+    stream.on('end', () => {
+      const { status, reason } = behave(token);
+      stream.respond({ ':status': status, 'content-type': 'application/json' });
+      stream.end(reason ? JSON.stringify({ reason }) : '');
+    });
   });
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () => {
     resolve({ url: `http://127.0.0.1:${server.address().port}`, seen, close: () => server.close() });
@@ -134,4 +139,21 @@ test('a refused connection is a failure, not a crash', async () => {
   });
   assert.equal(results[0].ok, false);
   assert.equal(results[0].prune, false);
+});
+
+test('a body, extra data and a shorter expiry go out, and the defaults are unchanged', async () => {
+  const apple = await fakeApple(() => ({ status: 200 }));
+  const hosts = { production: apple.url, sandbox: apple.url };
+  const before = Math.floor(Date.now() / 1000);
+  await sendApns({ tokens: ['plain'], title: 'Hi', config, hosts });
+  await sendApns({ tokens: ['rich'], title: 'Snack time', body: 'Eat your snack now.',
+    data: { research: { kind: 'reminder' } }, expiresIn: 900, config, hosts });
+  apple.close();
+  const plain = apple.seen.find((s) => s.token === 'plain');
+  const rich = apple.seen.find((s) => s.token === 'rich');
+  assert.deepEqual(JSON.parse(plain.body), { aps: { alert: { title: 'Hi' }, sound: 'default' } }, 'no body, no extra keys');
+  const exp = (e) => Number(e.headers['apns-expiration']);
+  assert.ok(exp(plain) >= before + 3600 && exp(plain) <= before + 3605, 'an hour by default');
+  assert.deepEqual(JSON.parse(rich.body), { aps: { alert: { title: 'Snack time', body: 'Eat your snack now.' }, sound: 'default' }, research: { kind: 'reminder' } });
+  assert.ok(exp(rich) >= before + 900 && exp(rich) <= before + 905, 'fifteen minutes when asked');
 });

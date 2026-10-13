@@ -41,7 +41,7 @@ export function apnsJwt({ keyId, teamId, privateKey }, nowMs = Date.now()) {
   return `${head}.${body}.${sig.toString('base64url')}`;
 }
 
-function post(client, { token, jwt, topic, body, collapseId }) {
+function post(client, { token, jwt, topic, body, collapseId, expiresIn }) {
   return new Promise((resolve) => {
     const req = client.request({
       ':method': 'POST',
@@ -50,8 +50,9 @@ function post(client, { token, jwt, topic, body, collapseId }) {
       'apns-topic': topic,
       'apns-push-type': 'alert',
       'apns-priority': '10',
-      // A reminder an hour late is noise, so let Apple drop it instead.
-      'apns-expiration': String(Math.floor(Date.now() / 1000) + 3600),
+      // A reminder an hour late is noise, so let Apple drop it instead. A caller
+      // that knows better says so: a study reminder is stale after minutes.
+      'apns-expiration': String(Math.floor(Date.now() / 1000) + expiresIn),
       ...(collapseId ? { 'apns-collapse-id': collapseId } : {}),
     });
     let status = 0;
@@ -73,14 +74,21 @@ function post(client, { token, jwt, topic, body, collapseId }) {
 /**
  * Sends one alert to many tokens.
  *
+ * Optional: `body` is the line under the title, `data` is extra top-level keys the
+ * app can read when the notification is tapped, and `expiresIn` is how many
+ * seconds Apple should keep trying (default an hour).
+ *
  * Returns { fatal, results }. Each result is { token, ok, prune, env, status,
  * reason }. `prune` means Apple says the token is dead and the row can go.
  * `fatal` is set when Apple rejects the provider token itself, which means the
  * key or team id is wrong and every send would fail, so the run stops there.
  */
-export async function sendApns({ tokens, title, collapseId, config, hosts = HOSTS }) {
+export async function sendApns({ tokens, title, body: text, data, expiresIn = 3600, collapseId, config, hosts = HOSTS }) {
   const jwt = apnsJwt(config);
-  const body = JSON.stringify({ aps: { alert: { title }, sound: 'default' } });
+  const body = JSON.stringify({
+    aps: { alert: text ? { title, body: text } : { title }, sound: 'default' },
+    ...(data ?? {}),
+  });
   const clients = {};
   // Opened on first use, so the sandbox connection only exists if a token needs
   // it. The error handler matters: a connection error with no request in flight
@@ -94,7 +102,7 @@ export async function sendApns({ tokens, title, collapseId, config, hosts = HOST
   };
 
   const send = (env, token) =>
-    post(open(env), { token, jwt, topic: config.topic, body, collapseId });
+    post(open(env), { token, jwt, topic: config.topic, body, collapseId, expiresIn });
 
   const results = [];
   let fatal = null;

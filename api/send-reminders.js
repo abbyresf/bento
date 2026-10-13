@@ -15,6 +15,7 @@ import webpush from 'web-push';
 import { reminderMessage, streakMessage } from './reminderMessages.js';
 import { streakRecipients } from './_streakNudge.js';
 import { apnsConfigFromEnv, sendApns } from './_apns.js';
+import { withoutActiveParticipants } from './_research.js';
 
 function getSupabaseAdmin() {
   const url = process.env.VITE_SUPABASE_URL;
@@ -112,6 +113,19 @@ export default async function handler(req, res) {
   let ids = (optedIn ?? []).map(p => p.id).filter(id => !testOnly || id === only.toLowerCase());
   if (ids.length === 0) {
     return res.status(200).json({ sent: 0, note: testOnly ? 'that account is not opted in' : 'nobody opted in', ...(testOnly ? { test: true } : {}) });
+  }
+
+  // A student who is in a research study gets only the study's own pushes while
+  // they are in it, so every regular send, the streak nudge included, leaves them
+  // out. A one-account test is exempt, so delivery can still be checked.
+  let heldBack = 0;
+  if (!testOnly) {
+    const kept = await withoutActiveParticipants(admin, ids);
+    ids = kept.ids;
+    heldBack = kept.held;
+    if (ids.length === 0) {
+      return res.status(200).json({ meal, date: day, sent: 0, heldBack, note: 'everyone opted in is in a study' });
+    }
   }
 
   // For the streak nudge, narrow to students whose streak is running and who
@@ -259,7 +273,7 @@ export default async function handler(req, res) {
   }
 
   res.status(200).json({
-    meal, date: day, line, sent, pruned, failed, recipients: subs.length,
+    meal, date: day, line, sent, pruned, failed, recipients: subs.length, heldBack,
     native: { sent: nativeSent, pruned: nativePruned, failed: nativeFailed, ...(nativeNote ? { note: nativeNote } : {}) },
     ...(testOnly ? { test: true, nativeDetail, apnsConfigured: Boolean(apnsConfigFromEnv()) } : {}),
   });
