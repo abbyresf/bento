@@ -1,0 +1,25 @@
+{
+  "$comment": "The researcher dashboard is its own Vercel project on its own subdomain, built from this same repo. It is not part of bentodining.com. Create the project, set its Build and Output settings from this file, add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (the same two the student app uses, both public by design), and point research.bentodining.com at it. See RESEARCH_DASHBOARD_SPEC.md, section 6a.",
+  "buildCommand": "npm run build:research",
+  "outputDirectory": "dist-research",
+  "framework": null,
+  "rewrites": [{ "source": "/", "destination": "/research.html" }],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'" },
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    }
+  ]
+}

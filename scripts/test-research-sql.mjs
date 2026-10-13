@@ -10,11 +10,13 @@
 import { PGlite } from '@electric-sql/pglite';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
+import { SHEETS, AUDIT_SHEET } from '../src/research/sheets.js';
 
 const dir = process.env.MIGRATIONS_DIR
   ? process.env.MIGRATIONS_DIR
   : new URL('../supabase/migrations/', import.meta.url).pathname;
-const migrations = ['054_research_foundation.sql', '055_research_collection.sql', '056_research_reminders_and_survey.sql']
+const migrations = ['054_research_foundation.sql', '055_research_collection.sql', '056_research_reminders_and_survey.sql',
+  '057_research_dashboard.sql']
   .map((f) => readFileSync(`${dir}/${f}`, 'utf8'));
 const db = new PGlite();
 
@@ -1281,6 +1283,167 @@ await test('researchers can read the intro and the follow-up conditions', async 
   assert.match(rows[0].survey_intro, /1-minute survey/);
   const qs = await call(researcher, `select show_if from research.questions where study_id = $1 and show_if is not null`, [f.st], aal2);
   assert.equal(qs.length, 1);
+});
+
+
+// ── Phase 5: what the researcher site needs ──────────────────────────────────
+
+await test('the site can tell who is signed in and what step comes next', async () => {
+  const who = async (u, aal) => (await call(u, 'select * from public.research_whoami()', [], { aal }))[0];
+  assert.deepEqual(await who(researcher, 'aal2'), { is_researcher: true, role: 'researcher', aal: 'aal2', email: 'r@example.edu' });
+  assert.deepEqual(await who(researcher, 'aal1'), { is_researcher: true, role: 'researcher', aal: 'aal1', email: 'r@example.edu' }, 'a researcher who has not passed multi-factor yet');
+  assert.equal((await who(researcher)).aal, '', 'no aal claim at all');
+  assert.equal((await who(owner1, 'aal2')).role, 'owner');
+  assert.deepEqual(await who(outsider, 'aal2'), { is_researcher: false, role: null, aal: 'aal2', email: null }, 'signed in, not a researcher');
+  const gone = (await owner(`select user_id from research.researchers where is_active = false limit 1`))[0].user_id;
+  assert.equal((await who(gone, 'aal2')).is_researcher, false, 'a deactivated researcher is not one');
+  await assert.rejects(call(null, 'select * from public.research_whoami()'), /not_signed_in/);
+  await assert.rejects(call(null, 'select * from public.research_whoami()', [], { role: 'anon' }), /permission denied/);
+});
+
+await test('the audit log takes entries only from a researcher on a multi-factor session', async () => {
+  const before = (await owner('select count(*)::int c from research.audit_log'))[0].c;
+  const log = async (u, aal, action, detail = {}) => (await call(u, 'select public.research_log_action($1, $2::jsonb) r', [action, JSON.stringify(detail)], { aal }))[0].r;
+  assert.equal(await log(researcher, 'aal2', 'export', { sheet: 'meals', format: 'csv', rows: 120, filtered: true }), true);
+  assert.equal(await log(researcher, 'aal2', 'sign_in'), true);
+  assert.equal(await log(researcher, 'aal1', 'export'), false, 'a stolen password leaves no record and gets nothing');
+  assert.equal(await log(researcher, undefined, 'export'), false);
+  assert.equal(await log(outsider, 'aal2', 'export'), false, 'not a researcher');
+  assert.equal(await log(researcher, 'aal2', 'drop_everything'), false, 'only the known actions');
+  assert.equal(await log(researcher, 'aal2', 'export', { blob: 'x'.repeat(5000) }), false, 'a detail too big to be a record');
+  assert.equal((await call(researcher, `select public.research_log_action('export', '[1,2]'::jsonb) r`, [], { aal: 'aal2' }))[0].r, false, 'detail must be an object');
+  assert.equal((await owner('select count(*)::int c from research.audit_log'))[0].c, before + 2);
+  const [row] = await owner(`select * from research.audit_log where action = 'export' order by id desc limit 1`);
+  assert.equal(row.email, 'r@example.edu');
+  assert.deepEqual(row.detail, { sheet: 'meals', format: 'csv', rows: 120, filtered: true });
+  assert.equal(row.user_id, researcher);
+  await assert.rejects(call(null, `select public.research_log_action('export')`), /not_signed_in/);
+  await assert.rejects(call(null, `select public.research_log_action('export')`, [], { role: 'anon' }), /permission denied/);
+});
+
+await test('the audit log cannot be changed or deleted, and only an owner can read it', async () => {
+  await assert.rejects(owner(`update research.audit_log set action = 'sign_in'`), /audit_log_is_append_only/);
+  await assert.rejects(owner(`delete from research.audit_log`), /audit_log_is_append_only/);
+  const aal2 = { aal: 'aal2' };
+  assert.equal((await call(researcher, 'select * from research.audit_log', [], aal2)).length, 0, 'a researcher cannot read it');
+  assert.equal((await call(outsider, 'select * from research.audit_log', [], aal2)).length, 0);
+  assert.ok((await call(owner1, 'select * from research.audit_log', [], aal2)).length >= 2, 'an owner can');
+  assert.equal((await call(owner1, 'select * from research.audit_log', [], { aal: 'aal1' })).length, 0, 'an owner needs multi-factor too');
+  await assert.rejects(call(owner1, `insert into research.audit_log (user_id, action) values (gen_random_uuid(), 'export')`, [], aal2), /permission denied/);
+  await assert.rejects(call(owner1, `delete from research.audit_log`, [], aal2), /permission denied/);
+});
+
+await test('every answer is one row with its participant and its exact question', async () => {
+  const f = await seeded();
+  const base = { [f.q.where]: 'Yes - in Sherman', [f.q.goals]: 4, [f.q.left]: '1/2 plate' };
+  assert.equal(await submit(f.s1, '2026-10-13', { ...base, [f.q.snack]: true, [f.q.how]: '0-20 min before lunch' }, T.tue2130), 'ok');
+  assert.equal(await submit(f.l1, '2026-10-13', { [f.q.where]: 'No', [f.q.loop]: 5, [f.q.goals]: 2, [f.q.left]: 'Little or None' }, T.tue2130), 'ok');
+  const aal2 = { aal: 'aal2' };
+  const pid = (await owner('select id from research.participants where user_id = $1', [f.s1]))[0].id;
+  const rows = await call(researcher, `select * from research.responses_flat where participant_id = $1 order by question_position, question_text`, [pid], aal2);
+  assert.equal(rows.length, 5);
+  const row = (start) => rows.find((r) => r.question_text.startsWith(start));
+  assert.equal(row('Did you eat the snack').answer_text, 'Yes', 'a yes or no reads as Yes or No');
+  assert.equal(row('Did you eat the snack').grp, 'S');
+  assert.equal(row('To what extent').answer_text, '4', 'a rating reads as its number');
+  assert.equal(row('How much food').answer_text, '1/2 plate');
+  assert.equal(row('How long before lunch').question_format, 'multiple_choice');
+  assert.ok(rows.every((r) => r.question_id && r.submitted_at && r.late === false));
+  assert.equal((await call(researcher, `select * from research.responses_flat where participant_id = $1`, [pid], { aal: 'aal1' })).length, 0);
+  assert.equal((await call(outsider, `select * from research.responses_flat`, [], aal2)).length, 0);
+  assert.equal((await call(f.s1, `select * from research.responses_flat`, [], aal2)).length, 0, 'not even the participant');
+  const mine = (await owner('select id from research.participants where user_id = $1', [f.l1]))[0].id;
+  const l = (await call(researcher, `select * from research.responses_flat where participant_id = $1`, [mine], aal2));
+  assert.equal(l.length, 4, 'group L has four');
+  assert.ok(l.every((r) => r.grp === 'L'));
+});
+
+await test('the list shows who has enrolled, and the test study never appears', async () => {
+  const st = await newStudy({ code: 'ROSTER-0001' });
+  const joined = await listed(st, { name: 'Has Joined' });
+  assert.equal((await enroll(joined, 'ROSTER-0001')).status, 'ok');
+  await owner('select research.add_roster($1,$2::jsonb)', [st, JSON.stringify([{ email: 'not.yet@example.edu', group: 'L', name: 'Not Yet' }])]);
+  const aal2 = { aal: 'aal2' };
+  const rows = await call(researcher, `select * from research.roster_status where study_id = $1 order by email`, [st], aal2);
+  assert.equal(rows.length, 2);
+  const yes = rows.find((r) => r.full_name === 'Has Joined');
+  const no = rows.find((r) => r.full_name === 'Not Yet');
+  assert.deepEqual([yes.enrolled, yes.participant_status, !!yes.participant_code, !!yes.claimed_at], [true, 'active', true, true]);
+  assert.deepEqual([no.enrolled, no.participant_status, no.participant_code, no.claimed_at], [false, null, null, null]);
+  assert.equal((await call(researcher, `select * from research.roster_status`, [], { aal: 'aal1' })).length, 0);
+  assert.equal((await call(outsider, `select * from research.roster_status`, [], aal2)).length, 0);
+  const t = await newStudy({ code: 'ROSTER-TEST', test: true });
+  await owner('select research.add_roster($1,$2::jsonb)', [t, JSON.stringify([{ email: 'reviewer@example.edu', group: 'S' }])]);
+  assert.equal((await call(researcher, `select * from research.roster_status where study_id = $1`, [t], aal2)).length, 0);
+});
+
+
+await test('every sheet the dashboard shows is a view with a stable row id, a participant code and the right rows', async () => {
+  const aal2 = { aal: 'aal2' };
+  const sheets = ['participants', 'roster', 'responses', 'meals', 'plate_items', 'events', 'snapshots', 'prompts', 'activity'];
+  for (const name of sheets) {
+    const rows = await call(researcher, `select * from research.grid_${name}`, [], aal2);
+    assert.ok(rows.length > 0, `${name} has rows for a researcher`);
+    const keys = Object.keys(rows[0]);
+    assert.equal(keys[0], 'row_id', `${name} starts with its row id`);
+    assert.equal(new Set(rows.map((r) => r.row_id)).size, rows.length, `${name} row ids are unique`);
+    if (name !== 'roster') assert.ok(keys.includes('participant_code') && keys.includes('grp'), `${name} carries the participant`);
+    assert.equal((await call(researcher, `select * from research.grid_${name}`, [], { aal: 'aal1' })).length, 0, `${name} aal1`);
+    assert.equal((await call(researcher, `select * from research.grid_${name}`)).length, 0, `${name} no aal`);
+    assert.equal((await call(outsider, `select * from research.grid_${name}`, [], aal2)).length, 0, `${name} not a researcher`);
+    await assert.rejects(call(researcher, `update research.grid_${name} set row_id = 'x'`, [], aal2), /permission denied|cannot update/, `${name} is read only`);
+  }
+  // Nothing from the test study leaks through any of them.
+  const testPids = (await owner(`select p.id from research.participants p join research.studies s on s.id = p.study_id where s.is_test`)).map((r) => r.id);
+  assert.ok(testPids.length > 0);
+  const hidden = await call(researcher, `select row_id from research.grid_participants where row_id = any($1::text[])`, [testPids], aal2);
+  assert.equal(hidden.length, 0);
+  // The plate view flattens one row per item, a number or nothing.
+  const items = await call(researcher, `select consumed, servings from research.grid_plate_items where item_name = 'Odd'`, [], aal2);
+  assert.ok(items.length > 0);
+  assert.equal(items[0].consumed, null);
+});
+
+
+await test('every column the dashboard shows exists in the database view it reads, and the reverse', async () => {
+  for (const sheet of [...SHEETS, AUDIT_SHEET]) {
+    const source = `research.${sheet.view ?? sheet.table}`;
+    const { fields } = await db.query(`select * from ${source} limit 0`);
+    const have = fields.map((f) => f.name);
+    for (const c of sheet.columns) assert.ok(have.includes(c.field), `${sheet.id}: the database has no column ${c.field}`);
+    assert.ok(have.includes(sheet.rowId ?? 'row_id'), `${sheet.id}: no row id`);
+    // A view column nobody shows is a column researchers cannot see: say so.
+    const shown = new Set([sheet.rowId ?? 'row_id', ...sheet.columns.map((c) => c.field)]);
+    const hidden = have.filter((f) => !shown.has(f));
+    assert.deepEqual(hidden, [], `${sheet.id}: columns in the database that the sheet does not show`);
+    // What the view orders by must exist too.
+    assert.ok(have.includes(sheet.order ?? 'row_id'), `${sheet.id}: cannot order by ${sheet.order}`);
+  }
+});
+
+
+await test('a researcher is added by the email of someone already invited, and can be switched off', async () => {
+  const u = await user('new.researcher@example.edu');
+  const id = (await owner(`select research.add_researcher(' New.Researcher@Example.edu ') id`))[0].id;
+  assert.equal(id, u);
+  const aal2 = { aal: 'aal2' };
+  const who = async () => (await call(u, 'select * from public.research_whoami()', [], aal2))[0];
+  assert.deepEqual([(await who()).is_researcher, (await who()).role], [true, 'researcher']);
+  assert.ok((await call(u, 'select * from research.grid_participants', [], aal2)).length > 0, 'they can read as soon as they have multi-factor');
+  await owner(`select research.add_researcher('new.researcher@example.edu', 'owner')`);
+  assert.equal((await who()).role, 'owner', 'adding again changes the role');
+  assert.equal((await owner(`select count(*)::int c from research.researchers where user_id = $1`, [u]))[0].c, 1);
+  assert.equal((await owner(`select research.remove_researcher('NEW.researcher@example.edu') r`))[0].r, true);
+  assert.equal((await who()).is_researcher, false);
+  assert.equal((await call(u, 'select * from research.grid_participants', [], aal2)).length, 0, 'access is off at once');
+  assert.equal((await owner(`select research.remove_researcher('nobody@example.edu') r`))[0].r, false);
+  await assert.rejects(owner(`select research.add_researcher('not.invited@example.edu')`), /no_such_user/);
+  await assert.rejects(owner(`select research.add_researcher('new.researcher@example.edu', 'admin')`), /bad_role/);
+  for (const sql of [`select research.add_researcher('x@example.edu')`, `select research.remove_researcher('x@example.edu')`]) {
+    await assert.rejects(call(outsider, sql, [], aal2), /permission denied/, sql);
+    await assert.rejects(call(researcher, sql, [], aal2), /permission denied/, sql);
+    await assert.rejects(call(owner1, sql, [], aal2), /permission denied/, 'not even an owner, from the browser');
+  }
 });
 
 console.log(`\nall ${n} research SQL tests passed`);

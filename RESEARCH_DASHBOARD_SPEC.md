@@ -1,6 +1,6 @@
 # Bento research dashboard and enrolment: build spec
 
-Draft 7, 13 Oct 2026. Extends `RESEARCH_STUDY_PLAN.md`. Where the two disagree,
+Draft 8, 13 Oct 2026. Extends `RESEARCH_STUDY_PLAN.md`. Where the two disagree,
 this file wins, and the disagreements are listed in section 1.
 
 The researchers get their own secure dashboard. It shows every participant's
@@ -576,6 +576,65 @@ exists yet. Add one if a collaborator should see data without touching setup.
 
 ---
 
+## 6a. The dashboard as built (phase 5)
+
+Built 13 Oct, tested against made-up data and not yet against a real study. Source
+is `src/research/`, built apart from the student app by `vite.research.config.js`:
+`npm run dev:research` and `npm run build:research`. Nothing in the student build
+imports from it, and the iOS bundle was checked to contain none of it.
+
+What is there:
+
+| Page | What it does |
+| --- | --- |
+| Sign in | Email and password, then a code from an authenticator app. First time, the dashboard walks the researcher through adding the app. A password alone never reaches the data, in the screen and in the database |
+| Live | Enrolled against the cap, group balance, survey response rate per group, what was sent today, who cannot be reached, and a feed of the latest activity. Counts and codes only. No name or email on this page |
+| Data | Nine sheets as tabs: Participants, Roster, Survey answers, Meals, Plate items, Profiles, App usage, Reminders sent, Activity. Sort, a filter on every column, search across all columns, frozen header and first column, show and hide columns, resize, reorder, and a live row count. Rows arrive live without losing the sort, filters or scroll |
+| Compensation | The Activity sheet with response rate per group at the top |
+| Audit | Owners only. Every export and sign in |
+| Export | One sheet as CSV or Excel, what is filtered or every row, or all sheets as one Excel file with a Data Dictionary sheet |
+
+Decisions and limits:
+
+- **Every export is recorded first.** If the log refuses, no file is made. A file with
+  names or emails says so in its file name, and so does an export that was filtered.
+  The all-sheets file leaves out the two sheets with names unless asked.
+- **Opening a sheet of names or emails is recorded**, once a session.
+- **Spreadsheet formulas typed by participants are defused in CSV**, because free-text
+  survey answers could otherwise run when a researcher opens the file.
+- **The People page is the Participants and Roster sheets.** They hold names and
+  emails, so they are tagged and audited. There is no separate page.
+- **Read-only, no formulas.** AG Grid Community has no range selection or range copy
+  (those are paid). A cell copies, rows can be selected, and Export covers the rest.
+- **Idle sign-out after 30 minutes**, and the session ends when the tab closes.
+- **Not built:** inviting researchers from the page (see below), the Setup page
+  (phase 6), and a "N new rows" chip when a sorted sheet gets new rows. New rows go
+  straight into place.
+- **Not benchmarked precisely.** About 9,000 rows searched, sorted and scrolled
+  without delay, with 26 rows in the page at a time.
+- **The security headers in `vercel.research.json` are untested** until the site is
+  deployed. If the page loads blank, look at the browser console for a blocked
+  resource first.
+
+Look at it without a database: `npm run dev:research`, then open
+`http://localhost:5210/research.html?stub=researcher`. Other stubs: `owner`, `nomfa`
+(the code is 123456), `enroll`, `student`, `signedout`. Add `&rows=8000` to try a big
+sheet. The stub is development only and is not in the production build.
+
+**Setting it up for real**
+
+1. Apply migration 057.
+2. Supabase, Settings, API, Exposed schemas: add `research`. The dashboard reads the
+   `research` schema directly, so without this every sheet fails.
+3. Supabase, Authentication, Sign In / Providers, Multi-Factor: turn on TOTP.
+4. Create the Vercel project from `vercel.research.json`, add `VITE_SUPABASE_URL` and
+   `VITE_SUPABASE_ANON_KEY`, and point `research.bentodining.com` at it.
+5. Add yourself as an owner: invite yourself under Authentication, Users, then
+   `select research.add_researcher('<your email>', 'owner');`
+6. Add each researcher the same way, with `'researcher'`. To turn one off at once:
+   `select research.remove_researcher('<email>');`
+7. Sign in, set up the authenticator app, and check Live, then Data.
+
 ## 7. Bento's own use of the data
 
 Bento has permission to use the data too. The distinction from the regular pool is
@@ -615,7 +674,7 @@ Store, which depends on section 1.2.
 | 2 | **Built 13 Oct, iOS only.** Onboarding step and Settings entry, code screen, one-tap acknowledgement, push permission, leave flow. The `is_test` study for App Review is created from the SQL editor, not in code | Phase 1. Nothing from the researchers |
 | 3 | **Built 13 Oct, not yet applied to Supabase.** `055_research_collection.sql`. Triggers copy meals (with consumption), profile snapshots and events for active participants only, and can never block a student's own write. `research.plate_items` flattens a plate to one row per item. Dining Pulse exclusion in three places (section 7). Column list is provisional until the researchers' materials arrive | Phase 1 |
 | 4 | **Built 13 Oct, not yet applied to Supabase.** `056_research_reminders_and_survey.sql`, `api/research-send.js`, `api/_research.js`, `.github/workflows/research-send.yml`, the survey screens and the check in the three existing senders. 79 SQL tests, 18 sender tests. Reminder wording for group L is a draft, and there are no survey questions or survey time yet (section 8a) | Phases 1 and 3 |
-| 5 | Researcher site: auth with MFA, invites, Live, Data grid, People, Compensation, exports, audit | Phases 1 to 4 |
+| 5 | **Built 13 Oct, not yet applied or deployed.** `057_research_dashboard.sql`, `src/research/`, `vercel.research.json`. Sign in with MFA, Live, nine-sheet Data grid, Compensation, Audit, CSV and Excel export with audit, live updates. Researchers are added from SQL, not from the page (section 6a) | Phases 1 to 4 |
 | 6 | Setup page: editable questions, times, code, cap, and the list view | Phase 5 |
 | 7 | App Store update: labels, manifest, reviewer notes, 5.1.3 | Phase 2 |
 | 8 | Launch checks: Pro plan, restore drill, dry run with test participants | All |

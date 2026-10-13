@@ -49,3 +49,4 @@ ios/App/App/public/
 DerivedData/
 *.xcuserstate
 **/xcuserdata/
+dist-research
