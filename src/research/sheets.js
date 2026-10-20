@@ -22,6 +22,7 @@ export const SHEETS = [
       { field: 'status', header: 'Status', type: 'text', width: 110 },
       { field: 'full_name', header: 'Name', type: 'text', width: 180 },
       { field: 'email', header: 'Email', type: 'text', width: 240 },
+      { field: 'on_list', header: 'On the list', type: 'bool', width: 120 },
       { field: 'enrolled_at', header: 'Enrolled', type: 'datetime', width: 170 },
       { field: 'window_ends_at', header: 'Window ends', type: 'datetime', width: 170 },
       { field: 'withdrawn_at', header: 'Withdrew', type: 'datetime', width: 170 },

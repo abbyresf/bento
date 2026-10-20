@@ -13,7 +13,8 @@ export const DICTIONARY = {
   participants: {
     participant_code: CODE, grp: GRP,
     status: { source: 'Bento', meaning: 'active, completed (the window ran out) or withdrawn. Final once it is not active.' },
-    full_name: { source: "The researchers' list", meaning: 'The name the researchers gave for this person. May be empty.' },
+    full_name: { source: "The researchers' list", meaning: 'The name on the researchers\' list, once this person is matched to it by email. Empty until then.' },
+    on_list: { source: 'Bento, worked out when you read it', meaning: 'Whether the researchers\' list holds this person\'s email. Anyone with the study code can enrol, so this is how you find people who joined but are not on the list. It changes as the list is loaded.' },
     email: { source: 'The Bento account', meaning: 'The email on the participant\'s Bento account when they enrolled. Copied at enrolment, so it stays if the account is deleted.' },
     enrolled_at: { source: 'Bento', meaning: 'When they entered the code and confirmed. Collection starts here.' },
     window_ends_at: { source: 'Bento', meaning: 'When their study window ends. 21 days after enrolment unless extended.' },
@@ -26,11 +27,11 @@ export const DICTIONARY = {
   roster: {
     email: { source: "The researchers' list", meaning: 'The email the list matches a Bento account by.' },
     full_name: { source: "The researchers' list", meaning: 'The name on the list. May be empty.' },
-    enrolled: { source: 'Bento', meaning: 'Whether this person has entered the code and enrolled.' },
+    enrolled: { source: 'Bento, worked out when you read it', meaning: 'Whether someone with this email has entered the code and enrolled. Matched by email each time, so it follows the list as it grows.' },
     participant_code: CODE,
     participant_status: { source: 'Bento', meaning: 'Their status once enrolled. Empty if they have not.' },
     added_at: { source: "The researchers' list", meaning: 'When this row was loaded into Bento.' },
-    claimed_at: { source: 'Bento', meaning: 'When they enrolled against this row.' },
+    claimed_at: { source: 'Bento', meaning: 'When the matching person enrolled. Empty if nobody with this email has.' },
   },
   responses: {
     participant_code: CODE, grp: GRP,

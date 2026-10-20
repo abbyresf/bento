@@ -16,7 +16,7 @@ const dir = process.env.MIGRATIONS_DIR
   ? process.env.MIGRATIONS_DIR
   : new URL('../supabase/migrations/', import.meta.url).pathname;
 const migrations = ['054_research_foundation.sql', '055_research_collection.sql', '056_research_reminders_and_survey.sql',
-  '057_research_dashboard.sql', '058_research_setup.sql', '059_research_randomisation.sql', '060_research_wide_survey.sql', '061_research_roster_views.sql']
+  '057_research_dashboard.sql', '058_research_setup.sql', '059_research_randomisation.sql', '060_research_wide_survey.sql', '061_research_roster_views.sql', '062_research_dinner_reminders.sql', '063_research_open_enrolment.sql']
   .map((f) => readFileSync(`${dir}/${f}`, 'utf8'));
 const db = new PGlite();
 
@@ -188,23 +188,21 @@ await test('a closed, full, unstarted or ended study looks exactly like a wrong 
   assert.equal(JSON.parse(wrong).study_name, null);
 });
 
-await test('the right code from someone not on the list is told so, apart from a wrong code', async () => {
+await test('anyone with the right code gets in, on the list or not, and a wrong code is told apart', async () => {
   const stranger = await user();
   const r = await check(stranger, CODE);
-  assert.equal(r.status, 'not_on_list');
-  assert.equal(r.study_name, null);
+  assert.equal(r.status, 'ok');
+  assert.ok(r.study_name);
   assert.equal((await check(await user(), 'NOPE-0000')).status, 'invalid_code');
-  assert.equal((await enroll(stranger, CODE)).status, 'not_on_list');
-  assert.equal((await status(stranger)).enrolled, false);
+  assert.equal((await enroll(stranger, CODE)).status, 'ok');
+  assert.equal((await status(stranger)).enrolled, true);
+  assert.equal((await owner('select roster_id from research.participants where user_id = $1', [stranger]))[0].roster_id, null, 'nothing is matched at enrolment');
 });
 
-await test('being off the list is not a wrong guess and never locks anyone out', async () => {
+await test('a right code is never counted as a wrong guess', async () => {
   const u = await user();
-  for (let i = 0; i < 8; i++) assert.equal((await check(u, CODE)).status, 'not_on_list');
+  for (let i = 0; i < 8; i++) assert.equal((await check(u, CODE)).status, 'ok');
   assert.equal((await owner(`select count(*)::int c from research.redeem_attempts where user_id = $1`, [u]))[0].c, 0);
-  // ...and the list is added to later, the same student gets in.
-  await owner('select research.add_roster($1,$2::jsonb)', [study, JSON.stringify([{ email: await emailOf(u) }])]);
-  assert.equal((await check(u, CODE)).status, 'ok');
 });
 
 await test('only the iOS app can check a code or enrol', async () => {
@@ -221,8 +219,8 @@ await test('only the iOS app can check a code or enrol', async () => {
 await test('being on the list for another study does not open this one', async () => {
   const other = await newStudy({ code: 'OTHER-1234' });
   const u = await listed(other);
-  assert.equal((await check(u, CODE)).status, 'not_on_list');
   assert.equal((await check(u, 'OTHER-1234')).status, 'ok');
+  assert.equal((await check(u, 'WRONG-9999')).status, 'invalid_code');
 });
 
 await test('the code ignores case, spaces and dashes', async () => {
@@ -268,7 +266,7 @@ await test('enrolling needs the acknowledgement, and a missing one is not a wron
   assert.equal((await owner(`select count(*)::int c from research.redeem_attempts where user_id = $1`, [u]))[0].c, 0);
 });
 
-await test('enrolling takes the name from the list, assigns a group and starts the window', async () => {
+await test('enrolling assigns a group and starts the window, and the list names them once it is matched', async () => {
   const u = await listed(study, { grp: null, name: 'Maya Cohen' });
   const r = await enroll(u, CODE);
   assert.equal(r.status, 'ok');
@@ -276,25 +274,24 @@ await test('enrolling takes the name from the list, assigns a group and starts t
   assert.deepEqual(Object.keys(r).sort(), ['participant_code', 'status', 'window_ends_at'], 'the group is never returned');
   const [p] = await owner('select * from research.participants where user_id = $1', [u]);
   assert.ok(['S', 'L'].includes(p.grp));
-  assert.equal(p.full_name, 'Maya Cohen');
+  assert.equal(p.full_name, null, 'no name is taken at enrolment');
+  assert.equal((await owner('select full_name from research.grid_participants where email = $1', [p.email]))[0].full_name, 'Maya Cohen', 'the list gives the name when read');
   assert.equal(p.email, await emailOf(u));
   assert.equal(p.status, 'active');
   assert.equal(p.platform, 'ios');
   assert.ok(p.acknowledged_at);
   assert.equal((new Date(p.window_ends_at) - new Date(p.enrolled_at)) / 86400000, 21);
   assert.equal((await owner('select research_cohort from public.profiles where id = $1', [u]))[0].research_cohort, true);
-  const [ro] = await owner('select * from research.roster where claimed_by = $1', [u]);
-  assert.ok(ro.claimed_at);
   const s = await status(u);
   assert.deepEqual([s.enrolled, s.status, s.days_left], [true, 'active', 21]);
   assert.equal((await enroll(u, CODE)).status, 'already_enrolled');
   assert.equal((await check(u, CODE)).status, 'already_enrolled');
 });
 
-await test('a list with no name enrols with no name', async () => {
+await test('a list with no name shows no name', async () => {
   const u = await listed(study);
   assert.equal((await enroll(u, CODE)).status, 'ok');
-  assert.equal((await owner('select full_name from research.participants where user_id = $1', [u]))[0].full_name, null);
+  assert.equal((await owner('select full_name from research.grid_participants where email = $1', [await emailOf(u)]))[0].full_name, null);
 });
 
 const split = async (code, k) => {
@@ -384,15 +381,21 @@ await test('40 enrolments are numbered in order and the 41st listed student is r
   assert.equal((await enroll(await listed(s), 'FORTY-4040')).status, 'invalid_code');
 });
 
-await test('a list row can be taken only once', async () => {
-  const a = await user('shared@example.edu');
-  await owner('select research.add_roster($1,$2::jsonb)', [study, JSON.stringify([{ email: 'shared@example.edu' }])]);
-  assert.equal((await enroll(a, CODE)).status, 'ok');
-  // A second account that ends up with the same email still cannot take the row.
-  const b = await user('other@example.edu');
-  await owner(`update auth.users set email = 'shared@example.edu' where id = $1`, [b]);
-  assert.equal((await check(b, CODE)).status, 'not_on_list');
-  assert.equal((await enroll(b, CODE)).status, 'not_on_list');
+await test('the list is compared by email afterwards, in either order, and follows the list as it grows', async () => {
+  const st = await newStudy({ code: 'LATE-LIST-01' });
+  const early = await user('early@example.edu');
+  assert.equal((await enroll(early, 'LATE-LIST-01')).status, 'ok');
+  const asked = async () => (await owner(`select email, on_list, full_name from research.grid_participants where email in ('early@example.edu', 'wave2@example.edu') order by email`));
+  assert.deepEqual((await asked()).map((r) => [r.email, r.on_list]), [['early@example.edu', false]], 'before the list: not on it');
+  await owner('select research.add_roster($1,$2::jsonb)', [st, JSON.stringify([{ email: 'Early@Example.edu ', name: 'Early Bird' }, { email: 'wave2@example.edu' }])]);
+  const rows = await asked();
+  assert.deepEqual(rows.map((r) => [r.email, r.on_list, r.full_name]), [['early@example.edu', true, 'Early Bird']], 'the list arrives later and matches, ignoring case and spaces');
+  const wave2 = await user('wave2@example.edu');
+  assert.equal((await enroll(wave2, 'LATE-LIST-01')).status, 'ok');
+  const roster = await owner(`select email, enrolled, participant_code from research.roster_status where study_id = $1 order by email`, [st]);
+  assert.deepEqual(roster.map((r) => [r.email, r.enrolled, !!r.participant_code]), [['early@example.edu', true, true], ['wave2@example.edu', true, true]]);
+  await owner('select research.add_roster($1,$2::jsonb)', [st, JSON.stringify([{ email: 'later@example.edu' }])]);
+  assert.equal((await owner(`select enrolled from research.roster_status where email = 'later@example.edu'`))[0].enrolled, false, 'on the list and not joined yet');
 });
 
 await test('who, group and acknowledgement are fixed after enrolment', async () => {
@@ -404,15 +407,7 @@ await test('who, group and acknowledgement are fixed after enrolment', async () 
   await owner(`update research.participants set full_name = 'Corrected Name' where id = $1`, [p.id]);
 });
 
-await test('an enrolled list row cannot change who it matches or be released', async () => {
-  const [r] = await owner(`select id from research.roster where claimed_by is not null limit 1`);
-  for (const set of ["match_key = 'x@example.edu'",
-                     "claimed_by = null, claimed_at = null"]) {
-    await assert.rejects(owner(`update research.roster set ${set} where id = $1`, [r.id]), /roster_entry_claimed/);
-  }
-});
-
-await test('loading the list adds, updates, skips the enrolled, and rolls back on a bad row', async () => {
+await test('loading the list adds and updates, even for people already enrolled, and rolls back on a bad row', async () => {
   const s = await newStudy({ code: 'LOADED-0001' });
   const load = async (rows) => (await owner('select research.add_roster($1,$2::jsonb) r', [s, JSON.stringify(rows)]))[0].r;
   assert.deepEqual(await load([{ email: 'a@example.edu' }, { email: 'b@example.edu', name: 'B' }]),
@@ -421,7 +416,7 @@ await test('loading the list adds, updates, skips the enrolled, and rolls back o
   assert.equal((await enroll(a, 'LOADED-0001')).status, 'ok');
   assert.deepEqual(await load([{ email: 'a@example.edu' }, { email: 'b@example.edu', name: 'B2' },
                                 { email: 'c@example.edu' }]),
-    { added: 1, updated: 1, skipped_enrolled: 1 });
+    { added: 1, updated: 2, skipped_enrolled: 0 });
   assert.equal((await owner(`select full_name from research.roster where match_key = 'b@example.edu' and study_id = $1`, [s]))[0].full_name, 'B2', 'an unenrolled row can change name');
   await assert.rejects(load([{ email: 'd@example.edu' }, { email: 'not an email' }]), /bad_email/);
   await assert.rejects(owner(`select research.add_roster($1,'{"a":1}'::jsonb)`, [s]), /rows_must_be_an_array/);
@@ -504,12 +499,14 @@ await test('only an owner sees the whole researcher list', async () => {
 await test('test-study participants and list rows never appear in researcher views', async () => {
   const t = await newStudy({ code: 'REVIEW-0001', test: true });
   const rev = await listed(t, { name: 'App Reviewer' });
+  const revEmail = await emailOf(rev);
   assert.equal((await enroll(rev, 'REVIEW-0001')).status, 'ok');
   const opt = { aal: 'aal2' };
-  assert.equal((await call(researcher, `select * from research.participants where full_name = 'App Reviewer'`, [], opt)).length, 0);
+  assert.equal((await call(researcher, `select * from research.participants where email = $1`, [revEmail], opt)).length, 0);
+  assert.equal((await call(researcher, `select * from research.grid_participants where email = $1`, [revEmail], opt)).length, 0);
   assert.equal((await call(researcher, `select * from research.roster where study_id = $1`, [t], opt)).length, 0);
   assert.equal((await call(researcher, `select id from research.studies where id = $1`, [t], opt)).length, 0);
-  assert.equal((await owner(`select count(*)::int c from research.participants where full_name = 'App Reviewer'`))[0].c, 1, 'the row exists');
+  assert.equal((await owner(`select count(*)::int c from research.participants where email = $1`, [revEmail]))[0].c, 1, 'the row exists');
 });
 
 await test('deleting an account leaves every research row in place', async () => {
@@ -520,9 +517,9 @@ await test('deleting an account leaves every research row in place', async () =>
   await owner('delete from auth.users where id = $1', [u]);
   assert.equal((await owner('select count(*)::int c from public.profiles where id = $1', [u]))[0].c, 0, 'profile gone');
   assert.equal((await owner('select count(*)::int c from research.participants'))[0].c, before);
-  const [p] = await owner(`select full_name, email from research.participants where user_id = $1`, [u]);
-  assert.deepEqual([p.full_name, p.email], ['Leaving Student', email]);
-  assert.equal((await owner('select count(*)::int c from research.roster where claimed_by = $1', [u]))[0].c, 1);
+  const [p] = await owner(`select email from research.participants where user_id = $1`, [u]);
+  assert.equal(p.email, email);
+  assert.equal((await owner(`select full_name from research.grid_participants where email = $1`, [email]))[0].full_name, 'Leaving Student', 'the list still names them');
 });
 
 await test('leaving keeps every row, ends the window and cannot be undone', async () => {
@@ -1167,16 +1164,20 @@ await test('housekeeping closes the finished windows and records who can be reac
   assert.equal((await row(old)).status, 'completed');
 });
 
-await test('the default reminders are the two known ones, drafted, and only added once', async () => {
+await test('the default reminders are lunch and dinner for each group, drafted, and only added once', async () => {
   const st = await newStudy({ code: 'SEEDED-0001' });
-  assert.equal((await owner('select research.seed_default_reminders($1) n', [st]))[0].n, 2);
+  assert.equal((await owner('select research.seed_default_reminders($1) n', [st]))[0].n, 4);
   assert.equal((await owner('select research.seed_default_reminders($1) n', [st]))[0].n, 0);
-  const rows = await owner(`select grp, kind, send_time::text t, days, late_minutes, title, body from research.reminder_schedules where study_id = $1 order by grp`, [st]);
-  assert.deepEqual(rows.map((r) => [r.grp, r.kind, r.t, r.late_minutes]), [['L', 'reminder', '10:30:00', 30], ['S', 'reminder', '10:30:00', 30]]);
+  const rows = await owner(`select grp, kind, send_time::text t, days, late_minutes, title, body from research.reminder_schedules where study_id = $1 order by grp, send_time`, [st]);
+  assert.deepEqual(rows.map((r) => [r.grp, r.kind, r.t, r.late_minutes]),
+    [['L', 'reminder', '10:30:00', 30], ['L', 'reminder', '16:30:00', 30], ['S', 'reminder', '10:30:00', 30], ['S', 'reminder', '16:30:00', 30]]);
   assert.deepEqual(rows[0].days, [1, 2, 3, 4, 5, 6, 7]);
   for (const r of rows) assert.doesNotMatch(r.title + r.body, /[—;!]/);
-  assert.match(rows[1].body, /snack/i);
+  assert.match(rows[2].body, /snack/i);
   assert.match(rows[0].body, /walk the hall/i);
+  const other = await newStudy({ code: 'SEEDED-0002' });
+  await owner(`select research.seed_default_reminders($1, '17:00')`, [other]);
+  assert.deepEqual((await owner(`select distinct send_time::text t from research.reminder_schedules where study_id = $1 order by 1`, [other])).map((r) => r.t), ['10:30:00', '17:00:00'], 'the dinner time is a choice');
   await assert.rejects(owner(`select research.add_schedule($1,'Z','reminder','10:30','x')`, [st]), /unknown_group/);
   await assert.rejects(owner(`select research.add_schedule($1,'S','banana','10:30','x')`, [st]), /bad_kind/);
   assert.equal((await owner(`select late_minutes from research.reminder_schedules where id = $1`, [await sched(st, null, 'survey', '20:00', 's')]))[0].late_minutes, 180, 'a survey defaults to a longer window');

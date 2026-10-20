@@ -17,8 +17,8 @@ pool, in a way Bento can still use.
 | **Who runs what** | Students sign the consent form in the researchers' Qualtrics survey, and the researchers give Bento the list of who may join. Bento randomises (13 Oct, migration 059) |
 | **Identity** | Emails, and names if the list has them, are stored in Bento and visible to researchers. Reverses the 28 Sep "participant code only" decision |
 | **Platform** | The student-facing research features are in the iOS app only. The PWA shows none of it. The researcher dashboard is a website and is the exception (13 Oct) |
-| **Wrong code vs not listed** | Told apart. A wrong code says so. A right code from an account that is not on the list gets its own message (13 Oct) |
-| **Matching** | A student is matched to the list by the email on their Bento account. The researchers have not settled the match key, so it is built to swap |
+| **Who can enrol** | Anyone with the study code, listed or not (20 Oct, migration 063). Students join in waves and the full list arrives later, so the list is compared afterwards, not at the door |
+| **Matching** | Done after the fact, by the lower-cased email on the student's Bento account, whenever the list is read. Nothing is stored about the match |
 | **Data scope** | Study data, meal plans and confirmations, macros and profile, app usage |
 | **Study code** | One shared code for the whole study, plus a list match. Bento adds an enrolment cap and an on/off switch |
 | **Who configures** | Researchers edit questions, reminder times and code settings in the dashboard |
@@ -175,28 +175,30 @@ enrolment and "Your study" afterwards.
 
 ### 3.2 The researchers' list
 
-The researchers consent students in Qualtrics, then give you the list. Being on
-it is Bento's proof of that. It lives in `research.roster`: one row per person,
-with the email and optionally a name. It carries no group. The list is a
-reference for who may join and for who on it has not joined yet. Bento assigns
-the group at enrolment (3.5).
+The researchers consent students in Qualtrics and give you the list, in waves as
+students sign up. It lives in `research.roster`: one row per person, with the
+email and optionally a name. It carries no group. It is **not a gate**. Anyone
+with the study code can enrol. The list is a reference that is compared with
+who enrolled, and the comparison is live, so it can be loaded, added to or
+corrected at any time. Bento assigns the group at enrolment (3.5).
 
 - **Loading.** From a CSV, in the SQL editor:
   `node scripts/roster-to-sql.mjs <study-id> list.csv | pbcopy`, then paste and
   run. The script prints to the screen only and never writes a file, because the
   list is names and emails and this repository is public. It checks every row
   first. Keep the CSV outside the repo too.
-- **Loading again.** Safe. New people are added, people who have not enrolled
-  are updated, and people who have are left alone. A `group` column in the CSV
-  is ignored and the script says so.
-- **Fixed once enrolled.** A list row that a student has enrolled against cannot
-  change who it matches or be released.
-- **Matching.** By the lower-cased email on the student's Bento account. A
-  student who signed up with a different address will not match and is told
-  they are not on the list, with the signed-in email shown. Ask the researchers which address they collect in
-  Qualtrics, and tell participants to use it. `studies.match_on` and
-  `research.account_key()` are the one place to add another match kind, such as
-  a per-person code issued in Qualtrics. See open question 1.
+- **Loading again.** Safe, in any number of waves. New people are added and
+  existing rows are updated, whether or not the person has enrolled. A `group`
+  column in the CSV is ignored and the script says so.
+- **Matching, as the list is read.** By the lower-cased email on the student's
+  Bento account, copied onto the participant row at enrolment. The roster sheet
+  shows, for each listed email, whether someone with it has enrolled. The
+  participants sheet has an "On the list" column and fills in the name from the
+  list, so "enrolled but not on the list" and "on the list but not joined" are
+  each one filter. A student who signed up with a different address from the one
+  on the list shows as both. A per-person match key (a code issued in Qualtrics)
+  would be the one place to extend: `studies.match_on` and
+  `research.account_key()`.
 - **Researchers can see the list** in the dashboard, which also shows who on it
   has not enrolled yet.
 
@@ -205,7 +207,7 @@ the group at enrolment (3.5).
 Built in `054_research_foundation.sql`. Two SECURITY DEFINER functions:
 
 1. `research_check_code(code)` returns `ok` and the study name if the code is
-   right **and** the student is on the list. It records nothing about them.
+   right. It records nothing about them.
 2. `research_enroll(code, acknowledged)` runs after the student taps the
    acknowledgement. It assigns the group (3.5), issues the participant
    code and starts the window, in one step under a lock on the study row.
@@ -215,14 +217,9 @@ The client never queries the study, list or code tables.
 - The code is stored as a hash (sha256 of the code with case, spaces and dashes
   removed). The code itself is only ever typed into the SQL editor when a study
   is created, so it is never in the repository.
-- **A wrong code and a right code from an unlisted account are told apart**
-  (13 Oct, the owner's call). `invalid_code` is a wrong code and counts as a
-  wrong guess. `not_on_list` means the code is right and this account is not on
-  the list. It does not count as a guess. The app words it as "You are not
-  logged as a current participant in a study. Please contact us if you think this
-  is a mistake." with "contact us" linking to the Contact page. It never says the
-  code was right, though the different message still tells a code holder as much. Someone holding the code can learn
-  whether their own email is listed and nothing about anyone else. A closed,
+- **A wrong code is a wrong code.** `invalid_code` counts as a wrong guess, five
+  allowed, then locked. The `not_on_list` answer no longer exists (063): a right code
+  enrols whoever holds it. A closed,
   full, unstarted or ended study still looks exactly like a wrong code, so a
   code cannot be probed for its state.
 - **iOS only.** Both functions take the platform and return `ios_only` for
@@ -502,7 +499,7 @@ materials arrive.
 | Table | Holds |
 | --- | --- |
 | `studies` | One row per study. Name, code hash, groups, `match_on`, cap, `is_open`, `is_test`, `window_days`, start and end dates |
-| `roster` | The researchers' list. Study, match key (lower-cased email), optional name, `claimed_by`, `claimed_at` |
+| `roster` | The researchers' list. Study, match key (lower-cased email), optional name. `claimed_by` and `claimed_at` are no longer used (063) |
 | `participants` | `user_id` (plain uuid, **no foreign key**, see 1.1), `participant_code`, `group` (S or L), `roster_id`, `full_name` (from the list, may be empty), `email`, `enrolled_at`, `window_ends_at`, `status` (active, completed, withdrawn), `withdrawn_at`, `acknowledged_at`, `platform`, `push_status`, `install_state` |
 | `reminder_schedules` | Study, group, send time, days, title, body, active |
 | `questions` | Study, version, text, format, options, `groups`, position, active, edited by, edited at |
@@ -811,7 +808,7 @@ the questions must not be.
 1. Apply migrations 054, 055 and 056. 054 is done. Pushing to main applies the rest.
 2. Move Supabase to Pro for backups, and restore from one once before launch.
 3. `select research.create_study('<name>', '<the study code>', 40);` Note the id.
-4. `select research.seed_default_reminders('<id>');` adds the two 10:30 reminders.
+4. `select research.seed_default_reminders('<id>');` adds each group's reminder 30 minutes before lunch (10:30) and before dinner (16:30 by default, a placeholder: pass the real time as a second argument).
    **The wording is a draft.** Edit `title` and `body` in `research.reminder_schedules`.
 5. Add the survey schedule. The time is not decided:
    `select research.add_schedule('<id>', null, 'survey', '<HH:MM>', 'Today''s questions');`
@@ -839,11 +836,9 @@ researchers supply the list and Bento randomises (pairs in order of arrival),
 group L's reminder time (same as group S), the window length (21 days from each
 person's enrolment, held as data), streaks (not frozen), and the number of
 groups (two, no control group). What is left:
-1. **Match key and the list.** The researchers have not decided how a student is
-   matched to the list. The build uses the email on the Bento account. Which
-   email will the list hold, the one students use for Bento or one from
-   Qualtrics? When will the list arrive, and will it come in waves? Per-person
-   codes issued in Qualtrics would also work and are one branch to add.
+1. **The list.** Arrives in waves after people have enrolled. Which email will it
+   hold, the one students use for Bento or one from Qualtrics? Anyone whose
+   addresses differ will show as enrolled but not on the list.
 2. **Previous-study materials.** Not shared yet. Every column list above is
    provisional until they arrive. Ask for them first.
 3. **Group L wording.** The method is known (loop the hall, plan, then fill your
