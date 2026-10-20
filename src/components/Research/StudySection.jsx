@@ -56,10 +56,9 @@ export default function StudySection({ state, onGoContact }) {
       {study.state === 'active' && (
         <>
           <ul className="rs-facts">
-            <li>Participant code: <strong>{study.participantCode}</strong></li>
             <li>{daysLeftText(study.daysLeft)}{study.endsAt ? `, until ${endDateText(study.endsAt)}` : ''}</li>
           </ul>
-          <p className="section-note">During the study Bento sends you only study reminders.</p>
+          <p className="section-note">During the study Bento sends you only the study reminders and the daily questions.</p>
           {survey && (
             <div className="data-action-row rs-gap">
               <button type="button" className="btn-secondary" onClick={() => setSurveyOpen(true)}>

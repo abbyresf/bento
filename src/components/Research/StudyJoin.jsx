@@ -147,10 +147,10 @@ export default function StudyJoin({ startAt = 'ask', onDone, onEnrolled, onGoCon
     <>
       {title("You are in the study")}
       <ul className="rs-facts">
-        <li>Your participant code is <strong>{joined?.participantCode}</strong>.</li>
+        <li>You joined successfully.</li>
         <li>
           The study runs until <strong>{endDateText(joined?.endsAt)}</strong>.
-          Until then Bento sends you only study reminders.
+          Until then Bento sends you only the study reminders and the daily questions.
         </li>
       </ul>
       {!pushOn && (
