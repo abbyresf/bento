@@ -330,3 +330,32 @@
   color: #394a5a;
   margin: 0;
 }
+
+/* The nav and drawer actions are anchors now: they leave the site for
+   TestFlight. Anchors underline and do not size like buttons. */
+a.landing-nav-cta,
+a.landing-drawer-cta {
+  text-decoration: none;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The browser route, under the beta link in the mobile drawer. */
+.landing-drawer-web {
+  display: block;
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.85rem 1rem;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.72);
+  text-align: center;
+  cursor: pointer;
+}
+
+.landing-drawer-web:hover { color: #fff; }

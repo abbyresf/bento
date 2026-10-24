@@ -1059,11 +1059,17 @@
   }
 
   .lh-btn-primary,
+  .lh-btn-secondary,
   .lh-btn-outline,
   .lh-btn-primary--inv,
   .lh-btn-ghost {
     width: auto;
     min-width: 180px;
+    /* Side by side these are flex items that may shrink, and the row is
+       narrower than the two labels want. Left to shrink, "Join the iOS beta"
+       collapsed to its 180px minimum and broke across two lines next to a
+       wider sibling. */
+    flex-shrink: 0;
   }
 
   .lh-features-grid { grid-template-columns: 1fr 1fr; }
@@ -1566,3 +1572,71 @@
 .lh-school-check,
 .lh-waitlist-form { max-width: 460px; }
 .lh-trust-bod { max-width: 70ch; }
+
+/* ═══════════════════════════════════════════
+   SECONDARY ACTION
+   The web app, offered beside the iOS beta. TestFlight is iPhone and iPad
+   only, so every place that promotes it also shows this: an Android or laptop
+   visitor must never reach a dead end.
+═══════════════════════════════════════════ */
+.lh-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 52px;
+  padding: 1rem 1.5rem;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--navy);
+  border: 1.5px solid var(--lh-border);
+  font-family: var(--ff-body);
+  font-size: var(--t-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.lh-btn-secondary:hover {
+  background: #fff;
+  border-color: var(--muted);
+}
+
+/* On the dark closing section. */
+.lh-btn-secondary--inv {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.lh-btn-secondary--inv:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+/* The primary action is an <a> now, because it leaves the site. Anchors carry
+   an underline and do not size like buttons. */
+a.lh-btn-primary,
+a.lh-school-hit-btn {
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+
+/* Action labels never break mid-phrase. "Join the iOS beta" wrapping to "Join
+   the iOS / beta" reads as a layout fault, and these labels are short enough
+   that a line break is never the right answer. */
+.lh-btn-primary,
+.lh-btn-secondary {
+  white-space: nowrap;
+}
+
+/* Source order matters here. The .lh-btn-secondary base rule sits after the
+   600px media query in this file, so its width:100% was beating the width:auto
+   that puts side-by-side buttons on their content width. The secondary ended
+   up 508px wide beside a 200px primary, which inverts the hierarchy: the
+   browser fallback looked like the main action. */
+@media (min-width: 600px) {
+  .lh-btn-secondary {
+    width: auto;
+  }
+}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { submitWaitlistEntry } from '../../lib/db';
 import { UNIVERSITIES } from '../../data/universities';
+import { TESTFLIGHT_URL } from '../../data/links';
 import './LandingHome.css';
 
 /* ── SVG Icon Library ── */
@@ -131,7 +132,7 @@ const STEPS = [
    decoration. */
 const STATS = [
   { icon: 'calendar', label: 'Live menu every morning', sublabel: 'Your actual dining hall, not a recipe database', tone: 'action', wide: true },
-  { icon: 'phone',    label: 'Save to your home screen', sublabel: 'Works like a native app. No App Store needed.', tone: 'positive' },
+  { icon: 'phone',    label: 'On iPhone, or in any browser', sublabel: 'Join the iOS beta, or open Bento on the web.', tone: 'positive' },
   { icon: 'free',     label: 'Free, always', sublabel: 'No subscription, no paywall, no catch', tone: 'positive' },
   { icon: 'lock',     label: 'Your data stays private', sublabel: 'Goals and restrictions belong to you alone', tone: 'positive' },
 ];
@@ -208,7 +209,7 @@ function ShieldIcon() {
  * in the list but not live yet is a real answer, not a miss, so it is stated
  * plainly rather than being dropped into the waitlist as if unknown.
  */
-function SchoolCheck({ onGetStarted }) {
+function SchoolCheck() {
   const [query, setQuery] = useState('');
   const q = query.trim().toLowerCase();
 
@@ -244,9 +245,10 @@ function SchoolCheck({ onGetStarted }) {
               <p className="lh-school-hit-name">{u.name}</p>
               <p className="lh-school-hit-note">Bento is live here. {u.location}</p>
             </div>
-            <button className="lh-school-hit-btn" onClick={onGetStarted}>
-              Get started {Icon.arrow}
-            </button>
+            <a className="lh-school-hit-btn" href={TESTFLIGHT_URL}
+              target="_blank" rel="noopener noreferrer">
+              Join the beta {Icon.arrow}
+            </a>
           </div>
         ))}
 
@@ -427,11 +429,18 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
               macro goals, and tells you what to grab.
             </p>
             <div className="lh-hero-ctas">
-              <button className="lh-btn-primary" onClick={onGetStarted}>
-                Get Started {Icon.arrow}
+              {/* A real link, not a button with a handler: it leaves the site.
+                  rel noopener because target _blank without it hands the new
+                  tab a reference back to this window. */}
+              <a className="lh-btn-primary" href={TESTFLIGHT_URL}
+                target="_blank" rel="noopener noreferrer">
+                Join the iOS beta {Icon.arrow}
+              </a>
+              <button className="lh-btn-secondary" onClick={onGetStarted}>
+                Or use it in your browser
               </button>
             </div>
-            <p className="lh-platform-note">Save to your home screen &bull; Free, always</p>
+            <p className="lh-platform-note">iPhone and iPad &bull; Free, always</p>
           </div>
         </div>
       </section>
@@ -563,7 +572,7 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
             Bento is live at Brandeis, Tufts is coming soon, and we're adding more campuses. Check
             yours, then join the waitlist if it isn't there yet.
           </p>
-          <SchoolCheck onGetStarted={onGetStarted} />
+          <SchoolCheck />
           <WaitlistForm />
         </div>
       </section>
@@ -599,14 +608,18 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
             </h2>
             <p className="lh-cta-sub">Free forever. Two minutes to set up. Works at your dining hall today.</p>
             <div className="lh-cta-btns">
-              <button className="lh-btn-primary lh-btn-primary--inv" onClick={onGetStarted}>
-                Get Started {Icon.arrow}
-              </button>
-              <a className="lh-cta-secondary" href="#lh-availability">
-                See if my school is supported
+              <a className="lh-btn-primary lh-btn-primary--inv" href={TESTFLIGHT_URL}
+                target="_blank" rel="noopener noreferrer">
+                Join the iOS beta {Icon.arrow}
               </a>
+              <button className="lh-btn-secondary lh-btn-secondary--inv" onClick={onGetStarted}>
+                Or use it in your browser
+              </button>
             </div>
-            <p className="lh-cta-note">Save to your home screen &bull; Works on any phone</p>
+            <a className="lh-cta-secondary" href="#lh-availability">
+              See if my school is supported
+            </a>
+            <p className="lh-cta-note">Free, always &bull; iOS beta, or any browser</p>
           </div>
         </div>
       </section>

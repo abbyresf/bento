@@ -6,6 +6,7 @@ import LandingRequestSchool from './LandingRequestSchool';
 import LandingUniversities from './LandingUniversities';
 import TermsPage from '../Terms/TermsPage';
 import PrivacyPage from '../Terms/PrivacyPage';
+import { TESTFLIGHT_URL } from '../../data/links';
 import './LandingPage.css';
 
 const NAV_TABS = [
@@ -67,9 +68,12 @@ export default function LandingPage({ onGetStarted, initialTab = 'home' }) {
           </nav>
 
           {/* Desktop CTA */}
-          <button className="landing-nav-cta" onClick={onGetStarted}>
-            Get started
-          </button>
+          {/* Labelled with the platform, so nobody learns it is iOS only after
+              the click. The hero below carries the browser option. */}
+          <a className="landing-nav-cta" href={TESTFLIGHT_URL}
+            target="_blank" rel="noopener noreferrer">
+            Join the iOS beta
+          </a>
 
           {/* Mobile spacer */}
           <div className="landing-nav-spacer" aria-hidden="true" />
@@ -97,8 +101,13 @@ export default function LandingPage({ onGetStarted, initialTab = 'home' }) {
             </button>
           ))}
           <div className="landing-drawer-divider" />
-          <button className="landing-drawer-cta" onClick={() => { onGetStarted(); setDrawerOpen(false); }}>
-            Get started. It's free.
+          <a className="landing-drawer-cta" href={TESTFLIGHT_URL}
+            target="_blank" rel="noopener noreferrer"
+            onClick={() => setDrawerOpen(false)}>
+            Join the iOS beta
+          </a>
+          <button className="landing-drawer-web" onClick={() => { onGetStarted(); setDrawerOpen(false); }}>
+            Or use it in your browser
           </button>
         </div>
       </nav>
