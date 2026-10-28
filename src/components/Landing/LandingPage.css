@@ -369,5 +369,10 @@ a.landing-drawer-badge {
   text-decoration: none;
 }
 a.landing-nav-badge img { height: 40px; width: auto; display: block; }
+/* The badge sits in the top right corner at every width. The spacer that
+   used to balance the logo on phones is not needed with a badge to fill that
+   side. */
+a.landing-nav-badge { margin-left: auto; flex-shrink: 0; }
+.landing-nav-spacer { display: none; }
 a.landing-drawer-badge img { height: 50px; width: auto; display: block; }
 a.landing-drawer-badge { margin: 4px 0; }
