@@ -332,7 +332,7 @@
 }
 
 /* The nav and drawer actions are anchors now: they leave the site for
-   TestFlight. Anchors underline and do not size like buttons. */
+   the App Store. Anchors underline and do not size like buttons. */
 a.landing-nav-cta,
 a.landing-drawer-cta {
   text-decoration: none;
@@ -359,3 +359,15 @@ a.landing-drawer-cta {
 }
 
 .landing-drawer-web:hover { color: #fff; }
+
+/* Apple's App Store badge, as supplied. Sized only. */
+a.landing-nav-badge,
+a.landing-drawer-badge {
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
+  text-decoration: none;
+}
+a.landing-nav-badge img { height: 40px; width: auto; display: block; }
+a.landing-drawer-badge img { height: 50px; width: auto; display: block; }
+a.landing-drawer-badge { margin: 4px 0; }

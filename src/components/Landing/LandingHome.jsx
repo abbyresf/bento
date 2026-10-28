@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { submitWaitlistEntry } from '../../lib/db';
 import { UNIVERSITIES } from '../../data/universities';
-import { TESTFLIGHT_URL } from '../../data/links';
+import { APP_STORE_URL } from '../../data/links';
 import './LandingHome.css';
 
 /* ── SVG Icon Library ── */
@@ -132,7 +132,7 @@ const STEPS = [
    decoration. */
 const STATS = [
   { icon: 'calendar', label: 'Live menu every morning', sublabel: 'Your actual dining hall, not a recipe database', tone: 'action', wide: true },
-  { icon: 'phone',    label: 'On iPhone, or in any browser', sublabel: 'Join the iOS beta, or open Bento on the web.', tone: 'positive' },
+  { icon: 'phone',    label: 'On iPhone, or in any browser', sublabel: 'Download on the App Store, or open Bento on the web.', tone: 'positive' },
   { icon: 'free',     label: 'Free, always', sublabel: 'No subscription, no paywall, no catch', tone: 'positive' },
   { icon: 'lock',     label: 'Your data stays private', sublabel: 'Goals and restrictions belong to you alone', tone: 'positive' },
 ];
@@ -245,9 +245,9 @@ function SchoolCheck() {
               <p className="lh-school-hit-name">{u.name}</p>
               <p className="lh-school-hit-note">Bento is live here. {u.location}</p>
             </div>
-            <a className="lh-school-hit-btn" href={TESTFLIGHT_URL}
+            <a className="lh-school-hit-btn" href={APP_STORE_URL}
               target="_blank" rel="noopener noreferrer">
-              Join the beta {Icon.arrow}
+              Get the app {Icon.arrow}
             </a>
           </div>
         ))}
@@ -380,7 +380,7 @@ function useSettleIn(rootRef) {
 }
 
 /* ── Main component ── */
-export default function LandingHome({ onGetStarted, onGoUniversities }) {
+export default function LandingHome({ onGoUniversities }) {
   const heroRef = useRef(null);
   const pageRef = useRef(null);
   useSettleIn(pageRef);
@@ -432,15 +432,12 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
               {/* A real link, not a button with a handler: it leaves the site.
                   rel noopener because target _blank without it hands the new
                   tab a reference back to this window. */}
-              <a className="lh-btn-primary" href={TESTFLIGHT_URL}
+              <a className="lh-store-badge" href={APP_STORE_URL}
                 target="_blank" rel="noopener noreferrer">
-                Join the iOS beta {Icon.arrow}
+                <img src="/app-store-badge.svg" alt="Download on the App Store" className="lh-store-badge-img" width="150" height="50" />
               </a>
-              <button className="lh-btn-secondary" onClick={onGetStarted}>
-                Or use it in your browser
-              </button>
             </div>
-            <p className="lh-platform-note">iPhone and iPad &bull; Free, always</p>
+            <p className="lh-platform-note">iPhone &bull; Free, always</p>
           </div>
         </div>
       </section>
@@ -608,18 +605,15 @@ export default function LandingHome({ onGetStarted, onGoUniversities }) {
             </h2>
             <p className="lh-cta-sub">Free forever. Two minutes to set up. Works at your dining hall today.</p>
             <div className="lh-cta-btns">
-              <a className="lh-btn-primary lh-btn-primary--inv" href={TESTFLIGHT_URL}
+              <a className="lh-store-badge" href={APP_STORE_URL}
                 target="_blank" rel="noopener noreferrer">
-                Join the iOS beta {Icon.arrow}
+                <img src="/app-store-badge.svg" alt="Download on the App Store" className="lh-store-badge-img" width="150" height="50" />
               </a>
-              <button className="lh-btn-secondary lh-btn-secondary--inv" onClick={onGetStarted}>
-                Or use it in your browser
-              </button>
             </div>
             <a className="lh-cta-secondary" href="#lh-availability">
               See if my school is supported
             </a>
-            <p className="lh-cta-note">Free, always &bull; iOS beta, or any browser</p>
+            <p className="lh-cta-note">Free, always &bull; iPhone</p>
           </div>
         </div>
       </section>

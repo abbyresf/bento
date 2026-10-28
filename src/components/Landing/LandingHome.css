@@ -1575,7 +1575,7 @@
 
 /* ═══════════════════════════════════════════
    SECONDARY ACTION
-   The web app, offered beside the iOS beta. TestFlight is iPhone and iPad
+   The web app, offered beside the App Store link. The app is iPhone
    only, so every place that promotes it also shows this: an Android or laptop
    visitor must never reach a dead end.
 ═══════════════════════════════════════════ */
@@ -1639,4 +1639,32 @@ a.lh-school-hit-btn {
   .lh-btn-secondary {
     width: auto;
   }
+}
+
+/* ═══════════════════════════════════════════
+   APP STORE BADGE
+   Apple's own artwork, unaltered. Apple asks for the badge as supplied, with
+   clear space around it, so it is only ever sized, never recolored or cropped.
+   The badge is black, so on the dark closing section it keeps a thin light
+   outline, which Apple's guidelines allow for dark backgrounds.
+═══════════════════════════════════════════ */
+.lh-store-badge {
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
+  border-radius: 9px;
+  align-self: flex-start;
+  width: fit-content;
+}
+.lh-store-badge-img { display: block; height: 50px; width: auto; }
+.lh-cta .lh-store-badge { outline: 1px solid rgba(255, 255, 255, 0.55); outline-offset: -1px; }
+
+/* The badge stands alone under the copy, so on phones and tablets it sits in
+   the middle with its note. On wide screens the copy is left aligned and the
+   badge follows it. */
+@media (max-width: 959px) {
+  .lh-hero-ctas { align-items: center; }
+  .lh-hero-copy-bottom .lh-platform-note { text-align: center; }
+  .lh-cta-btns { align-items: center; }
+  .lh-store-badge { align-self: center; }
 }

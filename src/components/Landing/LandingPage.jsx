@@ -6,7 +6,7 @@ import LandingRequestSchool from './LandingRequestSchool';
 import LandingUniversities from './LandingUniversities';
 import TermsPage from '../Terms/TermsPage';
 import PrivacyPage from '../Terms/PrivacyPage';
-import { TESTFLIGHT_URL } from '../../data/links';
+import { APP_STORE_URL } from '../../data/links';
 import './LandingPage.css';
 
 const NAV_TABS = [
@@ -70,9 +70,9 @@ export default function LandingPage({ onGetStarted, initialTab = 'home' }) {
           {/* Desktop CTA */}
           {/* Labelled with the platform, so nobody learns it is iOS only after
               the click. The hero below carries the browser option. */}
-          <a className="landing-nav-cta" href={TESTFLIGHT_URL}
+          <a className="landing-nav-badge" href={APP_STORE_URL}
             target="_blank" rel="noopener noreferrer">
-            Join the iOS beta
+            <img src="/app-store-badge.svg" alt="Download on the App Store" width="120" height="40" />
           </a>
 
           {/* Mobile spacer */}
@@ -101,10 +101,10 @@ export default function LandingPage({ onGetStarted, initialTab = 'home' }) {
             </button>
           ))}
           <div className="landing-drawer-divider" />
-          <a className="landing-drawer-cta" href={TESTFLIGHT_URL}
+          <a className="landing-drawer-badge" href={APP_STORE_URL}
             target="_blank" rel="noopener noreferrer"
             onClick={() => setDrawerOpen(false)}>
-            Join the iOS beta
+            <img src="/app-store-badge.svg" alt="Download on the App Store" width="150" height="50" />
           </a>
           <button className="landing-drawer-web" onClick={() => { onGetStarted(); setDrawerOpen(false); }}>
             Or use it in your browser
@@ -115,7 +115,7 @@ export default function LandingPage({ onGetStarted, initialTab = 'home' }) {
       {/* ── Content ── */}
       <main className="landing-main">
         {activeTab === 'home' && (
-          <LandingHome onGetStarted={onGetStarted} onGoUniversities={() => handleTabChange('universities')} />
+          <LandingHome onGoUniversities={() => handleTabChange('universities')} />
         )}
         {activeTab === 'universities' && (
           <LandingUniversities />
