@@ -1,7 +1,7 @@
 // node --test test/mascotOutfits.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { OUTFITS, isUnlocked, unlockHint, validOutfit, unlockProgress, closetOrder } from '../src/data/mascotOutfits.js';
+import { OUTFITS, isUnlocked, unlockHint, validOutfit, unlockProgress, closetOrder, visibleOutfits } from '../src/data/mascotOutfits.js';
 
 const by = (id) => OUTFITS.find((o) => o.id === id);
 
@@ -53,7 +53,7 @@ test('ids are unique', () => {
 
 test('the closet lists earned pieces first, then locked ones nearest to unlocking', () => {
   const ctx = { longestStreak: 12, dishesRated: 2, questsClaimed: 0 };
-  const ids = closetOrder(OUTFITS, ctx).map((o) => o.id);
+  const ids = closetOrder(visibleOutfits(OUTFITS, ctx), ctx).map((o) => o.id);   // what the closet is given: no unclaimed gifts
   // earned: gradcap (free), headband (3 days), sunglasses (7 days), in listed order
   assert.deepEqual(ids.slice(0, 3), ['gradcap', 'headband', 'sunglasses']);
   // locked, by progress: chefhat 12/14 first, sprout 2/5 and partyhat 12/30 tie at .4
@@ -88,4 +88,31 @@ test('progress is a fraction and unlocked pieces are 1', () => {
   assert.equal(unlockProgress(by('crown'), { longestStreak: 30 }), 0.5);
   assert.equal(unlockProgress(by('crown'), { longestStreak: 600 }), 1);
   assert.equal(unlockProgress(by('crown'), undefined), 0);
+});
+
+test('a Halloween gift unlocks only the piece that was chosen', () => {
+  assert.equal(isUnlocked(by('pumpkin'), { gifts: ['pumpkin'] }), true);
+  assert.equal(isUnlocked(by('batwings'), { gifts: ['pumpkin'] }), false);
+  assert.equal(isUnlocked(by('pumpkin'), {}), false);
+  assert.equal(isUnlocked(by('pumpkin'), { gifts: null }), false);
+});
+
+test('a gift stays out of the closet until it is owned, and then shows with the rest', () => {
+  const ids = (ctx) => visibleOutfits(OUTFITS, ctx).map((o) => o.id);
+  assert.equal(ids({}).includes('pumpkin'), false);
+  assert.equal(ids({}).includes('batwings'), false);
+  assert.equal(ids({ gifts: ['batwings'] }).includes('batwings'), true);
+  assert.equal(ids({ gifts: ['batwings'] }).includes('pumpkin'), false);
+  assert.equal(ids({}).length, OUTFITS.length - 2);
+});
+
+test('a worn gift is dropped if the student does not own it, and kept if they do', () => {
+  assert.equal(validOutfit('pumpkin', { gifts: [] }), null);
+  assert.equal(validOutfit('pumpkin', { gifts: ['pumpkin'] }), 'pumpkin');
+});
+
+test('the gift pieces draw in the right place', () => {
+  assert.equal(by('batwings').slot, 'back');
+  assert.equal(by('pumpkin').slot, 'head');
+  assert.equal(unlockHint(by('pumpkin'), {}), 'Launch week gift');
 });

@@ -1,0 +1,70 @@
+.hg-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  animation: hg-fade 320ms ease-out backwards;
+}
+@keyframes hg-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.hg-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface, #fff);
+  border-radius: 24px;
+  padding: 1.4rem 1.1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+  text-align: center;
+  animation: hg-up 460ms cubic-bezier(0.32, 0.72, 0, 1) backwards;
+}
+@keyframes hg-up { from { transform: translateY(24px) scale(0.97); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.hg-kicker { margin: 0; font-size: 0.74rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; color: #E2791B; }
+.hg-title { margin: 0.35rem 0 0; font-size: 1.3rem; font-weight: 900; line-height: 1.2; color: var(--text-primary, #24384F); }
+.hg-sub { margin: 0.4rem 0 1rem; font-size: 0.9rem; font-weight: 600; color: var(--text-secondary, #5b6b7d); }
+
+.hg-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.hg-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.7rem 0.3rem 0.6rem;
+  border: 2.5px solid var(--border, #e4dccf);
+  border-radius: 18px;
+  background: var(--surface, #fff);
+  font-family: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 160ms, background 160ms, transform 160ms;
+}
+.hg-choice.on { border-color: #FD8F2A; background: rgba(253, 143, 42, 0.1); transform: translateY(-2px); }
+.hg-choice .mc-body, .hg-choice .mc-eye { animation: none; }   /* the preview holds still, so two Bentos side by side do not pulse */
+.hg-name { font-size: 0.9rem; font-weight: 800; color: var(--text-primary, #24384F); }
+
+.hg-note { margin: 0.8rem 0 0; font-size: 0.78rem; font-weight: 700; color: var(--text-disabled, #94a3b8); }
+.hg-error { margin: 0.5rem 0 0; font-size: 0.82rem; font-weight: 700; color: #C0392B; }
+
+.hg-go {
+  width: 100%;
+  margin-top: 0.9rem;
+  padding: 0.85rem;
+  border: 0;
+  border-radius: 14px;
+  background: #FD8F2A;
+  color: #fff;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+.hg-go:disabled { background: var(--border, #e4dccf); color: var(--text-disabled, #94a3b8); cursor: default; }
+.hg-later { margin-top: 0.4rem; padding: 0.6rem; border: 0; background: none; font-family: inherit; font-size: 0.88rem; font-weight: 800; color: var(--text-secondary, #5b6b7d); cursor: pointer; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hg-overlay, .hg-card { animation: none; }
+  .hg-choice { transition: none; }
+}

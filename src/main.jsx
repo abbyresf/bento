@@ -10,6 +10,7 @@ import './native.css'
 import App from './App.jsx'
 import { ThemeProvider } from './context/ThemeContext.jsx'
 import ErrorBoundary from './components/common/ErrorBoundary.jsx'
+import HalloweenGift from './components/Mascot/HalloweenGift.jsx'
 import { initNativeAuthLinks } from './lib/nativeAuth'
 import { initKeyboardInset } from './lib/keyboard'
 
@@ -55,6 +56,7 @@ createRoot(document.getElementById('root')).render(
       <ThemeProvider>
         <Router>
           <App />
+          <HalloweenGift />
           {/* The script loads from /_vercel/insights, which does not exist in
               the shell's local origin and 404s on every launch. */}
           {!Capacitor.isNativePlatform() && <Analytics />}

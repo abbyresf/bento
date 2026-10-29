@@ -105,6 +105,29 @@ const WEAR = {
       <circle cx="76" cy="17" r="2.4" fill={GR} stroke={NV} strokeWidth="1.6" />
     </g>
   ),
+  pumpkin: (
+    // A small pumpkin sitting on top of the head: two side lobes behind a taller middle one, and a short stem
+    // tucked behind the middle lobe so only its top shows.
+    <g className="mc-wear">
+      <rect x="56.5" y="-4" width="7" height="12" rx="2.4" transform="rotate(8 60 4)" fill={GR} stroke={NV} strokeWidth="2.6" />
+      <ellipse cx="45" cy="15" rx="14" ry="11" fill={OR} stroke={NV} strokeWidth="3" />
+      <ellipse cx="75" cy="15" rx="14" ry="11" fill={OR} stroke={NV} strokeWidth="3" />
+      <ellipse cx="60" cy="14" rx="13" ry="13" fill={OR} stroke={NV} strokeWidth="3" />
+      <path d="M52 5Q50 14 54 23M68 5Q70 14 66 23" stroke={NV} strokeWidth="2.2" strokeLinecap="round" fill="none" opacity="0.4" />
+    </g>
+  ),
+  batwings: (
+    // Behind the body, one wing each side and the right a mirror of the left. Each wing reaches out sideways from the
+    // shoulder to a point, with three scallops down its lower edge.
+    <g className="mc-wear mc-cape">
+      <path d="M16 44C10 36 2 32 -6 38Q-2 44 -4 52Q3 50 2 60Q8 58 9 68Q13 66 16 72z" fill="#6B4BA6" stroke={NV} strokeWidth="3" strokeLinejoin="round" />
+      <path d="M15 46Q5 40 -3 40M15 51L-1 51M15 56L4 59M15 61L9 66" stroke="#3E2A66" strokeWidth="2.2" strokeLinecap="round" fill="none" opacity="0.65" />
+      <g transform="translate(120 0) scale(-1 1)">
+        <path d="M16 44C10 36 2 32 -6 38Q-2 44 -4 52Q3 50 2 60Q8 58 9 68Q13 66 16 72z" fill="#6B4BA6" stroke={NV} strokeWidth="3" strokeLinejoin="round" />
+        <path d="M15 46Q5 40 -3 40M15 51L-1 51M15 56L4 59M15 61L9 66" stroke="#3E2A66" strokeWidth="2.2" strokeLinecap="round" fill="none" opacity="0.65" />
+      </g>
+    </g>
+  ),
   cape: (
     <g className="mc-wear mc-cape">
       <path d="M26 38Q-12 66 -4 108Q28 98 60 108Q92 98 124 108Q132 66 94 38z" fill="#E8553A" stroke={NV} strokeWidth="3" strokeLinejoin="round" />
@@ -112,7 +135,7 @@ const WEAR = {
     </g>
   ),
 };
-const BACK = new Set(['cape']);
+const BACK = new Set(['cape', 'batwings']);
 
 /* `color` is a scheme id from data/mascotColors.js. Left out, the mascot wears the
  * signed-in student's own color. A buddy's Bento passes theirs, and null means classic. */

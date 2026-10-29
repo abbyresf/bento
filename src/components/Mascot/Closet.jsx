@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import Mascot from './Mascot';
-import { OUTFITS, closetOrder, isUnlocked, unlockHint } from '../../data/mascotOutfits';
+import { OUTFITS, closetOrder, isUnlocked, unlockHint, visibleOutfits } from '../../data/mascotOutfits';
 import { setOutfit, useOutfit } from '../../lib/mascotOutfit';
 import { setMascotColor, useMascotColor } from '../../lib/mascotColor';
 import { getDuoPerks } from '../../lib/duo';
 import { COLORS, canWear } from '../../data/mascotColors';
 import { getStreak, getVoiceStats, getQuestsClaimed } from '../../lib/db';
+import { getGiftPieces } from '../../lib/gifts';
 import { haptics } from '../../lib/haptics';
 import './Closet.css';
 
@@ -20,14 +21,15 @@ export default function Closet({ onClose }) {
 
   useEffect(() => {
     let off = false;
-    Promise.all([getStreak(), getVoiceStats(), getQuestsClaimed()]).then(([streak, voice, claimed]) => {
+    Promise.all([getStreak(), getVoiceStats(), getQuestsClaimed(), getGiftPieces()]).then(([streak, voice, claimed, gifts]) => {
       if (off) return;
       setCtx({
         longestStreak: streak?.longestStreak ?? 0,
         dishesRated: voice?.dishesRated ?? 0,
         questsClaimed: claimed ?? 0,
+        gifts,
       });
-    }).catch(() => { if (!off) setCtx({ longestStreak: 0, dishesRated: 0, questsClaimed: 0 }); });
+    }).catch(() => { if (!off) setCtx({ longestStreak: 0, dishesRated: 0, questsClaimed: 0, gifts: [] }); });
     return () => { off = true; };
   }, []);
 
@@ -39,7 +41,8 @@ export default function Closet({ onClose }) {
     setMascotColor(id);
   };
 
-  const earned = ctx ? OUTFITS.filter((o) => isUnlocked(o, ctx)).length : 0;
+  const shown = visibleOutfits(OUTFITS, ctx ?? {});
+  const earned = ctx ? shown.filter((o) => isUnlocked(o, ctx)).length : 0;
 
   const choose = (item) => {
     if (!ctx || !isUnlocked(item, ctx)) { haptics.warning(); return; }
@@ -55,10 +58,10 @@ export default function Closet({ onClose }) {
           <Mascot mood="cheer" size={120} outfit={worn} key={`${worn ?? 'none'}-${color ?? 'classic'}`} />
         </div>
         <h3>Bento's closet</h3>
-        <p className="closet-sub">{ctx ? `${earned} of ${OUTFITS.length} unlocked` : ' '}</p>
+        <p className="closet-sub">{ctx ? `${earned} of ${shown.length} unlocked` : ' '}</p>
 
         <div className="closet-grid">
-          {closetOrder(OUTFITS, ctx ?? {}).map((item) => {
+          {closetOrder(shown, ctx ?? {}).map((item) => {
             const open = ctx ? isUnlocked(item, ctx) : false;
             const on = worn === item.id;
             return (

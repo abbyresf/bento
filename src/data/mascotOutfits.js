@@ -26,6 +26,10 @@ export const OUTFITS = [
   { id: 'cape',       name: 'Cape',        slot: 'back', unlock: { type: 'streak', value: 100 } },
   { id: 'bowtie',     name: 'Bow tie',     slot: 'neck', unlock: { type: 'quests', value: 3 } },
   { id: 'flower',     name: 'Flower',      slot: 'head', unlock: { type: 'quests', value: 9 } },
+  // Halloween 2026 launch gift (migration 065). A new account picks one of the two. They stay out of the closet for
+  // everyone who has not been given one, so nobody sees a locked tile for something they can no longer earn.
+  { id: 'batwings',   name: 'Bat wings',   slot: 'back', unlock: { type: 'gift', piece: 'batwings' }, hidden: true },
+  { id: 'pumpkin',    name: 'Pumpkin hat', slot: 'head', unlock: { type: 'gift', piece: 'pumpkin' },  hidden: true },
 ];
 
 export const OUTFIT_IDS = OUTFITS.map((o) => o.id);
@@ -39,7 +43,13 @@ export function isUnlocked(item, ctx = {}) {
   if (u.type === 'rated')  return (ctx.dishesRated ?? 0) >= u.value;
   if (u.type === 'quests') return (ctx.questsClaimed ?? 0) >= u.value;
   if (u.type === 'quest')  return (ctx.questsDone ?? []).includes(u.id);
+  if (u.type === 'gift')   return (ctx.gifts ?? []).includes(u.piece);
   return false;
+}
+
+/* The pieces the closet lists for this student: every normal piece, and an event gift only once it is theirs. */
+export function visibleOutfits(items, ctx = {}) {
+  return items.filter((item) => !item.hidden || isUnlocked(item, ctx));
 }
 
 /* The line shown on a locked piece. Says what to do, never what was missed. */
@@ -59,6 +69,7 @@ export function unlockHint(item, ctx = {}) {
     return left === 1 ? 'Claim one more quest' : `Claim ${u.value} quests`;
   }
   if (u.type === 'quest') return 'Finish a quest';
+  if (u.type === 'gift')  return 'Launch week gift';
   return '';
 }
 

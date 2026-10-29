@@ -173,6 +173,9 @@ const RPC = {
   duo_nominate: () => 'ok',
   duo_twin_request: () => 'ok',
   duo_costumes: () => [],
+  gift_status: () => [{ eligible: true, piece: null }],
+  gift_claim: () => 'ok',
+  gift_pieces: () => [],
   duo_today_hints: () => [
     { quest_id: 'mystery_plate', friend_name: 'Maya', detail: 'Baked Salmon' },
     { quest_id: 'rainbow_plate', friend_name: 'Maya', detail: 'Green' },
