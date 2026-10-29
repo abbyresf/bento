@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, Fragment } from 'react';
 
 // Local date (YYYY-MM-DD) — avoids UTC date rollover after 8pm Eastern
 const localDateStr = (d = new Date()) =>
@@ -46,6 +46,8 @@ import { bentoSays, questSays } from '../../utils/bentoSays';
 import { loadHints, useQuestHints } from '../../lib/duoHints';
 import { mealShares, dayTargetsFor, replanMeals, activeMeals } from '../../utils/dayPlan';
 import { useSkipBreakfast, useDinnerOut, setSkipBreakfast, setDinnerOut, getSkipBreakfast, isDinnerOut } from '../../lib/mealPrefs';
+import { useAthlete, useAthleteAvailable, useLoad, useSnacks, dailyTargetsFor, isAthleteOn } from '../../lib/athlete';
+import { LoadPicker, SnackSlot } from './AthleteToday';
 import StreakCelebration from '../Streak/StreakCelebration';
 import BadgeCelebration from '../Badges/BadgeCelebration';
 import RatingSheet from './RatingSheet';
@@ -54,6 +56,9 @@ import { haptics } from '../../lib/haptics';
 import FeedbackSheet from '../Feedback/FeedbackSheet';
 import '../Feedback/FeedbackSheet.css';
 import './MealPlan.css';
+
+// Which gap in the day follows each meal (lib/athlete.js SNACK_SLOTS).
+const SNACK_SLOT_AFTER = { breakfast: 'morning', lunch: 'afternoon', dinner: 'evening' };
 
 export default function MealPlan({ settingsVersion = 0 }) {
   const [menu, setMenu] = useState(null);
@@ -115,14 +120,21 @@ export default function MealPlan({ settingsVersion = 0 }) {
   // they are eating out. The day's targets are shared across the meals that are left.
   const dinnerOut = useDinnerOut(viewDate);
   const shares = useMemo(() => mealShares({ skipBreakfast, dinnerOut }), [skipBreakfast, dinnerOut]);
+  // Athlete mode: the day's targets follow that date's training load, and a snack between meals comes out of what is left
+  // for the meals not yet decided. With the mode off, or migration 064 missing, both do nothing.
+  const athlete = useAthlete();
+  const athleteOn = useAthleteAvailable() && athlete.athleteMode;
+  const load = useLoad(viewDate);
+  const daySnacks = useSnacks(viewDate);
+  const snackTotals = useMemo(() => (athleteOn ? Object.values(daySnacks).map((x) => x.totals) : []), [athleteOn, daySnacks]);
   const planInputs = useRef(null);                  // what the last plan was built from, so the meals to come can be planned again
   const replanApplied = useRef({ sig: null });
   const freshPlans = useRef(new WeakSet());          // plans just built from the menu, as opposed to ones the student has tweaked
   // Builds a day's plan, with the meals this student eats, and remembers the inputs for planning around a decided meal.
   const planDay = useCallback((menuData, targets, fetchedRestrictions, recentItems, date) => {
     planInputs.current = { menu: menuData, targets, restrictions: fetchedRestrictions, recent: recentItems };
-    const plan = optimizeDay(menuData, targets, fetchedRestrictions, recentItems,
-      mealShares({ skipBreakfast: getSkipBreakfast(), dinnerOut: isDinnerOut(date) }), ratingsByIdRef.current);
+    const plan = optimizeDay(menuData, dailyTargetsFor(targets, date), fetchedRestrictions, recentItems,
+      mealShares({ skipBreakfast: getSkipBreakfast(), dinnerOut: isDinnerOut(date) }), ratingsByIdRef.current, { fuel: isAthleteOn() });
     freshPlans.current.add(plan);
     return plan;
   }, []);
@@ -304,17 +316,20 @@ export default function MealPlan({ settingsVersion = 0 }) {
       else if (confirmedMeals[m] && mealPlan[loc]?.[m]) fixed[m] = mealPlan[loc][m].totals;
     }
     const r = (t) => ['calories', 'protein', 'carbs', 'fat'].map((f) => Math.round(t?.[f] ?? 0));
-    const sig = JSON.stringify([viewDate, shares, Object.fromEntries(Object.entries(fixed).map(([m, t]) => [m, r(t)]))]);
+    const daily = dailyTargetsFor(inputs.targets, viewDate);
+    const sig = JSON.stringify([viewDate, shares, Object.fromEntries(Object.entries(fixed).map(([m, t]) => [m, r(t)])),
+      r({ calories: daily.calories, ...daily.macros }), snackTotals.map(r), athleteOn]);
     // A plan the student has only tweaked (a serving, say) keeps their change: only a new plan or a changed decision replans.
     if (!freshPlans.current.has(mealPlan) && replanApplied.current.sig === sig) return;
     const next = replanMeals({
-      menu: inputs.menu, daily: inputs.targets, shares, fixed, restrictions: inputs.restrictions,
-      recentIds: inputs.recent, ratingsById: ratingsByIdRef.current, prevPlan: mealPlan,
+      menu: inputs.menu, daily, shares, fixed, snacks: snackTotals, restrictions: inputs.restrictions,
+      recentIds: inputs.recent, ratingsById: ratingsByIdRef.current, prevPlan: mealPlan, options: { fuel: athleteOn },
     });
     replanApplied.current = { sig };
     setMealPlan(next);
     setRecommendations({ breakfast: null, lunch: null, dinner: null });
-  }, [mealPlan, menu, viewDate, shares, customMeals, confirmedMeals, selectedLocation]);
+  // athlete and load are read through dailyTargetsFor, so they are listed here to replan when they change.
+  }, [mealPlan, menu, viewDate, shares, customMeals, confirmedMeals, selectedLocation, snackTotals, athlete, athleteOn, load]);
 
   // Keep the home-screen widget showing today's plate. Only today: the widget
   // has no use for another day, and a student browsing tomorrow must not
@@ -912,6 +927,12 @@ export default function MealPlan({ settingsVersion = 0 }) {
         }
       }
     });
+    for (const t of snackTotals) {
+      totals.calories += t.calories;
+      totals.protein  += t.protein;
+      totals.carbs    += t.carbs;
+      totals.fat      += t.fat;
+    }
     return totals;
   };
 
@@ -958,6 +979,22 @@ export default function MealPlan({ settingsVersion = 0 }) {
     if (isViewingPast)    return true;
     if (isViewingTomorrow) return false;
     return hasMealPassed(meal);
+  };
+
+  // A snack between meals, picked from the menu of `meal` at the hall chosen for it.
+  const renderSnack = (slot, meal) => {
+    const loc = selectedLocation[meal];
+    return (
+      <SnackSlot
+        date={viewDate}
+        slot={slot}
+        snack={daySnacks[slot]}
+        menuItems={menu?.locations?.[loc]?.meals?.[meal] ?? []}
+        hallLabel={menu?.locations?.[loc]?.shortName ?? null}
+        restrictions={restrictions}
+        canEdit={!isViewingPast}
+      />
+    );
   };
 
   return (
@@ -1046,6 +1083,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
 
       {!dateLoading && mealPlan && (
       <div className="meals-timeline">
+        {athleteOn && <LoadPicker date={viewDate} load={load} isToday={isViewingToday} />}
         {skipBreakfast && (
           <p className="meal-off-note">
             Breakfast is off, so Bento plans two larger meals.{' '}
@@ -1053,7 +1091,10 @@ export default function MealPlan({ settingsVersion = 0 }) {
           </p>
         )}
         {['breakfast', 'lunch', 'dinner'].filter((meal) => meal !== 'breakfast' || !skipBreakfast).map((meal) => (
-          meal === 'dinner' && dinnerOut ? (
+          <Fragment key={meal}>
+          {/* With breakfast off, the morning gap sits before lunch and uses the lunch menu. */}
+          {athleteOn && meal === 'lunch' && skipBreakfast && renderSnack('morning', 'lunch')}
+          {meal === 'dinner' && dinnerOut ? (
             <div key="dinner-out" className="meal-card meal-out">
               <div>
                 <h3>Dinner</h3>
@@ -1112,7 +1153,9 @@ export default function MealPlan({ settingsVersion = 0 }) {
               </label>
             ) : null}
           />
-          )
+          )}
+          {athleteOn && renderSnack(SNACK_SLOT_AFTER[meal], meal)}
+          </Fragment>
         ))}
 
         <button className="fb-trigger" onClick={() => setShowFeedback(true)}>

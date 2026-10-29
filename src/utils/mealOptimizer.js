@@ -293,8 +293,13 @@ function generateReason(item, target, currentTotals) {
   return 'Balanced nutrition';
 }
 
-// Optimize a single meal
-export function optimizeMeal(availableItems, mealTarget, restrictions, recentItemIds, mealType = null, ratingsById = new Map()) {
+// Optimize a single meal.
+//
+// `options.fuel` is Athlete mode. A heavy training day can ask for far more carbohydrate than the slots above ever reach, so
+// once the plate is built, more grain and fruit go on until carbs or calories reach the target (see fillFuel). Without it the
+// plate is built exactly as before.
+export function optimizeMeal(availableItems, mealTarget, restrictions, recentItemIds, mealType = null, ratingsById = new Map(), options = {}) {
+  const fuel = options.fuel === true;
   const categorized = categorizeItems(availableItems);
   const selected = [];
   const currentTotals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
@@ -333,7 +338,8 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
   }
 
   // An already-selected item that could take one more serving inside the
-  // calorie budget, preferring whichever adds the most protein.
+  // calorie budget, preferring whichever adds the most protein (in Athlete mode,
+  // whichever lands closest to the protein target, see betterProtein).
   //
   // `reserve` holds back budget for the slots that still have to be filled
   // after this one. Without it a second serving can eat the space the grain and
@@ -348,7 +354,7 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
       if (!hasUsableNutrition(entry)) continue;
       if ((ratingsById?.get?.(entry.id) ?? 5) <= DISLIKED_THRESHOLD) continue;
       if (entry.nutrition.calories > remaining) continue;
-      if (!best || entry.nutrition.protein > best.nutrition.protein) best = entry;
+      if (betterProtein(entry, best)) best = entry;
     }
     return best;
   }
@@ -381,6 +387,14 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
   // Topping up protein is not a macro-gap problem: the generic score rewards
   // whatever best fits the remaining calories, which is how a 7g cottage
   // cheese beat 22g of chicken. Here the most protein that still fits wins.
+  //
+  // In Athlete mode the item that lands closest to the protein target wins
+  // instead, because the biggest one overshoots and uses calories the day's
+  // carbohydrate needs.
+  const proteinMiss = (item) => Math.abs(currentTotals.protein + item.nutrition.protein - mealTarget.protein);
+  const betterProtein = (item, best) => !best || (fuel
+    ? proteinMiss(item) < proteinMiss(best)
+    : item.nutrition.protein > best.nutrition.protein);
   function pickProteinTopUp() {
     const remaining = mealTarget.calories - currentTotals.calories;
     let best = null;
@@ -395,7 +409,7 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
       // win on grams regardless of the student's opinion.
       if ((ratingsById?.get?.(item.id) ?? 5) <= DISLIKED_THRESHOLD) continue;
       if (item.nutrition.calories > remaining * 1.15) continue;
-      if (!best || item.nutrition.protein > best.nutrition.protein) best = item;
+      if (betterProtein(item, best)) best = item;
     }
     return best;
   }
@@ -501,12 +515,46 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
   //
   // Only for a genuine shortfall, only one item, and never past the target,
   // because a plate of two of everything is not a meal.
-  if (selected.length > 0 && currentTotals.protein < mealTarget.protein * 0.85) {
+  //
+  // In Athlete mode the extra serving goes to whichever nutrient is furthest short, so protein is only topped up here when it
+  // is further from its target than carbohydrate.
+  const shortBy = (f) => (mealTarget[f] > 0 ? 1 - currentTotals[f] / mealTarget[f] : 0);
+  if (selected.length > 0 && currentTotals.protein < mealTarget.protein * 0.85 && (!fuel || shortBy('protein') >= shortBy('carbs'))) {
     const extra = bestExtraServing([ROLE.PROTEIN, ROLE.COMPOSED]);
     if (extra && currentTotals.protein + extra.nutrition.protein <= mealTarget.protein * 1.25) {
       addServing(extra);
     }
   }
+
+  // Athlete mode: fuel for training. Each step adds the grain or fruit with the most carbohydrate that still fits the calories
+  // left: another serving of one already on the plate (up to 3), or a new one. It stops when carbs or calories are within 5%
+  // of the target, when nothing fits, or after six additions.
+  function fillFuel() {
+    const FUEL_ROLES = new Set([ROLE.GRAIN, ROLE.FRUIT]);
+    const MAX_FUEL_SERVINGS = 3;
+    const okToEat = (item) => hasUsableNutrition(item) && (ratingsById?.get?.(item.id) ?? 5) > DISLIKED_THRESHOLD
+      && FUEL_ROLES.has(getRole(item)) && item.nutrition.carbs > 0;
+    for (let step = 0; step < 6; step++) {
+      const calLeft = mealTarget.calories - currentTotals.calories;
+      const carbsLeft = mealTarget.carbs - currentTotals.carbs;
+      if (calLeft <= mealTarget.calories * 0.05 || carbsLeft <= mealTarget.carbs * 0.05) return;
+      const fits = (item) => item.nutrition.calories <= calLeft * 1.1;
+      let best = null;
+      let more = false;
+      for (const entry of selected) {
+        if ((entry.servings ?? 1) >= MAX_FUEL_SERVINGS || !okToEat(entry) || !fits(entry)) continue;
+        if (!best || entry.nutrition.carbs > best.nutrition.carbs) { best = entry; more = true; }
+      }
+      for (const item of eligible) {
+        if (usedIds.has(item.id) || !okToEat(item) || !fits(item)) continue;
+        if (!passesHardRestrictions(item, restrictions) || getMealContextPenalty(item, mealType) >= 200) continue;
+        if (!best || item.nutrition.carbs > best.nutrition.carbs) { best = item; more = false; }
+      }
+      if (!best) return;
+      if (more) addServing(best); else addItem(best, 'Carbohydrate for training');
+    }
+  }
+  if (fuel && selected.length > 0) fillFuel();
 
   // Check if we hit targets reasonably
   const caloriePercent = (currentTotals.calories / mealTarget.calories) * 100;
@@ -656,7 +704,7 @@ export function findRecommendedAdditions(availableItems, mealTarget, currentTota
 }
 
 // Optimize full day across all meals — works with any set of location IDs.
-export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds, mealDistribution = MEAL_DISTRIBUTION, ratingsById = new Map()) {
+export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds, mealDistribution = MEAL_DISTRIBUTION, ratingsById = new Map(), options = {}) {
   // A meal with no share (breakfast skipped, dinner eaten out) is not planned at all.
   const mealTargets  = calculateMealTargets(nutritionTargets, mealDistribution);
   const locationIds  = Object.keys(menu.locations ?? {});
@@ -689,7 +737,8 @@ export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds,
         restrictions,
         locUsedIds,
         meal,
-        ratingsById
+        ratingsById,
+        options
       );
       result[locId][meal] = locResult;
       locResult.items.forEach(item => locUsedIds.add(item.id));

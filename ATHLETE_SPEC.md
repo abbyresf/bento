@@ -1,6 +1,7 @@
 # Bento Athlete: nutrition for college athletes
 
-Status: design, written 28 Oct 2026. Nothing is built. Not checked against a sports dietitian.
+Status: written 28 Oct 2026. Phase 1 built 29 Oct 2026 (migration 064, not yet run on the live database). Presets follow the
+2016 position statement in section 5. No sports dietitian has reviewed them.
 
 ## 1. What this is
 
@@ -34,20 +35,34 @@ individual.
    targets in Athlete mode. See section 8.
 7. **Athlete mode is optional and reversible.** Switching it off returns the student
    to their normal targets and deletes nothing.
-8. **Nothing here is medical advice.** Presets are starting points and the copy says
-   so.
+8. **Nothing here is medical advice.** Presets are starting points from published guidance
+   and the copy says so. Decided 29 Oct 2026: Bento ships with the published ranges, because
+   a school may have no sports dietitian. A dietitian review is welcome when one is available,
+   but it does not block shipping.
 
 ## 4. Phases
 
 ### Phase 1: Athlete mode, self-serve (no coach needed)
 
-- Turn on in Settings. Pick a sport group and a season phase.
+- Turn on in Settings. Pick your team from your school's list (decided 29 Oct 2026). A
+  student who gave male in onboarding sees men's teams, female sees women's, anyone else sees
+  both. One team at a time. An athlete who changes sport picks the new team.
+- The team sets the sport, and the team's published schedule sets the season. Season dates
+  live in `src/data/athleteTeams.js`, read from the school's athletics site and refreshed each
+  year. Bento shows only "in season until" or "season starts", because schedules give contest
+  dates and nothing about pre-season or post-season.
+- Settings stays small: the switch, the team and its season line. "Adjust targets" opens the
+  sliders, closed by default.
 - Presets set calorie, protein, carb and fat targets. The athlete can edit any number.
 - Training load per day: rest, light, heavy, two-a-day. One tap on Today, remembered
   per date.
-- Meal shares change with load. A two-a-day shifts weight toward a pre-practice snack
-  and a post-practice meal. This reuses `mealShares` and `replanMeals` in
-  `src/utils/dayPlan.js`.
+- Targets change with load (section 5). The meals still to come re-plan through
+  `replanMeals` in `src/utils/dayPlan.js`.
+- **Add a snack** (decided 29 Oct 2026). A small plus between meal cards and after dinner
+  opens the menu of the meal before it. A snack takes no share of its own. What it holds
+  comes out of what is left for the meals not yet decided. One snack per gap, any number of
+  items. Dining hall menu only for now. A typed-in food (a protein bar) can come later.
+  Athlete mode only for now.
 - The athlete can add a game or meet by hand: date, time, home or away.
 
 **Done when** an athlete can set a sport, mark a heavy day, and see Today re-plan
@@ -109,10 +124,22 @@ Before shipping:
   the owner's starting point, not a verified clinical table.
 - Sport groups stay coarse: endurance, strength and power, team and field, skill and
   precision. Presets by individual sport can come later.
-- Calorie targets use the existing profile calculation plus a load multiplier by day.
-  The multiplier values are open (section 9).
+- Load maps onto the statement's four carbohydrate bands in order (owner approved 29 Oct
+  2026): rest 3 to 5, light 5 to 7, heavy 6 to 10, two-a-day 8 to 12 g/kg. Rest sitting in the
+  lightest band is Bento's placement. A date with no load set is a light day.
+- Defaults are the middle of each range: protein 1.6 g/kg, fat 27.5%, carbs the middle of the
+  day's band. Calories are the sum of the three, so there is no separate load multiplier.
+- The athlete moves any value with a slider limited to the published range.
+- A sport changes a number only where its own published statement says so. Checked 29 Oct
+  2026: the IAAF 2019 consensus statement gives protein 1.3 to 1.7 g/kg for track and field
+  and cross country. It gives no daily carbohydrate figure by event group, only that intake
+  follows training. The football (UEFA 2021) and swimming (2014) statements were not read in
+  full, so they add nothing yet. Their main differences are on competition days (phase 2).
+- Weight classes (wrestling) are out of scope for now (decided 29 Oct 2026). Neither Brandeis
+  nor Tufts has wrestling.
 - Presets are shown as a range with an "adjust" control. Bento never says a number is
   right for the person.
+- Code: `src/utils/athleteTargets.js`, tests in `test/athleteTargets.test.mjs`.
 
 ## 6. Data model
 
@@ -120,16 +147,24 @@ All tables use `user_id uuid references auth.users(id) on delete cascade`, so
 `delete_user()` removes everything. Migrations are idempotent and safe to paste into
 the SQL editor.
 
-**Athlete profile** (columns on `profiles`, or one `athlete_profiles` row per user):
+**Athlete profile** (`athlete_profiles`, one row per user, decided 29 Oct 2026 so Bento Coach
+can build on it). It also holds the athlete's own carb, protein and fat settings, null meaning
+the default:
 
 | Field | Notes |
 | --- | --- |
 | `athlete_mode` | boolean, default false |
-| `sport_group` | one of four, null when mode is off |
-| `season_phase` | off-season, pre-season, in-season, post-season |
+| `team` | team id from `src/data/athleteTeams.js` (migration 065) |
+| `sport_group`, `season_phase` | from 064, no longer written |
 
 **Training days** (`athlete_load_days`): `user_id`, `load_date`, `load`
 (rest, light, heavy, double). Primary key on user and date.
+
+**Snacks** (`snacks`): `user_id`, `snack_date`, `slot` (morning, afternoon, evening), items
+and totals. Unique on user, date and slot. Kept out of `meal_history` on purpose: Pulse counts
+those rows and the research study copies them. Snacks do not count toward streaks.
+
+Phase 1 SQL is tested by `scripts/test-athlete-sql.mjs` (pglite).
 
 **Events** (`athlete_events`):
 
@@ -170,9 +205,10 @@ the SQL editor.
 
 ## 8. Safeguards
 
-- No target below the athlete's resting needs, whatever the athlete types. If an
-  entered calorie target is under a floor, the app shows a message and keeps the
-  previous value. The floor is open (section 9).
+- No target below the athlete's resting needs, whatever the athlete types. The floor is
+  the BMR the profile already calculates (decided 29 Oct 2026). A preset under it has its
+  carbohydrate raised to meet it. A slider move that would put any day under it is refused
+  with a message and the previous value stays.
 - No streak, badge or quest rewards eating less. Streaks reward confirming meals, as
   today.
 - No "deficit", "cut", "lean", or body weight goal copy. The profile goal options in
@@ -184,8 +220,8 @@ the SQL editor.
 
 ## 9. Open items
 
-1. Day load multipliers on calories (rest, light, heavy, double). Needs a dietitian.
-2. The calorie floor in section 8.
+1. ~~Day load multipliers.~~ Settled 29 Oct 2026: calories come from the g/kg ranges (section 5).
+2. ~~The calorie floor.~~ Settled 29 Oct 2026: the profile's BMR (section 8).
 3. Whether the minimum of 5 for aggregates is right, or should be higher.
 4. Wording for the support note, and who it points to.
 5. How a coach proves they are a coach. Options: a school email on Pulse sign up, or

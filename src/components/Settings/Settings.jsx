@@ -23,6 +23,8 @@ import StudySection from '../Research/StudySection';
 import { useStudyStatus } from '../../lib/useStudyStatus';
 import { DELETE_NOTE } from '../../data/research';
 import { useSkipBreakfast, setSkipBreakfast } from '../../lib/mealPrefs';
+import { useAthlete, useAthleteAvailable, loadAthlete } from '../../lib/athlete';
+import AthleteSection from './AthleteSection';
 import './Settings.css';
 
 /* Settings opens on a menu of sections. Tap one to open it, and Back returns to the
@@ -32,6 +34,7 @@ import './Settings.css';
 const SETTINGS_PAGES = [
   { id: 'profile',   label: 'Profile',   hint: 'Body stats, goals and daily targets' },
   { id: 'food',      label: 'Food',      hint: 'Dietary restrictions and meals' },
+  { id: 'athlete',   label: 'Athlete',   hint: 'Targets that follow your training' },
   { id: 'reminders', label: 'Reminders', hint: 'Meal reminders and buddy alerts' },
   { id: 'study',     label: 'Research',  hint: 'Join or leave a study' },
   { id: 'display',   label: 'Display',   hint: 'Appearance and nutrition numbers' },
@@ -61,7 +64,10 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, onOpen
   // exist: status is 'unavailable' and no request is made.
   const studyState = useStudyStatus();
   const { study, status: studyStatus } = studyState;
-  const pages = SETTINGS_PAGES.filter((p) => p.id !== 'study' || studyStatus === 'ok');
+  // Athlete is listed only once migration 064 exists.
+  const athleteAvailable = useAthleteAvailable();
+  const { athleteMode } = useAthlete();
+  const pages = SETTINGS_PAGES.filter((p) => (p.id !== 'study' || studyStatus === 'ok') && (p.id !== 'athlete' || athleteAvailable));
   // null is the menu. A saved page that is not available (yet) shows the menu.
   const [pageId, setPageId] = useState(takeSavedPage);
   const current = pages.find((p) => p.id === pageId) ?? null;
@@ -148,6 +154,7 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, onOpen
       setNutritionTargets(updatedTargets),
       setDietaryRestrictions(restrictions),
     ]);
+    loadAthlete();   // athlete targets are per kg, so a new weight changes them
     if (onSave) {
       onSave();
     } else {
@@ -315,7 +322,7 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, onOpen
                 ))}
               </select>
             </div>
-            <div className="setting-item">
+            {!athleteMode && <div className="setting-item">
               <label>Goal</label>
               <select
                 value={profile.goal}
@@ -325,7 +332,7 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, onOpen
                   <option key={key} value={key}>{value.label}</option>
                 ))}
               </select>
-            </div>
+            </div>}
           </div>
           <button className="btn-secondary" onClick={handleRecalculate}>
             Recalculate Targets
@@ -339,7 +346,11 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, onOpen
         {display.anyVisible && (
         <section className="settings-section">
           <h3>Daily Nutrition Targets</h3>
-          <p className="section-note">Calculated values can be manually overridden.</p>
+          <p className="section-note">
+            {athleteMode
+              ? 'Athlete mode is on, so your plan uses your Athlete targets. These come back when you turn it off.'
+              : 'Calculated values can be manually overridden.'}
+          </p>
           <div className="settings-grid">
             {display.calories && (
               <div className="setting-item">
@@ -385,6 +396,8 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, onOpen
         </section>
         )}
         </>)}
+
+        {page === 'athlete' && <AthleteSection onGoProfile={() => openPage('profile')} />}
 
         {page === 'food' && (<>
         {/* Dietary Restrictions Section */}

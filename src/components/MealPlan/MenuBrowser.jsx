@@ -7,7 +7,7 @@ import './MenuBrowser.css';
 
 const CATEGORY_ORDER = ['breakfast', 'entree', 'grill', 'deli', 'pizza', 'allgood', 'sides', 'soup', 'salad', 'bakery', 'beverage'];
 
-export default function MenuBrowser({ meal, locationLabel, items, restrictions, initialSelected, onDone, onClose, className = '' }) {
+export default function MenuBrowser({ meal, title, locationLabel, items, restrictions, initialSelected, onDone, onClose, className = '' }) {
   const display = useNutritionDisplay();
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(() => new Set(initialSelected?.map(i => i.id) ?? []));
@@ -98,7 +98,7 @@ export default function MenuBrowser({ meal, locationLabel, items, restrictions, 
           </svg>
         </button>
         <div className="browser-title">
-          <span className="browser-meal">{mealLabel} · Browse Menu</span>
+          <span className="browser-meal">{title ?? `${mealLabel} · Browse Menu`}</span>
           <span className="browser-location">
             {locationLabel}
             {/* Say why the list is short, so a filtered menu does not look

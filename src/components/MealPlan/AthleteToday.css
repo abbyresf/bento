@@ -1,0 +1,143 @@
+/* Training load */
+.load-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.load-picker-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.load-picker-options {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.35rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: var(--surface-sunk);
+  border: 1px solid var(--border);
+}
+
+.load-option {
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.25rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.load-option:hover { color: var(--text-primary); }
+
+.load-option.active {
+  background: var(--surface);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Snack between meals. The negative margin pulls the plus into the gap between two cards. */
+.snack-slot {
+  margin: -0.85rem 0;
+}
+
+.snack-slot.has-snack {
+  margin: 0;
+}
+
+.snack-add {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.snack-add::before,
+.snack-add::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--divider);
+}
+
+.snack-add-plus {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  font-size: 1.05rem;
+  line-height: 1;
+  color: var(--text-secondary);
+}
+
+.snack-add-text {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.snack-add:hover .snack-add-plus,
+.snack-add:focus-visible .snack-add-plus {
+  border-color: var(--accent-text);
+  color: var(--accent-text);
+}
+
+.snack-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.8rem 1rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: 14px;
+  background: var(--surface-soft);
+}
+
+.snack-card-text { min-width: 0; }
+
+.snack-card h4 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.snack-items {
+  margin: 0.15rem 0 0;
+  font-size: 0.82rem;
+  color: var(--text-body);
+  overflow-wrap: anywhere;
+}
+
+.snack-totals {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.snack-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .snack-slot { margin: -0.6rem 0; }
+  .snack-slot.has-snack { margin: 0; }
+}

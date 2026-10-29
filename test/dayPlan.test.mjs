@@ -89,3 +89,30 @@ test('replanning with dinner out or breakfast skipped drops those meals', () => 
   assert.equal(re.north.dinner, undefined);
   assert.ok(re.north.lunch);
 });
+
+test('a snack comes out of the meals not yet decided', () => {
+  const snack = fix(300);
+  const t = mealTargetsFor(daily, mealShares(), {}, [snack]);
+  // 2,200 less 300, shared 25 / 37.5 / 37.5
+  assert.deepEqual([t.breakfast.calories, t.lunch.calories, t.dinner.calories], [475, 713, 713]);
+  // with lunch decided, the snack and lunch both come out of dinner
+  const d = mealTargetsFor(daily, mealShares(), { breakfast: fix(550), lunch: fix(825) }, [snack]);
+  assert.equal(d.dinner.calories, 525);
+  assert.equal(d.lunch.calories, 825);                                                                         // the decided meal keeps its share
+});
+
+test('many snacks cannot starve a meal: the 35% limit holds', () => {
+  const t = mealTargetsFor(daily, mealShares(), { lunch: fix(825) }, [fix(800), fix(800)]);
+  assert.equal(t.dinner.calories, Math.round(825 * 0.35));
+});
+
+test('no snacks leaves the plan exactly as before', () => {
+  assert.deepEqual(mealTargetsFor(daily, mealShares(), {}, []), mealTargetsFor(daily, mealShares()));
+});
+
+test('planning again around a snack makes the meals to come smaller, and carries the day\'s targets', () => {
+  const base = plan(mealShares());
+  const next = replanMeals({ menu, daily, shares: mealShares(), fixed: {}, snacks: [fix(600)], restrictions: R, recentIds: new Set(), ratingsById: new Map(), prevPlan: base });
+  assert.ok(cal(next, 'dinner') < cal(base, 'dinner'), 'dinner is lighter');
+  assert.equal(next.targets, daily);
+});
