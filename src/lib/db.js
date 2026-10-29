@@ -1046,7 +1046,8 @@ const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes — matches server-side cache
 // cache format does. Adding `serving` to items changed that shape, and every
 // client holding a v2 entry kept serving up items without it. The version key
 // exists precisely so a shape change cannot be served from an old cache.
-const CACHE_VERSION = 'v3';
+// v4: items carry `stations` and `position`, which the whole-plate planner needs.
+const CACHE_VERSION = 'v4';
 
 export function getCachedMenu(university = 'brandeis') {
   try {

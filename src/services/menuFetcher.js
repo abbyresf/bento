@@ -77,12 +77,21 @@ export const BRANDEIS_CONFIG = {
 // Left alone, the browse list shows it three times and, worse, selecting it
 // once yields three servings, because selection is by id and every copy
 // matches. The first occurrence wins; station is only used for grouping.
-function dedupeMeals(meals) {
+//
+// The stations of the copies are kept on the one that stays (`stations`), so the
+// plate planner still knows red onions can top a burger, a salad or a sandwich.
+export function dedupeMeals(meals) {
   for (const period of Object.keys(meals)) {
-    const seen = new Set();
+    const kept = new Map();
     meals[period] = meals[period].filter(item => {
-      if (seen.has(item.id)) return false;
-      seen.add(item.id);
+      const first = kept.get(item.id);
+      if (first) {
+        for (const st of item.stations ?? []) {
+          if (!first.stations.includes(st)) first.stations = [...first.stations, st];
+        }
+        return false;
+      }
+      kept.set(item.id, item);
       return true;
     });
   }
@@ -291,6 +300,8 @@ function tuftsParseFood(food, mealPeriod) {
     id:        `tu_${food.id ?? food.name.replace(/\W+/g, '_').toLowerCase()}`,
     name:      food.name,
     station:   tuftsParseStation(food.food_category),
+    stationName: food.food_category || null,
+    stations:  food.food_category ? [food.food_category] : [],
     meal:      mealPeriod,
     nutrition: {
       calories: Math.round(n.calories  ?? 0),
@@ -325,7 +336,7 @@ function tuftsParseLocationPage(json) {
   for (const period of ['breakfast', 'lunch', 'dinner']) {
     const foods = data.meals?.[period] ?? [];
     for (const food of foods) {
-      if (food?.name) meals[period].push(tuftsParseFood(food, period));
+      if (food?.name) meals[period].push({ ...tuftsParseFood(food, period), position: meals[period].length });
     }
   }
 

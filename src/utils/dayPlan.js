@@ -12,7 +12,7 @@
  * leaves a lighter dinner, and a small lunch leaves a bigger one. The result is kept within 35% to 180% of a meal's normal
  * size, so a very large or very small meal never produces a nonsense plan for the next one. */
 import { MEAL_DISTRIBUTION } from './tdeeCalculator.js';
-import { optimizeMeal } from './mealOptimizer.js';
+import { planMeal } from './platePlanner.js';
 
 export const MEALS = ['breakfast', 'lunch', 'dinner'];
 const MIN_FACTOR = 0.35;
@@ -82,7 +82,7 @@ export function replanMeals({ menu, daily, shares, fixed, restrictions, recentId
       if (!(shares[meal] > 0) || !raw) { delete locPlan[meal]; continue; }
       // A decided meal stays exactly as it is.
       if (fixed[meal] && prevPlan[locId]?.[meal]) { prevPlan[locId][meal].items.forEach((i) => used.add(i.id)); continue; }
-      const res = optimizeMeal(raw, targets[meal], restrictions, used, meal, ratingsById);
+      const res = planMeal(raw, targets[meal], restrictions, used, meal, ratingsById);
       locPlan[meal] = res;
       res.items.forEach((i) => used.add(i.id));
     }
