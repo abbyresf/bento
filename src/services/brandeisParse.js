@@ -156,6 +156,11 @@ function brandeisParseMenuItemEl(liEl, mealPeriod, stationName) {
     id: `bh_${recipeId || name.replace(/\W+/g, '_').toLowerCase()}`,
     name,
     station: brandeisParseStation(stationName),
+    // The station exactly as the hall names it, and every station that lists this dish (see dedupeMeals). Dishes at one
+    // station are served to go together, which the coarse `station` above cannot tell apart: a jerk chicken line and a
+    // pasta line are both 'entree'. The plate planner builds whole plates from these.
+    stationName: stationName || null,
+    stations: stationName ? [stationName] : [],
     meal: mealPeriod,
     nutrition,
     serving,
@@ -193,7 +198,8 @@ export function parseBrandeisDoc(doc) {
 
       stationEl.querySelectorAll('li.menu-item-li').forEach((liEl) => {
         const item = brandeisParseMenuItemEl(liEl, mealPeriod, stationName);
-        if (item) meals[mealPeriod].push(item);
+        // Menu order within the meal. A hall lists a main and then its sides, so order helps group a line.
+        if (item) { item.position = meals[mealPeriod].length; meals[mealPeriod].push(item); }
       });
     });
   });

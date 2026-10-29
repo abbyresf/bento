@@ -15,7 +15,7 @@
  * Snacks (Athlete mode) are eaten on top of the meals and take no share of their own. What a snack holds comes out of what is
  * left for the meals not yet decided, the same way a decided meal's does, and the same 35% to 180% limits apply. */
 import { MEAL_DISTRIBUTION } from './tdeeCalculator.js';
-import { optimizeMeal } from './mealOptimizer.js';
+import { planMeal } from './platePlanner.js';
 
 export const MEALS = ['breakfast', 'lunch', 'dinner'];
 const MIN_FACTOR = 0.35;
@@ -86,7 +86,7 @@ export function replanMeals({ menu, daily, shares, fixed, snacks = [], restricti
       if (!(shares[meal] > 0) || !raw) { delete locPlan[meal]; continue; }
       // A decided meal stays exactly as it is.
       if (fixed[meal] && prevPlan[locId]?.[meal]) { prevPlan[locId][meal].items.forEach((i) => used.add(i.id)); continue; }
-      const res = optimizeMeal(raw, targets[meal], restrictions, used, meal, ratingsById, options);
+      const res = planMeal(raw, targets[meal], restrictions, used, meal, ratingsById, options);
       locPlan[meal] = res;
       res.items.forEach((i) => used.add(i.id));
     }

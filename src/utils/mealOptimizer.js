@@ -1,6 +1,7 @@
 // Meal optimization algorithm
 // Uses a greedy heuristic to select meals that best match nutrition targets
 
+import { planMeal } from './platePlanner.js';
 import { MEAL_DISTRIBUTION, calculateMealTargets } from './tdeeCalculator.js';
 import { getRole, ROLE, ACCESSORY_ROLES, isNutritionalBeverage } from './foodRoles.js';
 
@@ -293,6 +294,53 @@ function generateReason(item, target, currentTotals) {
   return 'Balanced nutrition';
 }
 
+// What a plate's card warns about: a plate well off its targets, no vegetable, and the label caveats that must show
+// whenever a restriction is on. Shared by both planners, so a whole plate carries the same safety notes as a slot plate.
+export function mealWarnings(selected, totals, mealTarget, restrictions) {
+  const warnings = [];
+  const caloriePercent = (totals.calories / mealTarget.calories) * 100;
+  const proteinPercent = (totals.protein / mealTarget.protein) * 100;
+
+  if (selected.length === 0) {
+    warnings.push('No items available for this meal at this location');
+  } else {
+    if (caloriePercent < 70) {
+      warnings.push(`Meal is under calorie target (${Math.round(caloriePercent)}%)`);
+    } else if (caloriePercent > 130) {
+      warnings.push(`Meal exceeds calorie target (${Math.round(caloriePercent)}%)`);
+    }
+    if (proteinPercent < 60) {
+      warnings.push('Consider adding protein-rich foods');
+    }
+
+    // Structure is prioritised over hitting macros exactly, so when the hall
+    // genuinely has no vegetable to offer, say so rather than quietly
+    // shipping a plate without one.
+    const rolesOnPlate = new Set(selected.map(getRole));
+    if (!rolesOnPlate.has(ROLE.VEGETABLE) && !rolesOnPlate.has(ROLE.SOUP)) {
+      warnings.push('No vegetable side available at this location right now');
+    }
+
+    // Halal is not labeled by Brandeis — warn when active
+    if (restrictions.halal) {
+      warnings.push('Brandeis Dining doesn\'t label halal items — always verify with dining staff');
+    }
+
+    // Dietary tags fail safe: an item without a "vegan" tag is excluded for a
+    // vegan. Allergens fail open: an item is excluded only when the allergen is
+    // positively declared, and most items declare none. That asymmetry is
+    // unavoidable — no dining hall certifies what a dish does *not* contain —
+    // but a student trusting the filter deserves to know it.
+    const hasAllergenRestriction = STRUCTURED_ALLERGENS.some(([key]) => restrictions[key])
+      || (restrictions.allergies?.length ?? 0) > 0;
+    if (hasAllergenRestriction) {
+      warnings.push('Allergen filtering relies on Brandeis\'s labels, which are incomplete — always confirm with dining staff');
+    }
+  }
+
+  return warnings;
+}
+
 // Optimize a single meal.
 //
 // `options.fuel` is Athlete mode. A heavy training day can ask for far more carbohydrate than the slots above ever reach, so
@@ -556,46 +604,7 @@ export function optimizeMeal(availableItems, mealTarget, restrictions, recentIte
   }
   if (fuel && selected.length > 0) fillFuel();
 
-  // Check if we hit targets reasonably
-  const caloriePercent = (currentTotals.calories / mealTarget.calories) * 100;
-  const proteinPercent = (currentTotals.protein / mealTarget.protein) * 100;
-
-  if (selected.length === 0) {
-    warnings.push('No items available for this meal at this location');
-  } else {
-    if (caloriePercent < 70) {
-      warnings.push(`Meal is under calorie target (${Math.round(caloriePercent)}%)`);
-    } else if (caloriePercent > 130) {
-      warnings.push(`Meal exceeds calorie target (${Math.round(caloriePercent)}%)`);
-    }
-    if (proteinPercent < 60) {
-      warnings.push('Consider adding protein-rich foods');
-    }
-
-    // Structure is prioritised over hitting macros exactly, so when the hall
-    // genuinely has no vegetable to offer, say so rather than quietly
-    // shipping a plate without one.
-    const rolesOnPlate = new Set(selected.map(getRole));
-    if (!rolesOnPlate.has(ROLE.VEGETABLE) && !rolesOnPlate.has(ROLE.SOUP)) {
-      warnings.push('No vegetable side available at this location right now');
-    }
-
-    // Halal is not labeled by Brandeis — warn when active
-    if (restrictions.halal) {
-      warnings.push('Brandeis Dining doesn\'t label halal items — always verify with dining staff');
-    }
-
-    // Dietary tags fail safe: an item without a "vegan" tag is excluded for a
-    // vegan. Allergens fail open: an item is excluded only when the allergen is
-    // positively declared, and most items declare none. That asymmetry is
-    // unavoidable — no dining hall certifies what a dish does *not* contain —
-    // but a student trusting the filter deserves to know it.
-    const hasAllergenRestriction = STRUCTURED_ALLERGENS.some(([key]) => restrictions[key])
-      || (restrictions.allergies?.length ?? 0) > 0;
-    if (hasAllergenRestriction) {
-      warnings.push('Allergen filtering relies on Brandeis\'s labels, which are incomplete — always confirm with dining staff');
-    }
-  }
+  warnings.push(...mealWarnings(selected, currentTotals, mealTarget, restrictions));
 
   return {
     items: selected,
@@ -731,7 +740,7 @@ export function optimizeDay(menu, nutritionTargets, restrictions, recentItemIds,
       const locMeals = menu.locations[locId]?.meals;
       if (!locMeals?.[meal] || !(mealDistribution[meal] > 0)) continue;
 
-      const locResult = optimizeMeal(
+      const locResult = planMeal(
         locMeals[meal],
         mealTargets[meal],
         restrictions,
