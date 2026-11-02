@@ -16,7 +16,7 @@ const dir = process.env.MIGRATIONS_DIR
   ? process.env.MIGRATIONS_DIR
   : new URL('../supabase/migrations/', import.meta.url).pathname;
 const migrations = ['054_research_foundation.sql', '055_research_collection.sql', '056_research_reminders_and_survey.sql',
-  '057_research_dashboard.sql', '058_research_setup.sql', '059_research_randomisation.sql', '060_research_wide_survey.sql', '061_research_roster_views.sql', '062_research_dinner_reminders.sql', '063_research_open_enrolment.sql', '064_research_one_group_start_code_pages.sql']
+  '057_research_dashboard.sql', '058_research_setup.sql', '059_research_randomisation.sql', '060_research_wide_survey.sql', '061_research_roster_views.sql', '062_research_dinner_reminders.sql', '063_research_open_enrolment.sql', '064_research_one_group_start_code_pages.sql', '065_research_participant_numbers.sql']
   .map((f) => readFileSync(`${dir}/${f}`, 'utf8'));
 const db = new PGlite();
 
@@ -2155,6 +2155,24 @@ await test('the final-day push goes out once, on the last day only', async () =>
   assert.equal(last.length, 1);
   assert.equal(last[0].kind, 'final');
   assert.equal((await claim('2026-10-18T16:05:00Z')).filter((r) => r.user_id === u).length, 0, 'once');
+});
+
+await test('a participant number is never reused, even after a row is removed', async () => {
+  const st = await startStudy({ code: 'NUMBERS-001' });
+  const a = await rawEnrollIn(st, 'NUMBERS-001');
+  const b = await rawEnrollIn(st, 'NUMBERS-001');
+  const c = await rawEnrollIn(st, 'NUMBERS-001');
+  assert.deepEqual([(await part(a)).participant_code, (await part(b)).participant_code, (await part(c)).participant_code], ['P-001', 'P-002', 'P-003']);
+  // A test account is reset: the middle row goes.
+  const pid = (await part(b)).id;
+  await owner('delete from research.profile_snapshots where participant_id = $1', [pid]);
+  await owner('delete from research.participants where id = $1', [pid]);
+  const d = await user();
+  const r = await rawEnroll(d, 'NUMBERS-001');
+  assert.equal(r.status, 'ok', 'joining still works');
+  assert.equal((await part(d)).participant_code, 'P-004', 'the next number after the highest, not the count');
+  const codes = (await owner('select participant_code from research.participants where study_id = $1 order by 1', [st])).map((x) => x.participant_code);
+  assert.deepEqual(codes, ['P-001', 'P-003', 'P-004']);
 });
 
 console.log(`\nall ${n} research SQL tests passed`);
