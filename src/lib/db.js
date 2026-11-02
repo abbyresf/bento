@@ -1017,6 +1017,7 @@ const ACCOUNT_LOCAL_KEYS = [
   'bento_pending_confirms_v1',
   'bento_duo_friends_v1',
   'bento_duo_join_code',
+  'bento_study_start_code',
   'bento_duo_here',
   'bento_duo_costume',
   'bento_skip_breakfast',

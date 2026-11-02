@@ -2,29 +2,40 @@ import { useState } from 'react';
 import { submitSurvey } from '../../lib/research';
 import {
   SURVEY_TODAY, SURVEY_LATE, SURVEY_INTRO, SURVEY_LATE_INTRO, SURVEY_THANKS, SURVEY_MAX_TEXT,
-  answerFor, buildAnswers, surveyReady, visibleQuestions, ratingHint,
+  answerFor, buildAnswers, surveyReady, surveyPages, pageReady, ratingHint, dayText,
 } from '../../data/research';
 import '../Friends/Friends.css';
 import './Research.css';
 
-/* The end-of-day questions, iOS app only. A sheet over whatever the student is
- * doing. The questions come from the research team, so this knows nothing about
- * what they ask, only how to show each kind: yes or no, a rating from 1 to 5, a
- * choice, or a few words.
+/* The end-of-day questions, in the iOS app and the web app on Android. A sheet over
+ * whatever the student is doing. The questions come from the research team, so this
+ * knows nothing about what they ask, only how to show each kind: yes or no, a rating
+ * from 1 to 5, a choice, or a few words.
+ *
+ * It says which day of the study it is ("Day 3 of 7") at the top of every page, so a
+ * student can see how far along they are. The questions come in pages, a lunch page
+ * and then a dinner page, each with its name in bold and a line between questions.
+ * Next needs every question on the page answered. Send, on the last page, sends all.
  *
  * "Not now" closes it and the app asks again the next time it comes to the front.
- * A free-text question may be left empty. Every other kind needs an answer, and
- * Send stays off until they all have one. */
+ * A free-text question may be left empty. Every other kind needs an answer. */
 export default function StudySurvey({ survey, onClose, onSent }) {
   const [answers, setAnswers] = useState({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
+  const [step, setStep] = useState(0);
 
   const set = (id, value) => { setAnswers((a) => ({ ...a, [id]: value })); setError(''); };
-  // Follow-ups appear only after the answer that calls for them.
-  const shown = visibleQuestions(survey.questions, answers);
+  // Follow-ups appear only after the answer that calls for them, and a page with
+  // nothing left to ask is skipped.
+  const pages = surveyPages(survey.questions, answers);
+  const at = Math.min(step, Math.max(0, pages.length - 1));
+  const page = pages[at];
+  const last = at >= pages.length - 1;
   const ready = surveyReady(survey.questions, answers);
+  const pageOk = page ? pageReady(page, answers) : false;
+  const day = dayText(survey.dayNumber, survey.totalDays);
 
   const send = async () => {
     if (busy || !ready) return;
@@ -46,7 +57,10 @@ export default function StudySurvey({ survey, onClose, onSent }) {
       <div className="fr-sheet" role="dialog" aria-modal="true" aria-label={survey.late ? SURVEY_LATE : SURVEY_TODAY}
            onClick={(e) => e.stopPropagation()}>
         <div className="fr-head">
-          <h3>{survey.late ? SURVEY_LATE : SURVEY_TODAY}</h3>
+          <div>
+            {day && <p className="rs-day" aria-label={day}>{day}</p>}
+            <h3>{survey.late ? SURVEY_LATE : SURVEY_TODAY}</h3>
+          </div>
           <button type="button" className="fr-close" onClick={onClose} aria-label="Close">×</button>
         </div>
 
@@ -61,7 +75,9 @@ export default function StudySurvey({ survey, onClose, onSent }) {
               {survey.late ? SURVEY_LATE_INTRO : (survey.intro ?? SURVEY_INTRO)}
             </p>
 
-            {shown.map((q) => (
+            {page?.title && <h4 className="rs-page-title">{page.title}</h4>}
+
+            {(page?.questions ?? []).map((q) => (
               <fieldset className="rs-q" key={q.id}>
                 <legend className="rs-q-text">{q.text}</legend>
 
@@ -105,7 +121,12 @@ export default function StudySurvey({ survey, onClose, onSent }) {
 
             {error && <p className="fr-error" role="alert">{error}</p>}
             <div className="fr-actions">
-              <button type="button" className="fr-btn" onClick={send} disabled={busy || !ready}>{busy ? 'Sending…' : 'Send answers'}</button>
+              {last ? (
+                <button type="button" className="fr-btn" onClick={send} disabled={busy || !ready}>{busy ? 'Sending…' : 'Send answers'}</button>
+              ) : (
+                <button type="button" className="fr-btn" onClick={() => setStep(at + 1)} disabled={!pageOk}>Next</button>
+              )}
+              {at > 0 && <button type="button" className="fr-btn-quiet" onClick={() => setStep(at - 1)} disabled={busy}>Back</button>}
               <button type="button" className="fr-btn-quiet" onClick={onClose} disabled={busy}>Not now</button>
             </div>
           </>

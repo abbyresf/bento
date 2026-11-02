@@ -37,7 +37,7 @@ export function timeText(t) {
 
 export function groupLabel(grp) { return grp ? `Group ${grp}` : 'Everyone'; }
 export function groupsLabel(grps) { return !grps || grps.length === 0 ? 'Everyone' : grps.map((g) => `Group ${g}`).join(' and '); }
-export const kindLabel = (k) => (k === 'survey' ? 'End-of-day questions' : 'Reminder');
+export const kindLabel = (k) => (k === 'survey' ? 'End-of-day questions' : k === 'final' ? 'Last-day reminder' : 'Reminder');
 
 /* Eastern time in and out of a datetime-local box. The study runs on Eastern time. */
 function offsetMinutes(utcMs, tz) {
@@ -106,7 +106,7 @@ export function enrolmentState(study, now = new Date()) {
   const t = now.getTime();
   if (study.starts_at && Date.parse(study.starts_at) > t) return { open: false, text: 'Open, but not until its start date.' };
   if (study.ends_at && Date.parse(study.ends_at) <= t) return { open: false, text: 'Open, but its end date has passed.' };
-  return { open: true, text: 'Open. Students with the code and on the list can join.' };
+  return { open: true, text: 'Open. Anyone with the code can join.' };
 }
 
 // ── Reminder and survey times ────────────────────────────────────────────────
@@ -142,7 +142,7 @@ export function scheduleChanges(s, form) {
 export function lateText(minutes, kind) {
   const m = Number(minutes);
   const span = m >= 120 && m % 60 === 0 ? `${m / 60} hours` : m === 60 ? '1 hour' : `${m} minutes`;
-  return kind === 'survey' ? `A push can still go out up to ${span} after.` : `Dropped, not sent, if it would arrive more than ${span} late.`;
+  return kind === 'survey' || kind === 'final' ? `A push can still go out up to ${span} after.` : `Dropped, not sent, if it would arrive more than ${span} late.`;
 }
 
 // ── Questions ────────────────────────────────────────────────────────────────
@@ -345,3 +345,23 @@ export const columnArgs = ({ key, codes }, q) => ({
   p_key: String(key ?? '').trim() || null,
   p_codes: String(codes ?? '').trim() ? String(codes).split(',').map((x) => Number(x.trim())) : null,
 });
+
+/* The second code, at the snack pickup station, and the final survey link. */
+export const ACTIVATION_NOTE = 'Students type this code, or scan the QR code that holds it, at the snack pickup station. It starts their week, and the reminders and daily questions begin then. It is stored scrambled, so nobody can read it back, including here.';
+
+/* The address the pickup station's QR code should hold. Anyone can make a QR code
+ * from an address with a free generator. The code is in the link, so only print it
+ * where students will see it. */
+export function startLinkFor(code) {
+  const c = String(code ?? '').replace(/[^A-Za-z0-9]/g, '');
+  return c.length >= 6 ? `https://www.bentodining.com/start/${c}` : '';
+}
+
+export function finalLinkProblem(raw) {
+  const t = String(raw ?? '').trim();
+  if (t === '') return '';
+  if (t.length > 500) return 'The link is too long.';
+  try { return new URL(t).protocol === 'https:' ? '' : 'The link has to start with https://.'; } catch { return 'That does not look like a web address.'; }
+}
+
+export const PAGE_CHOICES = [['', 'No page'], ['lunch', 'Lunch page'], ['dinner', 'Dinner page']];

@@ -6,13 +6,37 @@
 // Design: RESEARCH_DASHBOARD_SPEC.md, section 4. The database side is migrations
 // 054 to 056.
 
+import webpush from 'web-push';
 import { sendApns } from './_apns.js';
 
 const MISSING = (err) => err?.code === 'PGRST202' || err?.code === '42883' || /could not find the function/i.test(err?.message ?? '');
 
 // How long Apple keeps trying a study push. A snack reminder 30 minutes before
 // lunch is noise 15 minutes later. The survey is good for the evening.
-export const EXPIRES_IN = { reminder: 15 * 60, survey: 3 * 60 * 60 };
+export const EXPIRES_IN = { reminder: 15 * 60, survey: 3 * 60 * 60, final: 6 * 60 * 60 };
+
+/** The VAPID settings for web push (the Android web app), or null. */
+export function webConfigFromEnv(env = process.env) {
+  const publicKey = env.VITE_VAPID_PUBLIC_KEY;
+  const privateKey = env.VAPID_PRIVATE_KEY;
+  if (!publicKey || !privateKey) return null;
+  return { publicKey, privateKey, subject: env.VAPID_SUBJECT || 'mailto:hello@bentodining.com' };
+}
+
+/** One web push. Returns { ok } or { ok: false, prune, reason }. Replaceable in tests. */
+export async function sendWebPush({ sub, payload, ttl, config }) {
+  try {
+    await webpush.sendNotification(
+      { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+      JSON.stringify(payload),
+      { TTL: ttl, urgency: 'high', vapidDetails: { subject: config.subject, publicKey: config.publicKey, privateKey: config.privateKey } },
+    );
+    return { ok: true };
+  } catch (err) {
+    const gone = err?.statusCode === 404 || err?.statusCode === 410;
+    return { ok: false, prune: gone, reason: gone ? 'subscription gone' : `status ${err?.statusCode ?? 'error'}` };
+  }
+}
 
 /* Students who are in a study right now must get ONLY the study's own pushes, so
  * the three existing senders (meal reminders, the streak nudge and buddy alerts)
@@ -55,7 +79,7 @@ export async function withoutActiveParticipants(admin, ids) {
  * null. `send` is sendApns, replaceable so this can be tested without Apple.
  *
  * Returns counts only. Never a token, a user id or a prompt's words. */
-export async function runResearchSend({ admin, apns, send = sendApns, now = new Date() }) {
+export async function runResearchSend({ admin, apns, web = null, send = sendApns, sendWeb = sendWebPush, now = new Date() }) {
   const hk = await admin.rpc('research_housekeeping');
   if (hk.error && MISSING(hk.error)) return { ok: true, claimed: 0, note: 'research not set up on this database' };
 
@@ -70,12 +94,16 @@ export async function runResearchSend({ admin, apns, send = sendApns, now = new 
 
   const userIds = [...new Set(prompts.map((p) => p.user_id))];
   const { data: subs } = await admin
-    .from('push_subscriptions').select('id, user_id, apns_token').in('user_id', userIds).not('apns_token', 'is', null);
-  const tokensOf = new Map();
+    .from('push_subscriptions').select('id, user_id, apns_token, endpoint, p256dh, auth').in('user_id', userIds);
+  const tokensOf = new Map();   // user -> native (APNs) rows
+  const webOf = new Map();      // user -> browser rows (the Android web app)
   for (const s of subs ?? []) {
-    if (!tokensOf.has(s.user_id)) tokensOf.set(s.user_id, []);
-    tokensOf.get(s.user_id).push(s);
+    const into = s.apns_token ? tokensOf : s.endpoint ? webOf : null;
+    if (!into) continue;
+    if (!into.has(s.user_id)) into.set(s.user_id, []);
+    into.get(s.user_id).push(s);
   }
+  const reachable = (uid) => tokensOf.has(uid) || webOf.has(uid);
 
   // Everyone with the same words and kind goes in one call to Apple.
   const groups = new Map();
@@ -91,32 +119,52 @@ export async function runResearchSend({ admin, apns, send = sendApns, now = new 
 
   for (const members of groups.values()) {
     const { kind, title, body } = members[0];
-    const withDevice = members.filter((p) => tokensOf.has(p.user_id));
-    for (const p of members) if (!tokensOf.has(p.user_id)) outcome.set(p.prompt_id, { status: 'no_device' });
+    const withDevice = members.filter((p) => reachable(p.user_id));
+    for (const p of members) if (!reachable(p.user_id)) outcome.set(p.prompt_id, { status: 'no_device' });
     if (withDevice.length === 0) continue;
 
-    if (!apns || fatal) {
-      for (const p of withDevice) outcome.set(p.prompt_id, { status: 'failed', error: fatal ?? 'APNs not configured' });
-      continue;
+    // Each prompt collects what happened on each of its devices and is judged once.
+    const results = new Map(withDevice.map((p) => [p.prompt_id, []]));   // prompt_id -> [{ ok, reason }]
+
+    // Native devices, in one call to Apple.
+    const native = withDevice.filter((p) => tokensOf.has(p.user_id));
+    if (native.length > 0) {
+      if (!apns || fatal) {
+        for (const p of native) results.get(p.prompt_id).push({ ok: false, reason: fatal ?? 'APNs not configured' });
+      } else {
+        const tokens = native.flatMap((p) => tokensOf.get(p.user_id).map((s) => s.apns_token));
+        const out = await send({
+          tokens, title, body: body || undefined, data: { research: { kind } },
+          expiresIn: EXPIRES_IN[kind] ?? EXPIRES_IN.reminder, collapseId: `bento-study-${kind}`, config: apns,
+        });
+        if (out.fatal) fatal = `APNs rejected the key: ${out.fatal}`;
+        const byToken = new Map((out.results ?? []).map((r) => [r.token, r]));
+        for (const p of native) {
+          for (const s of tokensOf.get(p.user_id)) {
+            const r = byToken.get(s.apns_token);
+            if (r?.prune) dead.push(s.id);
+            results.get(p.prompt_id).push(r?.ok ? { ok: true } : { ok: false, reason: fatal ?? r?.reason ?? (r ? `status ${r.status}` : 'no result') });
+          }
+        }
+      }
     }
 
-    const tokens = withDevice.flatMap((p) => tokensOf.get(p.user_id).map((s) => s.apns_token));
-    const out = await send({
-      tokens, title, body: body || undefined, data: { research: { kind } },
-      expiresIn: EXPIRES_IN[kind] ?? EXPIRES_IN.reminder, collapseId: `bento-study-${kind}`, config: apns,
-    });
-    if (out.fatal) {
-      fatal = `APNs rejected the key: ${out.fatal}`;
+    // Browser devices (the Android web app), one push each.
+    for (const p of withDevice.filter((x) => webOf.has(x.user_id))) {
+      for (const s of webOf.get(p.user_id)) {
+        if (!web) { results.get(p.prompt_id).push({ ok: false, reason: 'web push not configured' }); continue; }
+        const r = await sendWeb({
+          sub: s, ttl: EXPIRES_IN[kind] ?? EXPIRES_IN.reminder, config: web,
+          payload: { title, body: body || '', tag: `bento-study-${kind}`, url: '/app', research: { kind } },
+        });
+        if (r.prune) dead.push(s.id);
+        results.get(p.prompt_id).push(r.ok ? { ok: true } : { ok: false, reason: r.reason ?? 'failed' });
+      }
     }
-    const byToken = new Map((out.results ?? []).map((r) => [r.token, r]));
+
     for (const p of withDevice) {
-      const mine = tokensOf.get(p.user_id).map((s) => ({ s, r: byToken.get(s.apns_token) }));
-      for (const { s, r } of mine) if (r?.prune) dead.push(s.id);
-      if (mine.some(({ r }) => r?.ok)) outcome.set(p.prompt_id, { status: 'sent' });
-      else outcome.set(p.prompt_id, {
-        status: 'failed',
-        error: fatal ?? mine.map(({ r }) => r?.reason ?? (r ? `status ${r.status}` : 'no result')).find(Boolean) ?? 'no result',
-      });
+      const rs = results.get(p.prompt_id);
+      outcome.set(p.prompt_id, rs.some((r) => r.ok) ? { status: 'sent' } : { status: 'failed', error: rs.map((r) => r.reason).find(Boolean) ?? 'no result' });
     }
   }
 

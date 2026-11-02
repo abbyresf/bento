@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { loadSetup, saveStudy, saveStudyCode, saveSchedule, addSchedule, addQuestion, setQuestion, tagQuestion } from './setupApi.js';
+import { loadSetup, saveStudy, saveStudyCode, saveSchedule, addSchedule, addQuestion, setQuestion, tagQuestion, saveActivationCode, saveFinalSurveyUrl, savePage } from './setupApi.js';
 import {
   WEEKDAYS, FORMATS, FORMAT_LABEL, daysLabel, timeText, groupLabel, groupsLabel, kindLabel, lateText, enrolmentState,
   studyForm, validateStudyForm, studyChanges, scheduleForm, validateScheduleForm, scheduleChanges,
   emptyQuestionForm, formFromQuestion, validateQuestionForm, buildQuestionArgs, answerChoices, describeShowIf, changeWarning, retireWarning,
   followUpsOf, changeBreaks, wantsCodes, codesText, defaultCodesText, validateColumn, columnArgs,
+  ACTIVATION_NOTE, startLinkFor, finalLinkProblem, PAGE_CHOICES,
 } from './setup.js';
 
 /* The Setup page: the study's settings, its reminder and survey times, and its
@@ -86,7 +87,7 @@ function StudyPanel({ data, reload }) {
         <span>{status.text}</span>
         {study.is_open
           ? <Confirm label="Close enrolment" danger question="Students who try to join will be told the code did not work. Close it?" onConfirm={() => toggleOpen(false)} disabled={state.busy} />
-          : <Confirm label="Open enrolment" question="Students with the code, who are on the list, will be able to join. Open it?" onConfirm={() => toggleOpen(true)} disabled={state.busy} />}
+          : <Confirm label="Open enrolment" question="Anyone with the code will be able to join. Open it?" onConfirm={() => toggleOpen(true)} disabled={state.busy} />}
       </div>
 
       <div className="rs-fields">
@@ -98,7 +99,7 @@ function StudyPanel({ data, reload }) {
         <label>
           <span>Days in the study</span>
           <input inputMode="numeric" value={form.window_days} onChange={(e) => set({ window_days: e.target.value })} />
-          <small>Counted from each person's own enrolment. A change applies to people who join after it. Everyone already in keeps the end date they were given.</small>
+          <small>Counted in calendar days from the day each person starts, with the start code. The week ends at midnight after the last day. A change applies to people who start after it. Everyone already started keeps the end date they were given.</small>
         </label>
         <label>
           <span>Enrolment opens (Eastern time)</span>
@@ -145,7 +146,76 @@ function StudyPanel({ data, reload }) {
         </div>
       )}
       <Feedback state={codeState} />
+
+      <StartCodeBlock study={study} reload={reload} />
+      <FinalLinkBlock study={study} reload={reload} />
     </Panel>
+  );
+}
+
+/* The code at the snack pickup station. Setting it is how the week is started, so
+ * until one is set nobody can start. */
+function StartCodeBlock({ study, reload }) {
+  const [code, setCode] = useState('');
+  const [open, setOpen] = useState(false);
+  const [state, run, reset] = useSave(reload);
+  const link = startLinkFor(code);
+  return (
+    <>
+      <div className="rs-sep" />
+      <h3>Start code</h3>
+      <p className="rs-sub">{ACTIVATION_NOTE}</p>
+      {!open ? (
+        <button type="button" className="rs-btn" onClick={() => { setOpen(true); reset(); }}>Set or change the start code</button>
+      ) : (
+        <div className="rs-codebox">
+          <label>
+            <span>New start code</span>
+            <input value={code} autoComplete="off" spellCheck={false} onChange={(e) => { setCode(e.target.value); reset(); }} placeholder="At least 6 letters or numbers" />
+            <small>Spaces and dashes are ignored, and capitals do not matter. It is not shown again after you save.</small>
+          </label>
+          {link && (
+            <label>
+              <span>Address for the QR code</span>
+              <input readOnly value={link} onFocus={(e) => e.target.select()} />
+              <small>Make a QR code from this address with any QR generator and print it at the station. Phone cameras open it in Bento. Copy it now, because it holds the code.</small>
+            </label>
+          )}
+          <div className="rs-actions">
+            <Confirm label="Save the start code" danger question="The old start code stops working now. Students who have not started yet will need the new one. Change it?"
+                     disabled={state.busy || code.replace(/[^A-Za-z0-9]/g, '').length < 6}
+                     onConfirm={async () => { if (await run(() => saveActivationCode(study.id, code), 'The start code is saved.')) { setCode(''); setOpen(false); } }} />
+            <button type="button" className="rs-btn rs-quiet" onClick={() => { setCode(''); setOpen(false); reset(); }}>Cancel</button>
+          </div>
+        </div>
+      )}
+      <Feedback state={state} />
+    </>
+  );
+}
+
+/* The survey outside the app, linked from the last day. */
+function FinalLinkBlock({ study, reload }) {
+  const [url, setUrl] = useState(study.final_survey_url ?? '');
+  const [state, run, reset] = useSave(reload);
+  const problem = finalLinkProblem(url);
+  const dirty = url.trim() !== (study.final_survey_url ?? '');
+  return (
+    <>
+      <div className="rs-sep" />
+      <h3>Final survey link</h3>
+      <p className="rs-sub">A button with this link appears in the app from each student's last day, and a reminder goes out that day. It opens in the browser. Leave it empty until you have the link.</p>
+      <label className="rs-fullfield">
+        <span>Link</span>
+        <input value={url} autoComplete="off" spellCheck={false} onChange={(e) => { setUrl(e.target.value); reset(); }} placeholder="https://..." />
+        <small>{problem || (study.final_survey_url ? 'A link is set.' : 'No link is set yet.')}</small>
+      </label>
+      <div className="rs-actions">
+        <button type="button" className="rs-btn rs-primary" disabled={!dirty || Boolean(problem) || state.busy}
+                onClick={() => run(() => saveFinalSurveyUrl(study.id, url.trim()), 'Saved.')}>{state.busy ? 'Saving…' : 'Save the link'}</button>
+      </div>
+      <Feedback state={state} />
+    </>
   );
 }
 
@@ -168,7 +238,7 @@ function ScheduleFields({ form, set, kind }) {
       <div className="rs-fields">
         <label><span>Time (Eastern)</span><input type="time" value={form.send_time} onChange={(e) => set({ send_time: e.target.value })} /></label>
         <label>
-          <span>{kind === 'survey' ? 'A push can go out up to' : 'Drop it if it would be more than'}</span>
+          <span>{kind === 'reminder' ? 'Drop it if it would be more than' : 'A push can go out up to'}</span>
           <input inputMode="numeric" value={form.late_minutes} onChange={(e) => set({ late_minutes: e.target.value })} />
           <small>minutes after the time. {lateText(Number(form.late_minutes) || 0, kind)}</small>
         </label>
@@ -231,8 +301,8 @@ function AddSchedule({ study, reload }) {
     <div className="rs-edit">
       <div className="rs-fields">
         <label><span>What</span>
-          <select value={form.kind} onChange={(e) => set({ kind: e.target.value, late_minutes: e.target.value === 'survey' ? '180' : '30' })}>
-            <option value="reminder">Reminder</option><option value="survey">End-of-day questions</option>
+          <select value={form.kind} onChange={(e) => set({ kind: e.target.value, late_minutes: e.target.value === 'reminder' ? '30' : '180' })}>
+            <option value="reminder">Reminder</option><option value="survey">End-of-day questions</option><option value="final">Last-day reminder</option>
           </select></label>
         <label><span>For</span>
           <select value={form.grp} onChange={(e) => set({ grp: e.target.value })}>
@@ -333,13 +403,14 @@ function QuestionForm({ initial, questions, groups, onSubmit, onCancel, submitLa
  * at any time, and past rows are re-labelled when the sheet is read. */
 function ColumnEditor({ q, run, busy }) {
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ key: q.column_key ?? '', codes: codesText(q) });
+  const [form, setForm] = useState({ key: q.column_key ?? '', codes: codesText(q), page: q.page ?? '' });
   const problems = validateColumn(form, q);
   if (!open) {
     return (
       <div className="rs-sub">
         Column in the research-format sheet: <code>{q.column_key || 'q' + q.position + (q.grps?.length === 1 ? '_' + q.grps[0].toLowerCase() : '')}</code>
-        {wantsCodes(q) && <> · codes {codesText(q) || defaultCodesText(q)}</>}{' '}
+        {wantsCodes(q) && <> · codes {codesText(q) || defaultCodesText(q)}</>}
+        {' · '}{q.page ? `${q.page === 'lunch' ? 'Lunch' : 'Dinner'} page` : 'No page'}{' '}
         <button type="button" className="rs-link" onClick={() => setOpen(true)}>Edit</button>
       </div>
     );
@@ -350,9 +421,21 @@ function ColumnEditor({ q, run, busy }) {
       {wantsCodes(q) && (
         <label>Codes, in order of the choices <input value={form.codes} placeholder={defaultCodesText(q)} onChange={(e) => setForm({ ...form, codes: e.target.value })} /></label>
       )}
+      <label>Survey page
+        <select value={form.page} onChange={(e) => setForm({ ...form, page: e.target.value })}>
+          {PAGE_CHOICES.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
+        </select>
+      </label>
       {problems.length > 0 && <ul className="rs-problems">{problems.map((p) => <li key={p}>{p}</li>)}</ul>}
       <button type="button" className="rs-btn rs-primary" disabled={busy || problems.length > 0}
-              onClick={async () => { if (await run(() => tagQuestion(columnArgs(form, q)), 'Column saved.')) setOpen(false); }}>Save column</button>{' '}
+              onClick={async () => {
+                const saved = await run(async () => {
+                  const a = await tagQuestion(columnArgs(form, q));
+                  if (!a.ok) return a;
+                  return (q.page ?? '') !== form.page ? savePage(q.id, form.page) : a;
+                }, 'Saved.');
+                if (saved) setOpen(false);
+              }}>Save</button>{' '}
       <button type="button" className="rs-btn" onClick={() => setOpen(false)}>Cancel</button>
     </div>
   );
@@ -377,7 +460,7 @@ function QuestionRow({ q, data, byId, reload, onChange }) {
             {!q.is_active && <span className="rs-chip-static rs-chip-warn">Retired</span>}
           </div>
           {q.show_if && <div className="rs-sub">{describeShowIf(q, byId)}</div>}
-          <ColumnEditor key={`${q.column_key}|${codesText(q)}`} q={q} run={run} busy={state.busy} />
+          <ColumnEditor key={`${q.column_key}|${codesText(q)}|${q.page}`} q={q} run={run} busy={state.busy} />
         </div>
         <div className="rs-actions">
           {q.is_active && <button type="button" className="rs-btn" onClick={() => onChange(q)}>Change</button>}

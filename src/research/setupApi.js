@@ -10,7 +10,7 @@ import { setupProblem } from './setup.js';
 export async function loadSetup(client = defaultClient) {
   const r = client.schema('research');
   const { data: studies, error: e1 } = await r.from('studies')
-    .select('id,name,cap,is_open,window_days,starts_at,ends_at,survey_intro,groups,timezone')
+    .select('id,name,cap,is_open,window_days,starts_at,ends_at,survey_intro,groups,timezone,final_survey_url')
     .order('created_at', { ascending: false }).limit(1);
   if (e1) throw new Error(e1.message || 'Could not read the study.');
   const study = studies?.[0];
@@ -50,3 +50,6 @@ export const addSchedule = (studyId, s, client) => call('research_add_schedule',
 export const addQuestion = (args, client) => call('research_add_question', args, client);
 export const setQuestion = (id, { active = null, position = null } = {}, client) => call('research_set_question', { p_id: id, p_active: active, p_position: position }, client);
 export const tagQuestion = (args, client) => call('research_tag_question', args, client);
+export const saveActivationCode = (studyId, code, client) => call('research_set_activation_code', { p_study: studyId, p_code: code }, client);
+export const saveFinalSurveyUrl = (studyId, url, client) => call('research_set_final_survey_url', { p_study: studyId, p_url: url }, client);
+export const savePage = (id, page, client) => call('research_set_question_page', { p_id: id, p_page: page || null }, client);

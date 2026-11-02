@@ -1,22 +1,30 @@
 /* Research study: the calls behind joining, checking and leaving.
  *
  * The database side is migration 054 and the design is RESEARCH_DASHBOARD_SPEC.md.
- * The study is part of the iOS app only. Every function here answers
- * "unavailable" on the web and on Android without touching the network, and the
- * database refuses a call that does not say it came from iOS. Pure helpers
+ * The study runs in the iOS app and in the web app on Android. Every function here
+ * answers "unavailable" anywhere else without touching the network, and the
+ * database refuses a call that does not say it came from iOS or Android. Pure helpers
  * (wording, code cleanup) live in src/data/research.js so they can be tested.
  *
  * Nothing is cached on the device. A stale "you are in the study" on a shared
  * phone would be worse than a short wait, so the status is always asked for. */
 import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
 import { supabase } from './supabase';
 import {
-  STUDY_PLATFORM, researchEnabledFor, normalizeStudyCode, studyCodeProblem,
-  studyText, summarizeStudy, summarizeSurvey, isMissingFeature,
+  studyPlatformFor, normalizeStudyCode, studyCodeProblem,
+  studyText, summarizeStudy, summarizeSurvey, isMissingFeature, safeExternalUrl,
 } from '../data/research';
 
+const ua = () => (typeof navigator === 'undefined' ? '' : navigator.userAgent);
+
+/* 'ios', 'android' or null. What the database is told about this device. */
+export function studyPlatform() {
+  return studyPlatformFor(Capacitor.getPlatform(), ua());
+}
+
 export function researchEnabled() {
-  return researchEnabledFor(Capacitor.getPlatform());
+  return studyPlatform() !== null;
 }
 
 const OFF = { ok: false, status: 'ios_only', message: studyText('ios_only') };
@@ -38,7 +46,7 @@ export async function checkStudyCode(code) {
   const problem = studyCodeProblem(code);
   if (problem) return { ok: false, status: 'invalid_code', message: problem, local: true };
   const { data, error } = await supabase.rpc('research_check_code', {
-    p_code: normalizeStudyCode(code), p_platform: STUDY_PLATFORM,
+    p_code: normalizeStudyCode(code), p_platform: studyPlatform(),
   });
   if (error) {
     if (isMissingFeature(error)) return { ok: false, status: 'unavailable', message: studyText('unavailable') };
@@ -52,12 +60,12 @@ export async function checkStudyCode(code) {
 }
 
 /* Step 2, after the student ticks the acknowledgement.
- * { ok: true, participantCode, endsAt } or { ok: false, status, message }.
+ * { ok: true } or { ok: false, status, message }. The week has not started yet.
  * The group is decided by the research team and never comes back to the app. */
 export async function enrollInStudy(code, acknowledged) {
   if (!researchEnabled()) return OFF;
   const { data, error } = await supabase.rpc('research_enroll', {
-    p_code: normalizeStudyCode(code), p_acknowledged: acknowledged === true, p_platform: STUDY_PLATFORM,
+    p_code: normalizeStudyCode(code), p_acknowledged: acknowledged === true, p_platform: studyPlatform(),
   });
   if (error) {
     if (isMissingFeature(error)) return { ok: false, status: 'unavailable', message: studyText('unavailable') };
@@ -67,11 +75,11 @@ export async function enrollInStudy(code, acknowledged) {
   if (!row || row.status !== 'ok') {
     return { ok: false, status: row?.status ?? 'error', message: studyText(row?.status) };
   }
-  return { ok: true, participantCode: row.participant_code, endsAt: row.window_ends_at };
+  return { ok: true };
 }
 
 /* { status: 'ok' | 'unavailable' | 'offline', study } where study is
- * { enrolled, state, participantCode, endsAt, daysLeft }. */
+ * { enrolled, state, activated, endsAt, daysLeft, dayNumber, totalDays }. */
 export async function getStudyStatus() {
   if (!researchEnabled()) return { status: 'unavailable', study: summarizeStudy(null) };
   const { data, error } = await supabase.rpc('research_my_status');
@@ -79,6 +87,47 @@ export async function getStudyStatus() {
     return { status: isMissingFeature(error) ? 'unavailable' : 'offline', study: summarizeStudy(null) };
   }
   return { status: 'ok', study: summarizeStudy(firstRow(data)) };
+}
+
+/* Starts the week, with the code from the snack pickup station.
+ * { ok: true, dayNumber, totalDays, endsAt } or { ok: false, status, message }.
+ * A wrong code counts as a guess (five an hour), so an empty field never does. */
+export async function activateStudy(code) {
+  if (!researchEnabled()) return OFF;
+  const problem = studyCodeProblem(code);
+  if (problem) return { ok: false, status: 'invalid_code', message: 'Enter the code from the snack pickup station.', local: true };
+  const { data, error } = await supabase.rpc('research_activate', { p_code: normalizeStudyCode(code), p_platform: studyPlatform() });
+  if (error) {
+    if (isMissingFeature(error)) return { ok: false, status: 'unavailable', message: studyText('unavailable') };
+    return { ok: false, status: 'error', message: studyText(error) };
+  }
+  const row = firstRow(data);
+  if (!row || row.status !== 'ok') return { ok: false, status: row?.status ?? 'error', message: studyText(row?.status) };
+  return { ok: true, dayNumber: row.day_number, totalDays: row.total_days, endsAt: row.window_ends_at };
+}
+
+/* The link to the final survey, from the last day. { available, url }. */
+export async function getFinalSurvey() {
+  if (!researchEnabled()) return { available: false, url: '' };
+  const { data, error } = await supabase.rpc('research_final_survey');
+  if (error) return { available: false, url: '' };
+  const row = firstRow(data);
+  const url = safeExternalUrl(row?.url);
+  return { available: row?.available === true && url !== '', url };
+}
+
+/* Opens an address outside the app: the system browser sheet in the apps, a new
+ * tab on the web. Only https. */
+export async function openOutsideApp(url) {
+  const safe = safeExternalUrl(url);
+  if (!safe) return false;
+  try {
+    if (Capacitor.isNativePlatform()) await Browser.open({ url: safe });
+    else window.open(safe, '_blank', 'noopener,noreferrer');
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /* Leaves the study. Collection stops, regular reminders return, rows are kept.
@@ -97,7 +146,7 @@ export async function leaveStudy() {
  * { state: 'none' | 'pending' | 'unavailable', forDate, late, questions, nextDueAt }. */
 export async function getPendingSurvey() {
   if (!researchEnabled()) return { status: 'unavailable', survey: summarizeSurvey(null) };
-  const { data, error } = await supabase.rpc('research_pending_survey', { p_platform: STUDY_PLATFORM });
+  const { data, error } = await supabase.rpc('research_pending_survey', { p_platform: studyPlatform() });
   if (error) {
     return { status: isMissingFeature(error) ? 'unavailable' : 'offline', survey: summarizeSurvey(null) };
   }
@@ -109,7 +158,7 @@ export async function getPendingSurvey() {
 export async function submitSurvey(forDate, answers) {
   if (!researchEnabled()) return OFF;
   const { data, error } = await supabase.rpc('research_submit_survey', {
-    p_for_date: forDate, p_answers: answers, p_platform: STUDY_PLATFORM,
+    p_for_date: forDate, p_answers: answers, p_platform: studyPlatform(),
   });
   if (error) {
     if (isMissingFeature(error)) return { ok: false, status: 'unavailable', message: studyText('unavailable') };
@@ -124,5 +173,5 @@ export async function submitSurvey(forDate, answers) {
  * keeps at most one every 20 minutes and ignores anyone not in a study. */
 export function logAppOpen() {
   if (!researchEnabled()) return;
-  supabase.rpc('research_log_event', { p_kind: 'app_open', p_platform: STUDY_PLATFORM }).then(() => {}, () => {});
+  supabase.rpc('research_log_event', { p_kind: 'app_open', p_platform: studyPlatform() }).then(() => {}, () => {});
 }

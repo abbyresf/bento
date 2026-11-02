@@ -31,6 +31,7 @@ import { syncNativePushToken } from './lib/push';
 import { loadOutfit, loadCostume, resetOutfit } from './lib/mascotOutfit';
 import { loadMascotColor, resetMascotColor } from './lib/mascotColor';
 import { initJoinLinks, peekJoinCode, forgetJoinCode } from './lib/joinLink';
+import { initStartLinks } from './lib/startLink';
 import { resetFriends } from './lib/friendsStore';
 import { resetHints } from './lib/duoHints';
 import { loadMealPrefs, resetMealPrefs } from './lib/mealPrefs';
@@ -223,7 +224,7 @@ function App() {
   }, [session, isNative]);
 
   // Invite links: /join/CODE on the web, and the https link in the app.
-  useEffect(() => { initJoinLinks(setJoinCode); }, []);
+  useEffect(() => { initJoinLinks(setJoinCode); initStartLinks(); }, []);
   useEffect(() => {
     if (location.pathname.startsWith('/join/')) navigate('/app', { replace: true });
   }, [location.pathname, navigate]);

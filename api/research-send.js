@@ -17,7 +17,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { apnsConfigFromEnv } from './_apns.js';
-import { runResearchSend } from './_research.js';
+import { runResearchSend, webConfigFromEnv } from './_research.js';
 
 function getSupabaseAdmin() {
   const url = process.env.VITE_SUPABASE_URL;
@@ -38,6 +38,6 @@ export default async function handler(req, res) {
   const admin = getSupabaseAdmin();
   if (!admin) return res.status(500).json({ error: 'Supabase not configured' });
 
-  const out = await runResearchSend({ admin, apns: apnsConfigFromEnv() });
+  const out = await runResearchSend({ admin, apns: apnsConfigFromEnv(), web: webConfigFromEnv() });
   return res.status(out.ok ? 200 : 500).json(out);
 }

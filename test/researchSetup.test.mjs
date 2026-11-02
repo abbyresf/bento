@@ -343,3 +343,32 @@ test('the new errors read as plain words', () => {
     assert.doesNotMatch(x, /\b(just|actually|really|very|seamless|boost)\b/i, x);
   }
 });
+
+// ── The start code, the final survey link and survey pages ───────────────────
+
+import { startLinkFor, finalLinkProblem, ACTIVATION_NOTE, PAGE_CHOICES } from '../src/research/setup.js';
+
+test('the QR address holds the start code and is only made for a real code', () => {
+  assert.equal(startLinkFor('PICKUP-777'), 'https://www.bentodining.com/start/PICKUP777');
+  assert.equal(startLinkFor(' pickup 777 '), 'https://www.bentodining.com/start/pickup777');
+  assert.equal(startLinkFor('abc'), '');
+  assert.equal(startLinkFor(null), '');
+});
+
+test('the final survey link has to be a plain https address, and empty is allowed', () => {
+  assert.equal(finalLinkProblem(''), '');
+  assert.equal(finalLinkProblem('   '), '');
+  assert.equal(finalLinkProblem('https://example.qualtrics.com/jfe/form/SV_abc'), '');
+  assert.match(finalLinkProblem('http://example.com'), /https/);
+  assert.match(finalLinkProblem('javascript:alert(1)'), /https/);
+  assert.match(finalLinkProblem('not a link'), /web address/);
+  assert.match(finalLinkProblem('https://x.example.com/' + 'a'.repeat(500)), /too long/);
+});
+
+test('the new kinds and pages read in plain words, in the Bento voice', () => {
+  assert.equal(kindLabel('final'), 'Last-day reminder');
+  assert.equal(kindLabel('survey'), 'End-of-day questions');
+  assert.equal(kindLabel('reminder'), 'Reminder');
+  assert.deepEqual(PAGE_CHOICES.map((c) => c[0]), ['', 'lunch', 'dinner']);
+  assert.doesNotMatch(ACTIVATION_NOTE, /[—;]/);
+});

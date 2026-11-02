@@ -77,7 +77,7 @@ function build(extraPlateRows) {
     { id: 2, at: iso(addDays(now, -1)), email: 'researcher@example.edu', user_id: '00000000-0000-0000-0000-000000000001', action: 'view_identities', detail: '{"sheet":"participants"}' },
     { id: 1, at: iso(addDays(now, -1)), email: 'researcher@example.edu', user_id: '00000000-0000-0000-0000-000000000001', action: 'sign_in', detail: '{}' },
   ];
-  const study = { id: 'study-1', name: 'Fall 2026 study', cap: 40, is_open: true, window_days: 21, starts_at: null, ends_at: null, survey_intro: 'This is a 1-minute survey about your meal experiences today at Usdan and Sherman all-you-care-to-eat (AYCTE) dining halls. Please answer honestly and accurately, as best you can.', groups: ['S', 'L'], timezone: 'America/New_York', created_at: iso(addDays(now, -20)) };
+  const study = { id: 'study-1', name: 'Fall 2026 study', cap: 40, is_open: true, window_days: 7, final_survey_url: null, starts_at: null, ends_at: null, survey_intro: 'This is a 1-minute survey about your meal experiences today at Usdan and Sherman all-you-care-to-eat (AYCTE) dining halls. Please answer honestly and accurately, as best you can.', groups: ['S'], timezone: 'America/New_York', created_at: iso(addDays(now, -20)) };
   const sch = (id, grp, kind, time, title, body, late) => ({ id, study_id: 'study-1', grp, kind, send_time: time, days: [1, 2, 3, 4, 5, 6, 7], late_minutes: late, title, body, is_active: true, created_at: iso(addDays(now, -20)) });
   const schedules = [
     sch('sch-s', 'S', 'reminder', '10:30:00', 'Snack time', 'Lunch opens at 11. Eat your snack now.', 30),
@@ -150,6 +150,22 @@ export function makeStub(mode = 'researcher') {
       if (a.p_code.replace(/[^A-Za-z0-9]/g, '').length < 6) return bad('code_too_short');
       if (/maple/i.test(a.p_code)) return bad('code_in_use');
       audit('code', { study: study.id }); return { data: true, error: null };
+    }
+    if (name === 'research_set_activation_code') {
+      if (a.p_code.replace(/[^A-Za-z0-9]/g, '').length < 6) return bad('code_too_short');
+      audit('activation_code', { study: study.id }); return { data: true, error: null };
+    }
+    if (name === 'research_set_final_survey_url') {
+      const u = String(a.p_url ?? '').trim();
+      if (u && !/^https:\/\/\S+$/.test(u)) return bad('bad_value: link');
+      study.final_survey_url = u || null;
+      audit('final_survey_url', { study: study.id }); return { data: true, error: null };
+    }
+    if (name === 'research_set_question_page') {
+      const row = tables.questions.find((x) => x.id === a.p_id);
+      if (!row) return bad('unknown_question');
+      row.page = a.p_page || null;
+      audit('question_page', { question: row.id }); return { data: true, error: null };
     }
     if (name === 'research_save_schedule') {
       const row = tables.reminder_schedules.find((x) => x.id === a.p_id);

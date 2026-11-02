@@ -220,3 +220,74 @@ test('the claim is asked for at the time the run says it is', async () => {
   await runResearchSend({ admin, apns, send: sender(), now: new Date('2026-10-13T14:30:00Z') });
   assert.equal(admin.calls.rpc.find((c) => c.name === 'research_claim_due_prompts').args.p_now, '2026-10-13T14:30:00.000Z');
 });
+
+// ── The Android web app: browser subscriptions ───────────────────────────────
+
+const web = { publicKey: 'pub', privateKey: 'priv', subject: 'mailto:x@example.com' };
+const webSub = (id, user, endpoint = `https://push.example/${id}`) => ({ id, user_id: user, apns_token: null, endpoint, p256dh: 'k', auth: 'a' });
+function webSender(plan = {}) {
+  const calls = [];
+  const fn = async (args) => { calls.push(args); return plan[args.sub.id] ?? { ok: true }; };
+  fn.calls = calls;
+  return fn;
+}
+
+test('a student on the Android web app is pushed through web push, with the same words and lifetime', async () => {
+  const admin = fakeAdmin({ rpc: rpcFor([due('p1', 'u1', 'survey', 'Questions', 'Two minutes.')]), subs: [webSub('w1', 'u1')] });
+  const sendWeb = webSender();
+  const send = sender();
+  const out = await runResearchSend({ admin, apns, web, send, sendWeb });
+  assert.equal(send.sent.length, 0, 'Apple is not called for a browser');
+  assert.equal(sendWeb.calls.length, 1);
+  const c = sendWeb.calls[0];
+  assert.deepEqual([c.payload.title, c.payload.body, c.payload.tag, c.ttl], ['Questions', 'Two minutes.', 'bento-study-survey', EXPIRES_IN.survey]);
+  assert.deepEqual(c.payload.research, { kind: 'survey' });
+  assert.equal(marked(admin)[0].status, 'sent');
+  assert.equal(out.sent, 1);
+});
+
+test('the final-day push lasts longer than a reminder', async () => {
+  const admin = fakeAdmin({ rpc: rpcFor([due('p1', 'u1', 'final', 'Last day', 'Finish the study.')]), subs: [webSub('w1', 'u1')] });
+  const sendWeb = webSender();
+  await runResearchSend({ admin, apns, web, send: sender(), sendWeb });
+  assert.equal(sendWeb.calls[0].ttl, EXPIRES_IN.final);
+  assert.ok(EXPIRES_IN.final > EXPIRES_IN.reminder);
+});
+
+test('a student with an iPhone and a browser is sent to both, and judged by either', async () => {
+  const admin = fakeAdmin({
+    rpc: rpcFor([due('p1', 'u1')]),
+    subs: [{ id: 'n1', user_id: 'u1', apns_token: 'tok' }, webSub('w1', 'u1')],
+  });
+  const sendWeb = webSender({ w1: { ok: false, prune: true, reason: 'subscription gone' } });
+  const send = sender();
+  await runResearchSend({ admin, apns, web, send, sendWeb });
+  assert.equal(send.sent.length, 1);
+  assert.equal(sendWeb.calls.length, 1);
+  assert.equal(marked(admin)[0].status, 'sent', 'the phone worked');
+  assert.deepEqual(admin.calls.deleted, ['w1'], 'the gone browser is removed');
+});
+
+test('a dead browser subscription is failed with its reason and removed', async () => {
+  const admin = fakeAdmin({ rpc: rpcFor([due('p1', 'u1')]), subs: [webSub('w1', 'u1')] });
+  await runResearchSend({ admin, apns, web, send: sender(), sendWeb: webSender({ w1: { ok: false, prune: true, reason: 'subscription gone' } }) });
+  assert.deepEqual([marked(admin)[0].status, marked(admin)[0].error], ['failed', 'subscription gone']);
+  assert.deepEqual(admin.calls.deleted, ['w1']);
+});
+
+test('web push not configured fails a browser student without crashing, and does not stop the phones', async () => {
+  const admin = fakeAdmin({
+    rpc: rpcFor([due('p1', 'u1'), due('p2', 'u2')]),
+    subs: [webSub('w1', 'u1'), { id: 'n2', user_id: 'u2', apns_token: 't2' }],
+  });
+  const out = await runResearchSend({ admin, apns, web: null, send: sender(), sendWeb: webSender() });
+  const m = Object.fromEntries(marked(admin).map((r) => [r.id, r]));
+  assert.deepEqual([m.p1.status, m.p1.error, m.p2.status], ['failed', 'web push not configured', 'sent']);
+  assert.deepEqual([out.sent, out.failed], [1, 1]);
+});
+
+test('a row that is neither a token nor a browser subscription is ignored', async () => {
+  const admin = fakeAdmin({ rpc: rpcFor([due('p1', 'u1')]), subs: [{ id: 'x', user_id: 'u1', apns_token: null, endpoint: null }] });
+  await runResearchSend({ admin, apns, web, send: sender(), sendWeb: webSender() });
+  assert.equal(marked(admin)[0].status, 'no_device');
+});

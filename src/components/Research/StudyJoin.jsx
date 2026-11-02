@@ -1,39 +1,30 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import BigTitle from '../Onboarding/BigTitle';
-import { researchEnabled, checkStudyCode, enrollInStudy, getAccountEmail } from '../../lib/research';
-import { subscribeToPush, getPushEnabled } from '../../lib/push';
-import {
-  ACK_TEXT, CODE_MAX, NOT_ON_LIST_BEFORE, NOT_ON_LIST_LINK, NOT_ON_LIST_AFTER, endDateText, pushResultText,
-} from '../../data/research';
+import StudyStart from './StudyStart';
+import { peekStartCode, forgetStartCode } from '../../lib/startLink';
+import { researchEnabled, checkStudyCode, enrollInStudy } from '../../lib/research';
+import { ACK_TEXT, CODE_MAX, START_PENDING_NOTE, START_LATER } from '../../data/research';
 import '../Friends/Friends.css';
 import './Research.css';
 
-/* Joining a research study, iOS app only (it renders nothing anywhere else).
+/* Joining a research study, in the iOS app and the web app on Android (it renders
+ * nothing anywhere else).
  *
  * Four stages: ask, code, ack, done. Onboarding starts at "ask" and a student who
  * says No leaves at once with nothing recorded. Settings starts at "code".
  *
- * The consent form is the research team's, signed in their own survey, so Bento
- * shows no consent text. The student ticks one box saying they did that. A code
- * an account that is not on the research team's list gets its own message, with
- * "contact us" linking to the Contact page, and the signed-in email so a student
- * can see if it is the wrong one. The message never says the code was right. */
-export default function StudyJoin({ startAt = 'ask', onDone, onEnrolled, onGoContact }) {
+ * The join code comes from the research team's first survey, where the consent form
+ * is signed, so Bento shows no consent text. The student ticks one box saying they
+ * did that. Anyone with the code can join. The research team compares the list of
+ * names afterwards. Joining does not start the week: that needs the second code,
+ * at the snack pickup station, which the last stage asks for (and Settings asks
+ * for later if the student is not at the station yet). */
+export default function StudyJoin({ startAt = 'ask', onDone, onEnrolled }) {
   const [phase, setPhase] = useState(startAt);       // ask | code | ack | done
   const [code, setCode] = useState('');
-  const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [unlisted, setUnlisted] = useState(false);
   const [acked, setAcked] = useState(false);
-  const [joined, setJoined] = useState(null);        // { participantCode, endsAt }
-  const [pushOn, setPushOn] = useState(true);
-  const [pushNote, setPushNote] = useState('');
-
-  useEffect(() => { getAccountEmail().then(setEmail).catch(() => {}); }, []);
-  useEffect(() => {
-    if (phase === 'done') getPushEnabled().then(setPushOn).catch(() => setPushOn(false));
-  }, [phase]);
 
   if (!researchEnabled()) return null;
 
@@ -43,10 +34,10 @@ export default function StudyJoin({ startAt = 'ask', onDone, onEnrolled, onGoCon
   const check = async (e) => {
     e?.preventDefault();
     if (busy) return;
-    setBusy(true); setError(''); setUnlisted(false);
+    setBusy(true); setError('');
     const res = await checkStudyCode(code);
     setBusy(false);
-    if (!res.ok) { setError(res.message); setUnlisted(res.status === 'not_on_list'); return; }
+    if (!res.ok) { setError(res.message); return; }
     setPhase('ack');
   };
 
@@ -57,20 +48,11 @@ export default function StudyJoin({ startAt = 'ask', onDone, onEnrolled, onGoCon
     setBusy(false);
     if (!res.ok) {
       setError(res.message);
-      if (res.status === 'not_on_list' || res.status === 'invalid_code') { setUnlisted(res.status === 'not_on_list'); setPhase('code'); }
+      if (res.status === 'invalid_code') setPhase('code');
       return;
     }
-    setJoined({ participantCode: res.participantCode, endsAt: res.endsAt });
     setPhase('done');
     onEnrolled?.();
-  };
-
-  const turnOnPush = async () => {
-    setBusy(true);
-    const res = await subscribeToPush();
-    setBusy(false);
-    setPushNote(pushResultText(res));
-    if (res?.ok) setPushOn(true);
   };
 
   if (phase === 'ask') {
@@ -95,27 +77,14 @@ export default function StudyJoin({ startAt = 'ask', onDone, onEnrolled, onGoCon
         <p className="step-description">The research team gave you this code.</p>
         <label className="fr-label" htmlFor="rs-code">Study code</label>
         <input id="rs-code" className="fr-input fr-code" value={code} maxLength={CODE_MAX + 10}
-               onChange={(e) => { setCode(e.target.value); setError(''); setUnlisted(false); }}
+               onChange={(e) => { setCode(e.target.value); setError(''); }}
                autoCapitalize="characters" autoCorrect="off" autoComplete="off" spellCheck={false}
                placeholder="Study code" />
-        {error && (
-          <p className="fr-error" role="alert">
-            {unlisted && onGoContact ? (
-              <>
-                {NOT_ON_LIST_BEFORE}
-                <button type="button" className="fr-link" onClick={onGoContact}>{NOT_ON_LIST_LINK}</button>
-                {NOT_ON_LIST_AFTER}
-              </>
-            ) : error}
-          </p>
-        )}
-        {unlisted && email && (
-          <p className="fr-note">You are signed in as <strong>{email}</strong>. The research team matches you by this email.</p>
-        )}
+        {error && <p className="fr-error" role="alert">{error}</p>}
         <div className="fr-actions">
           <button type="submit" className="fr-btn" disabled={busy}>{busy ? 'Checking…' : 'Check code'}</button>
           {startAt === 'ask' && (
-            <button type="button" className="fr-btn-quiet" onClick={() => { setPhase('ask'); setError(''); setUnlisted(false); }}>Back</button>
+            <button type="button" className="fr-btn-quiet" onClick={() => { setPhase('ask'); setError(''); }}>Back</button>
           )}
         </div>
       </form>
@@ -125,9 +94,9 @@ export default function StudyJoin({ startAt = 'ask', onDone, onEnrolled, onGoCon
   if (phase === 'ack') {
     return (
       <>
-        {title("You are on the list")}
+        {title("One last step")}
         <p className="step-description">
-          One last step. Bento does not collect your consent. The research team did that in their own survey.
+          Bento does not collect your consent. The research team did that in their own survey.
         </p>
         <label className="rs-ack">
           <input type="checkbox" checked={acked} onChange={(e) => { setAcked(e.target.checked); setError(''); }} />
@@ -145,23 +114,10 @@ export default function StudyJoin({ startAt = 'ask', onDone, onEnrolled, onGoCon
   // done
   return (
     <>
-      {title("You are in the study")}
-      <ul className="rs-facts">
-        <li>You joined successfully.</li>
-        <li>
-          The study runs until <strong>{endDateText(joined?.endsAt)}</strong>.
-          Until then Bento sends you only the study reminders and the daily questions.
-        </li>
-      </ul>
-      {!pushOn && (
-        <>
-          <p className="fr-note">Study reminders arrive as notifications. Turn them on to get them.</p>
-          <div className="fr-actions">
-            <button type="button" className="fr-btn" onClick={turnOnPush} disabled={busy}>{busy ? 'Turning on…' : 'Turn on study reminders'}</button>
-          </div>
-        </>
-      )}
-      {pushNote && <p className="fr-ok">{pushNote}</p>}
+      {title("You joined the study")}
+      <p className="step-description">{START_PENDING_NOTE}</p>
+      <StudyStart initialCode={peekStartCode() ?? ''} onStarted={() => { forgetStartCode(); onEnrolled?.(); }} />
+      <p className="fr-note">{START_LATER}</p>
     </>
   );
 }

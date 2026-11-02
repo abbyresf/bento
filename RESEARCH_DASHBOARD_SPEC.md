@@ -914,3 +914,48 @@ stays for reading the wording.
   loop scale was 1 to 7 and Bento's rating is 1 to 5. Their "why leftover"
   question (check all that apply, with an Other text column `_5_TEXT`) and "how
   many plates" are not in the October draft and have no question type here.
+
+## 11. The study as the researchers now run it (2 Nov, migration 064)
+
+Changes from the researchers. They override anything above that disagrees.
+
+- **One group.** Everyone takes the snack (PRELOAD). There is no loop-and-plan group
+  and nothing to randomise. `studies.groups` is `{S}`, group-L reminders and
+  questions are switched off, and the group columns stay in the data (always S).
+- **Two codes.** The *join code* (in the researchers' first survey) enrols a student,
+  as before. A second code, the *start code*, is at the snack pickup station as a QR
+  code and as text. Entering it starts the student's week, and not before: no
+  reminders, no survey, no meal or usage collection until then. Regular Bento
+  reminders carry on until the week starts. The code is stored as a hash
+  (`studies.activation_code_hash`) and set from the Setup page. The QR code holds
+  `https://www.bentodining.com/start/CODE`. The phone camera opens it in the iPhone
+  app (universal link, `/start/*` in the apple-app-site-association file) or the
+  web app on Android, and the app uses the code at once.
+- **The week.** `participants.activated_at` is set once and never moves. The window
+  is counted in calendar days from that day (default 7, `studies.window_days`) and
+  ends at midnight Eastern after the last day. Day 1 is the day they start.
+  `research_my_status` gives `day_number` and `total_days`. A start code that is
+  wrong counts as a guess (five an hour, shared with the join code).
+- **The survey** says "Day 3 of 7" at the top of every page and is split into a
+  lunch page and a dinner page (`questions.page`), each titled in bold, with a
+  border between questions. Next needs a page's questions answered. The default
+  question list (`research.seed_daily_survey_pages`) is the October draft without
+  the loop-and-plan question, the same questions on both pages. **It is a draft: the
+  researchers' final list replaces it.**
+- **Reminders.** One for everyone, "Eat your snack 30 minutes before you eat at the
+  dining hall.", at 10:30 and at a dinner time (default 16:30, a placeholder). Times
+  are data, edited in Setup.
+- **The final survey.** A link outside the app (Qualtrics, supplied by the
+  researchers, `studies.final_survey_url`, https only). From each student's last day
+  the app shows a "Final survey" button that opens it in the browser, and a push
+  goes out that day (reminder kind `final`). Nothing about who the student is is put
+  in the link.
+- **Android.** The study runs in the iOS app and in the web app on Android. The
+  database accepts platform `ios` or `android`. Android students are reached by web
+  push (VAPID), the same way the regular reminders reach the web app. There is no
+  Play Store app.
+- **The student sees no participant number.** It is still stored and shown to the
+  researchers.
+
+Open: the researchers' final question list for the lunch and dinner pages, the real
+dinner opening time, and the final survey link.

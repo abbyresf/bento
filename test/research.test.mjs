@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  researchEnabledFor, normalizeStudyCode, studyCodeProblem, studyText, summarizeStudy,
+  researchEnabledFor, studyPlatformFor, dayText, parseStartLink, safeExternalUrl, surveyPages, pageReady,
+  START_PENDING_NOTE, START_HELP, normalizeStudyCode, studyCodeProblem, studyText, summarizeStudy,
   daysLeftText, endDateText, pushResultText, isMissingFeature,
   ACK_TEXT, LEAVE_NOTE, DELETE_NOTE, CODE_MAX,
   NOT_ON_LIST_BEFORE, NOT_ON_LIST_LINK, NOT_ON_LIST_AFTER,
@@ -10,9 +11,21 @@ import {
   SURVEY_TODAY, SURVEY_LATE, SURVEY_INTRO, SURVEY_LATE_INTRO, SURVEY_RATING_HINT, SURVEY_THANKS,
 } from '../src/data/research.js';
 
-test('the study is on for iOS and nothing else', () => {
+test('the study is on for the iOS app and for Android, and nothing else', () => {
   assert.equal(researchEnabledFor('ios'), true);
-  for (const p of ['web', 'android', 'IOS', '', null, undefined]) assert.equal(researchEnabledFor(p), false, String(p));
+  assert.equal(researchEnabledFor('android'), true);
+  assert.equal(researchEnabledFor('web', 'Mozilla/5.0 (Linux; Android 14; Pixel 8) Chrome/126'), true, 'the web app on an Android phone');
+  for (const p of ['IOS', '', null, undefined]) assert.equal(researchEnabledFor(p), false, String(p));
+  assert.equal(researchEnabledFor('web', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari'), false, 'the web app on an iPhone is not the app');
+  assert.equal(researchEnabledFor('web', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome'), false, 'a computer');
+  assert.equal(researchEnabledFor('web'), false);
+});
+
+test('the database is told ios or android, never anything else', () => {
+  assert.equal(studyPlatformFor('ios', 'x'), 'ios');
+  assert.equal(studyPlatformFor('android', ''), 'android');
+  assert.equal(studyPlatformFor('web', 'Linux; Android 13'), 'android');
+  assert.equal(studyPlatformFor('web', 'Windows NT 10'), null);
 });
 
 test('codes are normalized like the database does it', () => {
@@ -76,8 +89,11 @@ test('the copy follows the Bento voice: no em dashes, no semicolons, no banned w
 test('the status row becomes what the screens use', () => {
   assert.deepEqual(summarizeStudy(null), { enrolled: false, state: 'none' });
   assert.deepEqual(summarizeStudy({ enrolled: false }), { enrolled: false, state: 'none' });
-  const s = summarizeStudy({ enrolled: true, status: 'active', participant_code: 'P-007', window_ends_at: '2026-11-03T15:00:00Z', days_left: 12 });
-  assert.deepEqual(s, { enrolled: true, state: 'active', participantCode: 'P-007', endsAt: '2026-11-03T15:00:00Z', daysLeft: 12 });
+  const s = summarizeStudy({ enrolled: true, status: 'active', participant_code: 'P-007', activated: true, day_number: 3, total_days: 7, window_ends_at: '2026-11-03T15:00:00Z', days_left: 5 });
+  assert.deepEqual(s, { enrolled: true, state: 'active', activated: true, endsAt: '2026-11-03T15:00:00Z', daysLeft: 5, dayNumber: 3, totalDays: 7 });
+  assert.ok(!('participantCode' in s), 'the participant number is not shown to the student');
+  const pending = summarizeStudy({ enrolled: true, status: 'active', activated: false, window_ends_at: null, days_left: 0 });
+  assert.deepEqual([pending.state, pending.activated, pending.dayNumber, pending.totalDays], ['pending', false, null, null], 'joined, week not started');
   assert.equal(summarizeStudy({ enrolled: true, status: 'completed', days_left: 0 }).state, 'completed');
   assert.equal(summarizeStudy({ enrolled: true, status: 'withdrawn', days_left: 0 }).state, 'withdrawn');
   assert.equal(summarizeStudy({ enrolled: true, status: 'surprise', days_left: -3 }).daysLeft, 0);
@@ -99,7 +115,7 @@ test('the end date is a readable day, or nothing', () => {
 
 test('turning reminders on reports what happened', () => {
   assert.match(pushResultText({ ok: true }), /on/i);
-  assert.match(pushResultText({ ok: false, reason: 'blocked' }), /iOS Settings/);
+  assert.match(pushResultText({ ok: false, reason: 'blocked' }), /phone settings/);
   assert.match(pushResultText({ ok: false, reason: 'save-failed' }), /try again/i);
 });
 
@@ -240,4 +256,79 @@ test('the research team\'s intro is used when they gave one', () => {
   assert.equal(summarizeSurvey({ ...row, intro: null }).intro, null);
   assert.equal(summarizeSurvey({ ...row, intro: '   ' }).intro, null);
   assert.equal(summarizeSurvey({ ...row, intro: undefined }).intro, null);
+});
+
+
+// ── Starting the week, the day count, pages and the final survey ─────────────
+
+test('the day reads Day 3 of 7, and never past the end', () => {
+  assert.equal(dayText(3, 7), 'Day 3 of 7');
+  assert.equal(dayText(1, 7), 'Day 1 of 7');
+  assert.equal(dayText(9, 7), 'Day 7 of 7');
+  assert.equal(dayText(null, 7), '');
+  assert.equal(dayText(0, 7), '');
+  assert.equal(dayText(2, 0), '');
+});
+
+test('the start code arrives in a link from the QR code', () => {
+  assert.equal(parseStartLink('https://www.bentodining.com/start/PICKUP-777'), 'PICKUP777');
+  assert.equal(parseStartLink('/start/pickup-777/'), 'PICKUP777');
+  assert.equal(parseStartLink('https://www.bentodining.com/start/ab'), null, 'too short to be a code');
+  assert.equal(parseStartLink('https://evil.example.com/start/PICKUP-777'), null, 'another site');
+  assert.equal(parseStartLink('https://www.bentodining.com/join/PICKUP-777'), null, 'a buddy link is not a start link');
+  assert.equal(parseStartLink('https://www.bentodining.com/start/PICKUP-777/extra'), null);
+  assert.equal(parseStartLink(null), null);
+});
+
+test('only an https address is opened outside the app', () => {
+  assert.equal(safeExternalUrl('https://example.qualtrics.com/jfe/form/SV_abc'), 'https://example.qualtrics.com/jfe/form/SV_abc');
+  for (const bad of ['http://example.com', 'javascript:alert(1)', 'file:///etc/passwd', 'bento://x', '', null, 'not a url']) assert.equal(safeExternalUrl(bad), '', String(bad));
+});
+
+test('the start words say what happens and use the Bento voice', () => {
+  for (const t of [START_PENDING_NOTE, START_HELP]) assert.doesNotMatch(t, /[—;!]/);
+  assert.match(START_PENDING_NOTE, /snack pickup/i);
+  assert.match(START_HELP, /QR/);
+});
+
+const LQ = (id, page, extra = {}) => ({ id, text: id, format: 'yes_no', options: [], page, show_if: null, ...extra });
+
+test('the questions come in a lunch page and then a dinner page', () => {
+  const qs = [LQ('d1', 'dinner'), LQ('l1', 'lunch'), LQ('l2', 'lunch'), LQ('d2', 'dinner')];
+  const pages = surveyPages(qs, {});
+  assert.deepEqual(pages.map((p) => [p.page, p.title, p.questions.map((q) => q.id)]), [['lunch', 'Lunch', ['l1', 'l2']], ['dinner', 'Dinner', ['d1', 'd2']]]);
+});
+
+test('a survey with no pages is one page with no title, and unpaged questions come first', () => {
+  assert.deepEqual(surveyPages([LQ('a', null), LQ('b', null)], {}).map((p) => [p.title, p.questions.length]), [['', 2]]);
+  const mixed = surveyPages([LQ('l', 'lunch'), LQ('x', null)], {});
+  assert.deepEqual(mixed.map((p) => p.page), ['', 'lunch']);
+  assert.equal(surveyPages([LQ('z', 'brunch')], {})[0].title, '', 'an unknown page is not named');
+});
+
+test('a page whose questions are all hidden is skipped, and a follow-up stays on its own page', () => {
+  const qs = [
+    LQ('lunchYN', 'lunch', { format: 'multiple_choice', options: ['Yes', 'No'] }),
+    LQ('lunch_goals', 'lunch', { format: 'rating', show_if: { question: 'lunchYN', none_of: ['No'] } }),
+    LQ('dinnerYN', 'dinner', { format: 'multiple_choice', options: ['Yes', 'No'] }),
+    LQ('dinner_goals', 'dinner', { format: 'rating', show_if: { question: 'dinnerYN', none_of: ['No'] } }),
+  ];
+  const none = surveyPages(qs, { lunchYN: 'No', dinnerYN: 'No' });
+  assert.deepEqual(none.map((p) => p.questions.map((q) => q.id)), [['lunchYN'], ['dinnerYN']], 'only the gate questions');
+  const some = surveyPages(qs, { lunchYN: 'Yes' });
+  assert.deepEqual(some[0].questions.map((q) => q.id), ['lunchYN', 'lunch_goals']);
+});
+
+test('Next needs every shown question on the page answered', () => {
+  const page = { questions: [LQ('a', 'lunch'), LQ('b', 'lunch', { format: 'rating' })] };
+  assert.equal(pageReady(page, {}), false);
+  assert.equal(pageReady(page, { a: true }), false);
+  assert.equal(pageReady(page, { a: false, b: 4 }), true);
+  assert.equal(pageReady({ questions: [] }, {}), false);
+});
+
+test('the survey carries the day through from the database row', () => {
+  const s = summarizeSurvey({ status: 'pending', for_date: '2026-11-03', late: false, questions: [LQ('q', 'lunch')], day_number: 3, total_days: 7 });
+  assert.deepEqual([s.dayNumber, s.totalDays], [3, 7]);
+  assert.equal(summarizeSurvey({ status: 'none', next_due_at: null }).state, 'none');
 });

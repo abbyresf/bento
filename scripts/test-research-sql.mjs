@@ -16,7 +16,7 @@ const dir = process.env.MIGRATIONS_DIR
   ? process.env.MIGRATIONS_DIR
   : new URL('../supabase/migrations/', import.meta.url).pathname;
 const migrations = ['054_research_foundation.sql', '055_research_collection.sql', '056_research_reminders_and_survey.sql',
-  '057_research_dashboard.sql', '058_research_setup.sql', '059_research_randomisation.sql', '060_research_wide_survey.sql', '061_research_roster_views.sql', '062_research_dinner_reminders.sql', '063_research_open_enrolment.sql']
+  '057_research_dashboard.sql', '058_research_setup.sql', '059_research_randomisation.sql', '060_research_wide_survey.sql', '061_research_roster_views.sql', '062_research_dinner_reminders.sql', '063_research_open_enrolment.sql', '064_research_one_group_start_code_pages.sql']
   .map((f) => readFileSync(`${dir}/${f}`, 'utf8'));
 const db = new PGlite();
 
@@ -109,11 +109,19 @@ const forceGroup = async (u, grp) => {
   await owner('update research.participants set grp = $2 where user_id = $1', [u, grp]);
   await owner('alter table research.participants enable trigger participants_guard');
 };
+// Studies whose enrolments start their week at once, for the tests about what a
+// participant does rather than about starting (see `activate`).
+const autoStart = new Set();
 const enroll = async (u, code, ack = true, platform = 'ios') => {
   const r = await rawEnroll(u, code, ack, platform);
   if (r.status === 'ok' && wanted.has(u)) await forceGroup(u, wanted.get(u));
+  if (r.status === 'ok' && autoStart.has(code)) await activate(u);
   return r;
 };
+const START = 'START-1234';
+const startable = (st) => owner('select research.set_activation_code($1,$2)', [st, START]);
+const activate = async (u, code = START, platform = 'ios') =>
+  (await call(u, 'select * from public.research_activate($1,$2)', [code, platform]))[0];
 const status = async (u) => (await call(u, 'select * from public.research_my_status()'))[0];
 const owner = async (sql, params = []) => (await db.query(sql, params)).rows;
 
@@ -139,6 +147,7 @@ const listed = async (study, { grp = 'S', name, email } = {}) => {
 };
 
 const study = await newStudy();
+await startable(study);
 
 await test('the code is stored as a hash and never in the clear', async () => {
   const [row] = await owner('select * from research.studies where id = $1', [study]);
@@ -205,9 +214,9 @@ await test('a right code is never counted as a wrong guess', async () => {
   assert.equal((await owner(`select count(*)::int c from research.redeem_attempts where user_id = $1`, [u]))[0].c, 0);
 });
 
-await test('only the iOS app can check a code or enrol', async () => {
+await test('only the iOS app and the Android web app can check a code or enrol', async () => {
   const u = await listed(study);
-  for (const platform of [null, 'web', 'android', 'IOS', '']) {
+  for (const platform of [null, 'web', 'desktop', 'IOS', '']) {
     assert.equal((await check(u, CODE, platform)).status, 'ios_only', String(platform));
     assert.equal((await enroll(u, CODE, true, platform)).status, 'ios_only', String(platform));
   }
@@ -280,10 +289,16 @@ await test('enrolling assigns a group and starts the window, and the list names 
   assert.equal(p.status, 'active');
   assert.equal(p.platform, 'ios');
   assert.ok(p.acknowledged_at);
-  assert.equal((new Date(p.window_ends_at) - new Date(p.enrolled_at)) / 86400000, 21);
+  assert.equal(p.window_ends_at, null, 'the week has not started');
+  assert.equal(p.activated_at, null);
   assert.equal((await owner('select research_cohort from public.profiles where id = $1', [u]))[0].research_cohort, true);
   const s = await status(u);
-  assert.deepEqual([s.enrolled, s.status, s.days_left], [true, 'active', 21]);
+  assert.deepEqual([s.enrolled, s.status, s.days_left, s.activated], [true, 'active', 0, false]);
+  const a = await activate(u);
+  assert.equal(a.status, 'ok');
+  assert.deepEqual([a.day_number, a.total_days], [1, 21]);
+  const s2 = await status(u);
+  assert.deepEqual([s2.activated, s2.day_number, s2.total_days, s2.days_left], [true, 1, 21, 21]);
   assert.equal((await enroll(u, CODE)).status, 'already_enrolled');
   assert.equal((await check(u, CODE)).status, 'already_enrolled');
 });
@@ -362,10 +377,12 @@ await test('a group named on the list is ignored', async () => {
   assert.equal((await owner(`select count(*)::int c from research.participants where study_id = $1 and grp = 'S'`, [s]))[0].c, 3);
 });
 
-await test('the window length is per study and read at enrolment', async () => {
+await test('the window length is per study and read when the week starts', async () => {
   const s = await newStudy({ code: 'SHORT-0001', window: 7 });
   const u = await listed(s);
+  await startable(s);
   assert.equal((await enroll(u, 'SHORT-0001')).status, 'ok');
+  assert.equal((await activate(u)).total_days, 7);
   assert.equal((await status(u)).days_left, 7);
 });
 
@@ -551,13 +568,16 @@ await test('an expired window reads as completed, then the job closes it and kee
 
 await test('researchers may extend a window and existing participants keep their own end date', async () => {
   const s = await newStudy({ code: 'EXTEND-3333', window: 21 });
+  await startable(s);
   const u = await listed(s);
   await enroll(u, 'EXTEND-3333');
+  await activate(u);
   await owner('update research.studies set window_days = 28 where id = $1', [s]);
   assert.equal((await status(u)).days_left, 21, 'unchanged by a study setting');
   const v = await listed(s);
   await enroll(v, 'EXTEND-3333');
-  assert.equal((await status(v)).days_left, 28, 'new enrolments get the new length');
+  await activate(v);
+  assert.equal((await status(v)).days_left, 28, 'new starts get the new length');
   await owner(`update research.participants set window_ends_at = window_ends_at + interval '7 days' where user_id = $1`, [u]);
   assert.equal((await status(u)).days_left, 28, 'a direct extension works');
 });
@@ -566,6 +586,8 @@ await test('researchers may extend a window and existing participants keep their
 // ── Phase 3: collecting what a participant does ──────────────────────────────
 
 const live = await newStudy({ code: 'LIVE-2026', cap: 300 });
+await startable(live);
+autoStart.add('LIVE-2026');
 const joiner = async (grp = 'S', opts = {}) => {
   const u = await listed(live, { grp, ...opts });
   assert.equal((await enroll(u, 'LIVE-2026')).status, 'ok');
@@ -784,6 +806,8 @@ await test('researchers read the copies with a multi-factor session, students an
 
 await test('test-study copies never reach researchers', async () => {
   const t = await newStudy({ code: 'REVIEW-0002', test: true });
+  await startable(t);
+  autoStart.add('REVIEW-0002');
   const rev = await listed(t);
   assert.equal((await enroll(rev, 'REVIEW-0002')).status, 'ok');
   await meal(rev);
@@ -832,10 +856,10 @@ await test('a participant is left out of dining survey results', async () => {
 // (UTC minus 4) until 1 November. Monday 12 Oct is the first day.
 
 const ENROLLED = '2026-10-12T13:00:00Z';   // Mon 09:00 ET
-const WINDOW_END = '2026-11-02T14:00:00Z';
+const WINDOW_END = '2036-11-02T14:00:00Z';   // far ahead: the real clock must not run past it
 const place = async (u, enrolled = ENROLLED, windowEnd = WINDOW_END) => {
   await owner('alter table research.participants disable trigger participants_guard');
-  await owner('update research.participants set enrolled_at = $2, window_ends_at = $3 where user_id = $1', [u, enrolled, windowEnd]);
+  await owner('update research.participants set enrolled_at = $2, activated_at = $2, window_ends_at = $3 where user_id = $1', [u, enrolled, windowEnd]);
   await owner('alter table research.participants enable trigger participants_guard');
 };
 const sched = async (study_, grp, kind, time, title, { days, late, body = '' } = {}) =>
@@ -1164,20 +1188,18 @@ await test('housekeeping closes the finished windows and records who can be reac
   assert.equal((await row(old)).status, 'completed');
 });
 
-await test('the default reminders are lunch and dinner for each group, drafted, and only added once', async () => {
+await test('the default reminders are one snack reminder before lunch and before dinner, and a final-day push, only added once', async () => {
   const st = await newStudy({ code: 'SEEDED-0001' });
-  assert.equal((await owner('select research.seed_default_reminders($1) n', [st]))[0].n, 4);
+  assert.equal((await owner('select research.seed_default_reminders($1) n', [st]))[0].n, 3);
   assert.equal((await owner('select research.seed_default_reminders($1) n', [st]))[0].n, 0);
-  const rows = await owner(`select grp, kind, send_time::text t, days, late_minutes, title, body from research.reminder_schedules where study_id = $1 order by grp, send_time`, [st]);
-  assert.deepEqual(rows.map((r) => [r.grp, r.kind, r.t, r.late_minutes]),
-    [['L', 'reminder', '10:30:00', 30], ['L', 'reminder', '16:30:00', 30], ['S', 'reminder', '10:30:00', 30], ['S', 'reminder', '16:30:00', 30]]);
+  const rows = await owner(`select grp, kind, send_time::text t, days, late_minutes, title, body from research.reminder_schedules where study_id = $1 order by send_time`, [st]);
+  assert.deepEqual(rows.map((r) => [r.grp, r.kind, r.t]), [[null, 'reminder', '10:30:00'], [null, 'final', '12:00:00'], [null, 'reminder', '16:30:00']]);
   assert.deepEqual(rows[0].days, [1, 2, 3, 4, 5, 6, 7]);
   for (const r of rows) assert.doesNotMatch(r.title + r.body, /[—;!]/);
-  assert.match(rows[2].body, /snack/i);
-  assert.match(rows[0].body, /walk the hall/i);
+  assert.equal(rows[0].body, 'Eat your snack 30 minutes before you eat at the dining hall.');
   const other = await newStudy({ code: 'SEEDED-0002' });
-  await owner(`select research.seed_default_reminders($1, '17:00')`, [other]);
-  assert.deepEqual((await owner(`select distinct send_time::text t from research.reminder_schedules where study_id = $1 order by 1`, [other])).map((r) => r.t), ['10:30:00', '17:00:00'], 'the dinner time is a choice');
+  await owner(`select research.seed_default_reminders($1, '17:00', '09:00')`, [other]);
+  assert.deepEqual((await owner(`select distinct send_time::text t from research.reminder_schedules where study_id = $1 order by 1`, [other])).map((r) => r.t), ['09:00:00', '10:30:00', '17:00:00'], 'the dinner and final times are a choice');
   await assert.rejects(owner(`select research.add_schedule($1,'Z','reminder','10:30','x')`, [st]), /unknown_group/);
   await assert.rejects(owner(`select research.add_schedule($1,'S','banana','10:30','x')`, [st]), /bad_kind/);
   assert.equal((await owner(`select late_minutes from research.reminder_schedules where id = $1`, [await sched(st, null, 'survey', '20:00', 's')]))[0].late_minutes, 180, 'a survey defaults to a longer window');
@@ -1887,6 +1909,252 @@ await test('a column is set from the dashboard only by a researcher on a multi-f
   const a = (await owner(`select detail from research.audit_log where action = 'setup_change' and detail ->> 'what' = 'question_columns' order by id desc limit 1`))[0].detail;
   assert.equal(a.to.key, 'lunch_hall');
   assert.equal(a.from.key, 'lunchYN');
+});
+
+
+// ── The start code, one group, lunch and dinner pages, the final survey ───────
+
+const startStudy = async ({ code, groups = ['S'], window = 7 } = {}) => {
+  const [{ create_study: id }] = await owner(`select research.create_study('Study', $1, 50, $2::text[], $3, false)`, [code, groups, window]);
+  await owner('update research.studies set is_open = true where id = $1', [id]);
+  await owner(`select research.set_activation_code($1, 'PICKUP-777')`, [id]);
+  return id;
+};
+const rawEnrollIn = async (st, code) => { const u = await user(); const r = await rawEnroll(u, code); assert.equal(r.status, 'ok'); return u; };
+const part = async (u) => (await owner('select * from research.participants where user_id = $1', [u]))[0];
+
+await test('everyone enrols into the one group and the week does not start until the start code', async () => {
+  const st = await startStudy({ code: 'ONEGRP-0001' });
+  for (let i = 0; i < 6; i++) {
+    const u = await rawEnrollIn(st, 'ONEGRP-0001');
+    const p = await part(u);
+    assert.equal(p.grp, 'S');
+    assert.equal(p.activated_at, null);
+    assert.equal(p.window_ends_at, null);
+  }
+});
+
+await test('the start code starts the week once, on calendar days, and a wrong one counts as a guess', async () => {
+  const st = await startStudy({ code: 'START-0001', window: 7 });
+  const u = await rawEnrollIn(st, 'START-0001');
+  assert.equal((await activate(u, 'WRONG-0000')).status, 'invalid_code');
+  assert.equal((await owner(`select count(*)::int c from research.redeem_attempts where user_id = $1`, [u]))[0].c, 1);
+  const a = await activate(u, 'pickup 777');
+  assert.equal(a.status, 'ok', 'case, spaces and dashes do not matter');
+  assert.deepEqual([a.day_number, a.total_days], [1, 7]);
+  const p = await part(u);
+  assert.ok(p.activated_at);
+  const local = (await owner(`select ($1::timestamptz at time zone 'America/New_York')::time::text t, (($1::timestamptz - interval '1 second') at time zone 'America/New_York')::date - ($2::timestamptz at time zone 'America/New_York')::date n`, [p.window_ends_at, p.activated_at]))[0];
+  assert.equal(local.t, '00:00:00', 'the week ends at local midnight');
+  assert.equal(local.n, 6, 'day 7 is six days after day 1');
+  assert.equal((await activate(u, 'PICKUP-777')).status, 'already_started');
+  await assert.rejects(owner(`update research.participants set activated_at = now() - interval '3 days' where user_id = $1`, [u]), /participant_start_is_fixed/);
+});
+
+await test('the start code is refused for someone not enrolled, with the wrong study, and after five wrong tries', async () => {
+  const st = await startStudy({ code: 'START-0002' });
+  const stranger = await user();
+  assert.equal((await activate(stranger, 'PICKUP-777')).status, 'not_enrolled');
+  const other = await startStudy({ code: 'START-0003' });
+  await owner(`select research.set_activation_code($1, 'OTHER-5555')`, [other]);
+  const u = await rawEnrollIn(st, 'START-0002');
+  assert.equal((await activate(u, 'OTHER-5555')).status, 'invalid_code', 'another study code does not start this one');
+  for (let i = 0; i < 4; i++) await activate(u, 'WRONG-1111');
+  assert.equal((await activate(u, 'PICKUP-777')).status, 'too_many_attempts');
+  assert.equal((await activate(u, 'PICKUP-777', 'web')).status, 'ios_only');
+  const noCode = await newStudy({ code: 'NOSTART-001' });
+  const v = await rawEnrollIn(noCode, 'NOSTART-001');
+  assert.equal((await activate(v, 'ANYTHING-1')).status, 'invalid_code', 'a study with no start code cannot be started');
+});
+
+await test('before the start code nothing is sent, asked or collected, and regular pushes carry on', async () => {
+  const st = await startStudy({ code: 'BEFORE-0001' });
+  await owner('update research.reminder_schedules set is_active = false');
+  await owner(`select research.seed_default_reminders($1)`, [st]);
+  await owner(`select research.add_schedule($1, null, 'survey', '20:00', 'Questions')`, [st]);
+  await question(st, 'Q', 'yes_no');
+  const u = await rawEnrollIn(st, 'BEFORE-0001');
+  await owner(`alter table research.participants disable trigger participants_guard`);
+  await owner(`update research.participants set enrolled_at = $2 where user_id = $1`, [u, ENROLLED]);
+  await owner(`alter table research.participants enable trigger participants_guard`);
+  assert.equal((await claim(T.tue1030)).filter((r) => r.user_id === u).length, 0, 'no reminder');
+  assert.equal(await pending(u, T.tue2130), undefined, 'no survey');
+  assert.equal((await owner('select * from research.active_user_ids($1::uuid[])', [[u]])).length, 0, 'regular pushes are not held back yet');
+  await meal(u);
+  assert.equal((await copies(u)).length, 0, 'no meal is collected');
+  assert.equal((await owner('select research.surveys_due($1, $2::timestamptz) n', [(await part(u)).id, T.tue2130]))[0].n, 0);
+  assert.equal((await call(u, 'select * from public.research_leave()'))[0].status, 'withdrawn', 'they can leave before starting');
+});
+
+await test('after the start code the reminders, the survey and collection begin, and regular pushes stop', async () => {
+  const st = await startStudy({ code: 'AFTER-00001' });
+  await owner('update research.reminder_schedules set is_active = false');
+  await owner(`select research.seed_default_reminders($1)`, [st]);
+  const u = await rawEnrollIn(st, 'AFTER-00001');
+  assert.equal((await activate(u, 'PICKUP-777')).status, 'ok');
+  assert.equal((await owner('select * from research.active_user_ids($1::uuid[])', [[u]])).length, 1);
+  await meal(u);
+  assert.equal((await copies(u)).length, 1);
+});
+
+await test('nothing is sent or asked for a time before the week started, even if they joined earlier', async () => {
+  const st = await startStudy({ code: 'LATESTART-01' });
+  await owner('update research.reminder_schedules set is_active = false');
+  await owner(`select research.add_schedule($1, null, 'reminder', '10:30', 'Snack time')`, [st]);
+  await owner(`select research.add_schedule($1, null, 'survey', '10:00', 'Questions')`, [st]);
+  await question(st, 'Q', 'yes_no');
+  const u = await rawEnrollIn(st, 'LATESTART-01');
+  await activate(u, 'PICKUP-777');
+  await owner(`alter table research.participants disable trigger participants_guard`);
+  // Joined Monday, started Tuesday at 10:45 ET, after that day's 10:30 reminder and 10:00 survey time.
+  await owner(`update research.participants set enrolled_at = $2, activated_at = '2026-10-13T14:45:00Z', window_ends_at = '2026-10-20T04:00:00Z' where user_id = $1`, [u, ENROLLED]);
+  await owner(`alter table research.participants enable trigger participants_guard`);
+  assert.equal((await claim(T.tue1050)).filter((r) => r.user_id === u).length, 0, 'the 10:30 reminder came before they started');
+  assert.equal((await pending(u, T.tue1100)).for_date, null, 'and so did the 10:00 questions');
+  assert.equal((await owner('select research.surveys_due($1, $2::timestamptz) n', [(await part(u)).id, T.tue1100]))[0].n, 0);
+  assert.deepEqual((await claim('2026-10-14T14:30:00Z')).filter((r) => r.user_id === u).map((r) => r.kind).sort(), ['reminder', 'survey'], 'the next day both go out');
+});
+
+await test('the survey says which day of the study it is, and the week length', async () => {
+  const st = await startStudy({ code: 'DAYNUM-0001', window: 7 });
+  await owner('update research.reminder_schedules set is_active = false');
+  await owner(`select research.add_schedule($1, null, 'survey', '20:00', 'Questions')`, [st]);
+  await question(st, 'Q', 'yes_no');
+  const u = await rawEnrollIn(st, 'DAYNUM-0001');
+  assert.equal((await activate(u, 'PICKUP-777')).status, 'ok');
+  await owner(`alter table research.participants disable trigger participants_guard`);
+  // Started Monday 12 October, ET. The week is Monday to Sunday and ends at midnight.
+  await owner(`update research.participants set enrolled_at = $2, activated_at = $2, window_ends_at = '2026-10-19T04:00:00Z' where user_id = $1`, [u, ENROLLED]);
+  await owner(`alter table research.participants enable trigger participants_guard`);
+  const p = await pending(u, T.tue2130);
+  assert.deepEqual([p.for_date.toISOString().slice(0, 10), p.day_number, p.total_days], ['2026-10-13', 2, 7]);
+  const next = await pending(u, T.mon1500);
+  assert.equal(next.for_date, null);
+  assert.equal(next.total_days, 7);
+  const st2 = (await call(u, 'select * from public.research_my_status()'))[0];
+  assert.equal(st2.total_days, 7);
+  const viaApp = (await call(u, `select status, day_number, total_days from public.research_pending_survey('ios')`))[0];
+  assert.ok(viaApp, 'the app function answers');
+});
+
+await test('the survey has a lunch page and a dinner page, the same questions on each', async () => {
+  const st = await startStudy({ code: 'PAGES-00001' });
+  await owner('update research.reminder_schedules set is_active = false');
+  await owner(`select research.add_schedule($1, null, 'survey', '20:00', 'Questions')`, [st]);
+  assert.equal((await owner('select research.seed_daily_survey_pages($1) n', [st]))[0].n, 10);
+  assert.equal((await owner('select research.seed_daily_survey_pages($1) n', [st]))[0].n, 0, 'only once');
+  const rows = await owner(`select page, column_key, position, text from research.questions where study_id = $1 order by position`, [st]);
+  assert.deepEqual(rows.map((r) => r.column_key), ['lunchYN', 'lunch_snack', 'lunch_snack_time', 'lunch_goals', 'lunch_waste', 'dinnerYN', 'dinner_snack', 'dinner_snack_time', 'dinner_goals', 'dinner_waste']);
+  assert.deepEqual([...new Set(rows.slice(0, 5).map((r) => r.page))], ['lunch']);
+  assert.deepEqual([...new Set(rows.slice(5).map((r) => r.page))], ['dinner']);
+  assert.match(rows[5].text, /dinner/);
+  assert.doesNotMatch(rows.map((r) => r.text).join(' '), /loop and plan/i);
+  const u = await rawEnrollIn(st, 'PAGES-00001');
+  await activate(u, 'PICKUP-777');
+  await owner(`alter table research.participants disable trigger participants_guard`);
+  await owner(`update research.participants set enrolled_at = $2, activated_at = $2 where user_id = $1`, [u, ENROLLED]);
+  await owner(`alter table research.participants enable trigger participants_guard`);
+  const p = await pending(u, T.tue2130);
+  assert.deepEqual(p.questions.map((q) => q.page), ['lunch', 'lunch', 'lunch', 'lunch', 'lunch', 'dinner', 'dinner', 'dinner', 'dinner', 'dinner']);
+  const id = (key) => rows.find((r) => r.column_key === key) && null;
+  void id;
+  const byKey = Object.fromEntries((await owner(`select id, column_key from research.questions where study_id = $1`, [st])).map((r) => [r.column_key, r.id]));
+  // Ate no lunch in a hall and had dinner in Usdan with the snack 20 minutes before.
+  const answers = {
+    [byKey.lunchYN]: 'No',
+    [byKey.dinnerYN]: 'Yes - in Usdan', [byKey.dinner_snack]: true, [byKey.dinner_snack_time]: '0-20 min before dinner',
+    [byKey.dinner_goals]: 4, [byKey.dinner_waste]: 'Little or None',
+  };
+  assert.equal(await submit(u, '2026-10-13', answers, T.tue2130), 'ok');
+  assert.equal(await submit(u, '2026-10-13', { ...answers, [byKey.lunch_goals]: 3 }, T.tue2130), 'not_pending');
+});
+
+await test('a question can be moved to a page, and a replacement keeps its page', async () => {
+  const st = await startStudy({ code: 'PAGES-00002' });
+  const q = await question(st, 'Hungry?', 'yes_no');
+  await owner(`select research.set_question_page($1, 'dinner')`, [q]);
+  await assert.rejects(owner(`select research.set_question_page($1, 'brunch')`, [q]), /bad_value: page/);
+  const n = await question(st, 'Hungry at dinner?', 'yes_no', { replaces: q });
+  assert.equal((await owner('select page from research.questions where id = $1', [n]))[0].page, 'dinner');
+  await owner(`select research.set_question_page($1, null)`, [n]);
+  assert.equal((await owner('select page from research.questions where id = $1', [n]))[0].page, null);
+});
+
+await test('the final survey link shows only from the last day, and only to someone who started and has not left', async () => {
+  const st = await startStudy({ code: 'FINAL-00001', window: 7 });
+  const u = await rawEnrollIn(st, 'FINAL-00001');
+  const final = async (user_) => (await call(user_, 'select * from public.research_final_survey()'))[0];
+  assert.equal((await final(u)).available, false, 'not started');
+  await activate(u, 'PICKUP-777');
+  assert.equal((await final(u)).available, false, 'no link set');
+  await owner(`update research.studies set final_survey_url = 'https://example.qualtrics.com/jfe/form/SV_abc' where id = $1`, [st]);
+  assert.equal((await final(u)).available, false, 'day 1');
+  // The week ends at local midnight after its last day. `daysLeft` is how many
+  // calendar days remain including today: 1 on the last day.
+  const move = async (daysLeft) => {
+    await owner('alter table research.participants disable trigger participants_guard');
+    await owner(`update research.participants set activated_at = now() - interval '6 days',
+      window_ends_at = (((now() at time zone 'America/New_York')::date + $2::int)::timestamp at time zone 'America/New_York') where user_id = $1`, [u, daysLeft]);
+    await owner('alter table research.participants enable trigger participants_guard');
+  };
+  await move(2);
+  assert.equal((await final(u)).available, false, 'day 6');
+  await move(1);
+  const f = await final(u);
+  assert.deepEqual([f.available, f.url], [true, 'https://example.qualtrics.com/jfe/form/SV_abc']);
+  await owner(`update research.participants set status = 'completed' where user_id = $1`, [u]);
+  assert.equal((await final(u)).available, true, 'still there once the week is over');
+  const w = await rawEnrollIn(st, 'FINAL-00001');
+  await activate(w, 'PICKUP-777');
+  await call(w, 'select * from public.research_leave()');
+  assert.equal((await final(w)).available, false, 'not for someone who left');
+});
+
+await test('the link must be a plain https address and is set only by a researcher', async () => {
+  const st = await startStudy({ code: 'FINAL-00002' });
+  await assert.rejects(owner(`update research.studies set final_survey_url = 'http://insecure.example.com' where id = $1`, [st]), /final_survey_url_check|violates check/);
+  await assert.rejects(owner(`update research.studies set final_survey_url = 'javascript:alert(1)' where id = $1`, [st]), /violates check/);
+  await assert.rejects(call(outsider, `select public.research_set_final_survey_url($1, 'https://x.example.com')`, [st], AAL2), /not_authorised/);
+  await call(researcher, `select public.research_set_final_survey_url($1, 'https://x.example.com/survey')`, [st], AAL2);
+  assert.equal((await owner('select final_survey_url from research.studies where id = $1', [st]))[0].final_survey_url, 'https://x.example.com/survey');
+  await assert.rejects(call(researcher, `select public.research_set_final_survey_url($1, 'ftp://x.example.com')`, [st], AAL2), /bad_value: link/);
+  await call(researcher, `select public.research_set_final_survey_url($1, '')`, [st], AAL2);
+  assert.equal((await owner('select final_survey_url from research.studies where id = $1', [st]))[0].final_survey_url, null);
+});
+
+await test('the start code is set by a researcher, never stored in the clear, and logged without its value', async () => {
+  const st = await startStudy({ code: 'SETCODE-001' });
+  const hash = (await owner('select activation_code_hash h from research.studies where id = $1', [st]))[0].h;
+  assert.ok(hash && !hash.includes('PICKUP'));
+  await assert.rejects(call(outsider, `select public.research_set_activation_code($1, 'NEWCODE-123')`, [st], AAL2), /not_authorised/);
+  await assert.rejects(call(researcher, `select public.research_set_activation_code($1, 'abc')`, [st], AAL2), /code_too_short/);
+  await call(researcher, `select public.research_set_activation_code($1, 'NEWCODE-123')`, [st], AAL2);
+  const u = await rawEnrollIn(st, 'SETCODE-001');
+  assert.equal((await activate(u, 'PICKUP-777')).status, 'invalid_code', 'the old code stops working');
+  assert.equal((await activate(u, 'NEWCODE-123')).status, 'ok');
+  const a = (await owner(`select detail::text d from research.audit_log where detail ->> 'what' = 'activation_code' order by id desc limit 1`))[0].d;
+  assert.ok(!a.includes('NEWCODE'));
+  await assert.rejects(call(researcher, `select activation_code_hash from research.studies`, [], AAL2), /permission denied/);
+});
+
+await test('the final-day push goes out once, on the last day only', async () => {
+  const st = await startStudy({ code: 'FINALPUSH-1', window: 7 });
+  await owner('update research.reminder_schedules set is_active = false');
+  await owner(`select research.add_schedule($1, null, 'final', '12:00', 'Last day', 'Finish the study.')`, [st]);
+  const u = await rawEnrollIn(st, 'FINALPUSH-1');
+  await activate(u, 'PICKUP-777');
+  const setWeek = async (acts, ends) => {
+    await owner('alter table research.participants disable trigger participants_guard');
+    await owner('update research.participants set enrolled_at = $2, activated_at = $2, window_ends_at = $3 where user_id = $1', [u, acts, ends]);
+    await owner('alter table research.participants enable trigger participants_guard');
+  };
+  // Day 6 of 7 on Sat 17 Oct, 10:30 ET and noon: nothing. Day 7 on Sun 18 Oct at noon: one push.
+  await setWeek('2026-10-12T13:00:00Z', '2026-10-19T04:00:00Z');
+  assert.equal((await claim('2026-10-17T16:00:00Z')).filter((r) => r.user_id === u).length, 0, 'day 6');
+  const last = (await claim('2026-10-18T16:00:00Z')).filter((r) => r.user_id === u);
+  assert.equal(last.length, 1);
+  assert.equal(last[0].kind, 'final');
+  assert.equal((await claim('2026-10-18T16:05:00Z')).filter((r) => r.user_id === u).length, 0, 'once');
 });
 
 console.log(`\nall ${n} research SQL tests passed`);

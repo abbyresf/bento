@@ -1,20 +1,27 @@
-/* Research study: the pure parts of enrolment.
+/* Research study: the pure parts of joining, starting and answering.
  *
  * Nothing here touches the network or the screen, so it can be tested. The
  * database side is supabase/migrations/054_research_foundation.sql and the design
  * is RESEARCH_DASHBOARD_SPEC.md. Copy follows the Bento voice: short, active, no
  * exclamation marks.
  *
- * The study lives in the iOS app only. The web app (the PWA) shows none of it,
- * and the database refuses a call that does not say it came from iOS. */
+ * The study lives in the iOS app and in the web app on Android. The web app on
+ * anything else shows none of it, and the database refuses a call that does not
+ * say it came from iOS or Android. */
 export { isMissingFeature } from './duo.js';
 
-export const STUDY_PLATFORM = 'ios';
+/* What the database is told about the device: 'ios' (the app), 'android' (the
+ * Android app, or the web app on an Android phone) or null for anything else.
+ * Capacitor reports 'ios', 'android' or 'web'. */
+export function studyPlatformFor(platform, userAgent = '') {
+  if (platform === 'ios') return 'ios';
+  if (platform === 'android') return 'android';
+  if (platform === 'web' && /Android/i.test(String(userAgent))) return 'android';
+  return null;
+}
 
-/* The research features belong to the iOS build and nothing else. Capacitor
- * reports 'ios', 'android' or 'web'. */
-export function researchEnabledFor(platform) {
-  return platform === STUDY_PLATFORM;
+export function researchEnabledFor(platform, userAgent = '') {
+  return studyPlatformFor(platform, userAgent) !== null;
 }
 
 /* The one thing Bento asks of a student. The consent form itself is the research
@@ -50,7 +57,9 @@ const TEXT = {
   too_many_attempts: 'Too many tries. Wait an hour and try again.',
   already_enrolled: 'You are already in this study.',
   acknowledgement_required: 'Tick the box to join.',
-  ios_only: 'The study runs in the Bento iOS app.',
+  ios_only: 'The study runs in the Bento app on iPhone and Android.',
+  not_enrolled: 'Join the study first.',
+  already_started: 'Your week has already started.',
   not_signed_in: 'Sign in first.',
   unavailable: 'Studies are not available yet. Try again later.',
   not_pending: 'These questions are no longer open.',
@@ -65,17 +74,71 @@ export function studyText(statusOrError) {
 }
 
 /* research_my_status returns one row. This turns it into what the screens use.
- * state: 'none' | 'active' | 'completed' | 'withdrawn'. */
+ * state: 'none' | 'pending' (joined, week not started) | 'active' | 'completed' |
+ * 'withdrawn'. dayNumber and totalDays are set once the week has started. */
 export function summarizeStudy(row) {
   if (!row || row.enrolled !== true) return { enrolled: false, state: 'none' };
-  const state = ['active', 'completed', 'withdrawn'].includes(row.status) ? row.status : 'active';
+  let state = ['active', 'completed', 'withdrawn'].includes(row.status) ? row.status : 'active';
+  const activated = row.activated === true;
+  if (state === 'active' && !activated) state = 'pending';
   return {
     enrolled: true,
     state,
-    participantCode: row.participant_code ?? '',
+    activated,
     endsAt: row.window_ends_at ?? null,
     daysLeft: Math.max(0, Number(row.days_left) || 0),
+    dayNumber: activated ? Math.max(1, Number(row.day_number) || 1) : null,
+    totalDays: activated ? Math.max(1, Number(row.total_days) || 1) : null,
   };
+}
+
+/* "Day 3 of 7", so a student can see how far along they are and how long is left. */
+export function dayText(dayNumber, totalDays) {
+  const d = Math.floor(Number(dayNumber) || 0);
+  const t = Math.floor(Number(totalDays) || 0);
+  if (d < 1 || t < 1) return '';
+  return `Day ${Math.min(d, t)} of ${t}`;
+}
+
+// ── Starting the week ────────────────────────────────────────────────────────
+
+export const START_TITLE = 'Start your week';
+export const START_HELP = 'Scan the QR code at the snack pickup station with your phone camera, or type the code printed there. Your reminders and daily questions begin when you do.';
+export const START_PENDING_NOTE = 'You joined the study. Your week starts when you enter the code at the snack pickup station. Until then Bento sends you no study reminders.';
+export const START_DONE = 'Your week has started.';
+export const START_LATER = 'You can do this later in Settings.';
+
+export const FINAL_TITLE = 'Final survey';
+export const FINAL_NOTE = 'This is the last part of the study. It opens in your browser.';
+export const FINAL_BUTTON = 'Open the final survey';
+
+/* The start code in a link: https://www.bentodining.com/start/CODE, or just the
+ * path /start/CODE on the web. null for anything else. */
+const START_HOST = 'www.bentodining.com';
+export function parseStartLink(url) {
+  if (typeof url !== 'string') return null;
+  let path;
+  try {
+    const u = new URL(url, `https://${START_HOST}`);
+    if (u.host !== START_HOST && !url.startsWith('/')) return null;
+    path = u.pathname;
+  } catch {
+    return null;
+  }
+  const m = /^\/start\/([A-Za-z0-9-]+)\/?$/.exec(path);
+  if (!m) return null;
+  const code = normalizeStudyCode(m[1]);
+  return code.length >= CODE_MIN ? code : null;
+}
+
+/* Only an https address is ever opened, whatever the database says. */
+export function safeExternalUrl(url) {
+  try {
+    const u = new URL(String(url ?? ''));
+    return u.protocol === 'https:' ? u.toString() : '';
+  } catch {
+    return '';
+  }
 }
 
 export function daysLeftText(n) {
@@ -98,7 +161,7 @@ export const DELETE_NOTE = 'You are in a research study. Deleting your account d
 /* The push step after joining. reason comes from subscribeToPush in push.js. */
 export function pushResultText(result) {
   if (result?.ok) return 'Study reminders are on.';
-  if (result?.reason === 'blocked') return 'Notifications are blocked. Turn them on for Bento Dining in iOS Settings.';
+  if (result?.reason === 'blocked') return 'Notifications are blocked. Turn them on for Bento Dining in your phone settings.';
   return 'Could not turn reminders on. You can try again from Settings.';
 }
 
@@ -123,6 +186,8 @@ export function summarizeSurvey(row) {
   }
   return {
     state: 'pending',
+    dayNumber: Number(row.day_number) || null,
+    totalDays: Number(row.total_days) || null,
     forDate: String(row.for_date ?? '').slice(0, 10),
     late: row.late === true,
     questions: row.questions,
@@ -173,6 +238,28 @@ export function visibleQuestions(questions, answers) {
     if (show) out.push(q);
   }
   return out;
+}
+
+/* The questions grouped into pages, in order: a lunch page, then a dinner page.
+ * Questions with no page of their own come first on a page with no title. A page
+ * is counted by what is SHOWN, so a page whose questions are all hidden is skipped.
+ * A survey that uses no pages is one page. */
+export const PAGE_TITLES = { lunch: 'Lunch', dinner: 'Dinner' };
+export function surveyPages(questions, answers) {
+  const shown = visibleQuestions(questions, answers);
+  const order = [];
+  const by = new Map();
+  for (const q of shown) {
+    const key = q.page && PAGE_TITLES[q.page] ? q.page : '';
+    if (!by.has(key)) { by.set(key, []); order.push(key); }
+    by.get(key).push(q);
+  }
+  order.sort((a, b) => (a === '' ? -1 : b === '' ? 1 : Object.keys(PAGE_TITLES).indexOf(a) - Object.keys(PAGE_TITLES).indexOf(b)));
+  return order.map((key) => ({ page: key, title: key ? PAGE_TITLES[key] : '', questions: by.get(key) }));
+}
+
+export function pageReady(page, answers) {
+  return page.questions.length > 0 && page.questions.every((q) => answerProblem(q, answerFor(q, answers)) === '');
 }
 
 export function surveyReady(questions, answers) {
