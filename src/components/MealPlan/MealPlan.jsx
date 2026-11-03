@@ -37,6 +37,8 @@ import { getNewBadge } from '../../data/badges';
 import { optimizeDay, findAlternatives, findRecommendedAdditions } from '../../utils/mealOptimizer';
 import MealCard from './MealCard';
 import DailySummary from './DailySummary';
+import DayBox from '../Box/DayBox';
+import { boxPrototypeOn } from '../Box/boxPrototype';
 import Mascot from '../Mascot/Mascot';
 import Closet from '../Mascot/Closet';
 import { useOutfit, useDisplayOutfit } from '../../lib/mascotOutfit';
@@ -120,6 +122,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
   // they are eating out. The day's targets are shared across the meals that are left.
   const dinnerOut = useDinnerOut(viewDate);
   const shares = useMemo(() => mealShares({ skipBreakfast, dinnerOut }), [skipBreakfast, dinnerOut]);
+  const boxOn = useMemo(boxPrototypeOn, []);   // the day box prototype, off unless switched on (see DayBox.jsx)
   // Athlete mode: the day's targets follow that date's training load, and a snack between meals comes out of what is left
   // for the meals not yet decided. With the mode off, or migration 064 missing, both do nothing.
   const athlete = useAthlete();
@@ -1048,6 +1051,27 @@ export default function MealPlan({ settingsVersion = 0 }) {
         </div>
       )}
 
+      {boxOn && !dateLoading && mealPlan && targets && (() => {
+        const on = activeMeals(shares);
+        const boxMeals = ['breakfast', 'lunch', 'dinner'].map((id) => ({
+          id,
+          active: on.includes(id),
+          items: customMeals[id]?.items ?? mealPlan[selectedLocation[id]]?.[id]?.items ?? [],
+          confirmed: !!confirmedMeals[id],
+          note: id === 'breakfast' && skipBreakfast ? 'skipped' : id === 'dinner' && dinnerOut ? 'eating out' : undefined,
+        }));
+        const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+        return (
+          <DayBox
+            meals={boxMeals}
+            calories={dayTotals.calories}
+            calorieTarget={dayTargetsFor(targets, shares)?.calories}
+            protein={dayTotals.protein}
+            seed={dayOfYear}
+            onOpenMeal={(id) => document.querySelector(`.meal-card.meal-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          />
+        );
+      })()}
       {isViewingToday && !dateLoading && mealPlan && (() => {
         // A quest waiting for you (a mystery dish, a Rainbow plate color) is what Bento says, ahead of the usual line.
         const say = questSays(questHints) ?? bentoSays({
@@ -1077,7 +1101,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
         );
       })()}
 
-      {!dateLoading && mealPlan && targets && (
+      {!boxOn && !dateLoading && mealPlan && targets && (
         <DailySummary totals={dayTotals} targets={dayTargetsFor(targets, shares)} />
       )}
 

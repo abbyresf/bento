@@ -14,7 +14,7 @@ const prefersReduced = () =>
   typeof window !== 'undefined'
   && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-export default function CountUp({ value, duration = 700, suffix = '', from = 0 }) {
+export default function CountUp({ value, duration = 700, suffix = '', from = 0, group = false }) {
   const target = Number.isFinite(value) ? value : 0;
   const [shown, setShown] = useState(prefersReduced() ? target : from);
   const current = useRef(shown);
@@ -38,5 +38,5 @@ export default function CountUp({ value, duration = 700, suffix = '', from = 0 }
   }, [target, duration]);
 
   // While counting, digits keep equal width so the text does not shimmy.
-  return <span style={{ fontVariantNumeric: 'tabular-nums' }}>{(prefersReduced() ? target : shown)}{suffix}</span>;
+  return <span style={{ fontVariantNumeric: 'tabular-nums' }}>{group ? (prefersReduced() ? target : shown).toLocaleString('en-US') : (prefersReduced() ? target : shown)}{suffix}</span>;
 }

@@ -1,0 +1,40 @@
+/* The day box. Display type is Fraunces (already loaded for the site), body stays Nunito. The ink outline is only on the box
+ * itself: nothing else on the screen is outlined. */
+.daybox { margin: 0.25rem 1rem 1rem; }
+.daybox-kicker { margin: 0 0 0.15rem; font: 800 0.72rem Nunito, sans-serif; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brand-orange, #FD8F2A); }
+.daybox-line {
+  margin: 0;
+  font: 700 1.85rem/1.1 'Fraunces', Georgia, serif;
+  font-variation-settings: 'opsz' 72;
+  letter-spacing: -0.004em;
+  word-spacing: 0.06em;
+  color: var(--text-primary, #24384F);
+  text-wrap: balance;
+}
+.daybox-numbers { display: flex; gap: 1.4rem; align-items: baseline; margin: 0.6rem 0 0.85rem; }
+.daybox-n { font: 700 2.35rem/1 'Fraunces', Georgia, serif; font-variation-settings: 'opsz' 96; letter-spacing: -0.01em; color: var(--text-primary, #24384F); font-variant-numeric: lining-nums tabular-nums; }
+.daybox-u { margin-left: 0.3rem; font: 700 0.78rem Nunito, sans-serif; color: var(--text-secondary, #64748b); }
+
+.daybox-svg { display: block; width: 100%; height: auto; overflow: visible; filter: drop-shadow(0 6px 0 rgba(36, 56, 79, 0.14)); }
+.daybox-comp { cursor: pointer; -webkit-tap-highlight-color: transparent; outline: none; transition: transform 160ms var(--spring-snappy, ease-out); }
+.daybox-comp:active { transform: scale(0.97); }
+.daybox-comp:focus-visible > g:first-child { stroke: #FFFDF9; stroke-width: 4; }
+.daybox-label { font: 800 10.5px Nunito, sans-serif; letter-spacing: 0.09em; text-transform: uppercase; fill: #FFFDF9; opacity: 0.92; pointer-events: none; }
+.daybox-label.dark { fill: #24384F; opacity: 0.7; }
+.daybox-glyph { animation: daybox-glyph-in 520ms var(--spring-bouncy, cubic-bezier(0.34, 1.56, 0.64, 1)) backwards; animation-delay: calc(260ms + var(--g, 0) * 70ms); transform-box: fill-box; transform-origin: center; pointer-events: none; }
+@keyframes daybox-glyph-in { from { opacity: 0; transform: translateY(-14px) scale(0.6) rotate(-12deg); } to { opacity: 1; transform: none; } }
+.daybox-check { animation: daybox-check-in 420ms var(--spring-bouncy, cubic-bezier(0.34, 1.56, 0.64, 1)) backwards 500ms; transform-box: fill-box; transform-origin: center; pointer-events: none; }
+@keyframes daybox-check-in { from { opacity: 0; transform: scale(0.2); } to { opacity: 1; } }
+
+/* The lid drops in when every meal is confirmed and lifts when peeked. Closed, it covers the box. */
+.daybox-lid { transform-box: view-box; transition: transform 520ms var(--spring-bouncy, cubic-bezier(0.34, 1.56, 0.64, 1)), opacity 200ms ease-out; cursor: pointer; outline: none; }
+.daybox-lid.open { transform: translateY(-110%); opacity: 0; }
+.daybox-lid.closed { transform: none; opacity: 1; animation: daybox-lid-drop 640ms var(--spring-bouncy, cubic-bezier(0.34, 1.56, 0.64, 1)) backwards; }
+@keyframes daybox-lid-drop { from { transform: translateY(-60%); opacity: 0; } to { transform: none; opacity: 1; } }
+.daybox-lid-text { font: 800 26px 'Fraunces', Georgia, serif; fill: #FEEAD7; letter-spacing: -0.01em; }
+.daybox-peek { margin: 0.5rem 0 0; text-align: center; font: 700 0.76rem Nunito, sans-serif; color: var(--text-disabled, #94a3b8); }
+
+@media (prefers-reduced-motion: reduce) {
+  .daybox-glyph, .daybox-check, .daybox-lid.closed { animation: none; }
+  .daybox-lid { transition: none; }
+}
