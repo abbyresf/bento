@@ -6,6 +6,7 @@ import { WEB_ORIGIN } from './apiBase';
 import { weekRange } from '../data/quests';
 import { clearWidget } from './widget';
 import { readQueue, removeEntry, updateEntry, bumpAttempts, isOfflineError } from './pendingConfirms';
+import { readRatingQueue, queueRating, dropQueuedRating, flushRatingQueue } from './pendingRatings';
 
 // ── Auth helpers ───────────────────────────────────────────────────────────
 
@@ -598,10 +599,8 @@ export async function getMyRatings() {
   return Object.fromEntries((data ?? []).map(r => [r.item_id, { rating: r.rating, name: r.item_name, updatedAt: r.updated_at }]));
 }
 
-// Upserts a rating. Passing null removes it.
-export async function rateItem(item, rating, diningHall = null) {
-  const id = await uid();
-  if (!id) return false;
+// One attempt at saving a rating. True when the database has it.
+async function sendRating(id, item, rating, diningHall) {
   if (rating === null) {
     const { error } = await supabase.from('item_ratings').delete().eq('user_id', id).eq('item_id', item.id);
     return !error;
@@ -617,6 +616,26 @@ export async function rateItem(item, rating, diningHall = null) {
     updated_at:  new Date().toISOString(),
   }, { onConflict: 'user_id,item_id' });
   return !error;
+}
+
+// Upserts a rating. Passing null removes it. A rating that cannot be saved right now is kept on the phone and sent later
+// (pendingRatings.js), so a student's stars are never lost without a word. Returns true when it reached the database.
+export async function rateItem(item, rating, diningHall = null) {
+  const id = await uid();
+  if (!id) return false;
+  let ok = false;
+  try { ok = await sendRating(id, item, rating, diningHall); } catch { ok = false; }
+  if (ok) dropQueuedRating(item.id);
+  else queueRating({ id: item.id, name: item.name, rating, diningHall });
+  return ok;
+}
+
+// Sends the ratings that were kept. Safe to call often: it does nothing when nothing is waiting.
+export async function flushPendingRatings() {
+  if (readRatingQueue().length === 0) return 0;
+  const id = await uid();
+  if (!id) return 0;
+  return flushRatingQueue((e) => sendRating(id, { id: e.id, name: e.name }, e.rating, e.diningHall));
 }
 
 // Returns aggregate ratings for all items — used for the leaderboard and badge.
