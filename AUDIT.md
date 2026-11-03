@@ -170,3 +170,27 @@ image and the structured data logo, but it is your brand file, so I left it alon
 Two things to know: `scripts/seed-demo-user.mjs` contains a demo password (`demo@bento.app`), so confirm that account
 does not exist in production, or delete it. And before making the repository private, move the 5 minute study
 reminder job and the other scheduled workflows off GitHub Actions, or they will use up the free private minutes.
+
+## H. Round two (3 Nov 2026)
+
+Pushed in round one: everything in section G, plus the `logo.png` swap (2 MB to 12 KB, flat white background).
+Committed locally, not pushed:
+- **B3** Pulse and onboarding are lazy routes. The student bundle went from 1.39 MB to 917 KB (409 KB to 271 KB
+  gzipped). Pulse (448 KB with its charts) loads only on `/admin`. I kept the landing page in the main bundle on
+  purpose: visitors arrive on a pre-rendered page and the client replaces it, so a lazy landing page would flash blank
+  while its chunk loaded. Checked in the mock app: onboarding and `/admin` both load their chunk and render.
+- **A3, ratings.** `rateItem` returned `false` when the write failed, and every caller ignored it: the stars stayed lit
+  and the database never heard. Pulse, the community totals and the Buddies quests that count ratings (Taste test,
+  Review duo, Pick of the week) missed those ratings with no message. This is a second likely cause of "the Buddies tab is
+  slow to notice a shared rating", next to the stale tab. Failed ratings are now kept on the phone and sent when the app
+  opens, returns to the front, or the connection comes back. A failed read of the ratings screen no longer leaves it
+  loading forever. Eight unit tests.
+
+Still open:
+- **A3, the rest.** The Community upvote handler (`CommunityTab.jsx` `handleEmphasize`) lets a failed request reject
+  with no message. Suggestion posting and quest starts surface errors but with small text. A shared, visible "could
+  not save, will retry" notice would fix the whole class; it needs a design decision.
+- **B4** `EXPLAIN ANALYZE` on `duo_quests` against the live database.
+- **C3** move the 5 minute study reminder job off GitHub Actions. Not urgent while the repository is public.
+- **D1 to D4 and D6** the file splits, the `mockMenu.js` rename, migration renumbering, Pulse as its own deploy. After the
+  next release, as agreed.
