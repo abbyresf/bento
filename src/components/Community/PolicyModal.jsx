@@ -13,7 +13,7 @@ export default function PolicyModal({ onClose }) {
           </button>
         </div>
         <div className="policy-body">
-          <p>The community tab is a space for Brandeis students to share honest feedback about dining. Keep it useful for everyone.</p>
+          <p>The community tab is a space for students at your school to share honest feedback about dining. Keep it useful for everyone.</p>
 
           <h3>What belongs here</h3>
           <ul>

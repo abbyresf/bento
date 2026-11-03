@@ -125,7 +125,7 @@ export default function FeedbackSheet({ onClose, initialTopic = null, initialMes
               type="email"
               value={replyEmail}
               onChange={(e) => setReplyEmail(e.target.value)}
-              placeholder="you@brandeis.edu"
+              placeholder="you@university.edu"
             />
 
             {note && <p className="fb-note">{note}</p>}
