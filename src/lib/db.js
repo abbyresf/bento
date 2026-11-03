@@ -609,7 +609,7 @@ export async function rateItem(item, rating, diningHall = null) {
     const { error } = await supabase.from('item_ratings').delete().eq('user_id', id).eq('item_id', item.id);
     return !error;
   }
-  const university = item.id?.startsWith('tu_') ? 'tufts' : 'brandeis';
+  const university = item.id?.startsWith('tu_') ? 'tufts' : item.id?.startsWith('bu_') ? 'bu' : 'brandeis';
   const { error } = await supabase.from('item_ratings').upsert({
     user_id:     id,
     item_id:     item.id,

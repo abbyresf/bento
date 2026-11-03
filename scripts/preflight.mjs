@@ -16,6 +16,13 @@ const HALLS = [
   ['brandeis', 'Kosher Table', `/api/dining/locations/the-farm-table-at-sherman/`],
   ['tufts',    'Carmichael',   `/api/tufts?slug=carmichael-dining-hall`],
   ['tufts',    'Dewick',       `/api/tufts?slug=dewick-dining`],
+  // Boston University is checked once it is switched on: PREFLIGHT_BU=1 node scripts/preflight.mjs
+  ...(process.env.PREFLIGHT_BU ? [
+    ['bu', 'Warren',   `/api/bu?slug=warren`],
+    ['bu', 'Marciano', `/api/bu?slug=marciano`],
+    ['bu', 'West',     `/api/bu?slug=west`],
+    ['bu', 'Granby',   `/api/bu?slug=granby`],
+  ] : []),
 ];
 
 // The client gives up on a location after 25s. Anything approaching that is a

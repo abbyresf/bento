@@ -49,6 +49,11 @@ jobs:
           # Tufts is paused (13 Oct 2026, see src/data/universities.js). Restore the slugs to warm it again.
           TUFTS=""
 
+          # Boston University (Nov 2026). One scrape of a hall's page fills the cache for the whole week, so each
+          # hall is requested once, for today, and tomorrow is already there. BU's robots.txt asks for a 15 second
+          # gap between requests, so the halls are spaced 16 seconds apart.
+          BU="warren marciano west granby"
+
           slow=0
 
           # An explicit if, rather than `awk ... && slow=$((slow+1))`. Actions
@@ -77,6 +82,11 @@ jobs:
             for SLUG in $TUFTS; do
               warm "$BASE/api/tufts?slug=$SLUG&date=$DATE" "$SLUG" "$DATE"
             done
+          done
+
+          for SLUG in $BU; do
+            warm "$BASE/api/bu?slug=$SLUG&date=$TODAY" "bu/$SLUG" "$TODAY"
+            sleep 16
           done
 
           # A warm request is a fraction of a second. Anything over 20s means

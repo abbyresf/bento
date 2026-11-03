@@ -34,7 +34,7 @@
       ]
     },
     {
-      "source": "/api/(dining|tufts)(.*)",
+      "source": "/api/(dining|tufts|bu)(.*)",
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",

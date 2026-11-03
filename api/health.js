@@ -2,7 +2,7 @@
 // and logs results to menu_health_log in Supabase.
 //
 // GET /api/health          → check all locations, return JSON status
-// GET /api/health?bust=true → also bust the dining/tufts cache for degraded locations
+// GET /api/health?bust=true → also bust the dining/tufts/bu cache for degraded locations
 
 import { createClient } from '@supabase/supabase-js';
 
@@ -16,6 +16,17 @@ const TUFTS_LOCATIONS = [
   { slug: 'carmichael-dining-hall', name: 'Carmichael' },
   { slug: 'dewick-dining',          name: 'Dewick' },
 ];
+
+// BU (migration 067). Its feed is a multi-megabyte page that asks crawlers for a 15 second gap, so this checks the
+// parsed copy the cache warmer keeps in menu_cache instead of fetching the page again. Set BU_LIVE to true when BU
+// is turned on in data/universities.js.
+const BU_LOCATIONS = [
+  { slug: 'warren',   name: 'Warren Towers' },
+  { slug: 'marciano', name: 'Marciano Commons' },
+  { slug: 'west',     name: 'West Campus' },
+  { slug: 'granby',   name: 'Granby (Fresh Fuel)' },
+];
+const BU_LIVE = false;
 
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner'];
 
@@ -97,6 +108,26 @@ async function bustCache(admin, result, dateStr) {
 // The database was never actually checked here. This endpoint only ever probed
 // the dining feeds, so a dead Postgres looked perfectly healthy right up until
 // students could not log in.
+async function checkBu(admin, slug, name, dateStr) {
+  if (!admin) return { slug, name, university: 'bu', status: 'error', error: 'Supabase not configured', item_count: 0 };
+  try {
+    const { data } = await admin
+      .from('menu_cache')
+      .select('html_content, fetched_at')
+      .eq('university', 'bu').eq('slug', slug).eq('date', dateStr)
+      .abortSignal(AbortSignal.timeout(5000))
+      .single();
+    if (!data) return { slug, name, university: 'bu', status: 'degraded', error: 'No cached menu', item_count: 0 };
+    const meals = JSON.parse(data.html_content)?.meals ?? {};
+    const itemCount = Object.values(meals).reduce((n, l) => n + (l?.length ?? 0), 0);
+    const ageHours = (Date.now() - new Date(data.fetched_at).getTime()) / 3600000;
+    if (ageHours > 36) return { slug, name, university: 'bu', status: 'degraded', error: 'Cached menu is stale', item_count: itemCount };
+    return { slug, name, university: 'bu', status: itemCount === 0 ? 'closed' : 'ok', item_count: itemCount };
+  } catch (err) {
+    return { slug, name, university: 'bu', status: 'error', error: err.message, item_count: 0 };
+  }
+}
+
 async function checkDatabase(admin) {
   if (!admin) return { status: 'error', error: 'Supabase not configured' };
   const started = Date.now();
@@ -136,17 +167,18 @@ export default async function handler(req, res) {
 
   // Tufts is paused (13 Oct 2026, see data/universities.js), so its feed is not checked.
   const TUFTS_PAUSED = true;
-  const [brandeisResults, tuftsResults] = await Promise.all([
+  const [brandeisResults, tuftsResults, buResults] = await Promise.all([
     Promise.all(BRANDEIS_LOCATIONS.map(l => checkBrandeis(l.slug, l.name, dateStr))),
     TUFTS_PAUSED ? Promise.resolve([]) : Promise.all(TUFTS_LOCATIONS.map(l => checkTufts(l.slug, l.name, dateStr))),
+    BU_LIVE ? Promise.all(BU_LOCATIONS.map(l => checkBu(getSupabaseAdmin(), l.slug, l.name, dateStr))) : Promise.resolve([]),
   ]);
 
-  const results = [...brandeisResults, ...tuftsResults];
+  const results = [...brandeisResults, ...tuftsResults, ...buResults];
 
   // A single dark hall is normal. Every hall at one school going dark on the
   // same day is far more likely to be a broken parser than a closed campus,
   // so escalate that case even though each location looked merely closed.
-  for (const university of ['brandeis', 'tufts']) {
+  for (const university of ['brandeis', 'tufts', 'bu']) {
     const forUni = results.filter(r => r.university === university);
     if (forUni.length && forUni.every(r => r.status === 'closed')) {
       forUni.forEach(r => {

@@ -2,7 +2,7 @@ export const UNIVERSITIES = [
   {
     id:           'brandeis',
     name:         'Brandeis University',
-    abbreviation: 'BU',
+    abbreviation: 'Brandeis',
     location:     'Waltham, MA',
     available:    true,
     aliases:      ['brandeis'],
@@ -30,6 +30,21 @@ export const UNIVERSITIES = [
     itemPrefix:   'tu_',
     diningPartner: false,
     diningTeamName: 'Tufts Dining',
+  },
+  {
+    id:           'bu',
+    name:         'Boston University',
+    abbreviation: 'BU',
+    location:     'Boston, MA',
+    // BU Dining agreed to Bento showing its menu (Nov 2026). Off until the launch checklist is done,
+    // so nothing ships early: set to true to turn it on.
+    available:    false,
+    aliases:      ['bu', 'boston university', 'terriers'],
+    hasKosher:    false,
+    labelHalal:   true,
+    itemPrefix:   'bu_',
+    diningPartner: false,
+    diningTeamName: 'BU Dining',
   },
   {
     id: 'mit',

@@ -369,6 +369,32 @@ export const TUFTS_CONFIG = {
   parseLocationPage: tuftsParseLocationPage,
 };
 
+// ── Boston University config ──────────────────────────────────────────────────
+
+// /api/bu serves parsed JSON, { meals, isOpen }, for one hall and one date (see src/services/buParse.js).
+function buParseLocationPage(text) {
+  let data;
+  try {
+    data = typeof text === 'string' ? JSON.parse(text) : text;
+  } catch {
+    return { meals: { breakfast: [], lunch: [], dinner: [] }, isOpen: false };
+  }
+  return { meals: data.meals ?? { breakfast: [], lunch: [], dinner: [] }, isOpen: !!data.isOpen };
+}
+
+export const BU_CONFIG = {
+  locations: {
+    warren:   { id: 'warren',   slug: 'warren',   name: 'Fresh Food Co. at Warren Towers',   shortName: 'Warren',   allItemsKosher: false },
+    marciano: { id: 'marciano', slug: 'marciano', name: 'Fresh Food Co. at Marciano Commons', shortName: 'Marciano', allItemsKosher: false },
+    west:     { id: 'west',     slug: 'west',     name: 'Fresh Food Co. at West Campus',     shortName: 'West',     allItemsKosher: false },
+    granby:   { id: 'granby',   slug: 'granby',   name: 'Fresh Fuel at Granby Commons',      shortName: 'Granby',   allItemsKosher: false },
+  },
+  getDiningUrl(slug, dateStr) {
+    return `${API_BASE}/api/bu?slug=${slug}&date=${dateStr}`;
+  },
+  parseLocationPage: buParseLocationPage,
+};
+
 // ── University router ─────────────────────────────────────────────────────────
 
 // Locations a student can actually pick. Excludes any table that gets merged
@@ -391,6 +417,7 @@ export function getUniversityConfig(universityId) {
   if (DEMO_CONFIG && universityId === 'demo') return DEMO_CONFIG;
   switch (universityId) {
     case 'tufts':    return TUFTS_CONFIG;
+    case 'bu':       return BU_CONFIG;
     case 'brandeis':
     default:         return BRANDEIS_CONFIG;
   }
