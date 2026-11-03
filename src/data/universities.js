@@ -36,9 +36,8 @@ export const UNIVERSITIES = [
     name:         'Boston University',
     abbreviation: 'BU',
     location:     'Boston, MA',
-    // BU Dining agreed to Bento showing its menu (Nov 2026). Off until the launch checklist is done,
-    // so nothing ships early: set to true to turn it on.
-    available:    false,
+    // BU Dining agreed to Bento showing its menu (Nov 2026).
+    available:    true,
     aliases:      ['bu', 'boston university', 'terriers'],
     hasKosher:    false,
     labelHalal:   true,

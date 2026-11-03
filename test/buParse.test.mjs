@@ -87,11 +87,11 @@ test('station kinds', () => {
   assert.equal(buStationKind('World'), 'entree');
 });
 
-test('BU is wired in but off until it is launched', () => {
+test('BU is wired in and launched', () => {
   const bu = UNIVERSITIES.find((u) => u.id === 'bu');
   assert.equal(bu.name, 'Boston University');
   assert.equal(bu.itemPrefix, 'bu_');
-  assert.equal(bu.available, false);
+  assert.equal(bu.available, true);
   assert.equal(getUniversityConfig('bu'), BU_CONFIG);
   assert.deepEqual(Object.keys(BU_CONFIG.locations), ['warren', 'marciano', 'west', 'granby']);
   assert.match(BU_CONFIG.getDiningUrl('warren', '2026-11-02'), /\/api\/bu\?slug=warren&date=2026-11-02$/);

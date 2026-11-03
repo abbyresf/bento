@@ -26,7 +26,7 @@ const BU_LOCATIONS = [
   { slug: 'west',     name: 'West Campus' },
   { slug: 'granby',   name: 'Granby (Fresh Fuel)' },
 ];
-const BU_LIVE = false;
+const BU_LIVE = true;
 
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner'];
 
