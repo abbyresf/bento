@@ -10,7 +10,7 @@ const casesFile = process.env.CASES_FILE ?? new URL('../test/fixtures/restrictio
 const dir = process.env.MIGRATIONS_DIR
   ? process.env.MIGRATIONS_DIR
   : new URL('../supabase/migrations/', import.meta.url).pathname;
-const migrations = ['043_duo_foundation.sql', '044_duo_here_duration.sql', '045_duo_quests_and_colors.sql', '046_duo_widget.sql', '047_duo_daily_target.sql', '048_duo_rating_quests.sql', '049_duo_match_plate.sql', '050_duo_mystery_plate.sql', '051_duo_rainbow_plate.sql', '052_duo_more_quests.sql', '053_duo_mystery_swap_and_hints.sql']
+const migrations = ['043_duo_foundation.sql', '044_duo_here_duration.sql', '045_duo_quests_and_colors.sql', '046_duo_widget.sql', '047_duo_daily_target.sql', '048_duo_rating_quests.sql', '049_duo_match_plate.sql', '050_duo_mystery_plate.sql', '051_duo_rainbow_plate.sql', '052_duo_more_quests.sql', '053_duo_mystery_swap_and_hints.sql', '068_duo_expired_picks.sql']
   .map((f) => readFileSync(`${dir}/${f}`, 'utf8'));
 const db = new PGlite();
 
@@ -498,6 +498,36 @@ const rowOf = async (as, other, id) => (await call(as, 'select * from public.duo
 const claimOf = async (as, other, id) => (await call(as, 'select public.duo_claim($1, $2, $3) r', [other, id, thisWeek]))[0].r;
 const mealToday = (u, ids = []) => db.query(`insert into public.meal_history (user_id, meal_date, meal_type, items) values ($1, (now() at time zone 'America/New_York')::date, 'lunch', $2::jsonb)`, [u, JSON.stringify(ids.map((id) => ({ id })))]);
 const pairUp = async (name) => { const a = await user(name + 'A'); const b = await user(name + 'B'); await makePair(a, b); await startFriendshipDaysAgo(a, b, 30); return [a, b]; };
+
+await test('an expired Rainbow, Bento, Twin or Swap pick stops showing as open, unless both of you already tapped', async () => {
+  const [a, b] = await pairUp('EX');
+  const expire = (quest) => db.query(`update public.duo_plate_picks set created_at = now() - interval '3 days', expires_at = now() - interval '1 day' where quest_id = $3 and user_a = least($1::uuid, $2::uuid) and user_b = greatest($1::uuid, $2::uuid)`, [a, b, quest]);
+  assert.equal((await call(a, 'select public.duo_rainbow_pick($1, $2) r', [b, 'green']))[0].r, 'ok');
+  assert.equal((await rowOf(a, b, 'rainbow_plate')).detail, 'Green');                    // open: shows, I did it is offered
+  await expire('rainbow_plate');
+  let r = await rowOf(a, b, 'rainbow_plate');
+  assert.equal(r.detail, null); assert.equal(r.acked, false); assert.equal(r.progress, 0);   // ran out, so the card shows Start again
+  assert.equal((await call(b, 'select public.duo_rainbow_pick($1, $2) r', [a, 'red']))[0].r, 'ok');   // and a new one can be made
+  assert.equal((await rowOf(a, b, 'rainbow_plate')).detail, 'Red');
+  // both tapped before it ran out: it stays, so it can still be claimed
+  await mealToday(a); await mealToday(b);
+  assert.equal((await call(a, 'select public.duo_plate_ack($1) r', [b]))[0].r, 'ok');
+  assert.equal((await call(b, 'select public.duo_plate_ack($1) r', [a]))[0].r, 'ok');
+  await db.query(`update public.duo_plate_picks set expires_at = now() - interval '1 hour' where quest_id = 'rainbow_plate' and item_name = 'Red' and user_a = least($1::uuid, $2::uuid)`, [a, b]);
+  r = await rowOf(a, b, 'rainbow_plate');
+  assert.equal(r.detail, 'Red'); assert.equal(r.progress, 2);
+  assert.equal(await claimOf(a, b, 'rainbow_plate'), 'ok');
+  // the other three behave the same
+  assert.equal((await call(a, 'select public.duo_bento_pick($1) r', [b]))[0].r, 'ok');
+  assert.equal((await call(a, 'select public.duo_twin_request($1, $2) r', [b, 'twin']))[0].r, 'ok');
+  assert.equal((await call(a, 'select public.duo_twin_request($1, $2) r', [b, 'swap']))[0].r, 'ok');
+  for (const q of ['bento_plate', 'twin_day', 'outfit_swap']) await expire(q);
+  for (const q of ['bento_plate', 'twin_day', 'outfit_swap']) {
+    r = await rowOf(a, b, q);
+    assert.equal(r.detail, null, q); assert.ok(!r.acked, q); assert.ok(!r.requested_by_me, q);   // null or false, the app reads only === true
+  }
+});
+
 
 await test('bento plate: honor system, a tap needs a confirmed meal, both taps then claim', async () => {
   const [a, b] = await pairUp('BP'); const s = await user('BPS');

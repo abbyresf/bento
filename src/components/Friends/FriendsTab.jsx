@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { useFriends, refreshFriends } from '../../lib/friendsStore';
 import { clearHere, setSharing, endFriend, blockFriend, getDuoStreak, getDuoQuests, claimDuoQuest, getDuoPerks, ackPlate } from '../../lib/duo';
@@ -123,6 +123,22 @@ export default function FriendsTab() {
     setQuestSheet({ kind: SHEET_FOR[g.quest.id], friend0: withBuddy ? friends.find((f) => f.friend_id === g.friendId) ?? null : null });
   };
   const say = (text) => setClaimNote(text);
+
+  // The tabs stay mounted, so quest progress was only read when the buddy list changed. A dish rated on the Ratings tab, or a
+  // buddy's tap, never showed here until the app was reopened. Read again when this tab comes into view, when the app comes
+  // back to the front, and every 30 seconds while it is showing.
+  const pageRef = useRef(null);
+  const refreshRef = useRef(null);
+  useEffect(() => { refreshRef.current = ids && status === 'ok' ? reloadQuests : null; });
+  useEffect(() => {
+    const showing = () => Boolean(pageRef.current) && pageRef.current.offsetParent !== null && document.visibilityState === 'visible';
+    const refresh = () => { if (showing()) refreshRef.current?.(); };
+    const timer = setInterval(refresh, 30000);
+    const io = typeof IntersectionObserver === 'function' ? new IntersectionObserver((e) => { if (e.some((x) => x.isIntersecting)) refresh(); }) : null;
+    if (io && pageRef.current) io.observe(pageRef.current);
+    document.addEventListener('visibilitychange', refresh);
+    return () => { clearInterval(timer); io?.disconnect(); document.removeEventListener('visibilitychange', refresh); };
+  }, [status]);
   // "I did it" for Rainbow plate and Bento plate. For Bento plate the dishes are checked here first, so the tap is honest.
   const tapQuest = async (g) => {
     setBusy(true); say(null);
@@ -133,14 +149,16 @@ export default function FriendsTab() {
       if (!ok) { say('Confirm a meal with a protein, a vegetable and a grain on Today first.'); setBusy(false); return; }
     }
     const res = await ackPlate(g.friendId, g.quest.id);
-    if (res.ok) await reloadQuests();
-    say(res.ok ? null : res.status === 'no_meal' ? 'Confirm a meal on Today first, then tap I did it.' : 'Could not save that. Try again.');
+    if (res.ok || res.status === 'no_pick') await reloadQuests();   // an ended quest goes back to Start
+    say(res.ok ? null : res.status === 'no_meal' ? 'Confirm a meal on Today first, then tap I did it.'
+      : res.status === 'no_pick' ? 'That one ended. Start a new one.' : 'Could not save that. Try again.');
     setBusy(false);
   };
   const approve = async (g) => {
     setBusy(true); say(null);
     const res = await ackPlate(g.friendId, g.quest.id);
     if (res.ok) { await reloadQuests(); await loadCostume(); say('Agreed. Bento dresses up for the day.'); }
+    else if (res.status === 'no_pick') { await reloadQuests(); say('That one ended. Start a new one.'); }
     else say('Could not save that. Try again.');
     setBusy(false);
   };
@@ -156,7 +174,7 @@ export default function FriendsTab() {
   const questList = useMemo(() => groupQuests(friends, quests, weeks), [friends, quests, weeks]);
   const questsUnreadable = friends.length > 0 && friends.every((f) => quests[f.friend_id] === null);
 
-  if (status === 'idle') return <div className="ft-page"><p className="fr-note">Loading…</p></div>;
+  if (status === 'idle') return <div className="ft-page" ref={pageRef}><p className="fr-note">Loading…</p></div>;
 
   const sent = ({ hall, meal, reached, minutes }) => {
     const at = Date.now();
@@ -175,7 +193,7 @@ export default function FriendsTab() {
   const isNative = Capacitor.isNativePlatform();
 
   return (
-    <div className="ft-page">
+    <div className="ft-page" ref={pageRef}>
       <h2 className="ft-title">Buddies</h2>
 
       {offline && <p className="fr-offline">No connection. Showing the last list.</p>}
