@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import { flushPendingConfirms, isOnboardingComplete, isTermsAccepted, setTermsAccepted, signOut, updatePassword, recordInstallState, getActiveSurvey, clearAccountLocalData } from './lib/db';
@@ -8,7 +8,6 @@ import LandingPage from './components/Landing/LandingPage';
 import LandingContact from './components/Landing/LandingContact';
 import LandingRequestSchool from './components/Landing/LandingRequestSchool';
 import { Capacitor } from '@capacitor/core';
-import OnboardingWizard from './components/Onboarding/OnboardingWizard';
 import StudyHost from './components/Research/StudyHost';
 import MealPlan from './components/MealPlan/MealPlan';
 import Settings from './components/Settings/Settings';
@@ -17,8 +16,6 @@ import BottomNav from './components/Nav/BottomNav';
 import TermsGate from './components/Terms/TermsGate';
 import InstallPrompt from './components/Install/InstallPrompt';
 import AppTutorial from './components/Install/AppTutorial';
-import PulseApp from './components/Pulse/PulseApp';
-import PulseJoin from './components/Pulse/PulseJoin';
 import MyRatings from './components/MyRatings/MyRatings';
 import CommunityTab from './components/Community/CommunityTab';
 import { RatingsProvider } from './context/RatingsContext';
@@ -41,6 +38,13 @@ import JoinSheet from './components/Friends/JoinSheet';
 import FriendsTab from './components/Friends/FriendsTab';
 import './App.css';
 import BentoLogo from './components/common/BentoLogo';
+
+// Loaded only when someone reaches them. Pulse (with its charts) is for dining staff on /admin, and onboarding runs once per
+// account, so neither belongs in the download every student makes on every launch.
+const PulseApp = lazy(() => import('./components/Pulse/PulseApp'));
+const PulseJoin = lazy(() => import('./components/Pulse/PulseJoin'));
+const OnboardingWizard = lazy(() => import('./components/Onboarding/OnboardingWizard'));
+const loadingScreen = <div className="app-loading"><div className="spinner"></div></div>;
 
 function isStandalone() {
   // The native app is installed by definition. Without this it looked like a
@@ -306,8 +310,8 @@ function App() {
 
   // ── Route branching (after all hooks) ────────────────────────────────────────
 
-  if (joinMatch) return <PulseJoin token={joinMatch[1]} />;
-  if (location.pathname.startsWith('/admin')) return <PulseApp />;
+  if (joinMatch) return <Suspense fallback={loadingScreen}><PulseJoin token={joinMatch[1]} /></Suspense>;
+  if (location.pathname.startsWith('/admin')) return <Suspense fallback={loadingScreen}><PulseApp /></Suspense>;
   if (location.pathname === '/preview') {
     // Web-only: a way to see the marketing page while signed in. In the app
     // there is no marketing page to preview.
@@ -432,7 +436,9 @@ function App() {
     return (
       <>
         <div style={{ display: showLanding ? 'none' : 'contents' }}>
-          <OnboardingWizard onComplete={handleOnboardingComplete} onGoContact={handleGoContact} onRequestSchool={handleGoRequestSchool} />
+          <Suspense fallback={loadingScreen}>
+            <OnboardingWizard onComplete={handleOnboardingComplete} onGoContact={handleGoContact} onRequestSchool={handleGoRequestSchool} />
+          </Suspense>
         </div>
         {landing}
       </>
