@@ -7,6 +7,7 @@ import { useNutritionDisplay } from '../../context/NutritionDisplayContext';
 import CountUp from '../common/CountUp';
 import { haptics } from '../../lib/haptics';
 import './MealCard.css';
+import { formatRange } from '../../utils/mealHours';
 
 const CATEGORY_ORDER = ['breakfast', 'entree', 'grill', 'deli', 'pizza', 'allgood', 'sides', 'soup', 'salad', 'bakery', 'beverage'];
 
@@ -184,7 +185,7 @@ export default function MealCard({
   const showKosherBadge = allItemsKosher && isKosherUser;
 
   const mealLabel = meal.charAt(0).toUpperCase() + meal.slice(1);
-  const timeRange = `${mealTime.start > 12 ? mealTime.start - 12 : mealTime.start}${mealTime.start >= 12 ? 'pm' : 'am'} – ${mealTime.end > 12 ? mealTime.end - 12 : mealTime.end}${mealTime.end >= 12 ? 'pm' : 'am'}`;
+  const timeRange = formatRange(mealTime);
 
   const switchToBento = () => {
     setMode('bento');

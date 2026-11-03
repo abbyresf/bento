@@ -24,7 +24,7 @@ function writePlanCache(date, meals) {
   } catch { /* storage unavailable in private mode; fall back to defaults */ }
 }
 
-import { hasMealPassed, MEAL_TIMES } from '../../data/mockMenu';
+import { mealHoursFor, hoursHavePassed } from '../../utils/mealHours';
 import { UNIVERSITIES } from '../../data/universities';
 import { fetchDiningMenu, getUniversityConfig, getSelectableLocations } from '../../services/menuFetcher';
 import { getUserProfile, getNutritionTargets, getDietaryRestrictions, getRecentItemIds, addMealToHistory, removeMealFromHistory, setCachedMenu, getCachedMenu, getCachedMenuAge, incrementStreak, incrementStreakForDate, getStreak, getConfirmedMealsForDate, fetchConfirmedMeals, recordDiningAvailability, flushPendingConfirms, getSession, setMealConsumption } from '../../lib/db';
@@ -978,7 +978,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const getMealPast = (meal) => {
     if (isViewingPast)    return true;
     if (isViewingTomorrow) return false;
-    return hasMealPassed(meal);
+    return hoursHavePassed(mealHoursFor(menu, selectedLocation[meal], meal));
   };
 
   // A snack between meals, picked from the menu of `meal` at the hall chosen for it.
@@ -1106,7 +1106,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
           <MealCard
             key={meal}
             meal={meal}
-            mealTime={MEAL_TIMES[meal]}
+            mealTime={mealHoursFor(menu, selectedLocation[meal], meal)}
             isPast={getMealPast(meal)}
             locationOptions={Object.values(getSelectableLocations(getUniversityConfig(university))).map(loc => ({
               id: loc.id,

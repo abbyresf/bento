@@ -143,7 +143,7 @@ export async function fetchDiningMenu(config, dateStr = null) {
         const res = await fetch(url, { signal: AbortSignal.timeout(25000) });
         if (!res.ok) throw new Error(`HTTP ${res.status} for ${locationConfig.slug}`);
         const html = await res.text();
-        const { meals: parsedMeals, isOpen } = config.parseLocationPage(html);
+        const { meals: parsedMeals, isOpen, hours } = config.parseLocationPage(html);
         const meals = dedupeMeals(parsedMeals);
         // Force-tag every item from an allItemsKosher location so the optimizer
         // can safely include them for kosher dietary restrictions.
@@ -159,7 +159,7 @@ export async function fetchDiningMenu(config, dateStr = null) {
             items.forEach(item => { item.source = locationConfig.sourceLabel; })
           );
         }
-        return [locationId, { ...locationConfig, meals, isOpen }];
+        return [locationId, { ...locationConfig, meals, isOpen, ...(hours && Object.keys(hours).length ? { hours } : {}) }];
       } catch (err) {
         lastError = err;
       }
@@ -371,7 +371,7 @@ export const TUFTS_CONFIG = {
 
 // ── Boston University config ──────────────────────────────────────────────────
 
-// /api/bu serves parsed JSON, { meals, isOpen }, for one hall and one date (see src/services/buParse.js).
+// /api/bu serves parsed JSON, { meals, isOpen, hours }, for one hall and one date (see src/services/buParse.js).
 function buParseLocationPage(text) {
   let data;
   try {
@@ -379,7 +379,7 @@ function buParseLocationPage(text) {
   } catch {
     return { meals: { breakfast: [], lunch: [], dinner: [] }, isOpen: false };
   }
-  return { meals: data.meals ?? { breakfast: [], lunch: [], dinner: [] }, isOpen: !!data.isOpen };
+  return { meals: data.meals ?? { breakfast: [], lunch: [], dinner: [] }, isOpen: !!data.isOpen, hours: data.hours ?? {} };
 }
 
 export const BU_CONFIG = {

@@ -20,6 +20,15 @@ const STAPLES_BY_UNIVERSITY = {
     { id: 'staple-tu-choc-chip-cookie',    name: 'Chocolate Chip Cookie' },
     { id: 'staple-tu-stir-fry-rice-bowl',  name: 'Stir-Fry Rice Bowl' },
   ],
+  // Dishes that appear on BU's own menus (Warren, Marciano, West, Granby).
+  bu: [
+    { id: 'staple-bu-scrambled-eggs',      name: 'Scrambled Eggs' },
+    { id: 'staple-bu-lemon-chicken',       name: 'Lemon Grilled Chicken Breast' },
+    { id: 'staple-bu-smash-burger',        name: 'Signature Smash Burger' },
+    { id: 'staple-bu-white-rice',          name: 'White Rice' },
+    { id: 'staple-bu-hummus',              name: 'Hummus' },
+    { id: 'staple-bu-plain-yogurt',        name: 'Plain Yogurt' },
+  ],
 };
 
 const DEFAULT_STAPLES = [

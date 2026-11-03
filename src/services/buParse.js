@@ -12,10 +12,15 @@
  *
  * Create-your-own stations (an omelet, a bowl) list one dish whose numbers are
  * the maximum of every topping, and BU's own page says "nutrition varies with
- * options". Putting that figure on a plate would be a lie, so those dishes are
- * left out. */
+ * options". That figure would be a lie on a plate, so the line itself is left
+ * out and each option under it (Scrambled Eggs, Cheddar, Spinach...) becomes a
+ * dish of its own, with its own label, which a student can add one by one.
+ *
+ * Every dish's ingredient text is also read as a check on BU's allergen and diet
+ * labels (see buIngredients.js). */
 import { parse } from 'node-html-parser';
 import { parseServingSize } from '../utils/servingSize.js';
+import { reconcileDish } from './buIngredients.js';
 
 const num = (text) => {
   const m = String(text ?? '').replace(/,/g, '').match(/-?\d+(?:\.\d+)?/);
@@ -65,24 +70,21 @@ const DIET_TAGS = {
 // BU's allergen class names, in the vocabulary the app's restrictions use.
 const ALLERGENS = {
   milk: 'milk', egg: 'eggs', soy: 'soy', wheat: 'wheat', fish: 'fish', shellfish: 'shellfish',
-  'tree-nuts': 'treeNuts', peanuts: 'peanuts', sesame: 'sesame',
+  'tree-nuts': 'tree nuts', peanuts: 'peanuts', sesame: 'sesame',
 };
 
 const slugOf = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 
-/* "Salsa Verde (tomatillos, onions), Fresh Onion" is two ingredients. Split on commas outside brackets and
-   keep the name before any bracket. */
-function topLevelIngredients(text) {
-  const out = [];
-  let depth = 0;
-  let cur = '';
-  for (const ch of text) {
-    if (ch === '(' || ch === '[') depth += 1;
-    else if ((ch === ')' || ch === ']') && depth > 0) depth -= 1;
-    if (ch === ',' && depth === 0) { out.push(cur); cur = ''; } else cur += ch;
-  }
-  out.push(cur);
-  return out.map((s) => s.replace(/\s*[([].*$/s, '').trim().toLowerCase()).filter(Boolean);
+/* Every ingredient named in the text, nested ones included ("Salsa Verde (tomatillos, onions)" gives salsa verde,
+   tomatillos and onions). The app matches a student's own allergy words against this list, so a sesame oil inside
+   a sauce has to be in it. */
+function allIngredients(text) {
+  const names = text
+    .replace(/[()[\]]/g, ',')
+    .split(/[,;]/)
+    .map((s) => s.replace(/\b(?:contains?|less than|\d+%|or less of|of the following)\b/gi, ' ').replace(/\s+/g, ' ').trim().toLowerCase())
+    .filter((s) => s.length > 1 && s.length < 60);
+  return [...new Set(names)].slice(0, 120);
 }
 
 function labelValue(el, label) {
@@ -95,58 +97,91 @@ function labelValue(el, label) {
   return 0;
 }
 
-function parseDish(li, mealPeriod) {
-  const wrapper = li.querySelector('.menu-item-wrapper');
-  if (!wrapper) return null;
-  const name = wrapper.querySelector('.menu-item-title')?.textContent.trim();
-  if (!name) return null;
-
-  // A create-your-own line: one dish standing for many choices. Left out (see the header).
-  if (wrapper.querySelector('.js-nutrition-see-options') || li.querySelector('.cyo-nutrition-facts')) return null;
-
-  const cals = wrapper.querySelector('.menu-nutrition-cals strong');
-  if (!cals) return null;
-
-  const facts = li.querySelector('section.nutrition-main') ?? li;
-  const stationName = wrapper.querySelector('.js-sortby-station')?.textContent.trim() || '';
-
-  const tags = new Set();
-  for (const d of wrapper.querySelectorAll('.menu-item-dietary-restriction li')) {
-    for (const cls of d.classNames.split(/\s+/)) for (const t of DIET_TAGS[cls] ?? []) tags.add(t);
+/* One dish from its label section. `overview` is the short calories/protein/carbs list shown on the menu card,
+   absent for a create-your-own option, whose numbers come from the full label alone. */
+function buildItem({ id, name, stationName, groupTitle, facts, overview, mealPeriod }) {
+  const tags = [];
+  for (const d of facts.querySelectorAll('.menu-item-dietary-restriction li')) {
+    for (const cls of d.classNames.split(/\s+/)) for (const t of DIET_TAGS[cls] ?? []) if (!tags.includes(t)) tags.push(t);
   }
-  const allergens = [];
+  const labeled = [];
   for (const a of facts.querySelectorAll('.nutrition-facts-allergens li')) {
     const key = ALLERGENS[a.classNames.split(/\s+/)[0]];
-    if (key && !allergens.includes(key)) allergens.push(key);
+    if (key && !labeled.includes(key)) labeled.push(key);
   }
 
-  const ingredientText = facts.querySelector('.nutrition-facts-ingredients')?.textContent.replace(/^\s*Ingredients:\s*/i, '') ?? '';
-  const ingredients = topLevelIngredients(ingredientText).slice(0, 20);
+  const ingredientText = facts.querySelector('.nutrition-facts-ingredients')?.textContent.replace(/^\s*Ingredients:\s*/i, '').trim() ?? '';
+  const { allergens, tags: checkedTags, check } = reconcileDish({ allergens: labeled, tags }, ingredientText);
 
-  const protein = num(wrapper.querySelector('.menu-nutrition-protein strong')?.textContent) || labelValue(facts, 'protein');
-  const carbs = num(wrapper.querySelector('.menu-nutrition-carbs strong')?.textContent) || labelValue(facts, 'total carbohydrate');
+  const calories = overview ? num(overview.querySelector('.menu-nutrition-cals strong')?.textContent) : labelValue(facts, 'calories');
+  const protein = (overview && num(overview.querySelector('.menu-nutrition-protein strong')?.textContent)) || labelValue(facts, 'protein');
+  const carbs = (overview && num(overview.querySelector('.menu-nutrition-carbs strong')?.textContent)) || labelValue(facts, 'total carbohydrate');
 
+  const stations = [groupTitle ?? stationName].filter(Boolean);
   return {
-    id: `bu_${slugOf(name)}`,
+    id,
     name,
     station: buStationKind(stationName),
-    stationName: stationName || null,
-    stations: stationName ? [stationName] : [],
+    stationName: stations[0] ?? null,
+    stations,
     meal: mealPeriod,
     nutrition: {
-      calories: num(cals.textContent),
-      protein,
-      carbs,
+      calories, protein, carbs,
       fat: labelValue(facts, 'total fat'),
       sodium: labelValue(facts, 'sodium'),
       fiber: labelValue(facts, 'dietary fiber'),
       sugar: labelValue(facts, 'sugars'),
     },
     serving: parseServingSize(facts.querySelector('.nutrition-serving-size')?.textContent.replace(/^\s*Serving size\s*/i, '').trim()),
-    tags: [...tags],
-    ingredients,
+    tags: checkedTags,
+    ingredients: allIngredients(ingredientText),
     allergens,
+    // What the ingredient check changed against BU's labels, and whether there was anything to check.
+    ...(Object.keys(check).length ? { ingredientCheck: check } : {}),
+    ...(ingredientText ? {} : { noIngredients: true }),
   };
+}
+
+function parseDishes(li, mealPeriod) {
+  const wrapper = li.querySelector('.menu-item-wrapper');
+  if (!wrapper) return [];
+  const name = wrapper.querySelector('.menu-item-title')?.textContent.trim();
+  if (!name) return [];
+  const stationName = wrapper.querySelector('.js-sortby-station')?.textContent.trim() || '';
+
+  // A create-your-own line: its options are the dishes.
+  const cyoRows = li.querySelectorAll('.nutrition-label-cyo > li.nutrition-label-cyo-section');
+  if (cyoRows.length) {
+    const groupTitle = /^create your own$/i.test(name) && stationName ? `Create your own (${stationName})` : name;
+    return cyoRows.map((row) => {
+      const optionName = row.querySelector('.nutrition-label-cyo-ingredient')?.textContent.trim();
+      const facts = row.querySelector('section.nutrition-create-your-own');
+      if (!optionName || !facts) return null;
+      const serving = facts.querySelector('.nutrition-serving-size')?.textContent.replace(/^\s*Serving size\s*/i, '').trim() ?? '';
+      return buildItem({ id: `bu_opt_${slugOf(optionName)}_${slugOf(serving)}`, name: optionName, stationName, groupTitle, facts, overview: null, mealPeriod });
+    }).filter(Boolean);
+  }
+  // A create-your-own line whose options did not come with it: its own figure is the maximum of every topping.
+  if (wrapper.querySelector('.js-nutrition-see-options') || /varies with options/i.test(wrapper.querySelector('.menu-nodata')?.textContent ?? '')) return [];
+
+  const overview = wrapper.querySelector('.menu-nutrition-overview');
+  if (!overview?.querySelector('.menu-nutrition-cals')) return [];
+  const facts = li.querySelector('section.nutrition-main') ?? li;
+  return [buildItem({ id: `bu_${slugOf(name)}`, name, stationName, facts, overview, mealPeriod })];
+}
+
+/* "7:00 AM - 11:00 AM" as { start: 7, end: 11 } in hours (10:30 is 10.5), or null. */
+export function buParseHours(text = '') {
+  const parts = [...String(text).matchAll(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/gi)];
+  if (parts.length < 2) return null;
+  const toHours = (m) => {
+    let h = parseInt(m[1], 10) % 12;
+    if (m[3].toLowerCase() === 'pm') h += 12;
+    return h + (m[2] ? parseInt(m[2], 10) / 60 : 0);
+  };
+  const start = toHours(parts[0]);
+  const end = toHours(parts[1]);
+  return end > start ? { start, end } : null;
 }
 
 /* The HTML of one day's <ol>, cut from the whole page, or null when the page does not list that date. */
@@ -167,18 +202,27 @@ export function buListedDates(html) {
 
 export function parseBuMenuPage(html, dateStr) {
   const meals = { breakfast: [], lunch: [], dinner: [] };
+  const hours = {};
   const day = sliceBuDay(html, dateStr);
-  if (!day) return { meals, isOpen: false };
+  if (!day) return { meals, isOpen: false, hours };
 
   const root = parse(day);
   for (const section of root.querySelectorAll('li.menu-meal-period')) {
     const slug = section.querySelector('.js-meal-period-name')?.getAttribute('data-meal-period-slug');
-    const mealPeriod = buMealPeriod(slug, section.querySelector('.js-meal-period-times')?.textContent);
+    const times = section.querySelector('.js-meal-period-times')?.textContent;
+    const mealPeriod = buMealPeriod(slug, times);
     if (!mealPeriod) continue;
+
+    // When two sittings map to one meal (brunch and lunch), the meal runs from the first start to the last end.
+    const span = buParseHours(times);
+    if (span) hours[mealPeriod] = hours[mealPeriod] ? { start: Math.min(hours[mealPeriod].start, span.start), end: Math.max(hours[mealPeriod].end, span.end) } : span;
+
     for (const li of section.querySelectorAll('ol.menu-dishes > li')) {
-      const item = parseDish(li, mealPeriod);
-      if (item) { item.position = meals[mealPeriod].length; meals[mealPeriod].push(item); }
+      for (const item of parseDishes(li, mealPeriod)) {
+        item.position = meals[mealPeriod].length;
+        meals[mealPeriod].push(item);
+      }
     }
   }
-  return { meals, isOpen: Object.values(meals).some((a) => a.length > 0) };
+  return { meals, isOpen: Object.values(meals).some((a) => a.length > 0), hours };
 }
