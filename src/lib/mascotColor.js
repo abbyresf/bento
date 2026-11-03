@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { supabase } from './supabase';
+import { currentUserId, readProfileRow, forgetProfileRead } from './authId';
 import { cleanColor } from '../data/mascotColors';
 import { syncWidgetMascot } from './widget';
 
@@ -39,17 +40,15 @@ export async function setMascotColor(id) {
   emit(next);
   syncWidgetMascot(readOutfit(), next);
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) await supabase.from('profiles').update({ mascot_color: next }).eq('id', user.id);
+    const id = await currentUserId();
+    if (id) { await supabase.from('profiles').update({ mascot_color: next }).eq('id', id); forgetProfileRead(); }
   } catch { /* the local copy still holds */ }
 }
 
 /* Pull the saved choice from the database. Call once when a student is signed in. */
 export async function loadMascotColor() {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data, error } = await supabase.from('profiles').select('mascot_color').eq('id', user.id).maybeSingle();
+    const { data, error } = await readProfileRow();
     if (error || !data) return;
     const saved = cleanColor(data.mascot_color);
     try {

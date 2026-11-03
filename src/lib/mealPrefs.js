@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { supabase } from './supabase';
+import { currentUserId, readProfileRow, forgetProfileRead } from './authId';
 
 /* Two switches about which meals Bento plans.
  *
@@ -34,17 +35,15 @@ export async function setSkipBreakfast(on) {
   try { if (skipBreakfast) localStorage.setItem(SKIP_KEY, '1'); else localStorage.removeItem(SKIP_KEY); } catch { /* storage unavailable */ }
   emit();
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) await supabase.from('profiles').update({ skip_breakfast: skipBreakfast }).eq('id', user.id);
+    const id = await currentUserId();
+    if (id) { await supabase.from('profiles').update({ skip_breakfast: skipBreakfast }).eq('id', id); forgetProfileRead(); }
   } catch { /* the phone's copy still holds */ }
 }
 
 /* Reads the saved choice. Call once when a student is signed in. A failed or empty read leaves what is showing alone. */
 export async function loadMealPrefs() {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data, error } = await supabase.from('profiles').select('skip_breakfast').eq('id', user.id).maybeSingle();
+    const { data, error } = await readProfileRow();
     if (error || !data || typeof data.skip_breakfast !== 'boolean') return;
     if (data.skip_breakfast !== skipBreakfast) {
       skipBreakfast = data.skip_breakfast;

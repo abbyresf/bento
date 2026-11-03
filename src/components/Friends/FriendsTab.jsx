@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useRefreshOnShow } from '../../lib/useRefreshOnShow';
 import { Capacitor } from '@capacitor/core';
 import { useFriends, refreshFriends } from '../../lib/friendsStore';
 import { clearHere, setSharing, endFriend, blockFriend, getDuoStreak, getDuoQuests, claimDuoQuest, getDuoPerks, ackPlate } from '../../lib/duo';
@@ -125,20 +126,9 @@ export default function FriendsTab() {
   const say = (text) => setClaimNote(text);
 
   // The tabs stay mounted, so quest progress was only read when the buddy list changed. A dish rated on the Ratings tab, or a
-  // buddy's tap, never showed here until the app was reopened. Read again when this tab comes into view, when the app comes
-  // back to the front, and every 30 seconds while it is showing.
-  const pageRef = useRef(null);
-  const refreshRef = useRef(null);
-  useEffect(() => { refreshRef.current = ids && status === 'ok' ? reloadQuests : null; });
-  useEffect(() => {
-    const showing = () => Boolean(pageRef.current) && pageRef.current.offsetParent !== null && document.visibilityState === 'visible';
-    const refresh = () => { if (showing()) refreshRef.current?.(); };
-    const timer = setInterval(refresh, 30000);
-    const io = typeof IntersectionObserver === 'function' ? new IntersectionObserver((e) => { if (e.some((x) => x.isIntersecting)) refresh(); }) : null;
-    if (io && pageRef.current) io.observe(pageRef.current);
-    document.addEventListener('visibilitychange', refresh);
-    return () => { clearInterval(timer); io?.disconnect(); document.removeEventListener('visibilitychange', refresh); };
-  }, [status]);
+  // buddy's tap, never showed here until the app was reopened. Read again when this tab comes into view or the app comes
+  // back to the front, and every 90 seconds while it is showing.
+  const pageRef = useRefreshOnShow(() => { if (ids && status === 'ok') reloadQuests(); }, { minGapMs: 15000, everyMs: 90000, deps: [status] });
   // "I did it" for Rainbow plate and Bento plate. For Bento plate the dishes are checked here first, so the tap is honest.
   const tapQuest = async (g) => {
     setBusy(true); say(null);

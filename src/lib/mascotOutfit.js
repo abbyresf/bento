@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { supabase } from './supabase';
+import { currentUserId, readProfileRow, forgetProfileRead } from './authId';
 import { OUTFIT_IDS } from '../data/mascotOutfits';
 import { syncWidgetMascot } from './widget';
 import { cleanColor } from '../data/mascotColors';
@@ -61,8 +62,8 @@ export async function setOutfit(id) {
   // The widget wears the same piece, whichever tab it was chosen from.
   syncWidgetMascot(next, readColor());
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) await supabase.from('profiles').update({ mascot_outfit: next }).eq('id', user.id);
+    const id = await currentUserId();
+    if (id) { await supabase.from('profiles').update({ mascot_outfit: next }).eq('id', id); forgetProfileRead(); }
   } catch { /* the local copy still holds */ }
 }
 
@@ -70,9 +71,7 @@ export async function setOutfit(id) {
  * in. A failed or empty read leaves what is already showing alone. */
 export async function loadOutfit() {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data, error } = await supabase.from('profiles').select('mascot_outfit').eq('id', user.id).maybeSingle();
+    const { data, error } = await readProfileRow();
     if (error || !data) return;
     const saved = OUTFIT_IDS.includes(data.mascot_outfit) ? data.mascot_outfit : null;
     try {

@@ -98,9 +98,9 @@ export default defineConfig(({ isSsrBuild, mode }) => ({
       registerType: 'autoUpdate',
       includeAssets: ['icons/icon.svg', 'icons/apple-touch-icon.png'],
       manifest: {
-        name: 'Bento – Brandeis Meal Planner',
+        name: 'Bento: College Dining',
         short_name: 'Bento',
-        description: 'Personalized daily meal plans from Brandeis dining halls',
+        description: 'Personalized daily meal plans from your campus dining halls',
         theme_color: '#243b55',
         background_color: '#faf7f4',
         display: 'standalone',
@@ -123,7 +123,9 @@ export default defineConfig(({ isSsrBuild, mode }) => ({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        globIgnores: ['logo.png'],
+        // The marketing pages' screenshots and photos load from the network when a landing page opens. Precaching them put
+        // about 3 MB in every install and every update of the app shell, for pictures a student using the app never sees.
+        globIgnores: ['logo.png', 'screenshots/**', 'team-*', 'bentopulse.png'],
         // Without this, the SW answers address-bar navigations to /api/* with
         // the cached app shell, so hitting /api/health in a browser boots the
         // React app and bounces to /app instead of returning the JSON.

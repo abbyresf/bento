@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useRefreshOnShow } from '../../lib/useRefreshOnShow';
 import { useRatings } from '../../context/RatingsContext';
 import { getSuggestions, getMyEmphasizes, getMyFlags, submitSuggestion, toggleEmphasize, flagSuggestion, getUserProfile } from '../../lib/db';
 import PolicyModal from './PolicyModal';
@@ -264,6 +265,10 @@ export default function CommunityTab() {
     setMyFlags(flags);
   }, [fetchAll]);
 
+  // This tab stays mounted once opened, so suggestions and votes from other students never arrived. Read again when it comes
+  // into view, at most every 30 seconds.
+  const pageRef = useRefreshOnShow(loadSuggestions, { minGapMs: 30000 });
+
   const handleEmphasize = async (suggestionId) => {
     const result = await toggleEmphasize(suggestionId);
     if (result) {
@@ -290,7 +295,7 @@ export default function CommunityTab() {
   };
 
   return (
-    <div className="community-tab">
+    <div className="community-tab" ref={pageRef}>
 
       {/* Policy banner */}
       <button className="community-policy-btn" onClick={() => setShowPolicy(true)}>

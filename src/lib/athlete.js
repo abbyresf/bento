@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { supabase } from './supabase';
+import { currentUserId, readProfileRow } from './authId';
 import { athleteDailyTargets, DEFAULT_LOAD, LOADS } from '../utils/athleteTargets';
 import { calculateBMR, lbsToKg, feetInchesToCm } from '../utils/tdeeCalculator';
 import { teamById } from '../data/athleteTeams';
@@ -42,10 +43,7 @@ const recent = (obj) => {
   return Object.fromEntries(Object.entries(obj).filter(([d]) => d >= cutoff));
 };
 
-const userId = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  return user?.id ?? null;
-};
+const userId = async () => (await currentUserId()) ?? null;
 
 /* The body numbers the targets need, from the profile. Null when any is missing. */
 function bodyFrom(p) {
@@ -71,7 +69,7 @@ export async function loadAthlete() {
     const since = new Date(Date.now() - KEEP_DAYS * 86400000).toISOString().slice(0, 10);
     const [prof, body, days, snackRows] = await Promise.all([
       supabase.from('athlete_profiles').select('athlete_mode, team, carbs_g_per_kg, protein_g_per_kg, fat_share').eq('user_id', id).maybeSingle(),
-      supabase.from('profiles').select('weight, weight_unit, height_feet, height_inches, age, sex, university').eq('id', id).maybeSingle(),
+      readProfileRow(),   // the whole row, shared with the other startup reads
       supabase.from('athlete_load_days').select('load_date, load').eq('user_id', id).gte('load_date', since),
       supabase.from('snacks').select('snack_date, slot, dining_hall, items, calories, protein, carbs, fat').eq('user_id', id).gte('snack_date', since),
     ]);

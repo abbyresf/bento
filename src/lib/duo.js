@@ -11,6 +11,7 @@
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { supabase } from './supabase';
+import { currentUserId, forgetProfileRead } from './authId';
 import { API_BASE } from './apiBase';
 import {
   isMissingFeature, normalizeCode, cleanName, nameProblem, inviteMessage, joinUrl, errorText, redeemText,
@@ -54,16 +55,18 @@ export async function getMyDuo() {
 export async function setDisplayName(name) {
   const problem = nameProblem(name);
   if (problem) return { ok: false, message: problem };
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, message: errorText('not_signed_in') };
-  const { error } = await supabase.from('profiles').update({ display_name: cleanName(name) }).eq('id', user.id);
+  const id = await currentUserId();
+  if (!id) return { ok: false, message: errorText('not_signed_in') };
+  const { error } = await supabase.from('profiles').update({ display_name: cleanName(name) }).eq('id', id);
+  forgetProfileRead();
   return error ? { ok: false, message: errorText(error) } : { ok: true };
 }
 
 export async function setSocialPush(on) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false };
-  const { error } = await supabase.from('profiles').update({ push_social_enabled: Boolean(on) }).eq('id', user.id);
+  const id = await currentUserId();
+  if (!id) return { ok: false };
+  const { error } = await supabase.from('profiles').update({ push_social_enabled: Boolean(on) }).eq('id', id);
+  forgetProfileRead();
   return { ok: !error };
 }
 

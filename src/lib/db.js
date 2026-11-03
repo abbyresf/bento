@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core';
-import { isAuthRetryableFetchError } from '@supabase/supabase-js';
 import { supabase } from './supabase';
+import { currentUserId, readProfileRow, forgetProfileRead } from './authId';
 import { signInWithGoogleNative, signInWithAppleNative } from './nativeAuth';
 import { WEB_ORIGIN } from './apiBase';
 import { weekRange } from '../data/quests';
@@ -64,15 +64,12 @@ export async function getSession() {
  * and used to return undefined, so every read behaved as if nobody was signed
  * in, which sent a returning student with no signal to onboarding. A network
  * failure says nothing about who is signed in, so only then is the id taken
- * from the stored session. Any other failure still returns undefined. */
+ * from the stored session. Any other failure still returns undefined.
+ *
+ * It is still getUser each time, but shared: callers that ask together wait on one request and a good answer is reused for
+ * 30 seconds (see userIdResolver.js). */
 async function uid() {
-  const { data, error } = await supabase.auth.getUser();
-  if (data?.user?.id) return data.user.id;
-  if (error && isAuthRetryableFetchError(error)) {
-    const { data: s } = await supabase.auth.getSession();
-    return s?.session?.user?.id;
-  }
-  return undefined;
+  return currentUserId();
 }
 
 // ── User Profile ───────────────────────────────────────────────────────────
@@ -80,11 +77,7 @@ async function uid() {
 export async function getUserProfile() {
   const id = await uid();
   if (!id) return null;
-  const { data } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', id)
-    .single();
+  const { data } = await readProfileRow();
   if (!data) return null;
   return {
     weight:        data.weight,
@@ -119,6 +112,7 @@ export async function setNutritionDisplay(prefs) {
     show_fat:      prefs.fat      ?? true,
     updated_at:    new Date().toISOString(),
   }).eq('id', id);
+  forgetProfileRead();
 }
 
 // ── Consumption ────────────────────────────────────────────────────────────
@@ -209,6 +203,7 @@ export async function setThemePref(theme) {
       theme,
       updated_at: new Date().toISOString(),
     }).eq('id', id);
+    forgetProfileRead();
   } catch { /* offline, signed out, or column not migrated */ }
 }
 
@@ -233,6 +228,7 @@ export async function setUserProfile(profile) {
     // is the only writer for those columns.
     updated_at:     new Date().toISOString(),
   });
+  forgetProfileRead();
 }
 
 // ── Install tracking ───────────────────────────────────────────────────────
@@ -273,6 +269,7 @@ export async function recordInstallState({ installed, platform }) {
   }
 
   const { error } = await supabase.from('profiles').update(patch).eq('id', id);
+  forgetProfileRead();
   if (error) return; // leave the cache unset so the next load retries
 
   try { localStorage.setItem(INSTALL_CACHE_KEY, signature); } catch { /* ignore */ }
@@ -915,11 +912,7 @@ export async function incrementStreakForDate(date) {
 export async function isOnboardingComplete() {
   const id = await uid();
   if (!id) return null;                 // unknown, not "incomplete"
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('weight, age')
-    .eq('id', id)
-    .maybeSingle();
+  const { data, error } = await readProfileRow();
   if (error) return null;               // unknown, not "incomplete"
   return !!(data?.weight && data?.age);
 }
@@ -927,11 +920,7 @@ export async function isOnboardingComplete() {
 export async function isTermsAccepted() {
   const id = await uid();
   if (!id) return null;                 // unknown, not "declined"
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('terms_accepted')
-    .eq('id', id)
-    .maybeSingle();
+  const { data, error } = await readProfileRow();
   if (error) return null;               // unknown, not "declined"
   return data?.terms_accepted === true;
 }
@@ -940,6 +929,7 @@ export async function setTermsAccepted() {
   const id = await uid();
   if (!id) return;
   await supabase.from('profiles').update({ terms_accepted: true }).eq('id', id);
+  forgetProfileRead();
 }
 
 // ── Data management ───────────────────────────────────────────────────────
@@ -981,6 +971,7 @@ export async function clearAllData() {
     supabase.from('weekly_summaries').delete().eq('user_id', id),
     supabase.from('profiles').update({ weight: null, age: null, terms_accepted: false }).eq('id', id),
   ]);
+  forgetProfileRead();
   // Clear every local key rather than a hand-maintained list. That list had
   // drifted: it named the v2 menu cache and two older generations but not v3,
   // and it never mentioned the meal-plan cache at all, so a reset quietly left

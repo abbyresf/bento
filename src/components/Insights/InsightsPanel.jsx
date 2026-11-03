@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useRefreshOnShow } from '../../lib/useRefreshOnShow';
 import { getWeeklySummaries, getWeeklyHistoryFromMealHistory, getNutritionTargets, getDailyGoalHits, getDailyBreakdown, getStreak, getVoiceStats, getUserProfile } from '../../lib/db';
 import { UNIVERSITIES } from '../../data/universities';
 import { voiceMessage } from '../../utils/bentoSays';
@@ -212,8 +213,8 @@ export default function InsightsPanel({ onClose, tabMode = false }) {
   const [showBadges, setShowBadges] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    Promise.all([
+  const load = useCallback(() => {
+    return Promise.all([
       getWeeklySummaries(8),
       getNutritionTargets(),
       getDailyGoalHits(),
@@ -235,6 +236,9 @@ export default function InsightsPanel({ onClose, tabMode = false }) {
       setLoading(false);
     });
   }, []);
+  useEffect(() => { load(); }, [load]);
+  // Insights stays mounted once opened, so confirming a meal on Today never reached it. Read again when it comes into view.
+  const pageRef = useRefreshOnShow(load, { minGapMs: 20000 });
 
   const latestCompleted = summaries?.[0] ?? null;
   // Fall back to a live summary built from this week's meal history
@@ -252,7 +256,7 @@ export default function InsightsPanel({ onClose, tabMode = false }) {
 
   if (tabMode) {
     return (
-      <div className="insights-panel-page">
+      <div className="insights-panel-page" ref={pageRef}>
         <div className="insights-panel-header">
           <h2>Insights</h2>
           <button className="insights-close" onClick={onClose} aria-label="Close">
