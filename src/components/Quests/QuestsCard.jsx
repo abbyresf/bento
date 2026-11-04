@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { QUESTS, computeProgress, questState, weekStartOf } from '../../data/quests';
+import { QUESTS, WATER_QUEST, computeProgress, questState, weekStartOf } from '../../data/quests';
+import { useAthlete, useAthleteExtras, useWaterGoalDays } from '../../lib/athlete';
 import { getQuestWeek, claimQuest } from '../../lib/db';
 import { haptics } from '../../lib/haptics';
 import './QuestsCard.css';
 
-/* This week's three quests. Hidden until the read succeeds, so it never shows
+/* This week's three quests, and a fourth for water in Athlete mode. Hidden until the read succeeds, so it never shows
  * progress that is not true. Claiming needs the quest_claims table (migration
  * 042): if it is missing, the card still shows progress but offers no claim. */
 export default function QuestsCard() {
@@ -12,12 +13,18 @@ export default function QuestsCard() {
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(false);
+  // Water lives on the phone and in water_logs. Today's cups re-render the card as they are logged.
+  const { athleteMode } = useAthlete();
+  const waterOn = useAthleteExtras() && athleteMode;
+  const waterDays = useWaterGoalDays(weekStart);
 
   const load = useCallback(() => getQuestWeek(weekStart).then(setData).catch(() => {}), [weekStart]);
   useEffect(() => { load(); }, [load]);
 
   if (!data) return null;
   const progress = computeProgress(data);
+  const quests = waterOn ? [...QUESTS, WATER_QUEST] : QUESTS;
+  if (waterOn) progress[WATER_QUEST.id] = Math.min(waterDays, WATER_QUEST.target);
 
   const claim = async (quest) => {
     if (busy) return;
@@ -36,7 +43,7 @@ export default function QuestsCard() {
     <div className="quests-card">
       <h3>This week</h3>
       <ul className="quests-list">
-        {QUESTS.map((q) => {
+        {quests.map((q) => {
           const state = questState(q, progress, data.claimedIds);
           const n = progress[q.id] ?? 0;
           return (

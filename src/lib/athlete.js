@@ -12,6 +12,12 @@ import { teamById } from '../data/athleteTeams';
  *              schedule sets the season.
  *   load       one per date: rest, light, heavy or double. athlete_load_days. A date with none is a light day.
  *   snacks     one per gap in the day (morning, afternoon, evening), each with its items and totals. snacks.
+ *   week       the athlete's usual load for each weekday (athlete_profiles.week_loads, migration 069). A load set on Today
+ *              for one date wins over it.
+ *   water      cups logged per date (water_logs, migration 069) and a daily goal (athlete_profiles.water_goal_cups).
+ *
+ * The week plan and water are read and written apart from the rest, so a database without migration 069 still has a working
+ * Athlete mode, and only these two are hidden (`extrasAvailable`).
  *
  * Each is kept on the phone for speed and written to the database so it follows the athlete to a new phone. A failed call
  * leaves the phone's copy working. If migration 064 has not been run, `available` is false and the app hides Athlete mode.
@@ -20,10 +26,17 @@ import { teamById } from '../data/athleteTeams';
 const SETTINGS_KEY = 'bento_athlete_v1';
 const LOADS_KEY = 'bento_athlete_loads_v1';
 const SNACKS_KEY = 'bento_snacks_v1';
+const WATER_KEY = 'bento_water_v1';
 const KEEP_DAYS = 14;
 export const SNACK_SLOTS = ['morning', 'afternoon', 'evening'];
 
-const EMPTY_SETTINGS = { athleteMode: false, team: null, custom: {}, body: null, university: null, sex: null };
+const EMPTY_SETTINGS = { athleteMode: false, team: null, custom: {}, body: null, university: null, sex: null, weekLoads: {}, waterGoal: null };
+export const WEEKDAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
+/* The default water goal, in 8 oz cups. The National Academies' Adequate Intake for total water is 2.7 L a day for women and
+ * 3.7 L for men, about 80% of it from drinks: 2.2 L and 3.0 L, or 9 and 13 cups. Anyone who gave neither gets the middle, 11.
+ * It is a starting point the athlete can change in Settings. Training in heat raises it, which the copy says. */
+export const defaultWaterGoal = (sex) => (sex === 'female' ? 9 : sex === 'male' ? 13 : 11);
 const NONE = {};
 const listeners = new Set();
 const emit = () => listeners.forEach((l) => l());
@@ -33,9 +46,11 @@ const write = (key, v) => { try { localStorage.setItem(key, JSON.stringify(v)); 
 const missing = (error) => ['42P01', 'PGRST205', 'PGRST202'].includes(error?.code);
 
 let available = true;
+let extrasAvailable = true;
 let settings = { ...EMPTY_SETTINGS, ...read(SETTINGS_KEY, {}) };
 let loads = read(LOADS_KEY, {});     // { date: load }
 let snacks = read(SNACKS_KEY, {});   // { date: { slot: { items, totals, hall } } }
+let water = read(WATER_KEY, {});     // { date: cups }
 
 // Only the last two weeks and the days ahead are kept.
 const recent = (obj) => {
@@ -48,7 +63,8 @@ const userId = async () => (await currentUserId()) ?? null;
 /* The body numbers the targets need, from the profile. Null when any is missing. */
 function bodyFrom(p) {
   if (!p || !(p.weight > 0)) return null;
-  const weightKg = p.weight_unit === 'lbs' ? lbsToKg(p.weight) : p.weight;
+  // The app stores 'lbs'. 'lb' is accepted too, so a stray spelling never reads pounds as kilograms.
+  const weightKg = p.weight_unit === 'lbs' || p.weight_unit === 'lb' ? lbsToKg(p.weight) : p.weight;
   const heightCm = feetInchesToCm(p.height_feet ?? 0, p.height_inches ?? 0);
   const bmr = heightCm > 0 && p.age > 0 && p.sex ? Math.round(calculateBMR(weightKg, heightCm, p.age, p.sex)) : 0;
   return { weightKg, bmr };
@@ -67,11 +83,13 @@ export async function loadAthlete() {
     const id = await userId();
     if (!id) return;
     const since = new Date(Date.now() - KEEP_DAYS * 86400000).toISOString().slice(0, 10);
-    const [prof, body, days, snackRows] = await Promise.all([
+    const [prof, body, days, snackRows, extras, waterRows] = await Promise.all([
       supabase.from('athlete_profiles').select('athlete_mode, team, carbs_g_per_kg, protein_g_per_kg, fat_share').eq('user_id', id).maybeSingle(),
       readProfileRow(),   // the whole row, shared with the other startup reads
       supabase.from('athlete_load_days').select('load_date, load').eq('user_id', id).gte('load_date', since),
       supabase.from('snacks').select('snack_date, slot, dining_hall, items, calories, protein, carbs, fat').eq('user_id', id).gte('snack_date', since),
+      supabase.from('athlete_profiles').select('week_loads, water_goal_cups').eq('user_id', id).maybeSingle(),
+      supabase.from('water_logs').select('log_date, cups').eq('user_id', id).gte('log_date', since),
     ]);
     if (missing(prof.error)) { available = false; emit(); return; }
     available = true;
@@ -90,6 +108,16 @@ export async function loadAthlete() {
         protein: r?.protein_g_per_kg == null ? null : Number(r.protein_g_per_kg),
         fatShare: r?.fat_share == null ? null : Number(r.fat_share),
       };
+    }
+    // Migration 069 missing shows up as an unknown column or table.
+    extrasAvailable = !(extras.error && ['42703', 'PGRST204', '42P01', 'PGRST205'].includes(extras.error.code));
+    if (extrasAvailable && !extras.error) {
+      next.weekLoads = extras.data?.week_loads ?? {};
+      next.waterGoal = extras.data?.water_goal_cups ?? null;
+    }
+    if (extrasAvailable && !waterRows.error) {
+      water = Object.fromEntries((waterRows.data ?? []).map((w) => [w.log_date, w.cups]));
+      write(WATER_KEY, water);
     }
     if (!days.error) {
       loads = Object.fromEntries((days.data ?? []).map((d) => [d.load_date, d.load]));
@@ -110,7 +138,7 @@ export async function loadAthlete() {
   } catch { /* keep the phone's copy */ }
 }
 
-/* Changes any of: athleteMode, team, custom. Turning the mode off deletes nothing. The phone's copy changes at
+/* Changes any of: athleteMode, team, custom, weekLoads, waterGoal. Turning the mode off deletes nothing. The phone's copy changes at
  * once and the database a moment later, so dragging a slider sends one write, not one per step. */
 let saveTimer = null;
 export function updateAthlete(patch) {
@@ -133,10 +161,20 @@ async function saveAthlete() {
       fat_share: c.fatShare ?? null,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id' });
+    if (extrasAvailable) {
+      await supabase.from('athlete_profiles')
+        .update({ week_loads: settings.weekLoads ?? {}, water_goal_cups: settings.waterGoal ?? null })
+        .eq('user_id', id);
+    }
   } catch { /* the phone's copy still holds */ }
 }
 
-export const getLoad = (date) => loads[date] ?? DEFAULT_LOAD;
+const weekdayOf = (date) => WEEKDAYS[(new Date(`${date}T12:00:00`).getDay() + 6) % 7];
+
+/* The load for a date: one set on Today for that date, else the weekly plan for that weekday, else light. */
+export const getLoad = (date) => loads[date] ?? settings.weekLoads?.[weekdayOf(date)] ?? DEFAULT_LOAD;
+/* Where the load came from: 'day' (set on Today), 'week' (the weekly plan) or 'default'. */
+export const loadSource = (date) => (loads[date] ? 'day' : settings.weekLoads?.[weekdayOf(date)] ? 'week' : 'default');
 
 export async function setLoad(date, load) {
   if (!LOADS.includes(load)) return;
@@ -176,6 +214,39 @@ export async function setSnack(date, slot, snack) {
   } catch { /* the phone's copy still holds */ }
 }
 
+export const getWater = (date) => water[date] ?? 0;
+export const waterGoal = () => settings.waterGoal ?? defaultWaterGoal(settings.sex);
+
+/* Sets the cups logged for a date. The phone's copy changes at once and the database a moment later, so tapping the plus a
+ * few times sends one write. */
+let waterTimer = null;
+export function setWater(date, cups) {
+  const n = Math.max(0, Math.min(40, Math.round(cups)));
+  water = recent({ ...water, [date]: n });
+  write(WATER_KEY, water);
+  emit();
+  clearTimeout(waterTimer);
+  waterTimer = setTimeout(async () => {
+    try {
+      const id = await userId();
+      if (id && extrasAvailable) await supabase.from('water_logs').upsert({ user_id: id, log_date: date, cups: n, updated_at: new Date().toISOString() }, { onConflict: 'user_id,log_date' });
+    } catch { /* the phone's copy still holds */ }
+  }, 600);
+}
+
+/* Days in the week starting `weekStart` (YYYY-MM-DD, a Monday) when the water goal was reached. For the water quest. */
+export function waterGoalDays(weekStart) {
+  const goal = waterGoal();
+  const start = new Date(`${weekStart}T12:00:00`);
+  let n = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start.getTime() + i * 86400000);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    if (getWater(key) >= goal) n++;
+  }
+  return n;
+}
+
 /* The day's targets for planning. In Athlete mode they come from the athlete presets for that date's load. Otherwise, or with
  * no body weight on the profile, they are the student's normal targets, unchanged. */
 export function dailyTargetsFor(base, date) {
@@ -192,10 +263,17 @@ export function athleteSport(s = settings) {
 }
 
 /* Called on sign out, after local storage has been cleared. */
-export function resetAthlete() { clearTimeout(saveTimer); settings = { ...EMPTY_SETTINGS }; loads = {}; snacks = {}; emit(); }
+export function resetAthlete() {
+  clearTimeout(saveTimer); clearTimeout(waterTimer);
+  settings = { ...EMPTY_SETTINGS }; loads = {}; snacks = {}; water = {}; emit();
+}
 
 const subscribe = (cb) => { listeners.add(cb); return () => listeners.delete(cb); };
 export const useAthlete = () => useSyncExternalStore(subscribe, () => settings, () => EMPTY_SETTINGS);
 export const useAthleteAvailable = () => useSyncExternalStore(subscribe, () => available, () => false);
 export const useLoad = (date) => useSyncExternalStore(subscribe, () => getLoad(date), () => DEFAULT_LOAD);
 export const useSnacks = (date) => useSyncExternalStore(subscribe, () => getSnacks(date), () => NONE);
+export const useAthleteExtras = () => useSyncExternalStore(subscribe, () => available && extrasAvailable, () => false);
+export const useLoadSource = (date) => useSyncExternalStore(subscribe, () => loadSource(date), () => 'default');
+export const useWater = (date) => useSyncExternalStore(subscribe, () => getWater(date), () => 0);
+export const useWaterGoalDays = (weekStart) => useSyncExternalStore(subscribe, () => waterGoalDays(weekStart), () => 0);

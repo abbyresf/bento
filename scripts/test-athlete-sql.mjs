@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 
 const dir = process.env.MIGRATIONS_DIR ?? new URL('../supabase/migrations/', import.meta.url).pathname;
-const migrations = ['064_athlete_mode.sql', '065_athlete_team.sql'].map((f) => readFileSync(`${dir}/${f}`, 'utf8'));
+const migrations = ['064_athlete_mode.sql', '065_athlete_team.sql', '069_athlete_week_and_water.sql'].map((f) => readFileSync(`${dir}/${f}`, 'utf8'));
 const db = new PGlite();
 
 await db.exec(`
@@ -88,13 +88,33 @@ await test('one snack per gap in the day, which an upsert replaces', async () =>
   assert.equal(Number((await call(ana, 'select calories from public.snacks'))[0].calories), 400);
 });
 
+await test('the week plan and water goal are saved, and bad values refused', async () => {
+  await call(ana, `update public.athlete_profiles set week_loads = '{"mon":"heavy","sat":"rest"}', water_goal_cups = 10 where user_id = $1`, [ana]);
+  const [row] = await call(ana, 'select week_loads, water_goal_cups from public.athlete_profiles');
+  assert.equal(row.week_loads.mon, 'heavy');
+  assert.equal(row.water_goal_cups, 10);
+  for (const sql of [
+    `update public.athlete_profiles set water_goal_cups = 2 where user_id = $1`,
+    `update public.athlete_profiles set week_loads = '[]' where user_id = $1`,
+  ]) await assert.rejects(call(ana, sql, [ana]), /violates check constraint/, sql);
+});
+
+await test('water logs are own-row only', async () => {
+  await call(ana, `insert into public.water_logs (user_id, log_date, cups) values ($1, '2026-11-04', 6)`, [ana]);
+  assert.equal((await call(ana, 'select * from public.water_logs')).length, 1);
+  assert.equal((await call(ben, 'select * from public.water_logs')).length, 0);
+  await assert.rejects(call(ben, `insert into public.water_logs (user_id, log_date, cups) values ($1, '2026-11-05', 3)`, [ana]), /row-level security/);
+  await assert.rejects(call(null, 'select * from public.water_logs', [], 'anon'), /permission denied/);
+  await assert.rejects(call(ana, `insert into public.water_logs (user_id, log_date, cups) values ($1, '2026-11-06', 99)`, [ana]), /violates check constraint/);
+});
+
 await test('snacks never touch meal_history', async () => {
   assert.equal((await db.query('select count(*)::int c from public.meal_history')).rows[0].c, 0);
 });
 
 await test('deleting an account removes its rows', async () => {
   await db.query('delete from auth.users where id = $1', [ana]);
-  for (const t of ['athlete_profiles', 'athlete_load_days', 'snacks']) {
+  for (const t of ['athlete_profiles', 'athlete_load_days', 'snacks', 'water_logs']) {
     assert.equal((await db.query(`select count(*)::int c from public.${t} where user_id = $1`, [ana])).rows[0].c, 0, t);
   }
 });

@@ -19,6 +19,10 @@ export const QUESTS = [
   { id: 'twoMeals', title: 'Confirm two meals in one day', target: 1, unit: 'day' },
 ];
 
+/* Athlete mode adds one: reach the water goal on 5 days. It counts days at the goal, never cups past it, so drinking more
+ * than the goal earns nothing extra. Water is logged by the athlete (honor system), from lib/athlete.js. */
+export const WATER_QUEST = { id: 'water5', title: 'Reach your water goal on 5 days', target: 5, unit: 'days' };
+
 const pad = (n) => String(n).padStart(2, '0');
 export const dateStr = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 

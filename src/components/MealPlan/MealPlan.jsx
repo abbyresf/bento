@@ -49,8 +49,8 @@ import { bentoSays, questSays } from '../../utils/bentoSays';
 import { loadHints, useQuestHints } from '../../lib/duoHints';
 import { mealShares, dayTargetsFor, replanMeals, activeMeals } from '../../utils/dayPlan';
 import { useSkipBreakfast, useDinnerOut, setSkipBreakfast, setDinnerOut, getSkipBreakfast, isDinnerOut } from '../../lib/mealPrefs';
-import { useAthlete, useAthleteAvailable, useLoad, useSnacks, dailyTargetsFor, isAthleteOn } from '../../lib/athlete';
-import { LoadPicker, SnackSlot } from './AthleteToday';
+import { useAthlete, useAthleteAvailable, useLoad, useSnacks, dailyTargetsFor, isAthleteOn, useAthleteExtras, useLoadSource, useWater, waterGoal } from '../../lib/athlete';
+import { LoadPicker, SnackSlot, TrainingDayBanner, WaterRow } from './AthleteToday';
 import StreakCelebration from '../Streak/StreakCelebration';
 import BadgeCelebration from '../Badges/BadgeCelebration';
 import RatingSheet from './RatingSheet';
@@ -129,6 +129,9 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const athlete = useAthlete();
   const athleteOn = useAthleteAvailable() && athlete.athleteMode;
   const load = useLoad(viewDate);
+  const loadSource = useLoadSource(viewDate);
+  const extrasOn = useAthleteExtras() && athleteOn;   // week plan and water need migration 069
+  const cups = useWater(viewDate);
   const daySnacks = useSnacks(viewDate);
   const snackTotals = useMemo(() => (athleteOn ? Object.values(daySnacks).map((x) => x.totals) : []), [athleteOn, daySnacks]);
   const planInputs = useRef(null);                  // what the last plan was built from, so the meals to come can be planned again
@@ -1142,6 +1145,9 @@ export default function MealPlan({ settingsVersion = 0 }) {
         );
       })()}
 
+      {athleteOn && !dateLoading && (
+        <TrainingDayBanner date={viewDate} load={load} source={loadSource} isToday={isViewingToday} weekAvailable={extrasOn} />
+      )}
       {!boxOn && !dateLoading && mealPlan && targets && (
         <DailySummary totals={dayTotals} targets={dayTargetsFor(targets, shares)} />
       )}
@@ -1149,6 +1155,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
       {!dateLoading && mealPlan && (
       <div className="meals-timeline">
         {athleteOn && <LoadPicker date={viewDate} load={load} isToday={isViewingToday} />}
+        {extrasOn && !isViewingPast && <WaterRow date={viewDate} cups={cups} goal={waterGoal()} isToday={isViewingToday} />}
         {skipBreakfast && (
           <p className="meal-off-note">
             Breakfast is off, so Bento plans two larger meals.{' '}

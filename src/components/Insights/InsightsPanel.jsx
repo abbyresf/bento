@@ -6,6 +6,7 @@ import { voiceMessage } from '../../utils/bentoSays';
 import Mascot from '../Mascot/Mascot';
 import Closet from '../Mascot/Closet';
 import QuestsCard from '../Quests/QuestsCard';
+import MicrosCard from './MicrosCard';
 import { useDisplayOutfit } from '../../lib/mascotOutfit';
 import '../Mascot/Mascot.css';
 import WeeklySummaryCard from './WeeklySummaryCard';
@@ -279,6 +280,7 @@ export default function InsightsPanel({ onClose, tabMode = false }) {
               <CurrentStreak streak={streak} onOpenBadges={() => setShowBadges(true)} />
               <><VoiceCard /><QuestsCard /></>
               <WeeklySummaryCard summary={latest} targets={targets} />
+              <MicrosCard />
               <DailyBreakdown days={dailyDays} targets={targets} />
               <Callouts latest={latest} targets={targets} goalHits={goalHits} />
               <StreakHistory summaries={summaries} />
@@ -319,6 +321,7 @@ export default function InsightsPanel({ onClose, tabMode = false }) {
               <CurrentStreak streak={streak} onOpenBadges={() => setShowBadges(true)} />
               <><VoiceCard /><QuestsCard /></>
               <WeeklySummaryCard summary={latest} targets={targets} />
+              <MicrosCard />
               <DailyBreakdown days={dailyDays} targets={targets} />
               <Callouts latest={latest} targets={targets} goalHits={goalHits} />
               <StreakHistory summaries={summaries} />

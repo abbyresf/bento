@@ -141,3 +141,112 @@
   .snack-slot { margin: -0.6rem 0; }
   .snack-slot.has-snack { margin: 0; }
 }
+
+/* Training day line at the top of Today */
+.training-banner {
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.9rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+}
+
+.training-banner.training-heavy,
+.training-banner.training-double {
+  border-color: var(--accent-tint-border);
+  background: var(--accent-wash);
+}
+
+.training-banner-head {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.training-banner-sub {
+  margin: 0.2rem 0 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+/* Water */
+.water-row {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.water-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.water-title {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.water-count {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.water-row.done .water-count {
+  color: var(--fern-text);
+  font-weight: 700;
+}
+
+.water-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.water-step {
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.water-step:disabled { opacity: 0.4; cursor: default; }
+
+.water-plus {
+  border-color: var(--info-border);
+  background: var(--info-bg);
+  color: var(--info-text);
+}
+
+.water-dots {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  justify-content: center;
+}
+
+.water-dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  border: 1px solid var(--info-border);
+}
+
+.water-dot.full { background: var(--info-text); border-color: var(--info-text); }
+
+.water-nudge {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
