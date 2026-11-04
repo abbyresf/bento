@@ -547,13 +547,14 @@ export async function fetchConfirmedMeals(date) {
   if (!id) return null;
   const { data, error } = await supabase
     .from('meal_history')
-    .select('id, meal_type, items')
+    .select('id, meal_type, items, dining_hall')
     .eq('user_id', id)
     .eq('meal_date', date);
   if (error) return null;
   const result = { breakfast: null, lunch: null, dinner: null };
   for (const row of (data ?? [])) {
-    if (row.meal_type in result) result[row.meal_type] = { rowId: row.id, items: row.items };
+    // The plate as eaten and its hall, so Today can show what was eaten rather than plan the meal again.
+    if (row.meal_type in result) result[row.meal_type] = { rowId: row.id, items: row.items, hall: row.dining_hall ?? null };
   }
   return result;
 }

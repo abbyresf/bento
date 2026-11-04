@@ -35,6 +35,7 @@ import { sumItems, MAX_SERVINGS } from '../../utils/servingSize.js';
 import BentoLogo from '../common/BentoLogo';
 import { getNewBadge } from '../../data/badges';
 import { optimizeDay, findAlternatives, findRecommendedAdditions } from '../../utils/mealOptimizer';
+import { confirmedPlates, applyConfirmedPlates, hallLocation } from '../../utils/confirmedPlates';
 import MealCard from './MealCard';
 import DailySummary from './DailySummary';
 import DayBox from '../Box/DayBox';
@@ -133,14 +134,37 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const planInputs = useRef(null);                  // what the last plan was built from, so the meals to come can be planned again
   const replanApplied = useRef({ sig: null });
   const freshPlans = useRef(new WeakSet());          // plans just built from the menu, as opposed to ones the student has tweaked
+  // The plates already eaten on one date, { date, plates: { meal: { items, hall } } } (utils/confirmedPlates.js). A plan built
+  // from the menu has them put back, so a confirmed meal shows what was eaten and the meals to come are planned around it.
+  const eatenRef = useRef({ date: null, plates: {} });
+  const withEaten = useCallback((plan, date) => {
+    if (eatenRef.current.date !== date) return plan;
+    return applyConfirmedPlates(plan, eatenRef.current.plates);
+  }, []);
+  // Remembers what was eaten on a date, puts it into the plan showing now, and points each eaten meal's hall picker at the
+  // hall it was eaten at.
+  const rememberEaten = useCallback((date, plates) => {
+    eatenRef.current = { date, plates };
+    if (viewDateRef.current !== date) return;
+    setMealPlan((prev) => withEaten(prev, date));
+    const locations = planInputs.current?.menu?.locations;
+    setSelectedLocation((prev) => {
+      let next = prev;
+      for (const [meal, plate] of Object.entries(plates)) {
+        const loc = hallLocation(locations, plate.hall);
+        if (loc && prev[meal] !== loc) next = { ...next, [meal]: loc };
+      }
+      return next;
+    });
+  }, [withEaten]);
   // Builds a day's plan, with the meals this student eats, and remembers the inputs for planning around a decided meal.
   const planDay = useCallback((menuData, targets, fetchedRestrictions, recentItems, date) => {
     planInputs.current = { menu: menuData, targets, restrictions: fetchedRestrictions, recent: recentItems };
-    const plan = optimizeDay(menuData, dailyTargetsFor(targets, date), fetchedRestrictions, recentItems,
-      mealShares({ skipBreakfast: getSkipBreakfast(), dinnerOut: isDinnerOut(date) }), ratingsByIdRef.current, { fuel: isAthleteOn() });
+    const plan = withEaten(optimizeDay(menuData, dailyTargetsFor(targets, date), fetchedRestrictions, recentItems,
+      mealShares({ skipBreakfast: getSkipBreakfast(), dinnerOut: isDinnerOut(date) }), ratingsByIdRef.current, { fuel: isAthleteOn() }), date);
     freshPlans.current.add(plan);
     return plan;
-  }, []);
+  }, [withEaten]);
   const [dateLoading, setDateLoading] = useState(false);
   // The date whose menu failed to load, or null. Held as a date rather than a
   // boolean so a stale failure cannot leak onto a day that loaded fine.
@@ -244,11 +268,13 @@ export default function MealPlan({ settingsVersion = 0 }) {
       if (targets && !fetchedRestrictions.__unknown) {
         const optimized = planDay(menuData, targets, fetchedRestrictions, recentItems, localDateStr());
         setMealPlan(optimized);
+        // The database may have answered before the menu arrived, when there was no hall to point at yet.
+        if (eatenRef.current.date === localDateStr()) rememberEaten(localDateStr(), eatenRef.current.plates);
       }
     } finally {
       setLoading(false);
     }
-  }, [planDay]);
+  }, [planDay, rememberEaten]);
 
   useEffect(() => {
     loadMenuAndOptimize();
@@ -283,6 +309,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
       }
       setConfirmedMeals(bools);
       setConfirmedMealIds(ids);
+      rememberEaten(viewDate, confirmedPlates(viewDate, server, readQueue()));
       try {
         localStorage.setItem('bento_confirmed_meals_v2', JSON.stringify({ date: viewDate, meals: bools }));
       } catch { /* localStorage unavailable */ }
@@ -291,7 +318,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
     const onVisible = () => { if (document.visibilityState === 'visible') sync(); };
     document.addEventListener('visibilitychange', onVisible);
     return () => { cancelled = true; document.removeEventListener('visibilitychange', onVisible); };
-  }, [viewDate]);
+  }, [viewDate, rememberEaten]);
 
   // The quest lines at the top of Today: ask on opening, on returning to the app, every couple of minutes while it is open,
   // and when a meal is confirmed, because that may have been the mystery dish.
@@ -452,12 +479,15 @@ export default function MealPlan({ settingsVersion = 0 }) {
         setConfirmedMealIds(confirmedIds);
         setPendingMeals(waiting);
         setRestrictions(fetchedRestrictions);
+        // Set before the plan is built, so planDay puts the eaten plates in.
+        eatenRef.current = { date: capturedDate, plates: confirmedPlates(capturedDate, confirmedForDate, readQueue()) };
 
         if (fetchedRestrictions.__unknown) {
           setDateError({ date: capturedDate, kind: 'fetch' });
         } else if (targets) {
           const optimized = planDay(menuData, targets, fetchedRestrictions, recentItems, capturedDate);
           setMealPlan(optimized);
+          rememberEaten(capturedDate, eatenRef.current.plates);
         } else {
           // Menu loaded, but there is nothing to build a plate against. Second
           // route to the same blank screen, and worth saying out loud rather
@@ -787,6 +817,11 @@ export default function MealPlan({ settingsVersion = 0 }) {
       removeEntry(viewDate, meal);
       setPendingMeals(prev => ({ ...prev, [meal]: false }));
     } else if (rowId) await removeMealFromHistory(rowId);
+    // The eaten plate is forgotten, so the replan gives this meal a planned plate again.
+    if (eatenRef.current.date === viewDate && eatenRef.current.plates[meal]) {
+      const { [meal]: _gone, ...rest } = eatenRef.current.plates;
+      eatenRef.current = { date: viewDate, plates: rest };
+    }
     const updatedConfirmed = { ...confirmedMeals, [meal]: false };
     setConfirmedMeals(updatedConfirmed);
     setConfirmedMealIds(prev => ({ ...prev, [meal]: null }));
@@ -868,6 +903,12 @@ export default function MealPlan({ settingsVersion = 0 }) {
       queued = true;
     }
     setConfirmingMeals(prev => ({ ...prev, [meal]: false }));
+    // What was just eaten stays on the card through the next reload, even before the database is asked again.
+    if (eatenRef.current.date === confirmDate) {
+      eatenRef.current = { date: confirmDate, plates: { ...eatenRef.current.plates, [meal]: { items: mealItems, hall } } };
+    } else {
+      eatenRef.current = { date: confirmDate, plates: { [meal]: { items: mealItems, hall } } };
+    }
     const updatedConfirmed = { ...confirmedMeals, [meal]: true };
     setConfirmedMeals(updatedConfirmed);
     setConfirmedMealIds(prev => ({ ...prev, [meal]: rowId }));
