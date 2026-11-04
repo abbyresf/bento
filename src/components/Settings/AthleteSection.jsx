@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAthlete, updateAthlete, athleteSport } from '../../lib/athlete';
+import { useAthlete, updateAthlete, athleteSport, useAthleteExtras, WEEKDAYS, defaultWaterGoal } from '../../lib/athlete';
 import { useNutritionDisplay } from '../../context/NutritionDisplayContext';
 import { LOADS, LOAD_LABELS, athleteSettings, rangesFor, wouldBreakFloor } from '../../utils/athleteTargets';
 import { teamsFor, teamById, seasonStatus } from '../../data/athleteTeams';
@@ -33,6 +33,15 @@ export default function AthleteSection({ onGoProfile }) {
   const ranges = rangesFor(sport);
   const body = athlete.body;
   const draft = athlete.custom ?? {};
+  const extras = useAthleteExtras();
+  const week = athlete.weekLoads ?? {};
+  const goal = athlete.waterGoal ?? defaultWaterGoal(athlete.sex);
+  const setDay = (day, load) => {
+    const next = { ...week };
+    if (load) next[day] = load; else delete next[day];
+    updateAthlete({ weekLoads: next });
+  };
+  const setGoal = (cups) => updateAthlete({ waterGoal: Math.max(4, Math.min(24, cups)) });
   const s = athleteSettings(draft, sport);
 
   const change = (next, lowering) => {
@@ -86,7 +95,34 @@ export default function AthleteSection({ onGoProfile }) {
           </p>
         )}
 
-        <p className="section-note">Pick how hard you train each day on Today. Bento plans more on heavy days.</p>
+        {extras ? (<>
+          <h4 className="athlete-sub">Your training week</h4>
+          <p className="section-note">Set how hard each day usually is. Today shows it, and you can change any one day there.</p>
+          <div className="athlete-week">
+            {WEEKDAYS.map((d) => (
+              <div key={d} className="athlete-week-row">
+                <label htmlFor={`athlete-week-${d}`}>{WEEKDAY_NAMES[d]}</label>
+                <select id={`athlete-week-${d}`} value={week[d] ?? ''} onChange={(e) => setDay(d, e.target.value || null)}>
+                  <option value="">{LOAD_LABELS.light} (default)</option>
+                  {LOADS.map((l) => <option key={l} value={l}>{LOAD_LABELS[l]}</option>)}
+                </select>
+              </div>
+            ))}
+          </div>
+
+          <h4 className="athlete-sub">Water</h4>
+          <p className="section-note">
+            Your daily goal in 8 oz cups. It starts from the National Academies guidance. Drink more on hot days and hard
+            training days.
+          </p>
+          <div className="athlete-water-goal">
+            <button type="button" className="athlete-step" onClick={() => setGoal(goal - 1)} aria-label="One cup less">−</button>
+            <span className="athlete-water-value" aria-live="polite">{goal} cups a day</span>
+            <button type="button" className="athlete-step" onClick={() => setGoal(goal + 1)} aria-label="One cup more">+</button>
+          </div>
+        </>) : (
+          <p className="section-note">Pick how hard you train each day on Today. Bento plans more on heavy days.</p>
+        )}
 
         {display.anyVisible && (
           <button type="button" className="athlete-adjust" aria-expanded={adjusting} onClick={() => setAdjusting(!adjusting)}>
@@ -123,6 +159,8 @@ export default function AthleteSection({ onGoProfile }) {
     </section>
   );
 }
+
+const WEEKDAY_NAMES = { mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' };
 
 function Slider({ id, label, value, range, step, shown, onChange }) {
   return (

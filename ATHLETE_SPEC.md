@@ -68,6 +68,25 @@ individual.
 **Done when** an athlete can set a sport, mark a heavy day, and see Today re-plan
 around it, with no account other than their own.
 
+### Phase 1b: week plan, water and minerals (built 4 Nov 2026, migration 069)
+
+- **Training week** in Settings: the usual load for each weekday. A load set on Today for
+  one date wins. Today opens with a line saying what kind of day it is and where that came
+  from.
+- **Water** on Today: cups logged with a plus and a minus, against a daily goal in 8 oz cups.
+  The default goal is the National Academies Adequate Intake from drinks: 9 cups for women,
+  13 for men, 11 for anyone who gave neither. The athlete can change it (4 to 24). After 2pm
+  with under half the goal, one line suggests a glass with the next meal. No push yet.
+- **Water quest**: reach the goal on 5 days in a week. It counts days at the goal, never cups
+  past it, so drinking more than the goal earns nothing. Claims count toward the closet like
+  any quest. Honor system.
+- **Minerals in Insights**: calcium, iron and potassium from the last 7 days of confirmed
+  meals, as a daily average and a share of the FDA label Daily Value (1,300 mg, 18 mg,
+  4,700 mg). The menu reader keeps them from 4 Nov 2026. A dish that does not list one is left
+  out, not counted as zero, and the card says when coverage is thin. Vitamin D is left out:
+  only about a quarter of Brandeis dishes list it. Sodium is left out, because athletes'
+  needs rise with sweat and a label ceiling would read wrong.
+
 ### Phase 2: Game-day fueling
 
 - A game or meet in the next 3 days changes the plan:

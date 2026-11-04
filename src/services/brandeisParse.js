@@ -92,6 +92,18 @@ function getNutritionValue(facts, label) {
   return fact ? Math.round(Number(fact.value) || 0) : 0;
 }
 
+/* A micronutrient in mg, or null when the label does not list it. Unlike the
+ * macros, a missing micro must stay missing: Brandeis lists iron on most dishes
+ * but not all, and counting an unlisted dish as zero would make a week look
+ * lower than it was. Vitamin D is left out because only about a quarter of
+ * dishes list it (checked 4 Nov 2026). */
+function getMicroValue(facts, label) {
+  const fact = facts.find((f) => f.label.toLowerCase() === label);
+  if (!fact || fact.value === '' || fact.value == null) return null;
+  const v = Number(fact.value);
+  return Number.isFinite(v) ? Math.round(v * 10) / 10 : null;
+}
+
 function brandeisParseMenuItemEl(liEl, mealPeriod, stationName) {
   const link = liEl.querySelector('a.show-nutrition');
   if (!link) return null;
@@ -123,6 +135,9 @@ function brandeisParseMenuItemEl(liEl, mealPeriod, stationName) {
         sodium:   getNutritionValue(facts, 'sodium'),
         fiber:    getNutritionValue(facts, 'fiber'),
         sugar:    getNutritionValue(facts, 'sugar'),
+        calcium:   getMicroValue(facts, 'calcium'),
+        iron:      getMicroValue(facts, 'iron'),
+        potassium: getMicroValue(facts, 'potassium'),
       };
 
       const tagSet = new Set();

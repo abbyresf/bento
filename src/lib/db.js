@@ -814,6 +814,22 @@ export async function getDailyGoalHits() {
 }
 
 // Per-day breakdown for the past 7 days, using local dates (no UTC rollover bug).
+/* The last 7 days of confirmed meals, for the minerals card in Athlete mode (utils/micros.js). Rows: { meal_date, items },
+ * latest confirm per meal. Throws when the read fails, so the card stays hidden. */
+export async function getMicroWeek() {
+  const id = await uid();
+  if (!id) return [];
+  const since = new Date();
+  since.setDate(since.getDate() - 6);
+  const { data, error } = await supabase
+    .from('meal_history')
+    .select('items, confirmed_at, meal_type, meal_date')
+    .eq('user_id', id)
+    .gte('meal_date', localDateStr(since));
+  if (error) throw error;
+  return deduplicateMealHistory(data).map((r) => ({ ...r, meal_date: r._date }));
+}
+
 export async function getDailyBreakdown() {
   const id = await uid();
   if (!id) return [];
@@ -1035,6 +1051,7 @@ const ACCOUNT_LOCAL_KEYS = [
   'bento_athlete_v1',
   'bento_athlete_loads_v1',
   'bento_snacks_v1',
+  'bento_water_v1',
 ];
 
 export function clearAccountLocalData() {
