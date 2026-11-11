@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRatings } from '../../context/RatingsContext';
 import { getUserProfile, getCampusPosts, getMyVotes, castVote, toggleEmphasize, getReplies, submitReply, flagReply,
-  flagSuggestion, submitSuggestion, getPostsByIds, getMyReposts, toggleRepost, submitQuote } from '../../lib/db';
+  flagSuggestion, submitSuggestion, getPostsByIds, getMyReposts, getMyFlags, toggleRepost, submitQuote } from '../../lib/db';
 import { UNIVERSITIES } from '../../data/universities';
 import { COLOR_IDS } from '../../data/mascotColors';
 import Mascot from '../Mascot/Mascot';
@@ -16,9 +16,10 @@ async function fetchFeed() {
   const profile = await getUserProfile();
   const uni = profile?.university ?? 'brandeis';
   const school = UNIVERSITIES.find((u) => u.id === uni) ?? { id: uni, shortName: 'your school', name: 'your school' };
-  const [{ posts, full, reposts }, votes, mine] = await Promise.all([
-    getCampusPosts(uni), getMyVotes().catch(() => new Map()), getMyReposts().catch(() => new Set()),
+  const [{ posts: all, full, reposts }, votes, mine, flagged] = await Promise.all([
+    getCampusPosts(uni), getMyVotes().catch(() => new Map()), getMyReposts().catch(() => new Set()), getMyFlags().catch(() => new Set()),
   ]);
+  const posts = all.filter((p) => !flagged.has(p.id));   // what you reported stays out of your feed
   // Quotes show the post they quote. Most are in the list already; fetch the rest.
   const have = new Set(posts.map((p) => p.id));
   const missing = [...new Set(posts.map((p) => p.quote_of).filter((id) => id && !have.has(id)))];
@@ -61,7 +62,7 @@ export default function LoudFeed() {
   }, [apply]);
 
   const schoolName = school?.shortName ?? school?.name ?? 'your school';
-  const sorted = useMemo(() => sortPosts(posts, view), [posts, view]);
+  const sorted = useMemo(() => sortPosts(posts.filter((p) => !reported.has(p.id)), view), [posts, view, reported]);
   const autos = useMemo(() => (view === 'hot' ? autoPosts(aggregates, schoolName, posts.length) : []), [aggregates, schoolName, posts.length, view]);
   const top = useMemo(() => topRated(aggregates), [aggregates]);
 
@@ -105,10 +106,13 @@ export default function LoudFeed() {
     }
   };
 
+  // Reporting hides the post for you at once. Three reports from your school hide it for everyone (migration 074).
   const report = async (post) => {
     haptics.light();
+    if (!window.confirm('Report this post? It will be hidden for you, and three reports hide it for everyone.')) return;
+    haptics.medium();
     setReported((s) => new Set(s).add(post.id));
-    try { await flagSuggestion(post.id); } catch { /* the post stays marked reported on this screen */ }
+    try { await flagSuggestion(post.id); } catch { /* still hidden on this screen */ }
   };
 
   return (

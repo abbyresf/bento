@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 const dir = process.env.MIGRATIONS_DIR ?? new URL('../supabase/migrations/', import.meta.url).pathname;
 const migration = readFileSync(`${dir}/072_campus_feed.sql`, 'utf8');
 const reposts = readFileSync(`${dir}/073_campus_reposts.sql`, 'utf8');
+const autoHide = readFileSync(`${dir}/074_campus_auto_hide.sql`, 'utf8');
 const db = new PGlite();
 
 await db.exec(`
@@ -34,11 +35,16 @@ await db.exec(`
   create table public.suggestion_emphasizes (
     user_id uuid not null references auth.users(id), suggestion_id uuid not null references public.suggestions(id) on delete cascade,
     created_at timestamptz not null default now(), primary key (user_id, suggestion_id));
+  create table public.suggestion_flags (
+    user_id uuid not null references auth.users(id), suggestion_id uuid not null references public.suggestions(id) on delete cascade,
+    created_at timestamptz not null default now(), primary key (user_id, suggestion_id));
 `);
 await db.exec(migration);
 await db.exec(migration); // safe to run twice
 await db.exec(reposts);
 await db.exec(reposts);   // 073 too
+await db.exec(autoHide);
+await db.exec(autoHide);  // and 074
 await db.exec('grant select on all tables in schema public to authenticated; grant select on public.profiles to authenticated;');
 
 const user = async (uni) => {
@@ -148,6 +154,26 @@ await test('a quote is a new anonymous post in the same school that points at th
   await fails(() => call(a, 'select public.submit_quote($1, $2)', [orig, '']), /check|length/);
   await db.query('delete from public.suggestions where id = $1', [orig]);
   assert.equal((await row(id)).quote_of, null, 'the quote stays when the original goes');
+});
+
+await test('three reports from the same school hide a post, and a reviewed post stays up', async () => {
+  const p = await post('brandeis', 'rude post');
+  const c = await user('brandeis');
+  const flag = (u, id) => call(u, 'select public.flag_suggestion($1) as n', [id]);
+  await flag(a, p); await flag(a, p);
+  assert.equal((await row(p)).flag_count, 1, 'one person counts once');
+  await fails(() => flag(t, p), /not found/);
+  await flag(b, p);
+  assert.equal((await row(p)).is_hidden, false, 'two reports are not enough');
+  await flag(c, p);
+  assert.equal((await row(p)).is_hidden, true, 'the third report hides it');
+  await fails(() => flag(a, p), /not found/);
+  // Restored by hand: later reports leave it up.
+  const ok = await post('brandeis', 'fine post');
+  await db.query('update public.suggestions set reviewed_ok = true where id = $1', [ok]);
+  const d = await user('brandeis');
+  for (const u of [a, b, c, d]) await flag(u, ok);
+  assert.equal((await row(ok)).is_hidden, false);
 });
 
 console.log(`${n} checks passed`);
