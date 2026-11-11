@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { useNavigate } from 'react-router-dom';
+import { loudOn } from '../Loud/loudFlag';
+import '../Loud/loud.css';
+
+const LOUD = loudOn();
 import { signIn, signUp, signInWithGoogle, signInWithApple, resetPasswordForEmail } from '../../lib/db';
 import './AuthScreen.css';
 import BentoLogo from '../common/BentoLogo';
@@ -133,7 +137,9 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
   if (serviceDown) return <ServiceDown onRetry={() => setServiceDown(false)} />;
 
   return (
-    <div className="auth-screen">
+    <div className={`auth-screen${LOUD ? ' loud loud-onb' : ''}`}>
+      {LOUD && <span className="loud-glow" style={{ background: 'var(--or)', width: 260, height: 260, right: -60, top: 40 }} />}
+      {LOUD && <span className="loud-glow" style={{ background: 'var(--lc)', width: 240, height: 240, left: -80, bottom: 80 }} />}
       <div className="auth-card">
         <BentoLogo className="auth-logo" />
 

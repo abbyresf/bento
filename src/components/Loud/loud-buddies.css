@@ -1,0 +1,114 @@
+/* Buddies tab (Loud pilot). Scoped under .loud-buddies; tokens from .loud. */
+.loud-buddies { position: relative; isolation: isolate; color: var(--tx); background: transparent; }
+.loud-buddies .lb-top { font-size: 12px; font-weight: 700; color: var(--mu); padding: 6px 2px 0; }
+.loud-buddies .ft-title {
+  font-family: var(--disp); font-weight: 800; font-stretch: 74%; font-size: 60px; line-height: .82; letter-spacing: -.04em;
+  text-transform: uppercase; margin: 10px 2px 14px; color: var(--tx);
+}
+.loud-buddies .ft-card { background: transparent; border: 0; box-shadow: none; padding: 0; margin-bottom: 18px; }
+.loud-buddies .ft-section { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--mu); margin: 0 2px 8px; }
+.loud-buddies .fr-note, .loud-buddies .ft-quests-head, .loud-buddies .fr-friend-sub { color: var(--mu); }
+
+/* Out now: the invite card */
+.loud-buddies .ft-out-card { background: linear-gradient(150deg, var(--pk), var(--lc)); color: #141418; border-radius: 26px; padding: 16px; }
+.loud-buddies .ft-out-card .ft-section { color: rgba(20,20,24,.7); }
+.loud-buddies .ft-out-card .fr-note { color: rgba(20,20,24,.75); }
+.loud-buddies .ft-out { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-direction: column; gap: 8px; }
+.loud-buddies .ft-out li { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.28); border: 0; border-radius: 16px; padding: 8px 12px; }
+.loud-buddies .ft-out .fr-chip-name { display: block; font-family: var(--disp); font-weight: 800; font-stretch: 82%; text-transform: uppercase; font-size: 20px; color: #141418; }
+.loud-buddies .ft-out .fr-chip-line { color: rgba(20,20,24,.72); font-weight: 600; }
+.loud-buddies .ft-out-card .ft-here {
+  width: 100%; background: #141418; color: var(--li); border: 0; border-radius: 999px; padding: 14px; box-shadow: 0 4px 0 rgba(0,0,0,.35);
+  font-family: var(--disp); font-weight: 800; font-size: 16px; text-transform: uppercase;
+}
+.loud-buddies .ft-youhere { background: rgba(255,255,255,.28); border: 0; border-radius: 16px; color: #141418; margin-top: 10px; }
+.loud-buddies .ft-youhere .fr-friend-sub { color: rgba(20,20,24,.72); }
+.loud-buddies .ft-youhere .fr-btn-quiet { background: rgba(20,20,24,.12); color: #141418; border: 0; }
+
+/* Quests */
+.loud-buddies .qd-list { display: flex; flex-direction: column; gap: 8px; }
+.loud-buddies .qd-card { background: var(--s1); border: 0; border-radius: 20px; box-shadow: inset 0 0 0 1px var(--ln); color: var(--tx); }
+.loud-buddies .qd-card.can-claim { background: var(--li); color: #141418; box-shadow: none; }
+.loud-buddies .qd-card.claimed { opacity: .6; }
+.loud-buddies .qd-emoji { background: var(--s2); border-radius: 14px; }
+.loud-buddies .qd-card.can-claim .qd-emoji { background: #141418; }
+.loud-buddies .qd-title { font-family: var(--disp); font-weight: 800; font-stretch: 84%; text-transform: uppercase; font-size: 16px; color: inherit; }
+.loud-buddies .qd-what, .loud-buddies .qd-meta { color: var(--mu); }
+.loud-buddies .qd-card.can-claim .qd-what, .loud-buddies .qd-card.can-claim .qd-meta { color: rgba(20,20,24,.7); }
+.loud-buddies .qd-bar { background: rgba(127,127,127,.22); }
+.loud-buddies .qd-bar i { background: var(--or); }
+.loud-buddies .qd-card.can-claim .qd-bar i { background: #141418; }
+.loud-buddies .qd-card .fr-btn { background: var(--s2); color: var(--tx); border: 0; border-radius: 999px; font-weight: 800; }
+.loud-buddies .qd-card.can-claim .fr-btn {
+  background: #141418; color: var(--li); font-family: var(--disp); text-transform: uppercase; box-shadow: 0 3px 0 rgba(0,0,0,.35);
+}
+.loud-buddies .ft-claimed { background: none; color: var(--mu); padding: 0; border: 0; font-weight: 800; }
+.loud-buddies .qd-stars button { color: var(--fa); }
+.loud-buddies .fr-ok { color: var(--lacc); }
+
+/* Your buddies */
+.loud-buddies .fr-friend { background: var(--s1); border: 0; border-radius: 18px; box-shadow: inset 0 0 0 1px var(--ln); color: var(--tx); }
+.loud-buddies .fr-friend-name { font-family: var(--disp); font-weight: 800; font-stretch: 84%; text-transform: uppercase; font-size: 17px; color: var(--tx); }
+.loud-buddies .fr-friend .fr-btn-quiet, .loud-buddies .fr-friend .fr-btn { background: var(--s2); color: var(--tx); border: 0; border-radius: 999px; }
+.loud-buddies > .ft-card:last-of-type > .fr-btn, .loud-buddies .ft-card > .fr-btn-quiet {
+  background: var(--s2); color: var(--tx); border: 0; border-radius: 999px; font-weight: 700;
+}
+.loud-buddies .ft-first { background: linear-gradient(150deg, var(--pk), var(--lc)); color: #141418; border-radius: 26px; padding: 18px; }
+.loud-buddies .ft-first h3 { font-family: var(--disp); font-weight: 800; font-stretch: 78%; text-transform: uppercase; font-size: 32px; }
+.loud-buddies .ft-first .fr-btn { background: #141418; color: var(--li); border: 0; border-radius: 999px; font-weight: 800; }
+
+/* Buddies sheets live outside the page; give them the Loud ground too. */
+html.loud-app .fr-sheet { background: var(--bg); color: var(--tx); }
+html.loud-app .fr-sheet .fr-head, html.loud-app .fr-sheet h2 { font-family: var(--disp); font-weight: 800; font-stretch: 78%; text-transform: uppercase; color: var(--tx); }
+html.loud-app .fr-sheet .fr-note, html.loud-app .fr-sheet .fr-label { color: var(--mu); }
+html.loud-app .fr-sheet .fr-input { background: var(--s1); color: var(--tx); border: 0; box-shadow: inset 0 0 0 1px var(--ln); border-radius: 14px; }
+html.loud-app .fr-sheet .fr-btn { background: var(--li); color: #141418; border: 0; border-radius: 999px; font-weight: 800; box-shadow: 0 3px 0 #7E9C12; }
+html.loud-app .fr-sheet .fr-btn-quiet, html.loud-app .fr-sheet .fr-choice { background: var(--s1); color: var(--tx); border: 0; box-shadow: inset 0 0 0 1px var(--ln); }
+html.loud-app .fr-sheet .fr-choice[aria-pressed="true"], html.loud-app .fr-sheet .fr-choice.on { background: var(--li); color: #141418; }
+html.loud-app .closet { background: var(--bg); color: var(--tx); }
+html.loud-app .closet-name, html.loud-app .closet-sub, html.loud-app .closet-note { color: var(--mu); }
+html.loud-app .closet-item { background: var(--s1); border: 0; box-shadow: inset 0 0 0 1px var(--ln); }
+html.loud-app .closet-done { background: var(--li); color: #141418; border: 0; border-radius: 999px; font-weight: 800; }
+/* Higher than .qd-card.fun ... in Friends.css. */
+.loud-buddies .qd-card .qd-emoji { background: var(--s2); }
+.loud-buddies .qd-card.can-claim .qd-emoji { background: #141418; }
+.loud-buddies .qd-card .qd-bar i { background: var(--or); }
+.loud-buddies .qd-card.can-claim .qd-bar i { background: #141418; }
+.loud-buddies .ft-card > .fr-btn-quiet, .loud-buddies .ft-card .fr-list + .fr-btn-quiet, .loud-buddies .fr-btn-quiet {
+  background: var(--s2); color: var(--tx); border: 0; border-radius: 999px; font-weight: 700; padding: 10px 16px;
+}
+
+/* Contrast. Secondary text is stronger here than elsewhere, claimed quests no longer fade their text, and older
+ * Friends.css rules that colored text with the app's accent or fern are overridden. */
+.loud-buddies { --mu: color-mix(in srgb, var(--tx) 78%, transparent); }
+.loud-buddies .qd-card.claimed { opacity: 1; }
+.loud-buddies .qd-card.claimed .qd-title { color: var(--mu); }
+.loud-buddies .qd-card.fun:not(.can-claim) { background: var(--s1); box-shadow: inset 0 0 0 1px var(--ln); }
+.loud-buddies .ft-claimed { color: var(--tx); }
+.loud-buddies .qd-stars button { color: var(--tx); }
+.loud-buddies .fr-link { color: var(--lacc); }
+.loud-buddies .fr-ok { color: var(--tx); font-weight: 700; }
+.loud-buddies .fr-friend-sub, .loud-buddies .qd-what, .loud-buddies .qd-meta, .loud-buddies .ft-quests-head { color: var(--mu); }
+.loud-buddies .ft-out-card, .loud-buddies .ft-out-card * { color: #141418; }
+.loud-buddies .ft-out-card .ft-here { color: var(--li); }
+.loud-buddies .ft-out-card .fr-note, .loud-buddies .ft-out .fr-chip-line, .loud-buddies .ft-youhere .fr-friend-sub { color: rgba(20,20,24,.82); }
+html.loud-app .fr-sheet .fr-choice[aria-pressed="true"] { color: #141418; }
+html.loud-app .fr-sheet .fr-link { color: var(--lacc); }
+html.loud-app .closet h2, html.loud-app .closet h3:first-of-type { font-family: var(--disp); font-weight: 800; font-stretch: 78%; text-transform: uppercase; letter-spacing: -.02em; font-size: 32px; color: var(--tx); }
+
+/* Eat together sits on a bright gradient in both modes: everything on it is near-black. */
+.loud-buddies .ft-first p, .loud-buddies .ft-first .fr-note { color: rgba(20, 20, 24, .82); font-weight: 600; }
+.loud-buddies .ft-first .fr-link { color: #141418; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 2px; }
+
+/* Title row with the add button beside it. */
+.loud-buddies .lb-head { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.loud-buddies .lb-head .ft-title { margin-bottom: 0; }
+.loud-buddies .lb-add {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; border: 0; cursor: pointer;
+  background: var(--li); color: #141418; font: inherit; font-weight: 800; font-size: 15px;
+  padding: 12px 16px; border-radius: 999px; box-shadow: 0 3px 0 #7E9C12; -webkit-tap-highlight-color: transparent;
+}
+.loud-buddies .lb-add span { font-size: 20px; line-height: 1; margin-top: -2px; }
+.loud-buddies .lb-add:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #7E9C12; }
+.loud-buddies .lb-add:disabled { opacity: .5; }
+.loud-buddies .lb-head + * { margin-top: 18px; }

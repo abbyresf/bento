@@ -90,6 +90,10 @@ export async function getUserProfile() {
     activityLevel: data.activity_level,
     goal:          data.goal,
     university:    data.university,
+    // The shorter setup (migration 071). Missing columns read as the device copy, so the pilot works before 071 runs.
+    setupDone:     data.setup_done ?? readSetupLocal(id).setupDone ?? false,
+    goals:         data.goals ?? readSetupLocal(id).goals ?? [],
+    likedFoods:    data.liked_foods ?? readSetupLocal(id).likedFoods ?? [],
     // Which nutrition numbers this person wants to see. Defaults to visible so
     // a missing row never silently hides information someone relies on.
     nutritionDisplay: {
@@ -674,6 +678,92 @@ export async function getMyEmphasizes() {
   return new Set((data ?? []).map(r => r.suggestion_id));
 }
 
+// ── Campus feed (Loud pilot, migration 072) ────────────────────────────────
+// Campus posts are the community suggestions: anonymous, one school. 072 adds downvotes and replies. Before 072 runs
+// the extra columns are missing, so posts load without them and `full` is false, which hides downvotes and replies.
+export async function getCampusPosts(university) {
+  const read = (cols) => {
+    let q = supabase.from('suggestions').select(cols).eq('is_hidden', false);
+    if (university) q = q.eq('university', university);
+    return q.order('created_at', { ascending: false }).limit(100);
+  };
+  // 073 adds reposts and quotes, 072 downvotes and replies. Each read falls back to what the database has.
+  const withReposts = await read('id, content, emphasize_count, downvote_count, reply_count, repost_count, quote_of, created_at');
+  if (!withReposts.error) return { posts: withReposts.data ?? [], full: true, reposts: true };
+  const full = await read('id, content, emphasize_count, downvote_count, reply_count, created_at');
+  if (!full.error) return { posts: full.data ?? [], full: true, reposts: false };
+  const old = await read('id, content, emphasize_count, created_at');
+  return { posts: (old.data ?? []).map((p) => ({ ...p, downvote_count: 0, reply_count: 0 })), full: false, reposts: false };
+}
+
+// The caller's vote on each post: 1 up, -1 down.
+export async function getMyVotes() {
+  const id = await uid();
+  const votes = new Map();
+  if (!id) return votes;
+  const [up, down] = await Promise.all([
+    supabase.from('suggestion_emphasizes').select('suggestion_id').eq('user_id', id),
+    supabase.from('suggestion_downvotes').select('suggestion_id').eq('user_id', id),
+  ]);
+  for (const r of up.data ?? []) votes.set(r.suggestion_id, 1);
+  for (const r of down.data ?? []) votes.set(r.suggestion_id, -1);
+  return votes;
+}
+
+// Posts quoted by others that are not in the loaded list (older, or further down), so a quote can show them.
+export async function getPostsByIds(ids) {
+  if (!ids?.length) return [];
+  const { data } = await supabase.from('suggestions').select('id, content, created_at').in('id', ids).eq('is_hidden', false);
+  return data ?? [];
+}
+
+export async function getMyReposts() {
+  const id = await uid();
+  if (!id) return new Set();
+  const { data, error } = await supabase.from('suggestion_reposts').select('suggestion_id').eq('user_id', id);
+  if (error) return new Set();
+  return new Set((data ?? []).map((r) => r.suggestion_id));
+}
+
+export async function toggleRepost(suggestionId) {
+  const { data, error } = await supabase.rpc('toggle_repost', { p_suggestion_id: suggestionId });
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
+
+export async function submitQuote(quoteOf, content) {
+  const { data, error } = await supabase.rpc('submit_quote', { p_quote_of: quoteOf, p_content: content });
+  if (error) throw error;
+  return data;
+}
+
+export async function castVote(suggestionId, vote) {
+  const { data, error } = await supabase.rpc('cast_vote', { p_suggestion_id: suggestionId, p_vote: vote });
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
+
+export async function getReplies(suggestionId) {
+  const { data } = await supabase
+    .from('suggestion_replies')
+    .select('id, content, created_at')
+    .eq('suggestion_id', suggestionId)
+    .order('created_at', { ascending: true })
+    .limit(200);
+  return data ?? [];
+}
+
+export async function submitReply(suggestionId, content) {
+  const { data, error } = await supabase.rpc('submit_reply', { p_suggestion_id: suggestionId, p_content: content });
+  if (error) throw error;
+  return data;
+}
+
+export async function flagReply(replyId) {
+  const { error } = await supabase.rpc('flag_reply', { p_reply_id: replyId });
+  if (error) throw error;
+}
+
 export async function submitSuggestion(content) {
   const { data, error } = await supabase.rpc('submit_suggestion', { p_content: content });
   if (error) throw error;
@@ -945,12 +1035,31 @@ export async function incrementStreakForDate(date) {
 // again. A read failing is not the same as a student not having agreed, and
 // the caller must be able to tell the difference.
 
+// ── Shorter setup (migration 071) ──────────────────────────────────────────
+// Kept on the device as well, so the pilot works before the columns exist, and so a reinstall after 071 runs reads them
+// back from the profile.
+const setupKey = (id) => `bento_setup_${id}`;
+export function readSetupLocal(id) {
+  try { return JSON.parse(localStorage.getItem(setupKey(id)) ?? '{}'); } catch { return {}; }
+}
+export async function saveSetupState({ setupDone, goals, likedFoods }) {
+  const id = await uid();
+  if (!id) return;
+  try { localStorage.setItem(setupKey(id), JSON.stringify({ setupDone, goals, likedFoods })); } catch { /* storage full or blocked */ }
+  // Fails quietly if 071 has not run yet: the device copy above stands in.
+  await supabase.from('profiles')
+    .update({ setup_done: setupDone, goals, liked_foods: likedFoods, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  forgetProfileRead();
+}
+
 export async function isOnboardingComplete() {
   const id = await uid();
   if (!id) return null;                 // unknown, not "incomplete"
   const { data, error } = await readProfileRow();
   if (error) return null;               // unknown, not "incomplete"
-  return !!(data?.weight && data?.age);
+  // A student who skipped their details finished setup too (migration 071, or the device copy before it runs).
+  return !!(data?.weight && data?.age) || data?.setup_done === true || readSetupLocal(id).setupDone === true;
 }
 
 export async function isTermsAccepted() {

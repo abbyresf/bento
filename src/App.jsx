@@ -37,6 +37,9 @@ import { revokeBuddyWidget } from './lib/widget';
 import JoinSheet from './components/Friends/JoinSheet';
 import FriendsTab from './components/Friends/FriendsTab';
 import './App.css';
+import './components/Loud/loud.css';
+import './components/Loud/loud-app.css';
+import { loudOn } from './components/Loud/loudFlag';   // also sets html.loud-app when the pilot is on
 import BentoLogo from './components/common/BentoLogo';
 
 // Loaded only when someone reaches them. Pulse (with its charts) is for dining staff on /admin, and onboarding runs once per
@@ -45,6 +48,8 @@ const PulseApp = lazy(() => import('./components/Pulse/PulseApp'));
 const PulseJoin = lazy(() => import('./components/Pulse/PulseJoin'));
 const RutgersWaitlist = lazy(() => import('./components/Waitlist/RutgersWaitlist'));
 const OnboardingWizard = lazy(() => import('./components/Onboarding/OnboardingWizard'));
+const LoudFeed = lazy(() => import('./components/Loud/LoudFeed'));
+const LoudYou = lazy(() => import('./components/Loud/LoudYou'));
 const loadingScreen = <div className="app-loading"><div className="spinner"></div></div>;
 
 function isStandalone() {
@@ -440,7 +445,7 @@ function App() {
       <>
         <div style={{ display: showLanding ? 'none' : 'contents' }}>
           <Suspense fallback={loadingScreen}>
-            <OnboardingWizard onComplete={handleOnboardingComplete} onGoContact={handleGoContact} onRequestSchool={handleGoRequestSchool} />
+            <OnboardingWizard onComplete={handleOnboardingComplete} onGoContact={handleGoContact} onRequestSchool={handleGoRequestSchool} onSignOut={handleReset} />
           </Suspense>
         </div>
         {landing}
@@ -491,7 +496,7 @@ function App() {
         <div className="tab-content">
           {visitedTabs.has('today') && (
             <div hidden={activeTab !== 'today'}>
-              <MealPlan settingsVersion={settingsVersion} />
+              <MealPlan settingsVersion={settingsVersion} onOpenBuddies={() => setActiveTab('friends')} onPersonalize={() => setShowSettings(true)} />
             </div>
           )}
           {visitedTabs.has('friends') && (
@@ -506,12 +511,14 @@ function App() {
           )}
           {visitedTabs.has('community') && (
             <div hidden={activeTab !== 'community'}>
-              <CommunityTab />
+              {loudOn() ? <Suspense fallback={null}><LoudFeed /></Suspense> : <CommunityTab />}
             </div>
           )}
           {visitedTabs.has('insights') && (
             <div hidden={activeTab !== 'insights'}>
-              <InsightsPanel tabMode onClose={() => setActiveTab('today')} />
+              {loudOn()
+                ? <Suspense fallback={null}><LoudYou onOpenSettings={() => setShowSettings(true)} /></Suspense>
+                : <InsightsPanel tabMode onClose={() => setActiveTab('today')} />}
             </div>
           )}
         </div>

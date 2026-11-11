@@ -1,0 +1,75 @@
+/* You tab (Loud pilot). Tokens from .loud. */
+.loud-you { position: relative; isolation: isolate; padding: 18px 16px 24px; color: var(--tx); }
+.ly-head { display: flex; align-items: center; gap: 14px; margin: 8px 2px 18px; }
+.ly-av { border: 0; cursor: pointer; width: 64px; height: 64px; border-radius: 22px; background: var(--bu); display: grid; place-items: center; transform: rotate(-4deg); box-shadow: 0 3px 0 #B8901A; flex: none; }
+.ly-title { font-family: var(--disp); font-weight: 800; font-stretch: 74%; font-size: 60px; line-height: .82; letter-spacing: -.04em; text-transform: uppercase; margin: 0; }
+.ly-sub { display: block; font-size: 13px; font-weight: 700; color: var(--mu); margin-top: 6px; }
+.ly-k { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--mu); margin: 0 2px 8px; }
+
+.ly-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; border-radius: 20px; overflow: hidden; margin-bottom: 10px; }
+.ly-stats div { padding: 12px 12px 11px; color: #141418; }
+.ly-stats b { display: block; font-family: var(--disp); font-weight: 800; font-stretch: 78%; font-size: 36px; line-height: .9; letter-spacing: -.02em; }
+.ly-stats span { font-size: 11px; font-weight: 700; color: rgba(20,20,24,.72); }
+
+.ly-card { border-radius: 20px; padding: 14px; margin-bottom: 10px; }
+.ly-card-head { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--mu); }
+.ly-card-head .hit { color: var(--lacc); }
+.ly-chart { position: relative; display: flex; align-items: flex-end; gap: 6px; height: 90px; margin-top: 14px; }
+.ly-chart::before { content: ""; position: absolute; left: 0; right: 0; bottom: var(--goal); border-top: 1.5px dashed var(--fa); }
+.ly-chart i { flex: 1; border-radius: 6px 6px 3px 3px; background: rgba(127,127,127,.28); }
+.ly-chart i.on { background: var(--or); }
+.ly-days { display: flex; gap: 6px; margin-top: 5px; }
+.ly-days span { flex: 1; text-align: center; font-size: 10px; font-weight: 700; color: var(--fa); }
+.ly-goal-label { font-size: 11px; color: var(--mu); font-weight: 600; margin-top: 6px; }
+.ly-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 12px; }
+.ly-cal i { aspect-ratio: 1; border-radius: 7px; background: rgba(127,127,127,.2); }
+.ly-cal i.on { background: var(--or); }
+.ly-cal i.today { box-shadow: inset 0 0 0 2px var(--lacc); }
+
+.ly-links { border-radius: 20px; padding: 2px 14px; }
+.ly-links button { display: flex; justify-content: space-between; width: 100%; background: none; border: 0; border-top: 1px solid var(--ln); font: inherit; font-size: 15px; font-weight: 700; color: var(--tx); padding: 15px 2px; cursor: pointer; text-align: left; }
+.ly-links button:first-child { border-top: 0; }
+.ly-links button span { color: var(--fa); font-size: 20px; line-height: 1; }
+
+.loud-you.is-sub { padding-top: 12px; }
+.ly-back { background: none; border: 0; font: inherit; font-size: 14px; font-weight: 700; color: var(--mu); padding: 8px 2px; cursor: pointer; }
+/* Insights inside You: keep its content, drop its own close button and old card colors. */
+.loud-you .insights-panel, .loud-you .insights-panel-page { background: transparent; color: var(--tx); }
+.loud-you .insights-close, .loud-you .ip-close { display: none; }
+
+/* My Ratings and Insights inside You */
+.loud-you .my-ratings, .loud-you .my-ratings-page { background: transparent; color: var(--tx); padding-top: 0; }
+.loud-you .my-ratings-header h2 { margin-top: 4px; }
+.loud-you .my-ratings-note { color: var(--mu); }
+.loud-you .insights-panel-header h2, .loud-you .insights-panel-header h1 {
+  font-family: var(--disp); font-weight: 800; font-stretch: 76%; text-transform: uppercase; font-size: 40px; letter-spacing: -.03em; color: var(--tx);
+}
+.loud-you .insights-panel-header { border: 0; background: transparent; }
+.loud-you .streak-current, .loud-you .voice-card, .loud-you .quests-card, .loud-you .weekly-summary-card, .loud-you .daily-breakdown-card,
+.loud-you .insights-callout, .loud-you .streak-history-row {
+  background: var(--s1); color: var(--tx); border: 0; border-radius: 20px; box-shadow: inset 0 0 0 1px var(--ln);
+}
+.loud-you .insights-section-label, .loud-you .summary-week-range, .loud-you .summary-avg-label, .loud-you .macro-bar-label,
+.loud-you .macro-bar-values, .loud-you .streak-current-sub, .loud-you .quest-note, .loud-you .callout-text, .loud-you .streak-history-week { color: var(--mu); }
+.loud-you .streak-current-count, .loud-you .quest-title { color: var(--tx); }
+.loud-you .streak-current-count { font-family: var(--disp); font-weight: 800; font-stretch: 80%; }
+.loud-you .macro-bar-track, .loud-you .quest-bar { background: rgba(127,127,127,.22); }
+.loud-you .macro-bar-fill, .loud-you .quest-bar i { background: var(--or); }
+.loud-you .quest-claim { background: var(--li); color: #141418; border: 0; border-radius: 999px; font-weight: 800; box-shadow: 0 3px 0 #7E9C12; }
+.loud-you .streak-badges-btn { background: var(--s2); color: var(--tx); border: 0; }
+.loud-you .food-chip, .loud-you .summary-extra-chip { background: none; border: 0; padding: 0 8px 0 0; color: var(--mu); }
+/* Badges sheet opens over the page. */
+html.loud-app .badges-panel { background: var(--bg); color: var(--tx); }
+html.loud-app .badge-row { background: var(--s1); border: 0; box-shadow: inset 0 0 0 1px var(--ln); color: var(--tx); }
+html.loud-app .badge-row-desc, html.loud-app .badge-row-adds, html.loud-app .badges-hero-sub { color: var(--mu); }
+html.loud-app .badges-hero-name, html.loud-app .badge-row-name { font-family: var(--disp); font-weight: 800; font-stretch: 84%; text-transform: uppercase; color: var(--tx); }
+/* The filling bento box (badges) is gone from the pilot. */
+.loud-you .streak-badges-btn { display: none; }
+
+/* Insights lines up with the rest of You: 16px sides, and streak history is one card with dividers, not a card per row. */
+.loud-you .insights-panel-header, .loud-you .insights-body { padding-left: 16px; padding-right: 16px; }
+.loud-you .streak-history-list { background: var(--s1); border: 0; border-radius: 20px; box-shadow: inset 0 0 0 1px var(--ln); overflow: hidden; padding: 0; }
+.loud-you .streak-history-row { background: none; box-shadow: none; border-radius: 0; border: 0; border-top: 1px solid var(--ln); margin: 0; padding: 13px 16px; }
+.loud-you .streak-history-row:first-child { border-top: 0; }
+.loud-you .streak-history-count { color: var(--tx); font-weight: 800; }
+.loud-you .insights-goals { background: var(--s1); box-shadow: inset 0 0 0 1px var(--ln); border-radius: 20px; }

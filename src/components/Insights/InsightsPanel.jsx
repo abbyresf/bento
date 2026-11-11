@@ -45,54 +45,36 @@ function Callouts({ targets, goalHits }) {
     );
   }
 
-  const callouts = [];
   const { numDays, protein, calories, carbs, fat, avgCalories, avgProtein, avgCarbs, avgFat } = goalHits;
+  const fmt = (n) => Math.round(n).toLocaleString();
 
-  const hits = [
-    { label: 'calorie', count: calories },
-    { label: 'protein', count: protein },
-    { label: 'carb',    count: carbs },
-    { label: 'fat',     count: fat },
-  ];
-  for (const { label, count } of hits) {
-    if (count === numDays) {
-      callouts.push({ emoji: '🏆', text: `You hit your ${label} goal every day this week!` });
-    } else if (count >= numDays * 0.5) {
-      callouts.push({ emoji: '💪', text: `You hit your ${label} goal ${count} out of ${numDays} days this week.` });
-    }
-  }
-
-  const macros = [
-    { label: 'calories', value: avgCalories, target: targets.calories,        unit: '' },
-    { label: 'protein',  value: avgProtein,  target: targets.macros?.protein, unit: 'g' },
-    { label: 'carbs',    value: avgCarbs,    target: targets.macros?.carbs,   unit: 'g' },
-    { label: 'fat',      value: avgFat,      target: targets.macros?.fat,     unit: 'g' },
-  ];
-
-  for (const { label, value, target, unit } of macros) {
-    if (!target || value == null) continue;
-    const pct = value / target;
-    const diff = Math.abs(Math.round(value - target));
-    if (pct >= 0.9 && pct <= 1.1) {
-      callouts.push({ emoji: '🎯', text: `Solid ${label} — you're averaging ${value}${unit}, right on your ${target}${unit} goal.` });
-    } else if (value > target) {
-      callouts.push({ emoji: '⚡', text: `Your avg ${label} is ${value}${unit} — ${diff}${unit} above your goal.` });
-    } else {
-      callouts.push({ emoji: '📈', text: `Your avg ${label} is ${value}${unit} — ${diff}${unit} below your ${target}${unit} goal.` });
-    }
-  }
-
-  if (!callouts.length) return null;
+  // One row per macro: this week's daily average against the goal, and how far off it is.
+  const rows = [
+    { label: 'Calories', value: avgCalories, target: targets.calories,        unit: '',  hit: calories },
+    { label: 'Protein',  value: avgProtein,  target: targets.macros?.protein, unit: 'g', hit: protein },
+    { label: 'Carbs',    value: avgCarbs,    target: targets.macros?.carbs,   unit: 'g', hit: carbs },
+    { label: 'Fat',      value: avgFat,      target: targets.macros?.fat,     unit: 'g', hit: fat },
+  ].filter((r) => r.target && r.value != null).map((r) => {
+    const pct = r.value / r.target;
+    const diff = Math.abs(Math.round(r.value - r.target));
+    const state = pct >= 0.9 && pct <= 1.1 ? 'on' : pct > 1.1 ? 'over' : 'under';
+    const note = state === 'on' ? 'On target' : `${fmt(diff)}${r.unit} ${state}`;
+    return { ...r, state, note };
+  });
+  if (!rows.length) return null;
 
   return (
     <div className="insights-callouts">
-      <p className="insights-section-label">Highlights</p>
-      {callouts.slice(0, 4).map((c, i) => (
-        <div key={i} className="insights-callout">
-          <span className="callout-emoji">{c.emoji}</span>
-          <span className="callout-text">{c.text}</span>
-        </div>
-      ))}
+      <p className="insights-section-label">Daily average vs goal</p>
+      <div className="insights-goals">
+        {rows.map((r) => (
+          <div key={r.label} className={`insights-goal is-${r.state}`}>
+            <span className="insights-goal-name">{r.label}</span>
+            <span className="insights-goal-nums"><b>{fmt(r.value)}{r.unit}</b> of {fmt(r.target)}{r.unit}</span>
+            <span className="insights-goal-note">{r.note}{numDays ? ` · goal hit ${r.hit} of ${numDays} days` : ''}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

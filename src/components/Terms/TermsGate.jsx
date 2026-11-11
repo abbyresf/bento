@@ -1,18 +1,24 @@
 import { useState } from 'react';
 import TERMS_SECTIONS from './termsSections.jsx';
 import './TermsGate.css';
+import { loudOn } from '../Loud/loudFlag';
+import '../Loud/loud.css';
+
+const LOUD = loudOn();
 
 export default function TermsGate({ onAccept }) {
   const [checked, setChecked] = useState(false);
 
   return (
-    <div className="terms-screen">
+    <div className={`terms-screen${LOUD ? ' loud loud-onb' : ''}`}>
+      {LOUD && <span className="loud-glow" style={{ background: 'var(--or)', width: 260, height: 260, right: -60, top: 40 }} />}
+      {LOUD && <span className="loud-glow" style={{ background: 'var(--lc)', width: 240, height: 240, left: -80, bottom: 120 }} />}
       <div className="terms-card">
         <div className="terms-logo-row">
           <img src="/logo-cropped.png" alt="Bento" className="terms-logo" />
         </div>
 
-        <h1 className="terms-title">Before you continue</h1>
+        <h1 className="terms-title">{LOUD ? 'Before you start' : 'Before you continue'}</h1>
         <p className="terms-subtitle">
           Please read and agree to the following before using Bento.
         </p>

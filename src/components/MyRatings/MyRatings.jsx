@@ -1,10 +1,19 @@
 import { useRatings } from '../../context/RatingsContext';
 import StarRating from '../Community/StarRating';
 import './MyRatings.css';
+import { loudOn } from '../Loud/loudFlag';
+import LoudMyRatings from './LoudMyRatings';
+
+const LOUD = loudOn();
 
 const STATION_ORDER = ['breakfast', 'entree', 'grill', 'deli', 'pizza', 'allgood', 'sides', 'soup', 'salad', 'bakery', 'beverage'];
 
 export default function MyRatings({ tabMode = false }) {
+  if (LOUD) return <LoudMyRatings tabMode={tabMode} />;
+  return <ClassicMyRatings tabMode={tabMode} />;
+}
+
+function ClassicMyRatings({ tabMode }) {
   const { myRatings, rateItem } = useRatings();
 
   const items = Object.entries(myRatings)

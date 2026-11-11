@@ -31,7 +31,7 @@ import { getUserProfile, getNutritionTargets, getDietaryRestrictions, getRecentI
 import { useRatings } from '../../context/RatingsContext';
 import { buildPlatePayload, syncWidget, syncWidgetMascot } from '../../lib/widget';
 import { readQueue, enqueue, attachExtras, removeEntry, pendingMealsFor, isOfflineError, withTimeout } from '../../lib/pendingConfirms';
-import { sumItems, MAX_SERVINGS } from '../../utils/servingSize.js';
+import { sumItems, MAX_SERVINGS, formatServing, servingsOf } from '../../utils/servingSize.js';
 import BentoLogo from '../common/BentoLogo';
 import { getNewBadge } from '../../data/badges';
 import { optimizeDay, findAlternatives, findRecommendedAdditions } from '../../utils/mealOptimizer';
@@ -54,6 +54,13 @@ import { LoadPicker, SnackSlot, TrainingDayBanner, WaterRow } from './AthleteTod
 import StreakCelebration from '../Streak/StreakCelebration';
 import BadgeCelebration from '../Badges/BadgeCelebration';
 import RatingSheet from './RatingSheet';
+import MenuBrowser from './MenuBrowser';
+import LoudToday, { LoudDay } from '../Loud/LoudToday';
+import LoudStreak from '../Loud/LoudStreak';
+import { loudOn, streakDemo } from '../Loud/loudFlag';
+import { likedIdsFrom, withLikes } from '../Loud/likes';
+import { useFriends } from '../../lib/friendsStore';
+import { hereNow, presenceLine } from '../../data/duo';
 import Confetti from './Confetti';
 import { haptics } from '../../lib/haptics';
 import FeedbackSheet from '../Feedback/FeedbackSheet';
@@ -63,7 +70,7 @@ import './MealPlan.css';
 // Which gap in the day follows each meal (lib/athlete.js SNACK_SLOTS).
 const SNACK_SLOT_AFTER = { breakfast: 'morning', lunch: 'afternoon', dinner: 'evening' };
 
-export default function MealPlan({ settingsVersion = 0 }) {
+export default function MealPlan({ settingsVersion = 0, onOpenBuddies, onPersonalize }) {
   const [menu, setMenu] = useState(null);
   const [mealPlan, setMealPlan] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState({
@@ -119,11 +126,32 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const [pausedSchool, setPausedSchool] = useState(null);   // a school Bento is not live at yet
   const universityRef = useRef('brandeis');
   const [viewDate, setViewDate] = useState(() => localDateStr());
+  // Past midnight, someone looking at today should land on the new today, not stay on yesterday.
+  // A date they picked on purpose stays put.
+  const todayRef = useRef(localDateStr());
+  useEffect(() => {
+    const roll = () => {
+      const now = localDateStr();
+      if (now === todayRef.current) return;
+      const was = todayRef.current;
+      todayRef.current = now;
+      setViewDate((prev) => (prev === was ? now : prev));
+    };
+    const onVisible = () => { if (document.visibilityState === 'visible') roll(); };
+    document.addEventListener('visibilitychange', onVisible);
+    const t = setInterval(roll, 60000);
+    return () => { document.removeEventListener('visibilitychange', onVisible); clearInterval(t); };
+  }, []);
   // Which meals Bento plans for the day being viewed: breakfast is off for a student who skips it, and dinner is off on a day
   // they are eating out. The day's targets are shared across the meals that are left.
   const dinnerOut = useDinnerOut(viewDate);
   const shares = useMemo(() => mealShares({ skipBreakfast, dinnerOut }), [skipBreakfast, dinnerOut]);
-  const boxOn = useMemo(boxPrototypeOn, []);   // the day box prototype, off unless switched on (see DayBox.jsx)
+  const boxOn = useMemo(boxPrototypeOn, []);
+  const loud = useMemo(loudOn, []);   // the Loud redesign pilot, off unless switched on (see Loud/loudFlag.js)
+  const [loudBrowse, setLoudBrowse] = useState(null);   // the meal whose menu is open from "Change dishes"
+  const logAfterBrowse = useRef(null);                    // a meal picked in "Log a meal": log it once its dishes are set
+  const [loudMore, setLoudMore] = useState(false);       // the full day plan under the Loud hero
+  const [demoStreak, setDemoStreak] = useState(streakDemo);   // development only, see loudFlag.js   // the day box prototype, off unless switched on (see DayBox.jsx)
   // Athlete mode: the day's targets follow that date's training load, and a snack between meals comes out of what is left
   // for the meals not yet decided. With the mode off, or migration 064 missing, both do nothing.
   const athlete = useAthlete();
@@ -164,7 +192,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
   const planDay = useCallback((menuData, targets, fetchedRestrictions, recentItems, date) => {
     planInputs.current = { menu: menuData, targets, restrictions: fetchedRestrictions, recent: recentItems };
     const plan = withEaten(optimizeDay(menuData, dailyTargetsFor(targets, date), fetchedRestrictions, recentItems,
-      mealShares({ skipBreakfast: getSkipBreakfast(), dinnerOut: isDinnerOut(date) }), ratingsByIdRef.current, { fuel: isAthleteOn() }), date);
+      mealShares({ skipBreakfast: getSkipBreakfast(), dinnerOut: isDinnerOut(date) }), planRatings(menuData), { fuel: isAthleteOn() }), date);
     freshPlans.current.add(plan);
     return plan;
   }, [withEaten]);
@@ -185,7 +213,15 @@ export default function MealPlan({ settingsVersion = 0 }) {
 
   // The student's own star ratings, id -> stars. A ref keeps
   // loadMenuAndOptimize stable (no dependency on the ratings themselves).
-  const { ratingsById: contextRatings } = useRatings();
+  const { ratingsById: contextRatings, aggregates: ratingAggregates } = useRatings();
+  // Loud pilot: "Foods you like" from setup nudge the plan the way a liked dish does, and a student who skipped their
+  // details plans on the starter target until they add them.
+  const likesRef = useRef([]);
+  const [isStarter, setIsStarter] = useState(false);
+  const planRatings = (menuData) => (loudOn()
+    ? withLikes(ratingsByIdRef.current, likedIdsFrom(menuData, likesRef.current))
+    : ratingsByIdRef.current);
+  const { friends } = useFriends();
   const ratingsByIdRef = useRef(contextRatings);
   useEffect(() => { ratingsByIdRef.current = contextRatings; }, [contextRatings]);
 
@@ -198,6 +234,10 @@ export default function MealPlan({ settingsVersion = 0 }) {
 
     // Fetch profile first to get university routing (fast Supabase read)
     const profileData = await getUserProfile();
+    if (loudOn()) {
+      likesRef.current = profileData?.likedFoods ?? [];
+      setIsStarter(!!profileData && !profileData.weight);
+    }
     const uni = profileData?.university ?? 'brandeis';
     if (uni !== universityRef.current) {
       // University changed — reset location selection and any in-progress manual plate
@@ -334,6 +374,15 @@ export default function MealPlan({ settingsVersion = 0 }) {
   }, []);
   useEffect(() => { loadHints(); }, [confirmedMeals]);
 
+  // Loud pilot: a meal picked in "Log a meal" with "I ate something else" is logged as soon as its new dishes are set.
+  useEffect(() => {
+    const meal = logAfterBrowse.current;
+    if (!meal || !customMeals[meal]?.items?.length || confirmedMeals[meal]) return;
+    logAfterBrowse.current = null;
+    handleConfirmMeal(meal);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customMeals]);
+
   // Plan the meals still to come around the ones already decided. A plate built by hand, or a meal confirmed, takes its share of
   // the day, and the others are planned for what is left: a big hand-built lunch gives a lighter dinner, a small one a bigger
   // dinner. Meals that are decided are left exactly as they are. It only runs for today and days ahead, and only when something
@@ -356,7 +405,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
     if (!freshPlans.current.has(mealPlan) && replanApplied.current.sig === sig) return;
     const next = replanMeals({
       menu: inputs.menu, daily, shares, fixed, snacks: snackTotals, restrictions: inputs.restrictions,
-      recentIds: inputs.recent, ratingsById: ratingsByIdRef.current, prevPlan: mealPlan, options: { fuel: athleteOn },
+      recentIds: inputs.recent, ratingsById: planRatings(inputs.menu), prevPlan: mealPlan, options: { fuel: athleteOn },
     });
     replanApplied.current = { sig };
     setMealPlan(next);
@@ -638,7 +687,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
       meal,
       currentMealPlan.items,
       3,
-      ratingsByIdRef.current
+      planRatings(menu)
     );
     setRecommendations((prev) => ({ ...prev, [meal]: recs }));
   };
@@ -764,7 +813,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
       recentItems,
       excludeIds,
       4,
-      ratingsByIdRef.current
+      planRatings(menu)
     );
     setItemAlternatives((prev) => ({ ...prev, [key]: alts }));
   };
@@ -1044,8 +1093,115 @@ export default function MealPlan({ settingsVersion = 0 }) {
     );
   };
 
+  const loudToday = loud && isViewingToday && !dateLoading && !!mealPlan;
+  // Any other day in the pilot: the same date bar and rings, over the full list of meals.
+  const loudDay = loud && !isViewingToday && !dateLoading && !!mealPlan;
+  const loudData = loudToday || loudDay;
+  const dateNav = {
+    word: isViewingToday ? 'Today' : isViewingTomorrow ? 'Tomorrow'
+      : viewDate === localDateStr(new Date(Date.now() - 86400000)) ? 'Yesterday'
+      : new Date(viewDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' }),
+    date: new Date(viewDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+    onPrev: () => { haptics.selection(); navigateDate(-1); },
+    onNext: () => { haptics.selection(); navigateDate(1); },
+    nextDisabled: isViewingTomorrow,
+  };
+  const dietLabel = (() => {
+    if (!restrictions) return null;
+    const parts = [
+      restrictions.vegan ? 'Vegan' : restrictions.vegetarian ? 'Vegetarian' : null,
+      restrictions.glutenFree ? 'Gluten-free' : null,
+      restrictions.dairyFree ? 'Dairy-free' : null,
+      restrictions.nutFree ? 'Nut-free' : null,
+      restrictions.halal ? 'Halal' : null,
+      restrictions.kosher ? 'Kosher' : null,
+      restrictions.allergies?.length ? 'Allergy-safe' : null,
+    ].filter(Boolean);
+    return parts.length ? parts.slice(0, 2).join(' · ') : null;
+  })();
+  const loudMeals = loudData ? ['breakfast', 'lunch', 'dinner'].map((meal) => {
+    const loc = selectedLocation[meal];
+    const items = customMeals[meal]?.items ?? mealPlan[loc]?.[meal]?.items ?? [];
+    return {
+      meal,
+      active: activeMeals(shares).includes(meal) && !(meal === 'dinner' && dinnerOut),
+      confirmed: !!confirmedMeals[meal],
+      hours: mealHoursFor(menu, loc, meal),
+      hall: menu?.locations?.[loc]?.shortName ?? 'the dining hall',
+      items: items.map((item) => {
+        // How many servings, and what one serving is: "2 servings · 1 cup each".
+        const n = servingsOf(item);
+        const raw = formatServing(item.serving, 1);
+        // "1 serving" or "1 each" says nothing about size, so only the count shows.
+        const one = raw && !/^1 (serving|each|ea)s?$/i.test(raw.trim()) ? raw : null;
+        const portion = n > 1 ? `${n} servings${one ? ` · ${one} each` : ''}` : `1 serving${one ? ` · ${one}` : ''}`;
+        return { id: item.id, name: item.name, portion, avg: ratingAggregates?.[item.id]?.avg ?? null };
+      }),
+    };
+  }) : [];
+  // The rings count what was eaten, not what is planned: only confirmed meals.
+  const eatenTotals = loudData ? activeMeals(shares).filter((meal) => confirmedMeals[meal]).reduce((t, meal) => {
+    const m = customMeals[meal]?.totals ?? mealPlan[selectedLocation[meal]]?.[meal]?.totals;
+    return m ? { calories: t.calories + (m.calories ?? 0), protein: t.protein + (m.protein ?? 0) } : t;
+  }, { calories: 0, protein: 0 }) : null;
+  const loudTargets = loudData && targets ? (() => {
+    const t = dayTargetsFor(targets, shares);
+    return { calories: t.calories, protein: t.macros?.protein ?? 0 };
+  })() : null;
+  const friendsOut = loudToday ? hereNow(friends ?? []).map((f) => ({ name: f.display_name ?? 'A buddy', where: presenceLine(f), color: f.mascot_color ?? null })) : [];
+
   return (
-    <div className="meal-plan">
+    <div className={`meal-plan${loud ? ' loud loud-page' : ''}`}>
+      {loudToday && (
+        <LoudToday
+          dateNav={dateNav}
+          streak={streak.currentStreak}
+          dietLabel={dietLabel}
+          meals={loudMeals}
+          totals={eatenTotals}
+          targets={loudTargets}
+          bentoSay={isViewingToday ? (questSays(questHints) ?? bentoSays({ hour: new Date().getHours(), today: localDateStr(), confirmed: confirmedMeals, streak })) : null}
+          outfit={displayOutfit}
+          onCloset={() => setShowCloset(true)}
+          starter={isStarter}
+          onPersonalize={onPersonalize}
+          friendsOut={friendsOut}
+          confirming={confirmingMeals}
+          onConfirm={handleConfirmMeal}
+          onChangeDishes={(meal, opts) => { logAfterBrowse.current = opts?.thenLog ? meal : null; setLoudBrowse(meal); }}
+          onFriends={onOpenBuddies}
+        />
+      )}
+      {loud && !loudToday && (
+        <LoudDay
+          dateNav={dateNav}
+          ready={loudDay}
+          past={isViewingPast}
+          meals={loudMeals}
+          eaten={eatenTotals}
+          planned={{ calories: dayTotals.calories, protein: dayTotals.protein }}
+          targets={loudTargets}
+        />
+      )}
+      {loudToday && loudBrowse && (
+        <MenuBrowser
+          key={`loud-${loudBrowse}-${selectedLocation[loudBrowse]}`}
+          meal={loudBrowse}
+          locationLabel={menu?.locations?.[selectedLocation[loudBrowse]]?.shortName}
+          items={menu?.locations?.[selectedLocation[loudBrowse]]?.meals?.[loudBrowse] ?? []}
+          restrictions={restrictions}
+          initialSelected={customMeals[loudBrowse]?.items ?? mealPlan[selectedLocation[loudBrowse]]?.[loudBrowse]?.items}
+          onDone={(items) => { handleBrowserDone(loudBrowse, items); setLoudBrowse(null); }}
+          onClose={() => { logAfterBrowse.current = null; setLoudBrowse(null); }}
+          className="open"
+        />
+      )}
+      {loudToday && (
+        <button type="button" className={`loud-more${loudMore ? ' is-open' : ''}`} onClick={() => setLoudMore((v) => !v)} style={{ margin: '0 16px', width: 'calc(100% - 32px)' }}>
+          {loudMore ? 'Hide the full day' : 'See the full day: every meal, halls, servings'}
+        </button>
+      )}
+      {!loud && (
       <header className="meal-plan-header">
         <div className="header-top">
           <BentoLogo className="header-logo-sm" />
@@ -1064,6 +1220,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
           </button>
         </div>
       </header>
+      )}
 
       {isViewingToday && usingCachedData === 'cache' && (
         <div className="cache-warning">
@@ -1095,7 +1252,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
         </div>
       )}
 
-      {boxOn && !dateLoading && mealPlan && targets && (() => {
+      {!loud && boxOn && !dateLoading && mealPlan && targets && (() => {
         const on = activeMeals(shares);
         const boxMeals = ['breakfast', 'lunch', 'dinner'].map((id) => ({
           id,
@@ -1116,7 +1273,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
           />
         );
       })()}
-      {isViewingToday && !dateLoading && mealPlan && (() => {
+      {!loudToday && isViewingToday && !dateLoading && mealPlan && (() => {
         // A quest waiting for you (a mystery dish, a Rainbow plate color) is what Bento says, ahead of the usual line.
         const say = questSays(questHints) ?? bentoSays({
           hour: new Date().getHours(),
@@ -1148,11 +1305,11 @@ export default function MealPlan({ settingsVersion = 0 }) {
       {athleteOn && !dateLoading && (
         <TrainingDayBanner date={viewDate} load={load} source={loadSource} isToday={isViewingToday} weekAvailable={extrasOn} />
       )}
-      {!boxOn && !dateLoading && mealPlan && targets && (
+      {!loud && !boxOn && !dateLoading && mealPlan && targets && (
         <DailySummary totals={dayTotals} targets={dayTargetsFor(targets, shares)} />
       )}
 
-      {!dateLoading && mealPlan && (
+      {!dateLoading && mealPlan && (!loudToday || loudMore) && (
       <div className="meals-timeline">
         {athleteOn && <LoadPicker date={viewDate} load={load} isToday={isViewingToday} />}
         {extrasOn && !isViewingPast && <WaterRow date={viewDate} cups={cups} goal={waterGoal()} isToday={isViewingToday} />}
@@ -1216,7 +1373,7 @@ export default function MealPlan({ settingsVersion = 0 }) {
             isConfirming={confirmingMeals[meal]}
             onConfirm={() => handleConfirmMeal(meal)}
             onUndo={() => handleUndo(meal)}
-            headerExtra={meal === 'breakfast' ? (
+            headerExtra={meal === 'breakfast' && !isViewingPast ? (
               <button type="button" className="meal-chip" onClick={() => setSkipBreakfast(true)}>I skip breakfast</button>
             ) : meal === 'dinner' ? (
               <label className="meal-switch">
@@ -1259,14 +1416,18 @@ export default function MealPlan({ settingsVersion = 0 }) {
 
       {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}
 
-      {showStreakCelebration && (
+      {showStreakCelebration && loud && (
+        <LoudStreak streak={streak.currentStreak} onDismiss={handleStreakCelebrationDismiss} />
+      )}
+      {demoStreak > 0 && <LoudStreak streak={demoStreak} onDismiss={() => setDemoStreak(0)} />}
+      {showStreakCelebration && !loud && (
         <StreakCelebration
           streak={streak.currentStreak}
           onDismiss={handleStreakCelebrationDismiss}
         />
       )}
 
-      {newBadge && (
+      {newBadge && !loud && (
         <BadgeCelebration
           badge={newBadge}
           onDismiss={() => setNewBadge(null)}

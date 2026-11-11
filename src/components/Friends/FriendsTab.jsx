@@ -21,6 +21,11 @@ import RainbowPlateSheet from './RainbowPlateSheet';
 import SimpleQuestSheet from './SimpleQuestSheet';
 import NominateSheet from './NominateSheet';
 import './Friends.css';
+import { loudOn } from '../Loud/loudFlag';
+import '../Loud/loud.css';
+import '../Loud/loud-buddies.css';
+
+const LOUD = loudOn();
 
 /* The Friends tab.
  *
@@ -183,8 +188,21 @@ export default function FriendsTab() {
   const isNative = Capacitor.isNativePlatform();
 
   return (
-    <div className="ft-page" ref={pageRef}>
-      <h2 className="ft-title">Buddies</h2>
+    <div className={`ft-page${LOUD ? ' loud loud-buddies' : ''}`} ref={pageRef}>
+      {LOUD && <span className="loud-glow" style={{ background: 'var(--pk)', width: 240, height: 240, right: -60, top: 60 }} />}
+      {LOUD && <span className="loud-glow" style={{ background: 'var(--li)', width: 200, height: 200, left: -70, top: 520 }} />}
+      {LOUD && <div className="lb-top"><span>{friends.length} {friends.length === 1 ? 'buddy' : 'buddies'}</span></div>}
+      {LOUD && friends.length > 0 ? (
+        // With buddies, adding one more lives up top, next to the title, so it never sinks below a long list.
+        <div className="lb-head">
+          <h2 className="ft-title">Buddies</h2>
+          <button type="button" className="lb-add" onClick={() => setSheet('invite')} disabled={offline}>
+            <span aria-hidden="true">+</span> Add a buddy
+          </button>
+        </div>
+      ) : (
+        <h2 className="ft-title">Buddies</h2>
+      )}
 
       {offline && <p className="fr-offline">No connection. Showing the last list.</p>}
 
@@ -203,7 +221,7 @@ export default function FriendsTab() {
         </section>
       ) : (
         <>
-          <section className="ft-card">
+          <section className="ft-card ft-out-card">
             <h3 className="ft-section">Out now</h3>
             {out.length === 0 ? (
               <p className="fr-note" style={{ margin: 0 }}>No one is at a dining hall right now.</p>
@@ -251,7 +269,7 @@ export default function FriendsTab() {
                   {questList.map((g) => {
                     const t = questText(g);
                     return (
-                    <li key={`${g.quest.id}-${g.week}`} className={`qd-card ${g.state}${g.quest.fun ? ' fun' : ''}`}>
+                    <li key={`${g.quest.id}-${g.week}`} className={`qd-card ${g.state}${g.quest.fun ? ' fun' : ''}${g.action === 'claim' ? ' can-claim' : ''}`}>
                       <span className="qd-emoji" aria-hidden="true">{g.quest.emoji}</span>
                       <div className="qd-body">
                         <span className="qd-title">{g.quest.title}</span>
@@ -344,9 +362,11 @@ export default function FriendsTab() {
                 );
               })}
             </div>
-            <div className="fr-actions">
-              <button className="fr-btn-quiet" onClick={() => setSheet('invite')} disabled={offline}>Add a buddy</button>
-            </div>
+            {!LOUD && (
+              <div className="fr-actions">
+                <button className="fr-btn-quiet" onClick={() => setSheet('invite')} disabled={offline}>Add a buddy</button>
+              </div>
+            )}
           </section>
         </>
       )}
