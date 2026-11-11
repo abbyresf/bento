@@ -140,9 +140,17 @@ function brandeisParseMenuItemEl(liEl, mealPeriod, stationName) {
         potassium: getMicroValue(facts, 'potassium'),
       };
 
+      // Dietary labels. Until late October 2026 the site sent them as preferences[].html_attribute. It now sends
+      // attributes[].icon with the same values ("vegetarian", "vegan", "made_without_gluten"). Reading only the old
+      // field left every dish untagged, so a vegetarian, vegan or gluten-free student saw no dishes at all.
+      // Both shapes are read, so neither the old nor the new page breaks it.
       const tagSet = new Set();
-      for (const pref of data.preferences || []) {
-        for (const tag of brandeisMapPreference(pref.html_attribute)) tagSet.add(tag);
+      const labels = [
+        ...(Array.isArray(data.preferences) ? data.preferences : []).map((p) => p?.html_attribute),
+        ...(Array.isArray(data.attributes) ? data.attributes : []).map((a) => a?.icon ?? a?.html_attribute),
+      ];
+      for (const label of labels) {
+        for (const tag of brandeisMapPreference(String(label ?? '').toLowerCase())) tagSet.add(tag);
       }
       tags = Array.from(tagSet);
 
