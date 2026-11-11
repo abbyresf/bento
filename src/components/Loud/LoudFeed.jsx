@@ -152,33 +152,35 @@ export default function LoudFeed() {
             const net = (p.emphasize_count ?? 0) - (p.downvote_count ?? 0);
             return (
               <article key={p.id} className="lf-post loud-glass">
+                {/* Laid out like the forum apps: who and when on top, flag tucked in the corner,
+                    votes in their own column on the right, comment and repost under the text. */}
+                <div className="lf-meta">
+                  <span className="lf-av"><Mascot size={22} hop={false} color={colorForPost(p.id, COLOR_IDS)} /></span>
+                  Anonymous · {timeAgo(p.created_at)}
+                </div>
+                <button type="button" className={`lf-icon lf-flag${reported.has(p.id) ? ' is-flagged' : ''}`} aria-label={reported.has(p.id) ? 'Reported' : 'Report'}
+                  onClick={() => report(p)} disabled={reported.has(p.id)}>
+                  <FlagIcon />
+                </button>
                 <div className="lf-body">
-                  <div className="lf-meta">
-                    <span className="lf-av"><Mascot size={22} hop={false} color={colorForPost(p.id, COLOR_IDS)} /></span>
-                    Anonymous · {timeAgo(p.created_at)}
-                  </div>
                   <p>{p.content}</p>
                   {p.quote_of && byId[p.quote_of] && <QuotedPost post={byId[p.quote_of]} />}
-                  <div className="lf-foot">
-                    <button type="button" className="lf-icon" aria-label={`Comments, ${p.reply_count ?? 0}`} onClick={() => { haptics.light(); setThread(p); }}>
-                      <CommentIcon /><span>{p.reply_count || ''}</span>
-                    </button>
-                    {canRepost && (
-                      <button type="button" className={`lf-icon${reposted.has(p.id) ? ' is-reposted' : ''}`} aria-label={`Repost, ${p.repost_count ?? 0}`}
-                        aria-pressed={reposted.has(p.id)} onClick={() => { haptics.light(); setRepostMenu(p); }}>
-                        <RepostIcon /><span>{p.repost_count || ''}</span>
-                      </button>
-                    )}
-                    <button type="button" className={`lf-icon lf-flag${reported.has(p.id) ? ' is-flagged' : ''}`} aria-label={reported.has(p.id) ? 'Reported' : 'Report'}
-                      onClick={() => report(p)} disabled={reported.has(p.id)}>
-                      <FlagIcon />
-                    </button>
-                  </div>
                 </div>
                 <div className="lf-vote">
-                  <button type="button" aria-label="Upvote" aria-pressed={mine === 1} className={mine === 1 ? 'up on' : 'up'} onClick={() => vote(p, 1)}>▲</button>
+                  <button type="button" aria-label="Upvote" aria-pressed={mine === 1} className={mine === 1 ? 'up on' : 'up'} onClick={() => vote(p, 1)}><ChevronIcon /></button>
                   <b>{net}</b>
-                  {full && <button type="button" aria-label="Downvote" aria-pressed={mine === -1} className={mine === -1 ? 'down on' : 'down'} onClick={() => vote(p, -1)}>▼</button>}
+                  {full && <button type="button" aria-label="Downvote" aria-pressed={mine === -1} className={mine === -1 ? 'down on' : 'down'} onClick={() => vote(p, -1)}><ChevronIcon down /></button>}
+                </div>
+                <div className="lf-foot">
+                  <button type="button" className="lf-icon" aria-label={`Comments, ${p.reply_count ?? 0}`} onClick={() => { haptics.light(); setThread(p); }}>
+                    <CommentIcon /><span>{p.reply_count || ''}</span>
+                  </button>
+                  {canRepost && (
+                    <button type="button" className={`lf-icon${reposted.has(p.id) ? ' is-reposted' : ''}`} aria-label={`Repost, ${p.repost_count ?? 0}`}
+                      aria-pressed={reposted.has(p.id)} onClick={() => { haptics.light(); setRepostMenu(p); }}>
+                      <RepostIcon /><span>{p.repost_count || ''}</span>
+                    </button>
+                  )}
                 </div>
               </article>
             );
@@ -322,6 +324,9 @@ function RepostIcon() {
 }
 function QuoteIcon() {
   return <svg {...ICON}><path d="M4 20h4l11-11-4-4L4 16z" /><path d="M13.5 6.5l4 4" /></svg>;
+}
+function ChevronIcon({ down = false }) {
+  return <svg {...ICON} width={20} height={20} strokeWidth={2.6}><path d={down ? 'M6 9l6 6 6-6' : 'M6 15l6-6 6 6'} /></svg>;
 }
 function FlagIcon() {
   return <svg {...ICON}><path d="M5 22V4" /><path d="M5 4h11l-2 4 2 4H5" /></svg>;

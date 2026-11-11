@@ -93,3 +93,21 @@ html.loud-app:not([data-theme="light"]) .lf-icon.is-reposted { color: var(--li);
 .lf-menu > button svg { width: 22px; height: 22px; flex: none; }
 .lf-menu b { display: block; font-size: 15px; }
 .lf-menu small { display: block; font-size: 12px; color: var(--mu); font-weight: 600; margin-top: 2px; }
+
+/* Post card, forum layout: meta and flag on top, text and votes in the middle, actions below. */
+.lf-post:not(.is-auto) {
+  display: grid; grid-template-columns: minmax(0, 1fr) 40px; column-gap: 12px;
+  grid-template-areas: "meta flag" "body vote" "foot vote";
+  padding: 14px 12px 8px 16px;
+}
+.lf-post:not(.is-auto) > .lf-meta { grid-area: meta; }
+.lf-post:not(.is-auto) > .lf-flag { grid-area: flag; justify-self: center; align-self: center; margin: 0; padding: 4px; color: var(--fa); }
+.lf-post:not(.is-auto) > .lf-flag svg { width: 15px; height: 15px; }
+.lf-post:not(.is-auto) > .lf-flag.is-flagged { color: #FF5A5A; }
+.lf-post:not(.is-auto) > .lf-body { grid-area: body; }
+.lf-post:not(.is-auto) > .lf-body > p { margin-top: 8px; }
+.lf-post:not(.is-auto) > .lf-vote { grid-area: vote; align-self: center; gap: 0; }
+.lf-post:not(.is-auto) > .lf-foot { grid-area: foot; gap: 22px; margin-top: 6px; }
+.lf-vote button { display: grid; place-items: center; padding: 2px 6px; }
+.lf-vote button:active { transform: scale(.88); }
+.lf-vote b { font-size: 16px; line-height: 1.3; }
