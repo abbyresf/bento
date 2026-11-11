@@ -1,0 +1,95 @@
+/* Rutgers waitlist page. Loud tokens copied from the loud-redesign branch (src/components/Loud/loud.css),
+ * scoped under .rw so they stay local until the redesign merges. */
+
+.rw {
+  --or: #FF6A13; --li: #D2FF3D; --pk: #FF7AC8; --lc: #A99CFF; --bu: #FFD84D; --sk: #7FD8FF;
+  --scarlet: #CC0033;
+  --ink: #141418;
+  --disp: 'Bricolage Grotesque', system-ui, sans-serif;
+  --sans: 'Geist', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+  --bg: #F6EFE3; --s1: #FFFDF8; --tx: #141418;
+  --mu: rgba(20, 20, 24, 0.62); --fa: rgba(20, 20, 24, 0.36); --ln: rgba(20, 20, 24, 0.12);
+  --gl: linear-gradient(145deg, rgba(255,255,255,.82) 0%, rgba(255,255,255,.42) 45%, rgba(255,255,255,.6) 100%);
+  --gl-hi: rgba(255,255,255,1); --gl-rim: rgba(20,20,24,.06); --gl-sh: 0 12px 26px -16px rgba(60,40,20,.35);
+  --glow: .42;
+  --lacc: #B8500C;
+
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--tx);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+@media (prefers-color-scheme: dark) {
+  .rw {
+    --bg: #0D0D10; --s1: #18181D; --tx: #F7F1E6;
+    --mu: rgba(247, 241, 230, 0.6); --fa: rgba(247, 241, 230, 0.34); --ln: rgba(247, 241, 230, 0.12);
+    --gl: linear-gradient(145deg, rgba(255,255,255,.17) 0%, rgba(255,255,255,.05) 42%, rgba(255,255,255,.09) 100%);
+    --gl-hi: rgba(255,255,255,.32); --gl-rim: rgba(255,255,255,.09); --gl-sh: 0 12px 28px -16px rgba(0,0,0,.7);
+    --glow: .75;
+    --lacc: var(--li);
+  }
+}
+
+.rw-glow { position: absolute; border-radius: 50%; filter: blur(60px); opacity: var(--glow); z-index: -1; pointer-events: none; }
+.rw-glow-a { width: 340px; height: 340px; background: var(--or); top: -120px; right: -120px; }
+.rw-glow-b { width: 300px; height: 300px; background: var(--scarlet); bottom: 40px; left: -140px; }
+
+.rw-main { max-width: 480px; margin: 0 auto; padding: 20px 16px 40px; }
+
+.rw-logo { display: inline-block; padding: 4px 2px 0; line-height: 0; }
+.rw-logo img { display: block; height: 40px; width: auto; }
+
+.rw-card {
+  margin-top: 18px;
+  border-radius: 30px;
+  padding: 22px 18px 20px;
+  background: linear-gradient(160deg, #FF8A3D, #FF5A0A);
+  color: #fff;
+  box-shadow: 0 18px 40px -20px rgba(255, 90, 10, .7);
+}
+.rw-label { font-family: var(--disp); font-weight: 700; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; opacity: .9; }
+.rw-big {
+  font-family: var(--disp); font-weight: 800; font-stretch: 74%;
+  font-size: clamp(54px, 17vw, 80px); line-height: .84; letter-spacing: -.04em;
+  text-transform: uppercase; margin: 10px 0 14px;
+}
+.rw-sub { font-size: 16px; line-height: 1.4; font-weight: 500; margin: 0 0 18px; opacity: .95; }
+
+.rw-form { display: flex; flex-direction: column; gap: 10px; }
+.rw-field { display: flex; flex-direction: column; gap: 6px; }
+.rw-field span { font-family: var(--disp); font-weight: 700; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+.rw-field input {
+  width: 100%; box-sizing: border-box;
+  font: 600 17px/1.2 var(--sans);
+  color: var(--ink);
+  background: rgba(255,255,255,.94);
+  border: 0; border-radius: 16px;
+  padding: 15px 16px;
+  box-shadow: inset 0 0 0 1px rgba(20,20,24,.08);
+  outline: none;
+}
+.rw-field input::placeholder { color: rgba(20,20,24,.38); }
+.rw-field input:focus-visible { box-shadow: inset 0 0 0 1px rgba(20,20,24,.08), 0 0 0 3px var(--ink); }
+
+.rw-error { margin: 2px 0 0; font-size: 14px; font-weight: 700; color: var(--ink); background: var(--bu); border-radius: 12px; padding: 9px 12px; }
+
+.rw-btn {
+  display: block; width: 100%; margin-top: 8px;
+  border: 0; cursor: pointer;
+  font-family: var(--disp); font-weight: 800; font-size: 19px; text-transform: uppercase; letter-spacing: .01em;
+  padding: 16px; border-radius: 999px;
+}
+.rw-btn.is-li { background: var(--li); color: var(--ink); box-shadow: 0 4px 0 #7E9C12; }
+.rw-btn.is-ink { background: var(--ink); color: var(--li); box-shadow: 0 4px 0 rgba(0,0,0,.4); }
+.rw-btn:disabled { opacity: .6; cursor: default; }
+.rw-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: none; }
+.rw-btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+
+.rw-fine { margin: 18px 4px 0; font-size: 13px; color: var(--mu); line-height: 1.4; }
+.rw-fine a { color: var(--lacc); font-weight: 700; }

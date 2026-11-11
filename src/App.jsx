@@ -43,6 +43,7 @@ import BentoLogo from './components/common/BentoLogo';
 // account, so neither belongs in the download every student makes on every launch.
 const PulseApp = lazy(() => import('./components/Pulse/PulseApp'));
 const PulseJoin = lazy(() => import('./components/Pulse/PulseJoin'));
+const RutgersWaitlist = lazy(() => import('./components/Waitlist/RutgersWaitlist'));
 const OnboardingWizard = lazy(() => import('./components/Onboarding/OnboardingWizard'));
 const loadingScreen = <div className="app-loading"><div className="spinner"></div></div>;
 
@@ -312,6 +313,8 @@ function App() {
 
   if (joinMatch) return <Suspense fallback={loadingScreen}><PulseJoin token={joinMatch[1]} /></Suspense>;
   if (location.pathname.startsWith('/admin')) return <Suspense fallback={loadingScreen}><PulseApp /></Suspense>;
+  // Rutgers waitlist, shared by the campus ambassador. Public, works signed in or out.
+  if (location.pathname.replace(/\/$/, '') === '/rutgers') return <Suspense fallback={null}><RutgersWaitlist /></Suspense>;
   if (location.pathname === '/preview') {
     // Web-only: a way to see the marketing page while signed in. In the app
     // there is no marketing page to preview.
