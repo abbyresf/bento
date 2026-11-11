@@ -1,4 +1,4 @@
-// Runs supabase/migrations/072_campus_feed.sql against a real Postgres (pglite), on stand-ins for the community tables
+// Runs supabase/migrations/072_campus_feed.sql and 073_campus_reposts.sql against a real Postgres (pglite), on stand-ins for the community tables
 // it extends (015, 016, 025), then checks the rules.
 //
 //   node scripts/test-campus-sql.mjs        (needs @electric-sql/pglite: npm i --no-save @electric-sql/pglite)
@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 
 const dir = process.env.MIGRATIONS_DIR ?? new URL('../supabase/migrations/', import.meta.url).pathname;
 const migration = readFileSync(`${dir}/072_campus_feed.sql`, 'utf8');
+const reposts = readFileSync(`${dir}/073_campus_reposts.sql`, 'utf8');
 const db = new PGlite();
 
 await db.exec(`
@@ -25,7 +26,8 @@ await db.exec(`
     id uuid primary key default gen_random_uuid(), content text not null,
     emphasize_count integer not null default 0, flag_count integer not null default 0,
     is_hidden boolean not null default false, created_at timestamptz not null default now(),
-    university text not null default 'brandeis');
+    university text not null default 'brandeis',
+    constraint suggestions_content_length check (char_length(content) between 1 and 300));
   alter table public.suggestions enable row level security;
   create policy "read own university suggestions" on public.suggestions for select to authenticated
     using (is_hidden = false and university = (select coalesce(university, 'brandeis') from public.profiles where id = auth.uid()));
@@ -35,6 +37,8 @@ await db.exec(`
 `);
 await db.exec(migration);
 await db.exec(migration); // safe to run twice
+await db.exec(reposts);
+await db.exec(reposts);   // 073 too
 await db.exec('grant select on all tables in schema public to authenticated; grant select on public.profiles to authenticated;');
 
 const user = async (uni) => {
@@ -118,6 +122,32 @@ await test('three reports hide a reply and the count drops; one person counts on
 await test('nobody can write counts or votes directly', async () => {
   await fails(() => call(a, 'update public.suggestions set emphasize_count = 999 where id = $1', [p1]), /permission denied/);
   await fails(() => call(a, 'insert into public.suggestion_replies (suggestion_id, content, university) values ($1, $2, $3)', [p1, 'hi', 'brandeis']), /permission denied|row-level security/);
+});
+
+await test('a repost counts once per person, undoes on a second tap, and stays in the school', async () => {
+  const p = await post('brandeis', 'repost me');
+  const r1 = (await call(a, 'select * from public.toggle_repost($1)', [p]))[0];
+  assert.deepEqual(r1, { reposted: true, repost_count: 1 });
+  await call(b, 'select * from public.toggle_repost($1)', [p]);
+  assert.equal((await row(p)).repost_count, 2);
+  const r2 = (await call(a, 'select * from public.toggle_repost($1)', [p]))[0];
+  assert.deepEqual(r2, { reposted: false, repost_count: 1 });
+  await fails(() => call(t, 'select * from public.toggle_repost($1)', [p]), /not found/);
+  // Nobody can read who reposted, only their own row.
+  assert.equal((await call(a, 'select * from public.suggestion_reposts where suggestion_id = $1', [p])).length, 0);
+  assert.equal((await call(b, 'select * from public.suggestion_reposts where suggestion_id = $1', [p])).length, 1);
+});
+
+await test('a quote is a new anonymous post in the same school that points at the original', async () => {
+  const orig = await post('brandeis', 'pesto is back');
+  const id = (await call(a, 'select public.submit_quote($1, $2) as id', [orig, 'confirmed, it is elite']))[0].id;
+  const q = await row(id);
+  assert.equal(q.quote_of, orig); assert.equal(q.university, 'brandeis'); assert.equal(q.content, 'confirmed, it is elite');
+  assert.ok(!('user_id' in q), 'a quote stores no author');
+  await fails(() => call(t, 'select public.submit_quote($1, $2)', [orig, 'hi']), /not found/);
+  await fails(() => call(a, 'select public.submit_quote($1, $2)', [orig, '']), /check|length/);
+  await db.query('delete from public.suggestions where id = $1', [orig]);
+  assert.equal((await row(id)).quote_of, null, 'the quote stays when the original goes');
 });
 
 console.log(`${n} checks passed`);

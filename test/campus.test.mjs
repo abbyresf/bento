@@ -19,6 +19,13 @@ test('downvotes pull a post down, and New is newest first', () => {
   assert.deepEqual(sortPosts([liked, { id: 'c', created_at: ago(1) }], 'new', now).map((p) => p.id), ['c', 'a']);
 });
 
+test('a repost lifts a post more than a single upvote', () => {
+  const upvoted = { id: 'a', emphasize_count: 2, downvote_count: 0, repost_count: 0, created_at: ago(3) };
+  const reposted = { id: 'b', emphasize_count: 1, downvote_count: 0, repost_count: 1, created_at: ago(3) };
+  assert.ok(hotScore(reposted, now) > hotScore(upvoted, now));
+  assert.equal(hotScore({ ...upvoted, repost_count: undefined }, now), hotScore(upvoted, now));
+});
+
 const agg = {
   x: { name: 'Pesto pasta', avg: 4.8, count: 38, diningHall: 'Usdan' },
   y: { name: 'Poke bowl', avg: 4.6, count: 12 },

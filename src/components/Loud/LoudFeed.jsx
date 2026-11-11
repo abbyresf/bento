@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRatings } from '../../context/RatingsContext';
 import { getUserProfile, getCampusPosts, getMyVotes, castVote, toggleEmphasize, getReplies, submitReply, flagReply,
-  flagSuggestion, submitSuggestion } from '../../lib/db';
+  flagSuggestion, submitSuggestion, getPostsByIds, getMyReposts, toggleRepost, submitQuote } from '../../lib/db';
 import { UNIVERSITIES } from '../../data/universities';
 import { COLOR_IDS } from '../../data/mascotColors';
 import Mascot from '../Mascot/Mascot';
@@ -16,8 +16,15 @@ async function fetchFeed() {
   const profile = await getUserProfile();
   const uni = profile?.university ?? 'brandeis';
   const school = UNIVERSITIES.find((u) => u.id === uni) ?? { id: uni, shortName: 'your school', name: 'your school' };
-  const [{ posts, full }, votes] = await Promise.all([getCampusPosts(uni), getMyVotes().catch(() => new Map())]);
-  return { school, posts, full, votes };
+  const [{ posts, full, reposts }, votes, mine] = await Promise.all([
+    getCampusPosts(uni), getMyVotes().catch(() => new Map()), getMyReposts().catch(() => new Set()),
+  ]);
+  // Quotes show the post they quote. Most are in the list already; fetch the rest.
+  const have = new Set(posts.map((p) => p.id));
+  const missing = [...new Set(posts.map((p) => p.quote_of).filter((id) => id && !have.has(id)))];
+  const extra = reposts && missing.length ? await getPostsByIds(missing).catch(() => []) : [];
+  const byId = Object.fromEntries([...posts, ...extra].map((p) => [p.id, p]));
+  return { school, posts, full, reposts, votes, mine, byId };
 }
 
 const VIEWS = [['hot', 'Hot'], ['new', 'New'], ['top', 'Top rated']];
@@ -36,9 +43,15 @@ export default function LoudFeed() {
   const [composing, setComposing] = useState(false);
   const [showPolicy, setShowPolicy] = useState(false);
   const [reported, setReported] = useState(new Set());
+  const [canRepost, setCanRepost] = useState(false);
+  const [reposted, setReposted] = useState(new Set());
+  const [byId, setById] = useState({});
+  const [repostMenu, setRepostMenu] = useState(null);   // the post whose Repost / Quote menu is open
+  const [quoting, setQuoting] = useState(null);         // the post being quoted
 
   const apply = useCallback((r) => {
     setSchool(r.school); setPosts(r.posts); setFull(r.full); setVotes(r.votes); setLoaded(true);
+    setCanRepost(r.reposts); setReposted(r.mine); setById(r.byId);
   }, []);
   const load = useCallback(() => fetchFeed().then(apply), [apply]);
   useEffect(() => {
@@ -77,7 +90,23 @@ export default function LoudFeed() {
     }
   };
 
+  const repost = async (post) => {
+    setRepostMenu(null);
+    const was = reposted.has(post.id);
+    haptics.medium();
+    setReposted((s) => { const n = new Set(s); if (was) n.delete(post.id); else n.add(post.id); return n; });
+    setPosts((ps) => ps.map((p) => (p.id === post.id ? { ...p, repost_count: Math.max(0, (p.repost_count ?? 0) + (was ? -1 : 1)) } : p)));
+    try {
+      const r = await toggleRepost(post.id);
+      if (r) setPosts((ps) => ps.map((p) => (p.id === post.id ? { ...p, repost_count: r.repost_count } : p)));
+    } catch {
+      setReposted((s) => { const n = new Set(s); if (was) n.add(post.id); else n.delete(post.id); return n; });
+      setPosts((ps) => ps.map((p) => (p.id === post.id ? post : p)));
+    }
+  };
+
   const report = async (post) => {
+    haptics.light();
     setReported((s) => new Set(s).add(post.id));
     try { await flagSuggestion(post.id); } catch { /* the post stays marked reported on this screen */ }
   };
@@ -129,12 +158,20 @@ export default function LoudFeed() {
                     Anonymous · {timeAgo(p.created_at)}
                   </div>
                   <p>{p.content}</p>
+                  {p.quote_of && byId[p.quote_of] && <QuotedPost post={byId[p.quote_of]} />}
                   <div className="lf-foot">
-                    <button type="button" onClick={() => { haptics.light(); setThread(p); }}>
-                      {p.reply_count ? `${p.reply_count} ${p.reply_count === 1 ? 'reply' : 'replies'}` : 'Reply'}
+                    <button type="button" className="lf-icon" aria-label={`Comments, ${p.reply_count ?? 0}`} onClick={() => { haptics.light(); setThread(p); }}>
+                      <CommentIcon /><span>{p.reply_count || ''}</span>
                     </button>
-                    <button type="button" onClick={() => report(p)} disabled={reported.has(p.id)}>
-                      {reported.has(p.id) ? 'Reported' : 'Report'}
+                    {canRepost && (
+                      <button type="button" className={`lf-icon${reposted.has(p.id) ? ' is-reposted' : ''}`} aria-label={`Repost, ${p.repost_count ?? 0}`}
+                        aria-pressed={reposted.has(p.id)} onClick={() => { haptics.light(); setRepostMenu(p); }}>
+                        <RepostIcon /><span>{p.repost_count || ''}</span>
+                      </button>
+                    )}
+                    <button type="button" className={`lf-icon lf-flag${reported.has(p.id) ? ' is-flagged' : ''}`} aria-label={reported.has(p.id) ? 'Reported' : 'Report'}
+                      onClick={() => report(p)} disabled={reported.has(p.id)}>
+                      <FlagIcon />
                     </button>
                   </div>
                 </div>
@@ -161,25 +198,51 @@ export default function LoudFeed() {
         />, document.body,
       )}
       {thread && createPortal(<Thread post={thread} enabled={full} onClose={() => { setThread(null); load(); }} />, document.body)}
+      {repostMenu && createPortal(
+        <div className="lf-overlay" onClick={() => setRepostMenu(null)}>
+          <div className="lf-sheet loud lf-menu" onClick={(e) => e.stopPropagation()}>
+            <i className="lf-grab" />
+            <button type="button" onClick={() => repost(repostMenu)}>
+              <RepostIcon /><span><b>{reposted.has(repostMenu.id) ? 'Undo repost' : 'Repost'}</b><small>Boost it on Campus. Nobody sees who reposted.</small></span>
+            </button>
+            <button type="button" onClick={() => { setQuoting(repostMenu); setRepostMenu(null); }}>
+              <QuoteIcon /><span><b>Quote</b><small>Write a new post with this one attached.</small></span>
+            </button>
+          </div>
+        </div>, document.body,
+      )}
+      {quoting && createPortal(
+        <Compose
+          schoolName={schoolName}
+          quote={quoting}
+          onPolicy={() => setShowPolicy(true)}
+          onClose={() => setQuoting(null)}
+          onPosted={() => { setQuoting(null); setView('new'); load(); }}
+        />, document.body,
+      )}
       {showPolicy && createPortal(<PolicyModal onClose={() => setShowPolicy(false)} />, document.body)}
     </section>
   );
 }
 
-function Compose({ schoolName, onPolicy, onClose, onPosted }) {
+function Compose({ schoolName, quote = null, onPolicy, onClose, onPosted }) {
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const post = async () => {
     setBusy(true); setError(null);
-    try { await submitSuggestion(text.trim()); haptics.success(); onPosted(); } catch { setError('That did not post. Check your connection and try again.'); setBusy(false); }
+    try {
+      if (quote) await submitQuote(quote.id, text.trim()); else await submitSuggestion(text.trim());
+      haptics.success(); onPosted();
+    } catch { setError('That did not post. Check your connection and try again.'); setBusy(false); }
   };
   return (
     <div className="lf-overlay" onClick={onClose}>
       <div className="lf-sheet loud" onClick={(e) => e.stopPropagation()}>
         <i className="lf-grab" />
-        <h2>Post to {schoolName}</h2>
-        <textarea value={text} maxLength={300} rows={4} autoFocus placeholder="What is good at the hall today?" onChange={(e) => setText(e.target.value)} />
+        <h2>{quote ? 'Quote post' : `Post to ${schoolName}`}</h2>
+        <textarea value={text} maxLength={300} rows={quote ? 3 : 4} autoFocus placeholder={quote ? 'Add your take' : 'What is good at the hall today?'} onChange={(e) => setText(e.target.value)} />
+        {quote && <QuotedPost post={quote} />}
         <div className="lf-sheet-row"><span>Anonymous. Dining staff can read posts.</span><span>{text.length}/300</span></div>
         <button type="button" className="lf-link" onClick={onPolicy}>Community guidelines</button>
         {error && <p className="lf-error">{error}</p>}
@@ -217,9 +280,10 @@ function Thread({ post, enabled, onClose }) {
             <div key={r.id} className="lf-reply">
               <span className="lf-av"><Mascot size={20} hop={false} color={colorForPost(r.id, COLOR_IDS)} /></span>
               <div><p>{r.content}</p>
-                <span className="lf-reply-meta">{timeAgo(r.created_at)} ·{' '}
-                  <button type="button" disabled={reported.has(r.id)} onClick={() => { setReported((s) => new Set(s).add(r.id)); flagReply(r.id).catch(() => {}); }}>
-                    {reported.has(r.id) ? 'Reported' : 'Report'}
+                <span className="lf-reply-meta">{timeAgo(r.created_at)}
+                  <button type="button" className={`lf-icon lf-flag${reported.has(r.id) ? ' is-flagged' : ''}`} aria-label={reported.has(r.id) ? 'Reported' : 'Report'}
+                    disabled={reported.has(r.id)} onClick={() => { haptics.light(); setReported((s) => new Set(s).add(r.id)); flagReply(r.id).catch(() => {}); }}>
+                    <FlagIcon />
                   </button>
                 </span>
               </div>
@@ -234,4 +298,31 @@ function Thread({ post, enabled, onClose }) {
       </div>
     </div>
   );
+}
+
+/* The post a quote carries, shown small inside it. */
+function QuotedPost({ post }) {
+  return (
+    <div className="lf-quoted">
+      <div className="lf-meta">
+        <span className="lf-av"><Mascot size={18} hop={false} color={colorForPost(post.id, COLOR_IDS)} /></span>
+        Anonymous · {timeAgo(post.created_at)}
+      </div>
+      <p>{post.content}</p>
+    </div>
+  );
+}
+
+const ICON = { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true };
+function CommentIcon() {
+  return <svg {...ICON}><path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.4L3 20.5l1.6-5.4A8.4 8.4 0 1 1 21 11.5z" /></svg>;
+}
+function RepostIcon() {
+  return <svg {...ICON}><path d="M17 2l4 4-4 4" /><path d="M3 11V9a3 3 0 0 1 3-3h15" /><path d="M7 22l-4-4 4-4" /><path d="M21 13v2a3 3 0 0 1-3 3H3" /></svg>;
+}
+function QuoteIcon() {
+  return <svg {...ICON}><path d="M4 20h4l11-11-4-4L4 16z" /><path d="M13.5 6.5l4 4" /></svg>;
+}
+function FlagIcon() {
+  return <svg {...ICON}><path d="M5 22V4" /><path d="M5 4h11l-2 4 2 4H5" /></svg>;
 }

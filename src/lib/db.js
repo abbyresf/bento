@@ -687,10 +687,13 @@ export async function getCampusPosts(university) {
     if (university) q = q.eq('university', university);
     return q.order('created_at', { ascending: false }).limit(100);
   };
+  // 073 adds reposts and quotes, 072 downvotes and replies. Each read falls back to what the database has.
+  const withReposts = await read('id, content, emphasize_count, downvote_count, reply_count, repost_count, quote_of, created_at');
+  if (!withReposts.error) return { posts: withReposts.data ?? [], full: true, reposts: true };
   const full = await read('id, content, emphasize_count, downvote_count, reply_count, created_at');
-  if (!full.error) return { posts: full.data ?? [], full: true };
+  if (!full.error) return { posts: full.data ?? [], full: true, reposts: false };
   const old = await read('id, content, emphasize_count, created_at');
-  return { posts: (old.data ?? []).map((p) => ({ ...p, downvote_count: 0, reply_count: 0 })), full: false };
+  return { posts: (old.data ?? []).map((p) => ({ ...p, downvote_count: 0, reply_count: 0 })), full: false, reposts: false };
 }
 
 // The caller's vote on each post: 1 up, -1 down.
@@ -705,6 +708,33 @@ export async function getMyVotes() {
   for (const r of up.data ?? []) votes.set(r.suggestion_id, 1);
   for (const r of down.data ?? []) votes.set(r.suggestion_id, -1);
   return votes;
+}
+
+// Posts quoted by others that are not in the loaded list (older, or further down), so a quote can show them.
+export async function getPostsByIds(ids) {
+  if (!ids?.length) return [];
+  const { data } = await supabase.from('suggestions').select('id, content, created_at').in('id', ids).eq('is_hidden', false);
+  return data ?? [];
+}
+
+export async function getMyReposts() {
+  const id = await uid();
+  if (!id) return new Set();
+  const { data, error } = await supabase.from('suggestion_reposts').select('suggestion_id').eq('user_id', id);
+  if (error) return new Set();
+  return new Set((data ?? []).map((r) => r.suggestion_id));
+}
+
+export async function toggleRepost(suggestionId) {
+  const { data, error } = await supabase.rpc('toggle_repost', { p_suggestion_id: suggestionId });
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
+
+export async function submitQuote(quoteOf, content) {
+  const { data, error } = await supabase.rpc('submit_quote', { p_quote_of: quoteOf, p_content: content });
+  if (error) throw error;
+  return data;
 }
 
 export async function castVote(suggestionId, vote) {

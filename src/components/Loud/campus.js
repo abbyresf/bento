@@ -3,7 +3,8 @@
 /* Hot: net votes, cooled by age, so a post with 20 votes from last week sinks below one with 8 from this morning.
  * The same shape as most link aggregators: score / (hours + 2)^1.5. */
 export function hotScore(post, now = Date.now()) {
-  const net = (post.emphasize_count ?? 0) - (post.downvote_count ?? 0);
+  // A repost is a stronger signal than an upvote: someone put their name behind sharing it, even anonymously.
+  const net = (post.emphasize_count ?? 0) - (post.downvote_count ?? 0) + 2 * (post.repost_count ?? 0);
   const hours = Math.max(0, (now - Date.parse(post.created_at)) / 3600000);
   return (net + 1) / Math.pow(hours + 2, 1.5);
 }
