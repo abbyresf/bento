@@ -55,8 +55,8 @@
 }
 .rw-label { font-family: var(--disp); font-weight: 700; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; opacity: .9; }
 .rw-big {
-  font-family: var(--disp); font-weight: 800; font-stretch: 74%;
-  font-size: clamp(54px, 17vw, 80px); line-height: .84; letter-spacing: -.04em;
+  font-family: var(--disp); font-weight: 800; font-stretch: 84%;
+  font-size: clamp(50px, 15.5vw, 76px); line-height: .94; letter-spacing: -.015em;
   text-transform: uppercase; margin: 10px 0 14px;
 }
 .rw-sub { font-size: 16px; line-height: 1.4; font-weight: 500; margin: 0 0 18px; opacity: .95; }
