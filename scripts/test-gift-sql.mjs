@@ -1,4 +1,4 @@
-// Runs supabase/migrations/065_event_gifts.sql against a real Postgres (pglite) with a stand-in for the Supabase pieces it
+// Runs supabase/migrations/076_event_gifts.sql against a real Postgres (pglite) with a stand-in for the Supabase pieces it
 // relies on, then checks the rules.
 //
 //   npm i --no-save @electric-sql/pglite && node scripts/test-gift-sql.mjs
@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 
 const dir = process.env.MIGRATIONS_DIR ?? new URL('../supabase/migrations/', import.meta.url).pathname;
-const migration = readFileSync(`${dir}/065_event_gifts.sql`, 'utf8');
+const migration = readFileSync(`${dir}/076_event_gifts.sql`, 'utf8');
 const db = new PGlite();
 
 await db.exec(`
