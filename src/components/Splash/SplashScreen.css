@@ -1,141 +1,75 @@
+/* Loud style: a plain warm cream or near-black ground, Geist for small text. Tokens copied from the loud-redesign branch
+   (src/components/Loud/loud.css) and scoped here. */
 .splash-screen {
+  --sp-bg: #F6EFE3;
+  --sp-mu: rgba(20, 20, 24, 0.5);
   position: fixed;
   inset: 0;
-  background: var(--bg-app);
+  background: var(--sp-bg);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
   opacity: 1;
-  transition: opacity 450ms cubic-bezier(0.4, 0, 1, 1);
+  transition: opacity 250ms ease-in;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .splash-screen {
+    --sp-bg: #0D0D10; --sp-mu: rgba(247, 241, 230, 0.45);
+  }
+}
+:root[data-theme="dark"] .splash-screen {
+  --sp-bg: #0D0D10; --sp-mu: rgba(247, 241, 230, 0.45);
 }
 
-.splash-leaving {
-  opacity: 0;
-}
-
-.splash-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.5rem;
-}
-
-/* The intro is a short film in five beats, about 4 seconds:
-     1. A glow swells behind where the mark will be.
-     2. The outline snaps in, huge, and settles to size with a 3D tilt.
-     3. The tray, green block and orange dot land one after another, each with
-        its own overshoot.
-     4. A band of light sweeps across the finished mark.
-     5. It holds, the tagline tracks in, and everything lifts away.
-   Each shape is a separate path in the SVG, so the motion is the real logo. */
-.splash-content { perspective: 700px; }
-
-.splash-glow {
-  position: absolute;
-  width: 360px;
-  height: 360px;
-  margin-top: -90px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(253, 144, 41, 0.42) 0%, rgba(119, 189, 62, 0.16) 42%, transparent 68%);
-  opacity: 0;
-  animation: splash-glow 2600ms var(--ease-out) 100ms forwards;
-  pointer-events: none;
-}
-@keyframes splash-glow {
-  0%   { opacity: 0; transform: scale(0.3); }
-  45%  { opacity: 1; transform: scale(1.1); }
-  100% { opacity: 0.55; transform: scale(1.25); }
-}
+.splash-leaving { opacity: 0; }
 
 .splash-logo {
-  position: relative;
-  width: 132px;
+  width: 120px;
   height: auto;
   display: block;
-  overflow: visible;
-  transform-style: preserve-3d;
-  animation: splash-mark 1500ms var(--spring-soft) 60ms both;
+  animation: splash-logo-in 350ms var(--ease-out) both;
 }
-@keyframes splash-mark {
-  0%   { transform: scale(2.4) rotateX(38deg) rotateY(-30deg); }
-  55%  { transform: scale(0.94) rotateX(-6deg) rotateY(5deg); }
-  100% { transform: scale(1) rotateX(0) rotateY(0); }
+@keyframes splash-logo-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: none; }
 }
 
-.splash-logo path {
-  transform-box: fill-box;
-  transform-origin: center;
-  opacity: 0;
-}
-.splash-p-outline { animation: splash-snap 520ms var(--ease-out) 80ms forwards; }
-.splash-p-rim     { animation: splash-snap 520ms var(--ease-out) 1250ms forwards; }
-.splash-p-cream {
-  transform-origin: center bottom;
-  animation: splash-tray 800ms var(--spring-bouncy) 420ms forwards;
-}
-.splash-p-green {
-  transform-origin: left center;
-  animation: splash-block 760ms var(--spring-bouncy) 780ms forwards;
-}
-.splash-p-orange { animation: splash-dot 860ms var(--spring-bouncy) 1080ms forwards; }
+.splash-p-body { fill: #263950; }
 
-@keyframes splash-snap  { from { opacity: 0; transform: scale(1.12); } to { opacity: 1; transform: none; } }
-@keyframes splash-tray  { from { opacity: 0; transform: translateY(80px) scaleY(0.4); } to { opacity: 1; transform: none; } }
-@keyframes splash-block { from { opacity: 0; transform: translateX(-70px) scaleX(0.1); } to { opacity: 1; transform: none; } }
-@keyframes splash-dot   { from { opacity: 0; transform: scale(0) rotate(-180deg); } to { opacity: 1; transform: none; } }
-
-/* The band of light, clipped to the logo's own silhouette by the mark's box. */
+/* One pass of light, left to right, inside the logo's clip. The skew leans
+   the band left by up to ~95 units at the bottom of the mark, so it travels
+   440 to clear the bottom right corner completely before it ends. */
 .splash-sheen {
-  position: absolute;
-  top: -10%;
-  bottom: -10%;
-  left: -50%;
-  width: 36%;
-  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.95), transparent);
-  transform: skewX(-20deg);
-  mix-blend-mode: overlay;
-  opacity: 0;
-  animation: splash-sheen 900ms var(--ease-out) 2000ms forwards;
-  pointer-events: none;
+  transform: translateX(0) skewX(-20deg);
+  animation: splash-sheen 750ms cubic-bezier(0.4, 0, 0.2, 1) 400ms both;
 }
-.splash-mark-wrap { position: relative; overflow: visible; }
 @keyframes splash-sheen {
-  0%   { opacity: 0; left: -50%; }
-  15%  { opacity: 1; }
-  100% { opacity: 0; left: 130%; }
+  from { transform: translateX(0) skewX(-20deg); }
+  to   { transform: translateX(440px) skewX(-20deg); }
 }
 
-/* A last pulse once the light has passed. */
-.splash-content {
-  animation: splash-pulse 700ms var(--spring-bouncy) 2300ms both;
-}
-@keyframes splash-pulse {
-  0%   { transform: scale(1); }
-  40%  { transform: scale(1.07); }
-  100% { transform: scale(1); }
-}
-
-.splash-tagline {
+.splash-footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 32px);
   margin: 0;
-  font-family: 'Nunito', 'Helvetica Neue', sans-serif;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--text-disabled);
-  opacity: 0;
-  animation: splash-tagline-in 1000ms var(--ease-out) 2050ms forwards;
+  text-align: center;
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--sp-mu);
+  animation: splash-footer-in 350ms var(--ease-out) 100ms both;
 }
-@keyframes splash-tagline-in {
-  from { opacity: 0; letter-spacing: 0.55em; transform: translateY(8px); }
-  to   { opacity: 1; letter-spacing: 0.18em; transform: none; }
+@keyframes splash-footer-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .splash-logo, .splash-glow, .splash-sheen { animation: none; }
-  .splash-logo path { animation: none; opacity: 1; }
-  .splash-content   { animation: none; }
-  .splash-tagline   { animation: none; opacity: 1; }
-  .splash-screen  { transition: none; }
+  .splash-logo, .splash-footer { animation: none; }
+  .splash-sheen { animation: none; opacity: 0; }
+  .splash-screen { transition: none; }
 }
