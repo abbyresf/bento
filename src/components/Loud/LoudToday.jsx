@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { formatClock } from '../../utils/mealHours';
 import Mascot from '../Mascot/Mascot';
 import { nowHours, countdown, pickNextMeal } from './heroTiming.js';
@@ -28,9 +30,12 @@ function Ring({ value, unit, pct, color }) {
  * same rows they always did. */
 export default function LoudToday({
   dateLabel, streak, dietLabel, meals, totals, targets, friendsOut,
-  confirming, onConfirm, onChangeDishes, onPrevDay, onNextDay, onFriends, onShowFullDay, starter, onPersonalize, now = new Date(),
+  confirming, onConfirm, onChangeDishes, onPrevDay, onNextDay, onFriends, starter, onPersonalize, bentoSay, outfit, onCloset, now = new Date(),
 }) {
   const next = pickNextMeal(meals, now);
+  const [logging, setLogging] = useState(false);
+  // Meals earlier today that were never logged: over, or open now but not the one the hero is showing.
+  const missed = meals.filter((m) => m.active && !m.confirmed && m.meal !== next?.meal && nowHours(now) >= m.hours.start);
   const isBefore = next && nowHours(now) < next.hours.start;
   const state = !next ? 'done' : isBefore ? 'before' : dietLabel ? 'safe' : 'open';
   const heroClass = HERO[state];
@@ -62,12 +67,21 @@ export default function LoudToday({
           : streak > 0 ? <span className="loud-streak">{streak}-day streak</span> : null}
       </div>
 
+      {bentoSay && (
+        <div className="loud-says">
+          <button type="button" className="loud-says-bento" onClick={onCloset} aria-label="Open Bento's closet">
+            <Mascot mood={bentoSay.mood} size={58} outfit={outfit} />
+          </button>
+          <div className="loud-says-bubble loud-glass" key={bentoSay.text}>{bentoSay.text}</div>
+        </div>
+      )}
+
       <div className={`loud-hero ${heroClass}${heroClass === 'is-glass' ? ' loud-glass' : ''}`}>
         <div className="loud-label" style={isBefore ? { color: 'var(--pk)', opacity: 1 } : undefined}>{label}</div>
         <div className="loud-big">{big}</div>
 
         {!next && !allLogged && (
-          <button type="button" className="loud-primary is-li" onClick={onShowFullDay}>Log a meal you ate</button>
+          <button type="button" className="loud-primary is-li" onClick={() => setLogging(true)}>Log a meal you ate</button>
         )}
         {next && (
           <>
@@ -91,6 +105,11 @@ export default function LoudToday({
             </button>
             <button type="button" className="loud-secondary" onClick={() => onChangeDishes(next.meal)}>Change dishes</button>
           </>
+        )}
+        {next && missed.length > 0 && (
+          <button type="button" className="loud-missed" onClick={() => setLogging(true)}>
+            Missed {missed.map((m) => MEAL_LABEL[m.meal].toLowerCase()).join(' and ')}? Log it
+          </button>
         )}
       </div>
 
@@ -121,6 +140,42 @@ export default function LoudToday({
           <span className="chev" aria-hidden="true">›</span>
         </button>
       )}
+      {logging && createPortal(
+        <LogSheet
+          meals={next ? missed : meals.filter((m) => m.active && !m.confirmed)}
+          confirming={confirming}
+          onConfirm={(meal) => { setLogging(false); onConfirm(meal); }}
+          onChangeDishes={(meal) => { setLogging(false); onChangeDishes(meal, { thenLog: true }); }}
+          onClose={() => setLogging(false)}
+        />, document.body,
+      )}
     </section>
+  );
+}
+
+/* Log a meal that already happened. Each unlogged meal shows Bento's plan for it, with one tap to log it as eaten or a
+ * way to pick what you actually had first. Logging goes through the same confirm as the hero, so the rings, the streak
+ * and the rating sheet all follow. */
+function LogSheet({ meals, confirming, onConfirm, onChangeDishes, onClose }) {
+  return (
+    <div className="loud-log-overlay" onClick={onClose}>
+      <div className="loud-log-sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Log a meal">
+        <i className="loud-log-grab" />
+        <h2>Log a meal</h2>
+        {meals.length === 0 && <p className="loud-log-empty">Every meal today is logged.</p>}
+        {meals.map((m) => (
+          <div key={m.meal} className="loud-log-meal">
+            <div className="loud-log-head"><b>{MEAL_LABEL[m.meal]}</b><span>{m.hall}</span></div>
+            <p>{m.items.length ? m.items.map((i) => i.name).join(', ') : 'No plan for this meal.'}</p>
+            <div className="loud-log-acts">
+              <button type="button" className="ghost" onClick={() => onChangeDishes(m.meal)}>I ate something else</button>
+              <button type="button" className="go" disabled={!m.items.length || confirming[m.meal]} onClick={() => onConfirm(m.meal)}>
+                {confirming[m.meal] ? 'Saving…' : 'I ate this'}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

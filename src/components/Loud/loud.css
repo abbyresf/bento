@@ -352,3 +352,30 @@
 .loud-onb.terms-screen { background: var(--bg); }
 .loud-onb .terms-body { background: var(--s1); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: inset 0 0 0 1px var(--ln); }
 .loud-onb .terms-body strong { color: var(--tx); }
+
+/* Bento and its line, above the hero. Tap Bento for the closet. */
+.loud-says { display: flex; align-items: center; gap: 10px; margin: 14px 2px 0; }
+.loud-says-bento { background: none; border: 0; padding: 0; cursor: pointer; flex: none; filter: drop-shadow(0 6px 10px rgba(0,0,0,.25)); }
+.loud-says-bubble { position: relative; flex: 1; border-radius: 18px 18px 18px 6px; padding: 11px 14px; font-size: 14px; font-weight: 600; line-height: 1.35; color: var(--tx); animation: loud-pop .35s cubic-bezier(.2,1.4,.4,1) both; }
+@keyframes loud-pop { from { transform: scale(.92) translateY(4px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .loud-says-bubble { animation: none; } }
+
+/* "Missed lunch? Log it" under the hero */
+.loud-missed { display: block; width: 100%; background: none; border: 0; font: inherit; font-size: 13px; font-weight: 700; color: inherit; opacity: .85; margin-top: 4px; padding: 6px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Log a meal */
+.loud-log-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,.45); display: flex; align-items: flex-end; }
+.loud-log-sheet { width: 100%; max-height: 86vh; overflow-y: auto; background: var(--bg); color: var(--tx); border-radius: 26px 26px 0 0; padding: 10px 18px calc(22px + env(safe-area-inset-bottom, 0px)); }
+.loud-log-grab { display: block; width: 38px; height: 4px; border-radius: 2px; background: var(--fa); margin: 0 auto 10px; }
+.loud-log-sheet h2 { font-family: var(--disp); font-weight: 800; font-stretch: 78%; text-transform: uppercase; font-size: 34px; line-height: .9; margin: 0 0 12px; }
+.loud-log-empty { color: var(--mu); font-size: 14px; }
+.loud-log-meal { background: var(--s1); border-radius: 20px; padding: 14px; margin-bottom: 8px; box-shadow: inset 0 0 0 1px var(--ln); }
+.loud-log-head { display: flex; justify-content: space-between; align-items: baseline; }
+.loud-log-head b { font-family: var(--disp); font-weight: 800; font-stretch: 82%; text-transform: uppercase; font-size: 22px; }
+.loud-log-head span { font-size: 12px; font-weight: 700; color: var(--mu); }
+.loud-log-meal p { font-size: 14px; line-height: 1.4; color: var(--mu); margin: 6px 0 12px; }
+.loud-log-acts { display: flex; gap: 8px; }
+.loud-log-acts button { flex: 1; border: 0; border-radius: 999px; padding: 12px 8px; font: inherit; font-size: 13.5px; font-weight: 800; cursor: pointer; }
+.loud-log-acts .ghost { background: var(--s2); color: var(--tx); }
+.loud-log-acts .go { background: var(--li); color: #141418; box-shadow: 0 3px 0 #7E9C12; font-family: var(--disp); text-transform: uppercase; }
+.loud-log-acts .go:disabled { background: var(--s2); color: var(--fa); box-shadow: none; }

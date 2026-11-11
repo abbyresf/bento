@@ -132,6 +132,7 @@ export default function MealPlan({ settingsVersion = 0, onOpenBuddies, onPersona
   const boxOn = useMemo(boxPrototypeOn, []);
   const loud = useMemo(loudOn, []);   // the Loud redesign pilot, off unless switched on (see Loud/loudFlag.js)
   const [loudBrowse, setLoudBrowse] = useState(null);   // the meal whose menu is open from "Change dishes"
+  const logAfterBrowse = useRef(null);                    // a meal picked in "Log a meal": log it once its dishes are set
   const [loudMore, setLoudMore] = useState(false);       // the full day plan under the Loud hero   // the day box prototype, off unless switched on (see DayBox.jsx)
   // Athlete mode: the day's targets follow that date's training load, and a snack between meals comes out of what is left
   // for the meals not yet decided. With the mode off, or migration 064 missing, both do nothing.
@@ -354,6 +355,15 @@ export default function MealPlan({ settingsVersion = 0, onOpenBuddies, onPersona
     return () => { document.removeEventListener('visibilitychange', onVisible); clearInterval(t); };
   }, []);
   useEffect(() => { loadHints(); }, [confirmedMeals]);
+
+  // Loud pilot: a meal picked in "Log a meal" with "I ate something else" is logged as soon as its new dishes are set.
+  useEffect(() => {
+    const meal = logAfterBrowse.current;
+    if (!meal || !customMeals[meal]?.items?.length || confirmedMeals[meal]) return;
+    logAfterBrowse.current = null;
+    handleConfirmMeal(meal);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customMeals]);
 
   // Plan the meals still to come around the ones already decided. A plate built by hand, or a meal confirmed, takes its share of
   // the day, and the others are planned for what is left: a big hand-built lunch gives a lighter dinner, a small one a bigger
@@ -1112,13 +1122,15 @@ export default function MealPlan({ settingsVersion = 0, onOpenBuddies, onPersona
           meals={loudMeals}
           totals={eatenTotals}
           targets={loudTargets}
-          onShowFullDay={() => setLoudMore(true)}
+          bentoSay={isViewingToday ? (questSays(questHints) ?? bentoSays({ hour: new Date().getHours(), today: localDateStr(), confirmed: confirmedMeals, streak })) : null}
+          outfit={displayOutfit}
+          onCloset={() => setShowCloset(true)}
           starter={isStarter}
           onPersonalize={onPersonalize}
           friendsOut={friendsOut}
           confirming={confirmingMeals}
           onConfirm={handleConfirmMeal}
-          onChangeDishes={(meal) => setLoudBrowse(meal)}
+          onChangeDishes={(meal, opts) => { logAfterBrowse.current = opts?.thenLog ? meal : null; setLoudBrowse(meal); }}
           onPrevDay={() => navigateDate(-1)}
           onNextDay={() => navigateDate(1)}
           onFriends={onOpenBuddies}
@@ -1133,7 +1145,7 @@ export default function MealPlan({ settingsVersion = 0, onOpenBuddies, onPersona
           restrictions={restrictions}
           initialSelected={customMeals[loudBrowse]?.items ?? mealPlan[selectedLocation[loudBrowse]]?.[loudBrowse]?.items}
           onDone={(items) => { handleBrowserDone(loudBrowse, items); setLoudBrowse(null); }}
-          onClose={() => setLoudBrowse(null)}
+          onClose={() => { logAfterBrowse.current = null; setLoudBrowse(null); }}
           className="open"
         />
       )}
