@@ -1,0 +1,69 @@
+/* Feed tab (Loud pilot). Tokens come from .loud in loud.css. */
+.loud-feed { position: relative; isolation: isolate; padding: 14px 16px 24px; min-height: 100%; color: var(--tx); }
+.lf-top { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: var(--mu); padding: 6px 2px 0; padding-right: 0; }
+.lf-title { font-family: var(--disp); font-weight: 800; font-stretch: 74%; font-size: 64px; line-height: .82; letter-spacing: -.04em; text-transform: uppercase; margin: 10px 2px 14px; color: var(--tx); }
+
+.lf-seg { display: flex; gap: 4px; background: var(--s2); border-radius: 14px; padding: 3px; margin-bottom: 12px; }
+.lf-seg button { flex: 1; border: 0; background: none; color: var(--mu); font: inherit; font-size: 13px; font-weight: 700; padding: 9px 4px; border-radius: 11px; cursor: pointer; }
+.lf-seg button.on { background: var(--tx); color: var(--bg); }
+
+.lf-list { display: flex; flex-direction: column; gap: 8px; }
+.lf-post { display: flex; gap: 10px; border-radius: 20px; padding: 12px 12px 10px 14px; }
+.lf-post.is-auto { flex-direction: column; gap: 6px; background: transparent; box-shadow: inset 0 0 0 2px var(--accent-text); }
+.lf-body { flex: 1; min-width: 0; }
+.lf-meta { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: var(--mu); }
+.lf-meta b { color: var(--tx); }
+.lf-av { width: 26px; height: 26px; border-radius: 50%; background: var(--s2); display: grid; place-items: center; overflow: hidden; flex: none; }
+.lf-av svg { margin-top: 3px; }
+.lf-auto { font-size: 10px; font-weight: 800; letter-spacing: .06em; color: var(--accent-text); }
+.lf-post p { font-size: 15px; line-height: 1.4; margin: 7px 0 0; color: var(--tx); overflow-wrap: anywhere; }
+.lf-foot { display: flex; gap: 16px; margin-top: 8px; }
+.lf-foot button { background: none; border: 0; font: inherit; font-size: 12.5px; font-weight: 700; color: var(--mu); padding: 4px 0; cursor: pointer; }
+.lf-foot button:disabled { opacity: .6; cursor: default; }
+.lf-vote { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 34px; }
+.lf-vote button { background: none; border: 0; color: var(--fa); font-size: 15px; padding: 4px 6px; cursor: pointer; line-height: 1; border-radius: 8px; }
+.lf-vote button.up.on { color: var(--or); }
+.lf-vote button.down.on { color: var(--sk); }
+.lf-vote b { font-family: var(--disp); font-weight: 800; font-size: 17px; color: var(--tx); }
+.lf-empty { color: var(--mu); font-size: 14px; line-height: 1.5; padding: 16px 4px; }
+
+.lf-top-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.lf-top-list li { display: flex; align-items: center; gap: 12px; border-radius: 18px; padding: 12px 14px; }
+.lf-top-list .rank { font-family: var(--disp); font-weight: 800; font-size: 26px; width: 28px; color: var(--accent-text); }
+.lf-top-list li:nth-child(1) { background: var(--li); color: #141418; box-shadow: none; }
+.lf-top-list li:nth-child(1) .rank, .lf-top-list li:nth-child(1) small, .lf-top-list li:nth-child(1) b { color: #141418; }
+.lf-top-list .nm { flex: 1; min-width: 0; }
+.lf-top-list .nm b { display: block; font-family: var(--disp); font-weight: 800; font-stretch: 84%; text-transform: uppercase; font-size: 16px; color: var(--tx); }
+.lf-top-list small { display: block; font-size: 11.5px; font-weight: 600; color: var(--mu); }
+.lf-top-list .sc { text-align: right; font-weight: 800; font-size: 14px; white-space: nowrap; }
+
+.lf-fab {
+  position: fixed; right: 18px; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); z-index: 30;
+  background: var(--li); color: #141418; border: 0; border-radius: 999px; padding: 13px 18px; box-shadow: 0 4px 0 #7E9C12, 0 10px 24px -8px rgba(0,0,0,.5);
+  font-family: var(--disp); font-weight: 800; font-size: 15px; text-transform: uppercase; cursor: pointer;
+}
+
+/* Sheets */
+.lf-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,.45); display: flex; align-items: flex-end; }
+.lf-sheet { width: 100%; max-height: 86vh; background: var(--bg); color: var(--tx); border-radius: 26px 26px 0 0; padding: 10px 18px calc(20px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 10px; }
+.lf-sheet.is-tall { height: 80vh; }
+.lf-grab { display: block; width: 38px; height: 4px; border-radius: 2px; background: var(--fa); margin: 0 auto 6px; }
+.lf-sheet h2 { font-family: var(--disp); font-weight: 800; font-stretch: 78%; text-transform: uppercase; font-size: 30px; line-height: .95; margin: 0; }
+.lf-sheet textarea, .lf-reply-box input {
+  width: 100%; font: inherit; font-size: 16px; color: var(--tx); background: var(--s1); border: 0; border-radius: 14px; padding: 12px 14px;
+  box-shadow: inset 0 0 0 1px var(--ln); resize: none;
+}
+.lf-sheet textarea:focus, .lf-reply-box input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--or); }
+.lf-sheet-row { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: var(--mu); }
+.lf-link { align-self: flex-start; background: none; border: 0; font: inherit; font-size: 13px; font-weight: 700; color: var(--accent-text); padding: 0; cursor: pointer; }
+.lf-error { color: #FF5A5A; font-size: 13px; font-weight: 600; margin: 0; }
+.lf-op { font-size: 17px; line-height: 1.4; font-weight: 600; padding-bottom: 10px; border-bottom: 1px solid var(--ln); margin: 0; }
+.lf-replies { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.lf-reply { display: flex; gap: 10px; }
+.lf-reply p { font-size: 14.5px; line-height: 1.4; margin: 0; }
+.lf-reply-meta { font-size: 11.5px; color: var(--mu); font-weight: 600; }
+.lf-reply-meta button { background: none; border: 0; font: inherit; color: var(--mu); padding: 0; cursor: pointer; }
+.lf-reply-box { display: flex; gap: 8px; }
+.lf-reply-box button { border: 0; border-radius: 14px; padding: 0 16px; background: var(--li); color: #141418; font-weight: 800; cursor: pointer; }
+.lf-reply-box button:disabled { background: var(--s2); color: var(--fa); }
+/* Sheets sit on <body>, outside .loud, so they take the tokens from html.loud-app. */

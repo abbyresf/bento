@@ -7,7 +7,7 @@
  *  - Translucent cards are liquid glass: blur + saturate, a bright top edge, a faint rim.
  *  - No pill-shaped labels. Rounded shapes are for controls only. */
 
-.loud {
+.loud, html.loud-app {
   --or: #FF6A13; --li: #D2FF3D; --pk: #FF7AC8; --lc: #A99CFF; --bu: #FFD84D; --sk: #7FD8FF;
   --ink: #141418;
   --disp: 'Bricolage Grotesque', system-ui, sans-serif;
@@ -33,13 +33,13 @@
   font-family: var(--sans);
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .loud {
+  :root:not([data-theme="light"]) .loud, :root.loud-app:not([data-theme="light"]) {
     --bg: var(--d-bg); --s1: var(--d-s1); --s2: var(--d-s2); --tx: var(--d-tx); --mu: var(--d-mu); --fa: var(--d-fa); --ln: var(--d-ln);
     --gl: var(--d-gl); --gl-hi: var(--d-gl-hi); --gl-rim: var(--d-gl-rim); --gl-sh: var(--d-gl-sh); --glow: var(--d-glow);
     --accent-text: var(--li);
   }
 }
-:root[data-theme="dark"] .loud {
+:root[data-theme="dark"] .loud, :root.loud-app[data-theme="dark"] {
   --bg: var(--d-bg); --s1: var(--d-s1); --s2: var(--d-s2); --tx: var(--d-tx); --mu: var(--d-mu); --fa: var(--d-fa); --ln: var(--d-ln);
   --gl: var(--d-gl); --gl-hi: var(--d-gl-hi); --gl-rim: var(--d-gl-rim); --gl-sh: var(--d-gl-sh); --glow: var(--d-glow);
   --accent-text: var(--li);
@@ -157,14 +157,14 @@
 .loud-mro .mro-item { flex-direction: column; align-items: stretch; gap: 8px; }
 
 /* My Ratings (pilot). Uses the app's own tokens for the page so it sits right in light and dark. */
-.loud-ratings { --or: #FF6A13; --li: #D2FF3D; --pk: #FF7AC8; --ink: #141418; --s1: var(--surface); --mu: var(--text-secondary); --ln: var(--border); --disp: 'Bricolage Grotesque', system-ui, sans-serif; }
+/* My Ratings now sits inside the themed app (html.loud-app), so it takes the Loud tokens from there. */
 .loud-ratings .my-ratings-header h2 { font-family: var(--disp); font-weight: 800; font-stretch: 76%; font-size: 40px; text-transform: uppercase; letter-spacing: -.03em; }
-.loud-ratings-sec { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-secondary); margin: 18px 0 6px; }
-.loud-rated { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.loud-ratings-sec { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--mu); margin: 18px 0 6px; }
+.loud-rated { padding: 12px 0; border-bottom: 1px solid var(--ln); }
 .loud-rated-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .loud-rated > .loud-rated-name { display: block; margin-bottom: 8px; }
-.loud-rated-name { font-family: var(--disp); font-weight: 800; font-size: 16px; font-stretch: 84%; text-transform: uppercase; color: var(--text-primary); }
-.loud-rated-remove { background: none; border: 0; font: inherit; font-size: 12px; font-weight: 700; color: var(--text-secondary); cursor: pointer; padding: 4px; }
+.loud-rated-name { font-family: var(--disp); font-weight: 800; font-size: 16px; font-stretch: 84%; text-transform: uppercase; color: var(--tx); }
+.loud-rated-remove { background: none; border: 0; font: inherit; font-size: 12px; font-weight: 700; color: var(--mu); cursor: pointer; padding: 4px; }
 
 /* Shorter setup (pilot). The wizard keeps its own light page, so these use fixed colors that read on it. */
 .loud-setup { text-align: left; }

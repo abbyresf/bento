@@ -13,7 +13,7 @@
     "ios:sync": "npm run build:native && cap sync ios",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:meals": "node test/mealPlan.test.mjs && node --test test/loudToday.test.mjs test/simpleSetup.test.mjs",
+    "test:meals": "node test/mealPlan.test.mjs && node --test test/loudToday.test.mjs test/simpleSetup.test.mjs test/campus.test.mjs test/youStats.test.mjs",
     "build:ssr": "vite build --ssr src/prerender-entry.jsx --outDir .ssr-build --emptyOutDir",
     "test:apns": "node --test test/apns.test.mjs",
     "test": "npm run test:meals && npm run test:apns && npm run test:copy",

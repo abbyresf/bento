@@ -2,6 +2,11 @@ import { haptics } from '../../lib/haptics';
 import { useFriends } from '../../lib/friendsStore';
 import { hereNow } from '../../data/duo';
 import './BottomNav.css';
+import { loudOn } from '../Loud/loudFlag';
+
+// Loud pilot: four tabs. Community becomes Feed, Insights becomes You, and My Ratings moves inside You.
+const LOUD = loudOn();
+const LOUD_LABEL = { community: 'Feed', insights: 'You' };
 
 export default function BottomNav({ activeTab, onTabChange }) {
   const { status, friends } = useFriends();
@@ -62,7 +67,9 @@ export default function BottomNav({ activeTab, onTabChange }) {
         </svg>
       ),
     },
-  ].filter((t) => t.id !== 'friends' || status !== 'unavailable');
+  ].filter((t) => t.id !== 'friends' || status !== 'unavailable')
+    .filter((t) => !LOUD || t.id !== 'ratings')
+    .map((t) => (LOUD && LOUD_LABEL[t.id] ? { ...t, label: LOUD_LABEL[t.id], ...(t.id === 'insights' ? { icon: YouIcon } : {}) } : t));
 
   return (
     <nav className="bottom-nav">
@@ -85,5 +92,14 @@ export default function BottomNav({ activeTab, onTabChange }) {
         );
       })}
     </nav>
+  );
+}
+
+function YouIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21v-1a7 7 0 0 1 14 0v1" />
+    </svg>
   );
 }

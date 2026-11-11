@@ -13,5 +13,8 @@ try {
 // A pilot build for the simulator or TestFlight can switch it on for everyone running that build: VITE_LOUD=1. The iPhone
 // app has no address bar to type ?loud=1 into.
 if (import.meta.env?.VITE_LOUD === '1') on = true;
+// The page itself takes the Loud look (ground, tab bar, sheets) through html.loud-app. Nothing in loud-app.css applies
+// without it, so the current app is untouched when the pilot is off.
+if (on && typeof document !== 'undefined') document.documentElement.classList.add('loud-app');
 
 export const loudOn = () => on;

@@ -1100,7 +1100,7 @@ export default function MealPlan({ settingsVersion = 0, onOpenBuddies, onPersona
     const t = dayTargetsFor(targets, shares);
     return { calories: t.calories, protein: t.macros?.protein ?? 0 };
   })() : null;
-  const friendsOut = loudToday ? hereNow(friends ?? []).map((f) => ({ name: f.display_name ?? 'A buddy', where: presenceLine(f) })) : [];
+  const friendsOut = loudToday ? hereNow(friends ?? []).map((f) => ({ name: f.display_name ?? 'A buddy', where: presenceLine(f), color: f.mascot_color ?? null })) : [];
 
   return (
     <div className={`meal-plan${loudToday ? ' loud loud-page' : ''}`}>

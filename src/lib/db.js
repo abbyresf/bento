@@ -678,6 +678,62 @@ export async function getMyEmphasizes() {
   return new Set((data ?? []).map(r => r.suggestion_id));
 }
 
+// ── Campus feed (Loud pilot, migration 072) ────────────────────────────────
+// Campus posts are the community suggestions: anonymous, one school. 072 adds downvotes and replies. Before 072 runs
+// the extra columns are missing, so posts load without them and `full` is false, which hides downvotes and replies.
+export async function getCampusPosts(university) {
+  const read = (cols) => {
+    let q = supabase.from('suggestions').select(cols).eq('is_hidden', false);
+    if (university) q = q.eq('university', university);
+    return q.order('created_at', { ascending: false }).limit(100);
+  };
+  const full = await read('id, content, emphasize_count, downvote_count, reply_count, created_at');
+  if (!full.error) return { posts: full.data ?? [], full: true };
+  const old = await read('id, content, emphasize_count, created_at');
+  return { posts: (old.data ?? []).map((p) => ({ ...p, downvote_count: 0, reply_count: 0 })), full: false };
+}
+
+// The caller's vote on each post: 1 up, -1 down.
+export async function getMyVotes() {
+  const id = await uid();
+  const votes = new Map();
+  if (!id) return votes;
+  const [up, down] = await Promise.all([
+    supabase.from('suggestion_emphasizes').select('suggestion_id').eq('user_id', id),
+    supabase.from('suggestion_downvotes').select('suggestion_id').eq('user_id', id),
+  ]);
+  for (const r of up.data ?? []) votes.set(r.suggestion_id, 1);
+  for (const r of down.data ?? []) votes.set(r.suggestion_id, -1);
+  return votes;
+}
+
+export async function castVote(suggestionId, vote) {
+  const { data, error } = await supabase.rpc('cast_vote', { p_suggestion_id: suggestionId, p_vote: vote });
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
+
+export async function getReplies(suggestionId) {
+  const { data } = await supabase
+    .from('suggestion_replies')
+    .select('id, content, created_at')
+    .eq('suggestion_id', suggestionId)
+    .order('created_at', { ascending: true })
+    .limit(200);
+  return data ?? [];
+}
+
+export async function submitReply(suggestionId, content) {
+  const { data, error } = await supabase.rpc('submit_reply', { p_suggestion_id: suggestionId, p_content: content });
+  if (error) throw error;
+  return data;
+}
+
+export async function flagReply(replyId) {
+  const { error } = await supabase.rpc('flag_reply', { p_reply_id: replyId });
+  if (error) throw error;
+}
+
 export async function submitSuggestion(content) {
   const { data, error } = await supabase.rpc('submit_suggestion', { p_content: content });
   if (error) throw error;

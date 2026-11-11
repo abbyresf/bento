@@ -1,4 +1,5 @@
 import { formatClock } from '../../utils/mealHours';
+import Mascot from '../Mascot/Mascot';
 import { nowHours, countdown, pickNextMeal } from './heroTiming.js';
 import './loud.css';
 
@@ -112,7 +113,7 @@ export default function LoudToday({
 
       {friendsOut.length > 0 && (
         <button type="button" className="loud-friends loud-glass" onClick={onFriends} style={{ width: '100%', border: 0, textAlign: 'left', font: 'inherit' }}>
-          <span className="face" aria-hidden="true">{friendsOut.length}</span>
+          <span className="face" aria-hidden="true"><Mascot size={30} hop={false} color={friendsOut[0].color ?? null} /></span>
           <span className="tx">
             <b>{friendsOut.slice(0, 2).map((f) => f.name).join(' + ')}{friendsOut.length > 2 ? ` + ${friendsOut.length - 2}` : ''}</b>
             {friendsOut[0].where}

@@ -37,6 +37,9 @@ import { revokeBuddyWidget } from './lib/widget';
 import JoinSheet from './components/Friends/JoinSheet';
 import FriendsTab from './components/Friends/FriendsTab';
 import './App.css';
+import './components/Loud/loud.css';
+import './components/Loud/loud-app.css';
+import { loudOn } from './components/Loud/loudFlag';   // also sets html.loud-app when the pilot is on
 import BentoLogo from './components/common/BentoLogo';
 
 // Loaded only when someone reaches them. Pulse (with its charts) is for dining staff on /admin, and onboarding runs once per
@@ -44,6 +47,8 @@ import BentoLogo from './components/common/BentoLogo';
 const PulseApp = lazy(() => import('./components/Pulse/PulseApp'));
 const PulseJoin = lazy(() => import('./components/Pulse/PulseJoin'));
 const OnboardingWizard = lazy(() => import('./components/Onboarding/OnboardingWizard'));
+const LoudFeed = lazy(() => import('./components/Loud/LoudFeed'));
+const LoudYou = lazy(() => import('./components/Loud/LoudYou'));
 const loadingScreen = <div className="app-loading"><div className="spinner"></div></div>;
 
 function isStandalone() {
@@ -503,12 +508,14 @@ function App() {
           )}
           {visitedTabs.has('community') && (
             <div hidden={activeTab !== 'community'}>
-              <CommunityTab />
+              {loudOn() ? <Suspense fallback={null}><LoudFeed /></Suspense> : <CommunityTab />}
             </div>
           )}
           {visitedTabs.has('insights') && (
             <div hidden={activeTab !== 'insights'}>
-              <InsightsPanel tabMode onClose={() => setActiveTab('today')} />
+              {loudOn()
+                ? <Suspense fallback={null}><LoudYou onOpenSettings={() => setShowSettings(true)} /></Suspense>
+                : <InsightsPanel tabMode onClose={() => setActiveTab('today')} />}
             </div>
           )}
         </div>
