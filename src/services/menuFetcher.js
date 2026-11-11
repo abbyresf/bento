@@ -240,7 +240,7 @@ function tuftsMapAllergen(slug) {
     case 'shellfish':  return 'shellfish';
     case 'tree-nuts':
     case 'tree_nuts':
-    case 'treenuts':   return 'treeNuts';
+    case 'treenuts':   return 'tree nuts';   // the spelling passesHardRestrictions matches
     case 'peanuts':
     case 'peanut':     return 'peanuts';
     case 'sesame':     return 'sesame';
