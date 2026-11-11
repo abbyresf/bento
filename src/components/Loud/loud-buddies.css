@@ -95,3 +95,7 @@ html.loud-app .closet-done { background: var(--li); color: #141418; border: 0; b
 html.loud-app .fr-sheet .fr-choice[aria-pressed="true"] { color: #141418; }
 html.loud-app .fr-sheet .fr-link { color: var(--lacc); }
 html.loud-app .closet h2, html.loud-app .closet h3:first-of-type { font-family: var(--disp); font-weight: 800; font-stretch: 78%; text-transform: uppercase; letter-spacing: -.02em; font-size: 32px; color: var(--tx); }
+
+/* Eat together sits on a bright gradient in both modes: everything on it is near-black. */
+.loud-buddies .ft-first p, .loud-buddies .ft-first .fr-note { color: rgba(20, 20, 24, .82); font-weight: 600; }
+.loud-buddies .ft-first .fr-link { color: #141418; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 2px; }

@@ -126,6 +126,22 @@ export default function MealPlan({ settingsVersion = 0, onOpenBuddies, onPersona
   const [pausedSchool, setPausedSchool] = useState(null);   // a school Bento is not live at yet
   const universityRef = useRef('brandeis');
   const [viewDate, setViewDate] = useState(() => localDateStr());
+  // Past midnight, someone looking at today should land on the new today, not stay on yesterday.
+  // A date they picked on purpose stays put.
+  const todayRef = useRef(localDateStr());
+  useEffect(() => {
+    const roll = () => {
+      const now = localDateStr();
+      if (now === todayRef.current) return;
+      const was = todayRef.current;
+      todayRef.current = now;
+      setViewDate((prev) => (prev === was ? now : prev));
+    };
+    const onVisible = () => { if (document.visibilityState === 'visible') roll(); };
+    document.addEventListener('visibilitychange', onVisible);
+    const t = setInterval(roll, 60000);
+    return () => { document.removeEventListener('visibilitychange', onVisible); clearInterval(t); };
+  }, []);
   // Which meals Bento plans for the day being viewed: breakfast is off for a student who skips it, and dinner is off on a day
   // they are eating out. The day's targets are shared across the meals that are left.
   const dinnerOut = useDinnerOut(viewDate);
