@@ -31,7 +31,7 @@ import { getUserProfile, getNutritionTargets, getDietaryRestrictions, getRecentI
 import { useRatings } from '../../context/RatingsContext';
 import { buildPlatePayload, syncWidget, syncWidgetMascot } from '../../lib/widget';
 import { readQueue, enqueue, attachExtras, removeEntry, pendingMealsFor, isOfflineError, withTimeout } from '../../lib/pendingConfirms';
-import { sumItems, MAX_SERVINGS } from '../../utils/servingSize.js';
+import { sumItems, MAX_SERVINGS, formatServing, servingsOf } from '../../utils/servingSize.js';
 import BentoLogo from '../common/BentoLogo';
 import { getNewBadge } from '../../data/badges';
 import { optimizeDay, findAlternatives, findRecommendedAdditions } from '../../utils/mealOptimizer';
@@ -1128,7 +1128,15 @@ export default function MealPlan({ settingsVersion = 0, onOpenBuddies, onPersona
       confirmed: !!confirmedMeals[meal],
       hours: mealHoursFor(menu, loc, meal),
       hall: menu?.locations?.[loc]?.shortName ?? 'the dining hall',
-      items: items.map((item) => ({ id: item.id, name: item.name, avg: ratingAggregates?.[item.id]?.avg ?? null })),
+      items: items.map((item) => {
+        // How many servings, and what one serving is: "2 servings · 1 cup each".
+        const n = servingsOf(item);
+        const raw = formatServing(item.serving, 1);
+        // "1 serving" or "1 each" says nothing about size, so only the count shows.
+        const one = raw && !/^1 (serving|each|ea)s?$/i.test(raw.trim()) ? raw : null;
+        const portion = n > 1 ? `${n} servings${one ? ` · ${one} each` : ''}` : `1 serving${one ? ` · ${one}` : ''}`;
+        return { id: item.id, name: item.name, portion, avg: ratingAggregates?.[item.id]?.avg ?? null };
+      }),
     };
   }) : [];
   // The rings count what was eaten, not what is planned: only confirmed meals.
@@ -1365,7 +1373,7 @@ export default function MealPlan({ settingsVersion = 0, onOpenBuddies, onPersona
             isConfirming={confirmingMeals[meal]}
             onConfirm={() => handleConfirmMeal(meal)}
             onUndo={() => handleUndo(meal)}
-            headerExtra={meal === 'breakfast' ? (
+            headerExtra={meal === 'breakfast' && !isViewingPast ? (
               <button type="button" className="meal-chip" onClick={() => setSkipBreakfast(true)}>I skip breakfast</button>
             ) : meal === 'dinner' ? (
               <label className="meal-switch">

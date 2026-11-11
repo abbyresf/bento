@@ -198,3 +198,32 @@ html.loud-app .meal-card-header { gap: 10px; align-items: flex-start; }
 html.loud-app .meal-header-left { flex: 1 1 auto; min-width: 0; }
 html.loud-app .meal-title-row { flex-wrap: wrap; row-gap: 0; column-gap: 8px; align-items: baseline; }
 html.loud-app .meal-header-right { flex: none; }
+
+/* The screens the redesign has not rebuilt (Settings, the full meal cards, Insights, sheets) read the app's older
+ * neutral tokens, which are navy in dark mode. Point those at the Loud neutrals so every screen shares one ground,
+ * one surface and one ink. html:root outranks the dark-mode token rules in tokens.css. Accent and tag colors stay. */
+html:root.loud-app {
+  --bg-app: var(--bg); --bg-ground: var(--bg);
+  --surface: var(--s1); --surface-soft: var(--s1); --surface-sunk: var(--s2); --confirmed-bg: var(--s1);
+  --border: var(--ln); --border-soft: var(--ln); --divider: var(--ln); --border-strong: var(--ln);
+  --text-primary: var(--tx); --text-heading: var(--tx); --text-body: var(--tx); --text-body-alt: var(--tx);
+  --text-secondary: var(--mu); --text-muted: var(--mu); --text-disabled: var(--fa); --text-faint: var(--fa);
+  --brand-navy: var(--tx);
+}
+
+/* Meal card footer: part of the card, not a separate slab. */
+html.loud-app .meal-card-footer { background: none; border-top: 1px solid var(--ln); border-radius: 0 0 24px 24px; padding: 14px 18px 18px; }
+html.loud-app .total-value { font-family: var(--disp); font-weight: 800; font-size: 20px; }
+
+/* The native status bar strip takes the page ground, not the old navy. */
+html.loud-app.is-native body::before { background: var(--bg); }
+
+/* Training day picker: padded like the other rows, four even buttons with no second frame around them. */
+html.loud-app .load-picker { padding: 14px 14px 14px 16px; gap: 10px; }
+html.loud-app .load-picker-label { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+html.loud-app .load-picker-options { background: none; border: 0; padding: 0; gap: 6px; border-radius: 0; }
+html.loud-app .load-option { min-height: 44px; font-size: 13px; padding: 0 2px; white-space: nowrap; }
+
+/* Optimizer notes ("No vegetable side…") read as a quiet line inside the card, not a yellow slab. */
+html.loud-app .meal-warnings { background: none; border-bottom: 1px solid var(--ln); padding: 10px 18px; }
+html.loud-app .meal-warnings .warning { background: none; border: 0; padding: 0; color: var(--mu); font-size: 13px; font-weight: 600; gap: 8px; }

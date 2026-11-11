@@ -101,7 +101,7 @@ export default function LoudToday({
               {next.items.length === 0 && <div className="loud-empty">Nothing planned yet. Pick dishes below.</div>}
               {next.items.map((item) => (
                 <div className="loud-row" key={item.id}>
-                  <b>{item.name}</b>
+                  <div className="loud-row-name"><b>{item.name}</b>{item.portion && <small>{item.portion}</small>}</div>
                   <span>{dietLabel ? '✓ Safe' : item.avg ? `★ ${item.avg.toFixed(1)}` : ''}</span>
                 </div>
               ))}

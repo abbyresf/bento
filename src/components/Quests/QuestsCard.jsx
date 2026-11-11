@@ -13,6 +13,7 @@ export default function QuestsCard() {
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(false);
+  const [justClaimed, setJustClaimed] = useState(null);   // the row that pops after a claim
   // Water lives on the phone and in water_logs. Today's cups re-render the card as they are logged.
   const { athleteMode } = useAthlete();
   const waterOn = useAthleteExtras() && athleteMode;
@@ -29,9 +30,12 @@ export default function QuestsCard() {
   const claim = async (quest) => {
     if (busy) return;
     setBusy(quest.id); setError(false);
+    haptics.medium();   // felt on the tap itself, before the save comes back
     try {
       await claimQuest(quest.id, weekStart);
       haptics.success();
+      setJustClaimed(quest.id);
+      setTimeout(() => setJustClaimed((id) => (id === quest.id ? null : id)), 1200);
       await load();
     } catch {
       haptics.warning();
@@ -47,7 +51,7 @@ export default function QuestsCard() {
           const state = questState(q, progress, data.claimedIds);
           const n = progress[q.id] ?? 0;
           return (
-            <li key={q.id} className={`quest ${state}`}>
+            <li key={q.id} className={`quest ${state}${justClaimed === q.id ? ' just-claimed' : ''}`}>
               <div className="quest-top">
                 <span className="quest-title">{q.title}</span>
                 {state === 'claimed' && <span className="quest-done">Claimed</span>}

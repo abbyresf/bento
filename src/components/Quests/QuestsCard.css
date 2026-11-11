@@ -24,3 +24,12 @@
 .quest-error { margin: 0.6rem 0 0; font-size: 0.8rem; color: var(--danger-text); }
 .quest-note { margin: 0.7rem 0 0; font-size: 0.72rem; color: var(--text-disabled); font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { .quest-bar i { transition: none; } }
+
+/* A claim pops: the row swells once and the bar flashes. */
+.quest.just-claimed { animation: quest-pop .55s cubic-bezier(.3,1.6,.5,1); }
+.quest.just-claimed .quest-bar i { animation: quest-flash .9s ease-out; }
+.quest.just-claimed .quest-done { animation: quest-stamp .5s cubic-bezier(.3,1.8,.5,1); display: inline-block; }
+@keyframes quest-pop { 0% { transform: scale(1); } 40% { transform: scale(1.035); } 100% { transform: scale(1); } }
+@keyframes quest-flash { 0% { filter: brightness(1.9) saturate(1.4); box-shadow: 0 0 14px currentColor; } 100% { filter: none; box-shadow: none; } }
+@keyframes quest-stamp { 0% { transform: scale(.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .quest.just-claimed, .quest.just-claimed .quest-bar i, .quest.just-claimed .quest-done { animation: none; } }
