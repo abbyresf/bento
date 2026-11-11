@@ -3,6 +3,11 @@ import { useRatings } from '../../context/RatingsContext';
 import { setMealConsumption } from '../../lib/db';
 import { formatServing, servingsOf } from '../../utils/servingSize.js';
 import StarRating from '../Community/StarRating';
+import { loudOn } from '../Loud/loudFlag';
+import ThreeChoice from '../Loud/ThreeChoice';
+
+// The Loud pilot asks Not good, Fine, Loved it in place of five stars (see Loud/reactions.js).
+const LOUD = loudOn();
 import DragSlider from '../common/DragSlider';
 import './RatingSheet.css';
 
@@ -91,12 +96,12 @@ export default function RatingSheet({ meal, items, diningHall, historyRowId, onD
 
   return (
     <div className="rating-sheet-overlay" onClick={onClose}>
-      <div className="rating-sheet" onClick={e => e.stopPropagation()}>
+      <div className={`rating-sheet${LOUD ? ' loud' : ''}`} onClick={e => e.stopPropagation()}>
         <div className="rating-sheet-handle" />
 
         <div className="rating-sheet-header">
           <h3>How was {mealLabel}?</h3>
-          <p className="rating-sheet-sub">Rate what you ate. It improves your future plans.</p>
+          <p className="rating-sheet-sub">{LOUD ? `Ratings sharpen your picks${diningHall ? ` and go to ${diningHall}'s kitchen` : ''}.` : 'Rate what you ate. It improves your future plans.'}</p>
         </div>
 
         <div className="rating-sheet-items">
@@ -112,12 +117,16 @@ export default function RatingSheet({ meal, items, diningHall, historyRowId, onD
               <div key={item.id} className="rating-sheet-item">
                 <div className="rating-sheet-item-top">
                   <span className="rating-sheet-item-name">{item.name}</span>
-                  <StarRating
-                    rating={ratings[item.id]}
-                    onChange={(r) => handleRate(item, r)}
-                    size={22}
-                    color="#f47421"
-                  />
+                  {LOUD ? (
+                    <ThreeChoice value={ratings[item.id]} onChange={(r) => handleRate(item, r)} allowClear label={`Rate ${item.name}`} />
+                  ) : (
+                    <StarRating
+                      rating={ratings[item.id]}
+                      onChange={(r) => handleRate(item, r)}
+                      size={22}
+                      color="#f47421"
+                    />
+                  )}
                 </div>
 
                 <div className={`eaten${isAnswered ? ' answered' : ''}`}>

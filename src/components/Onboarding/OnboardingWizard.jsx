@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { ACTIVITY_LEVELS, GOALS, calculateNutritionTargets } from '../../utils/tdeeCalculator';
-import { setUserProfile, setNutritionTargets, setDietaryRestrictions, setNutritionDisplay as saveNutritionDisplay } from '../../lib/db';
+import { ACTIVITY_LEVELS, GOALS, calculateNutritionTargets, calculateMacros, DEFAULT_MACRO_RATIOS } from '../../utils/tdeeCalculator';
+import { setUserProfile, setNutritionTargets, setDietaryRestrictions, setNutritionDisplay as saveNutritionDisplay, saveSetupState } from '../../lib/db';
+import { cleanLike } from '../Loud/likes';
+import { setupSteps, DETAIL_STEPS } from '../Loud/setupSteps';
 import { UNIVERSITIES } from '../../data/universities';
 import UniversityPicker from '../common/UniversityPicker';
 import CountUp from '../common/CountUp';
@@ -11,6 +13,30 @@ import MenuRatingOnboarding from './MenuRatingOnboarding';
 import StudyJoin from '../Research/StudyJoin';
 import { researchEnabled } from '../../lib/research';
 import './OnboardingWizard.css';
+import { loudOn } from '../Loud/loudFlag';
+
+const LOUD = loudOn();
+
+/* The shorter setup (Loud pilot). "What brings you here?" decides which steps follow. */
+const WHY = [
+  { id: 'goals',   label: 'Hit my goals',      tone: '#FF6A13' },
+  { id: 'safe',    label: 'Eat safely',        tone: '#7FD8FF' },
+  { id: 'friends', label: 'Eat with friends',  tone: '#FF7AC8' },
+  { id: 'sport',   label: 'Train for a sport', tone: '#A99CFF' },
+  { id: 'good',    label: "Find what's good",  tone: '#FFD84D' },
+];
+/* Drawn icons for the "What brings you here?" tiles, ink on the tile color. */
+const WHY_ICON = {
+  goals: <><rect x="6" y="15" width="5" height="10" rx="2" /><rect x="29" y="15" width="5" height="10" rx="2" /><rect x="11" y="11" width="5" height="18" rx="2" /><rect x="24" y="11" width="5" height="18" rx="2" /><rect x="16" y="18.5" width="8" height="3" /></>,
+  safe: <><path d="M20 5l12 5v9c0 8-5 13-12 16C13 32 8 27 8 19v-9z" fill="none" stroke="currentColor" strokeWidth="3" strokeLinejoin="round" /><path d="M14 19l4 4 8-8" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></>,
+  friends: <><circle cx="14" cy="13" r="5.5" /><path d="M4 31c0-5.5 4.5-9.5 10-9.5s10 4 10 9.5z" /><circle cx="27.5" cy="12" r="4.5" fill="none" stroke="currentColor" strokeWidth="2.6" /><path d="M24.5 20.8c.9-.3 1.9-.4 3-.4 4.7 0 8.5 3.7 8.5 8.6" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" /></>,
+  sport: <><circle cx="20" cy="20" r="13" fill="none" stroke="currentColor" strokeWidth="3" /><path d="M20 13l6 4-2 7h-8l-2-7z" /></>,
+  good: <path d="M20 5l4.5 9.5 10.5 1.3-7.7 7.2 2 10.4L20 28.3l-9.3 5.1 2-10.4L5 15.8l10.5-1.3z" />,
+};
+
+/* A student with no details gets a general starter target until they add them. 2,000 calories is the reference amount
+ * on US nutrition labels. Macros use the same split as "maintain". */
+const STARTER_TARGETS = { calories: 2000, macros: calculateMacros(2000, DEFAULT_MACRO_RATIOS.maintain) };
 
 /* The study question is part of the iOS app only. On the web (the PWA) and on
  * Android the step is not in the list at all. */
@@ -24,8 +50,17 @@ const SECTIONS = [
   { label: 'Preferences', steps: ['dietary', 'numbers', 'swipe'] },
 ];
 
-export default function OnboardingWizard({ onComplete, onGoContact, onRequestSchool }) {
+export default function OnboardingWizard({ onComplete, onGoContact, onRequestSchool, onSignOut }) {
   const [currentStep, setCurrentStep] = useState(0);
+  // Staple ratings live here, not in the staples step, so going back to it keeps them (Loud pilot).
+  const [stapleRatings, setStapleRatings] = useState({});
+  const [why, setWhy] = useState([]);                       // picks on "What brings you here?"
+  const [detailsSkipped, setDetailsSkipped] = useState(false);
+  const [likes, setLikes] = useState([]);                   // "Foods you like"
+  const [likeInput, setLikeInput] = useState('');
+  const wantsDetails = why.includes('goals') || why.includes('sport');
+  const withDetails = wantsDetails && !detailsSkipped;
+  const steps = !LOUD ? STEPS : setupSteps({ why, detailsSkipped, research: researchEnabled() });
   // The study step needs an answer, Yes or No, before Continue works.
   const [studyAnswered, setStudyAnswered] = useState(false);
   // Which way the last move went, so the next step slides in from that side.
@@ -81,14 +116,15 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
     return Object.keys(newErrors).length === 0;
   };
 
-  const WIPE_COLORS = ['#FD8F2A', '#77BD3E', '#24384F'];
+  const WIPE_COLORS = LOUD ? ['#FF6A13', '#D2FF3D', '#A99CFF'] : ['#FD8F2A', '#77BD3E', '#24384F'];
   const reduced = typeof window !== 'undefined'
     && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
   const changeStep = (delta) => {
-    const apply = () => setCurrentStep((prev) => Math.max(0, Math.min(prev + delta, STEPS.length - 1)));
+    const apply = () => setCurrentStep((prev) => Math.max(0, Math.min(prev + delta, steps.length - 1)));
     if (reduced) { apply(); return; }
-    const next = Math.max(0, Math.min(currentStep + delta, STEPS.length - 1));
+    const next = Math.max(0, Math.min(currentStep + delta, steps.length - 1));
+    if (next === currentStep) return;   // already at the first or last step: nothing to sweep to
     setWipe({
       key: Date.now(),
       color: WIPE_COLORS[next % WIPE_COLORS.length],
@@ -100,7 +136,7 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
   };
 
   const handleNext = () => {
-    if (STEPS[currentStep] === 'basics' && !validateBasics()) return;
+    if (steps[currentStep] === 'basics' && !validateBasics()) return;
     haptics.light();
     setDirection('fwd');
     changeStep(1);
@@ -137,6 +173,19 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
 
   const handleComplete = async () => {
     haptics.success();
+    if (LOUD) {
+      // Details are optional now. Without them the profile keeps no body numbers and the plan uses the starter target.
+      const keptProfile = withDetails ? profile
+        : { ...profile, weight: null, heightFeet: null, heightInches: null, age: null, sex: null };   // activity and goal keep their defaults
+      await Promise.all([
+        setUserProfile(keptProfile),
+        setNutritionTargets(withDetails ? calculateTargets() : STARTER_TARGETS),
+        setDietaryRestrictions(restrictions),
+      ]);
+      await saveSetupState({ setupDone: true, goals: why, likedFoods: likes });
+      onComplete();
+      return;
+    }
     const targets = calculateTargets();
     await Promise.all([
       setUserProfile(profile),
@@ -516,11 +565,72 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
     </div>
   );
 
+  const toggleWhy = (id) => setWhy((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const renderWhyStep = () => (
+    <div className="step-content loud-setup">
+      <h2 className="loud-setup-title">What brings you here?</h2>
+      <p className="loud-setup-sub">Pick as many as you like.</p>
+      <div className="loud-why">
+        {WHY.map((w) => (
+          <button
+            key={w.id}
+            type="button"
+            className={`loud-why-tile${why.includes(w.id) ? ' is-on' : ''}${w.id === 'good' ? ' is-wide' : ''}`}
+            style={{ '--tone': w.tone }}
+            aria-pressed={why.includes(w.id)}
+            onClick={() => toggleWhy(w.id)}
+          >
+            <svg className="loud-why-icon" viewBox="0 0 40 40" fill="currentColor" aria-hidden="true">{WHY_ICON[w.id]}</svg>
+            <span className="loud-why-label">{w.label}</span>
+            {why.includes(w.id) && <span className="loud-why-tick" aria-hidden="true">✓</span>}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  const addLike = () => {
+    const word = cleanLike(likeInput);
+    if (!word) return;
+    setLikes((prev) => (prev.some((l) => l.toLowerCase() === word.toLowerCase()) || prev.length >= 30 ? prev : [...prev, word]));
+    setLikeInput('');
+  };
+  const renderLikesStep = () => (
+    <div className="step-content loud-setup">
+      <h2 className="loud-setup-title">Foods you like</h2>
+      <p className="loud-setup-sub">Optional. Bento plans more dishes like these.</p>
+      <div className="loud-like-add">
+        <input
+          type="text"
+          value={likeInput}
+          maxLength={40}
+          placeholder="Type a food, like chicken"
+          onChange={(e) => setLikeInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addLike(); } }}
+          aria-label="A food you like"
+        />
+        <button type="button" onClick={addLike} disabled={!cleanLike(likeInput)}>Add</button>
+      </div>
+      <ul className="loud-like-list">
+        {likes.map((l) => (
+          <li key={l}>
+            <span>{l}</span>
+            <button type="button" onClick={() => setLikes((prev) => prev.filter((x) => x !== l))} aria-label={`Remove ${l}`}>Remove</button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+
   const renderStudyStep = () => (
     <div className="step-content">
       <StudyJoin
         startAt="ask"
-        onDone={() => { setStudyAnswered(true); handleNext(); }}
+        onDone={() => {
+          setStudyAnswered(true);
+          // When the study question is the last step (the shorter setup), answering only unlocks the finish button.
+          if (currentStep < steps.length - 1) handleNext();
+        }}
         onEnrolled={() => setStudyAnswered(true)}
         onGoContact={onGoContact}
       />
@@ -528,8 +638,10 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
   );
 
   const renderStep = () => {
-    switch (STEPS[currentStep]) {
+    switch (steps[currentStep]) {
       case 'university': return renderUniversityStep();
+      case 'why':        return renderWhyStep();
+      case 'likes':      return renderLikesStep();
       case 'basics':     return renderBasicsStep();
       case 'activity':   return renderActivityStep();
       case 'goals':      return renderGoalsStep();
@@ -541,12 +653,25 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
     }
   };
 
-  const isSwipeStep = STEPS[currentStep] === 'swipe';
+  const isSwipeStep = steps[currentStep] === 'swipe';
 
-  const sectionProgress = (
+  const sectionProgress = LOUD ? (
+    <div className="loud-setup-top">
+      <div className="loud-segs" aria-label={`Step ${currentStep + 1} of ${steps.length}`}>
+        {steps.map((st, i) => <i key={st} className={i <= currentStep ? 'on' : ''} />)}
+      </div>
+      {DETAIL_STEPS.includes(steps[currentStep]) ? (
+        <button type="button" className="loud-setup-skip" onClick={() => { haptics.selection(); setDetailsSkipped(true); }}>
+          Skip
+        </button>
+      ) : (
+        <span className="loud-setup-count">{currentStep + 1} of {steps.length}</span>
+      )}
+    </div>
+  ) : (
     <div className="section-progress">
       {SECTIONS.map((section, sIdx) => {
-        const sectionStepIndices = section.steps.map(s => STEPS.indexOf(s));
+        const sectionStepIndices = section.steps.map(s => steps.indexOf(s));
         const firstIdx = sectionStepIndices[0];
         const lastIdx  = sectionStepIndices[sectionStepIndices.length - 1];
         const isComplete = currentStep > lastIdx;
@@ -568,7 +693,8 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
 
   if (isSwipeStep) {
     return (
-      <div className="onboarding-wizard onboarding-wizard-swipe">
+      <div className={`onboarding-wizard onboarding-wizard-swipe${LOUD ? ' loud loud-onb' : ''}`}>
+        {LOUD && <LoudGlows />}
         {wipe && (
           <div key={wipe.key} className={`wipe${wipe.back ? ' back' : ''}`} style={{ '--wipe': wipe.color }} aria-hidden="true">
             <span className="wipe-num">{wipe.label}</span>
@@ -580,6 +706,9 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
         {sectionProgress}
         <MenuRatingOnboarding
           university={profile.university}
+          onBack={handleBack}
+          saved={stapleRatings}
+          onSave={setStapleRatings}
           onDone={() => {
             localStorage.setItem('bento_swipe_done', '1');
             handleNext();
@@ -601,13 +730,20 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
   );
 
   return (
-    <div className="onboarding-wizard">
+    <div className={`onboarding-wizard${LOUD ? ' loud loud-onb' : ''}`}>
+      {LOUD && <LoudGlows />}
       {wipeEl}
       <div className="wizard-header">
         <img src="/logo-cropped.png" alt="Bento" className="wizard-logo-img" />
       </div>
+      {/* Someone who closed the app halfway through setup comes back here. Give them a way back to sign in with a
+          different account instead of forcing them through setup (Loud pilot). */}
+      {LOUD && sectionProgress}
+      {LOUD && onSignOut && currentStep === 0 && (
+        <button type="button" className="wizard-login-instead" onClick={onSignOut}>‹ Log in with a different account</button>
+      )}
 
-      {sectionProgress}
+      {!LOUD && sectionProgress}
 
       <form onSubmit={(e) => e.preventDefault()}>
         <div key={currentStep} className={`step-stage ${direction}`}>
@@ -620,22 +756,37 @@ export default function OnboardingWizard({ onComplete, onGoContact, onRequestSch
               Back
             </button>
           )}
-          {currentStep < STEPS.length - 1 ? (
+          {currentStep < steps.length - 1 ? (
             <button
               type="button"
               className="btn-primary"
               onClick={handleNext}
-              disabled={STEPS[currentStep] === 'study' && !studyAnswered}
+              disabled={steps[currentStep] === 'study' && !studyAnswered}
             >
               Continue
             </button>
           ) : (
-            <button type="button" className="btn-primary" onClick={handleComplete}>
-              Get Started
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={handleComplete}
+              disabled={steps[currentStep] === 'study' && !studyAnswered}
+            >
+              {LOUD ? "See today's menu" : 'Get Started'}
             </button>
           )}
         </div>
       </form>
     </div>
+  );
+}
+
+/* Two soft color glows behind the setup screens (Loud pilot). They sit under everything and never cover text. */
+function LoudGlows() {
+  return (
+    <>
+      <span className="loud-glow" style={{ background: 'var(--or)', width: 260, height: 260, right: -60, top: 40 }} />
+      <span className="loud-glow" style={{ background: 'var(--lc)', width: 240, height: 240, left: -80, bottom: 120 }} />
+    </>
   );
 }

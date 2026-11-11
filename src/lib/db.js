@@ -90,6 +90,10 @@ export async function getUserProfile() {
     activityLevel: data.activity_level,
     goal:          data.goal,
     university:    data.university,
+    // The shorter setup (migration 071). Missing columns read as the device copy, so the pilot works before 071 runs.
+    setupDone:     data.setup_done ?? readSetupLocal(id).setupDone ?? false,
+    goals:         data.goals ?? readSetupLocal(id).goals ?? [],
+    likedFoods:    data.liked_foods ?? readSetupLocal(id).likedFoods ?? [],
     // Which nutrition numbers this person wants to see. Defaults to visible so
     // a missing row never silently hides information someone relies on.
     nutritionDisplay: {
@@ -945,12 +949,31 @@ export async function incrementStreakForDate(date) {
 // again. A read failing is not the same as a student not having agreed, and
 // the caller must be able to tell the difference.
 
+// ── Shorter setup (migration 071) ──────────────────────────────────────────
+// Kept on the device as well, so the pilot works before the columns exist, and so a reinstall after 071 runs reads them
+// back from the profile.
+const setupKey = (id) => `bento_setup_${id}`;
+export function readSetupLocal(id) {
+  try { return JSON.parse(localStorage.getItem(setupKey(id)) ?? '{}'); } catch { return {}; }
+}
+export async function saveSetupState({ setupDone, goals, likedFoods }) {
+  const id = await uid();
+  if (!id) return;
+  try { localStorage.setItem(setupKey(id), JSON.stringify({ setupDone, goals, likedFoods })); } catch { /* storage full or blocked */ }
+  // Fails quietly if 071 has not run yet: the device copy above stands in.
+  await supabase.from('profiles')
+    .update({ setup_done: setupDone, goals, liked_foods: likedFoods, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  forgetProfileRead();
+}
+
 export async function isOnboardingComplete() {
   const id = await uid();
   if (!id) return null;                 // unknown, not "incomplete"
   const { data, error } = await readProfileRow();
   if (error) return null;               // unknown, not "incomplete"
-  return !!(data?.weight && data?.age);
+  // A student who skipped their details finished setup too (migration 071, or the device copy before it runs).
+  return !!(data?.weight && data?.age) || data?.setup_done === true || readSetupLocal(id).setupDone === true;
 }
 
 export async function isTermsAccepted() {

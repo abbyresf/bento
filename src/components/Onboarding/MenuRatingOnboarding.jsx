@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { rateItem } from '../../lib/db';
 import StarRating from '../Community/StarRating';
+import ThreeChoice from '../Loud/ThreeChoice';
+import { loudOn } from '../Loud/loudFlag';
+
+const LOUD = loudOn();
 import './MenuRatingOnboarding.css';
 
 const STAPLES_BY_UNIVERSITY = {
@@ -40,9 +44,13 @@ const DEFAULT_STAPLES = [
   { id: 'staple-garden-salad',       name: 'Garden Salad' },
 ];
 
-export default function MenuRatingOnboarding({ onDone, university }) {
+/* In the Loud pilot the wizard owns the answers (`saved`, `onSave`), so leaving this step and coming back keeps them,
+ * and there is a Back button. Off the pilot it behaves as it always has. */
+export default function MenuRatingOnboarding({ onDone, university, onBack, saved, onSave }) {
   const staples = STAPLES_BY_UNIVERSITY[university] ?? DEFAULT_STAPLES;
-  const [ratings, setRatings] = useState({});
+  const [ownRatings, setOwnRatings] = useState({});
+  const ratings = LOUD && saved ? saved : ownRatings;
+  const setRatings = LOUD && onSave ? (fn) => onSave(fn(ratings)) : setOwnRatings;
   const [submitting, setSubmitting] = useState(false);
 
   const handleRate = (item, rating) => {
@@ -62,22 +70,29 @@ export default function MenuRatingOnboarding({ onDone, university }) {
   const anyRated = staples.some(item => ratings[item.id] > 0);
 
   return (
-    <div className="menu-rating-onboarding">
-      <h2 className="mro-title">Rate some dining hall staples</h2>
+    <div className={`menu-rating-onboarding${LOUD ? ' loud-mro' : ''}`}>
+      {LOUD && onBack && (
+        <button type="button" className="mro-back" onClick={onBack}>‹ Back</button>
+      )}
+      <h2 className="mro-title">{LOUD ? 'Rate a few staples' : 'Rate some dining hall staples'}</h2>
       <p className="mro-sub">
-        Seen these before? Rate them to personalize your meal plan from day one.
+        {LOUD ? 'Optional. Tap your choice again to clear it.' : 'Seen these before? Rate them to personalize your meal plan from day one.'}
       </p>
 
       <div className="mro-list">
         {staples.map(item => (
           <div key={item.id} className="mro-item">
             <span className="mro-item-name">{item.name}</span>
-            <StarRating
-              rating={ratings[item.id] ?? 0}
-              onChange={(r) => handleRate(item, r)}
-              size={26}
-              color="#f47421"
-            />
+            {LOUD ? (
+              <ThreeChoice value={ratings[item.id] ?? 0} onChange={(r) => setRatings((prev) => ({ ...prev, [item.id]: r }))} allowClear label={`Rate ${item.name}`} />
+            ) : (
+              <StarRating
+                rating={ratings[item.id] ?? 0}
+                onChange={(r) => handleRate(item, r)}
+                size={26}
+                color="#f47421"
+              />
+            )}
           </div>
         ))}
       </div>

@@ -437,7 +437,7 @@ function App() {
       <>
         <div style={{ display: showLanding ? 'none' : 'contents' }}>
           <Suspense fallback={loadingScreen}>
-            <OnboardingWizard onComplete={handleOnboardingComplete} onGoContact={handleGoContact} onRequestSchool={handleGoRequestSchool} />
+            <OnboardingWizard onComplete={handleOnboardingComplete} onGoContact={handleGoContact} onRequestSchool={handleGoRequestSchool} onSignOut={handleReset} />
           </Suspense>
         </div>
         {landing}
@@ -488,7 +488,7 @@ function App() {
         <div className="tab-content">
           {visitedTabs.has('today') && (
             <div hidden={activeTab !== 'today'}>
-              <MealPlan settingsVersion={settingsVersion} />
+              <MealPlan settingsVersion={settingsVersion} onOpenBuddies={() => setActiveTab('friends')} onPersonalize={() => setShowSettings(true)} />
             </div>
           )}
           {visitedTabs.has('friends') && (

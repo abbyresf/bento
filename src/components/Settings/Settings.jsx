@@ -26,6 +26,11 @@ import { useSkipBreakfast, setSkipBreakfast } from '../../lib/mealPrefs';
 import { useAthlete, useAthleteAvailable, loadAthlete } from '../../lib/athlete';
 import AthleteSection from './AthleteSection';
 import './Settings.css';
+import { loudOn } from '../Loud/loudFlag';
+
+// Loud pilot: a student who skipped their details in setup adds them here, so sex is asked here too (the calorie math
+// needs it) and Recalculate waits until every number it uses is filled in.
+const LOUD = loudOn();
 
 /* Settings opens on a menu of sections. Tap one to open it, and Back returns to the
  * menu. Profile and Food are the two with a Save button, because they edit a form.
@@ -280,7 +285,7 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, onOpen
               <label>Weight ({profile.weightUnit})</label>
               <input
                 type="number"
-                value={profile.weight}
+                value={profile.weight ?? ''}
                 onChange={(e) => handleProfileChange('weight', parseFloat(e.target.value))}
               />
             </div>
@@ -307,10 +312,20 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, onOpen
               <label>Age</label>
               <input
                 type="number"
-                value={profile.age}
+                value={profile.age ?? ''}
                 onChange={(e) => handleProfileChange('age', parseInt(e.target.value))}
               />
             </div>
+            {LOUD && (
+              <div className="setting-item">
+                <label>Sex (for the calorie math)</label>
+                <select value={profile.sex ?? ''} onChange={(e) => handleProfileChange('sex', e.target.value || null)}>
+                  <option value="">Choose</option>
+                  <option value="female">Female</option>
+                  <option value="male">Male</option>
+                </select>
+              </div>
+            )}
             <div className="setting-item">
               <label>Activity Level</label>
               <select
@@ -334,7 +349,11 @@ export default function Settings({ onClose, onReset, onSave, onGoContact, onOpen
               </select>
             </div>}
           </div>
-          <button className="btn-secondary" onClick={handleRecalculate}>
+          <button
+            className="btn-secondary"
+            onClick={handleRecalculate}
+            disabled={LOUD && !(profile.weight > 0 && profile.heightFeet > 0 && profile.age > 0 && profile.sex && profile.activityLevel && profile.goal)}
+          >
             Recalculate Targets
           </button>
         </section>
