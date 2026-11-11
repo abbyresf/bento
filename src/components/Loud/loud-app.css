@@ -215,8 +215,15 @@ html:root.loud-app {
 html.loud-app .meal-card-footer { background: rgba(127,127,127,.07); border-top: 1px solid var(--ln); border-radius: 0 0 24px 24px; padding: 14px 18px 18px; }
 html.loud-app .total-value { font-family: var(--disp); font-weight: 800; font-size: 20px; }
 
-/* The native status bar strip takes the page ground, not the old navy. */
-html.loud-app.is-native body::before { background: var(--bg); }
+/* The native status bar strip: no solid band. The page and its glows run up under the clock. Content scrolling
+ * underneath is blurred so the time stays readable, and the blur fades out at the bottom, so there is no edge. */
+html.loud-app.is-native body::before {
+  background: transparent;
+  height: calc(env(safe-area-inset-top, 0px) + 14px);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent);
+}
 
 /* Training day picker: padded like the other rows, four even buttons with no second frame around them. */
 html.loud-app .load-picker { padding: 14px 14px 14px 16px; gap: 10px; }
@@ -227,3 +234,4 @@ html.loud-app .load-option { min-height: 44px; font-size: 13px; padding: 0 2px; 
 /* Optimizer notes ("No vegetable side…") read as a quiet line inside the card, not a yellow slab. */
 html.loud-app .meal-warnings { background: none; border-bottom: 1px solid var(--ln); padding: 10px 18px; }
 html.loud-app .meal-warnings .warning { background: none; border: 0; padding: 0; color: var(--mu); font-size: 13px; font-weight: 600; gap: 8px; }
+
