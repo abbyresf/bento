@@ -50,3 +50,9 @@ test('the three choices save as 1, 3 and 5 stars, best on the right', () => {
 test('an older star rating shows on the nearest choice, and no rating shows none', () => {
   assert.deepEqual([0, null, 1, 2, 3, 4, 5].map(reactionFor), [0, 0, 1, 1, 3, 5, 5]);
 });
+
+import { nextMilestone } from '../src/components/Loud/heroTiming.js';
+
+test('the streak ring fills toward the next milestone', () => {
+  assert.deepEqual([0, 3, 7, 13, 14, 29, 30, 99, 100, 250].map(nextMilestone), [7, 7, 14, 14, 21, 30, 50, 100, 200, 300]);
+});

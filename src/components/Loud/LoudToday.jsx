@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { formatClock } from '../../utils/mealHours';
 import Mascot from '../Mascot/Mascot';
 import { haptics } from '../../lib/haptics';
-import { nowHours, countdown, pickNextMeal } from './heroTiming.js';
+import { nowHours, countdown, pickNextMeal, nextMilestone } from './heroTiming.js';
 import './loud.css';
 
 const MEAL_LABEL = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
@@ -11,7 +11,7 @@ const MEAL_LABEL = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
 const HERO = { open: 'is-or', safe: 'is-sk', before: 'is-glass', done: 'is-glass' };
 
 /* A progress ring in a glass tile. The ring fills clockwise from the top. */
-function Ring({ value, unit, pct, color }) {
+function Ring({ value, unit, pct, color, flame = false }) {
   const c = 2 * Math.PI * 22;
   return (
     <div className="loud-ring loud-glass">
@@ -20,6 +20,12 @@ function Ring({ value, unit, pct, color }) {
         <circle cx="27" cy="27" r="22" fill="none" stroke={color} strokeWidth="6" strokeLinecap="round"
           strokeDasharray={c} strokeDashoffset={c * (1 - pct / 100)} />
       </svg>
+      {flame && (
+        <svg className="loud-ring-flame" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 2c1 3.4 4.8 5.6 4.8 10.2A4.8 4.8 0 0 1 7.2 14c0-2 1-3.4 2.2-4.4.2 1.4 1 2.4 2 2.6C10.8 9 11.2 5.2 12 2z" fill="var(--or)" />
+          <path d="M12 21.5a3.4 3.4 0 0 1-3.4-3.4c0-1.6 1.2-2.6 2-3.6.3 1 1 1.6 1.8 1.8.4-1 .6-2 .4-3.2 1.6 1.2 2.6 2.8 2.6 4.8a3.4 3.4 0 0 1-3.4 3.6z" fill="var(--bu)" />
+        </svg>
+      )}
       <b>{value}</b>
       <span>{unit}</span>
     </div>
@@ -81,7 +87,7 @@ export default function LoudToday({
             <button type="button" className="loud-says-bento" onClick={() => { haptics.light(); onCloset(); }} aria-label="Open Bento's closet">
               <Mascot mood={bentoSay.mood} size={58} outfit={outfit} />
             </button>
-            {streak > 0 && <span className="loud-says-streak" aria-label={`${streak}-day streak`}>{streak}</span>}
+            <button type="button" className="loud-closet-link" onClick={() => { haptics.light(); onCloset(); }}>Closet</button>
           </div>
           <div className="loud-says-bubble loud-glass" key={bentoSay.text}>{bentoSay.text}</div>
         </div>
@@ -132,6 +138,7 @@ export default function LoudToday({
           <Ring value={`${Math.round(totals.protein)}g`} unit={`of ${Math.round(targets.protein)}g protein`}
             pct={pct(totals.protein, targets.protein)} color="var(--li)" />
           <Ring value={`${eaten}/${planned}`} unit="meals" pct={pct(eaten, planned)} color="var(--sk)" />
+          <Ring value={streak} unit={streak === 1 ? 'day streak' : 'day streak'} pct={pct(streak, nextMilestone(streak))} color="var(--or)" flame />
         </div>
       )}
 

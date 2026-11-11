@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { getMealHistory, getNutritionTargets, getStreak, getUserProfile } from '../../lib/db';
 import { UNIVERSITIES } from '../../data/universities';
 import Mascot from '../Mascot/Mascot';
 import LoudMyRatings from '../MyRatings/LoudMyRatings';
 import InsightsPanel from '../Insights/InsightsPanel';
+import Closet from '../Mascot/Closet';
 import { weekSummary, activeDays } from './youStats.js';
 import './loud.css';
 import './loud-you.css';
@@ -22,6 +24,7 @@ async function fetchYou() {
 export default function LoudYou({ onOpenSettings }) {
   const [data, setData] = useState(null);
   const [page, setPage] = useState('home');   // home | ratings | insights
+  const [closet, setCloset] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -45,7 +48,7 @@ export default function LoudYou({ onOpenSettings }) {
       <span className="loud-glow" style={{ background: 'var(--sk)', width: 220, height: 220, left: -70, top: 440 }} />
 
       <div className="ly-head">
-        <span className="ly-av"><Mascot size={48} hop={false} /></span>
+        <button type="button" className="ly-av" onClick={() => setCloset(true)} aria-label="Open Bento's closet"><Mascot size={48} hop={false} /></button>
         <div>
           <h1 className="ly-title">You</h1>
           <span className="ly-sub">{school?.shortName ?? school?.name ?? ''}{school && streak ? ' · ' : ''}{streak ? `${streak}-day streak` : ''}</span>
@@ -80,10 +83,12 @@ export default function LoudYou({ onOpenSettings }) {
       </div>
 
       <div className="ly-links loud-glass">
+        <button type="button" onClick={() => setCloset(true)}>Closet<span>›</span></button>
         <button type="button" onClick={() => setPage('ratings')}>Your ratings<span>›</span></button>
         <button type="button" onClick={() => setPage('insights')}>Insights<span>›</span></button>
         <button type="button" onClick={onOpenSettings}>Settings<span>›</span></button>
       </div>
+      {closet && createPortal(<Closet onClose={() => setCloset(false)} />, document.body)}
     </section>
   );
 }

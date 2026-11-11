@@ -94,3 +94,4 @@ html.loud-app .closet-done { background: var(--li); color: #141418; border: 0; b
 .loud-buddies .ft-out-card .fr-note, .loud-buddies .ft-out .fr-chip-line, .loud-buddies .ft-youhere .fr-friend-sub { color: rgba(20,20,24,.82); }
 html.loud-app .fr-sheet .fr-choice[aria-pressed="true"] { color: #141418; }
 html.loud-app .fr-sheet .fr-link { color: var(--lacc); }
+html.loud-app .closet h2, html.loud-app .closet h3:first-of-type { font-family: var(--disp); font-weight: 800; font-stretch: 78%; text-transform: uppercase; letter-spacing: -.02em; font-size: 32px; color: var(--tx); }

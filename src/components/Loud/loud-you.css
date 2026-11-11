@@ -1,7 +1,7 @@
 /* You tab (Loud pilot). Tokens from .loud. */
 .loud-you { position: relative; isolation: isolate; padding: 18px 16px 24px; color: var(--tx); }
 .ly-head { display: flex; align-items: center; gap: 14px; margin: 8px 2px 18px; }
-.ly-av { width: 64px; height: 64px; border-radius: 22px; background: var(--bu); display: grid; place-items: center; transform: rotate(-4deg); box-shadow: 0 3px 0 #B8901A; flex: none; }
+.ly-av { border: 0; cursor: pointer; width: 64px; height: 64px; border-radius: 22px; background: var(--bu); display: grid; place-items: center; transform: rotate(-4deg); box-shadow: 0 3px 0 #B8901A; flex: none; }
 .ly-title { font-family: var(--disp); font-weight: 800; font-stretch: 74%; font-size: 60px; line-height: .82; letter-spacing: -.04em; text-transform: uppercase; margin: 0; }
 .ly-sub { display: block; font-size: 13px; font-weight: 700; color: var(--mu); margin-top: 6px; }
 .ly-k { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--mu); margin: 0 2px 8px; }
