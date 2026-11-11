@@ -431,3 +431,25 @@
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 20'%3E%3Cpath d='M12 4.2a2.4 2.4 0 1 0-2.4-2.4M12 4.2v1.6L2.6 12a1.4 1.4 0 0 0 .8 2.6h17.2a1.4 1.4 0 0 0 .8-2.6L12 5.8' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
           mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 20'%3E%3Cpath d='M12 4.2a2.4 2.4 0 1 0-2.4-2.4M12 4.2v1.6L2.6 12a1.4 1.4 0 0 0 .8 2.6h17.2a1.4 1.4 0 0 0 .8-2.6L12 5.8' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
 }
+
+/* Date bar: centered under the help and settings buttons, with arrows sized for a thumb. */
+.loud-datenav { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 6px; margin: 4px auto 10px; }
+html.loud-app .loud-datenav { margin-top: 48px; }
+.loud-datenav button {
+  width: 48px; height: 48px; flex: none; display: grid; place-items: center; border-radius: 50%;
+  background: var(--s1); color: var(--tx); border: 0; cursor: pointer;
+  box-shadow: inset 0 0 0 1px var(--ln), 0 6px 16px -10px rgba(0,0,0,.35);
+  -webkit-tap-highlight-color: transparent; transition: transform .12s ease;
+}
+.loud-datenav button:active:not(:disabled) { transform: scale(.9); }
+.loud-datenav button:disabled { opacity: .3; cursor: default; }
+.loud-datenav-label { min-width: 170px; text-align: center; display: flex; flex-direction: column; align-items: center; line-height: 1; }
+.loud-datenav-label b { font-family: var(--disp); font-weight: 800; font-stretch: 78%; text-transform: uppercase; font-size: 30px; letter-spacing: -.01em; color: var(--tx); }
+.loud-datenav-label span { font-size: 13.5px; font-weight: 700; color: var(--mu); margin-top: 5px; }
+.loud-diet { text-align: center; font-size: 12.5px; font-weight: 700; color: var(--mu); margin: -4px 0 8px; position: relative; z-index: 1; }
+
+/* Past and future days */
+.loud-day { padding-bottom: 8px; }
+.loud-day .loud-hero { margin-top: 6px; }
+.loud-day-note { margin: 8px 0 0; font-size: 14px; font-weight: 600; color: var(--mu); }
+.loud-rings.loud-rings-3 { grid-template-columns: repeat(3, 1fr); }

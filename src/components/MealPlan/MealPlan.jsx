@@ -55,7 +55,7 @@ import StreakCelebration from '../Streak/StreakCelebration';
 import BadgeCelebration from '../Badges/BadgeCelebration';
 import RatingSheet from './RatingSheet';
 import MenuBrowser from './MenuBrowser';
-import LoudToday from '../Loud/LoudToday';
+import LoudToday, { LoudDay } from '../Loud/LoudToday';
 import LoudStreak from '../Loud/LoudStreak';
 import { loudOn, streakDemo } from '../Loud/loudFlag';
 import { likedIdsFrom, withLikes } from '../Loud/likes';
@@ -1094,6 +1094,18 @@ export default function MealPlan({ settingsVersion = 0, onOpenBuddies, onPersona
   };
 
   const loudToday = loud && isViewingToday && !dateLoading && !!mealPlan;
+  // Any other day in the pilot: the same date bar and rings, over the full list of meals.
+  const loudDay = loud && !isViewingToday && !dateLoading && !!mealPlan;
+  const loudData = loudToday || loudDay;
+  const dateNav = {
+    word: isViewingToday ? 'Today' : isViewingTomorrow ? 'Tomorrow'
+      : viewDate === localDateStr(new Date(Date.now() - 86400000)) ? 'Yesterday'
+      : new Date(viewDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' }),
+    date: new Date(viewDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+    onPrev: () => { haptics.selection(); navigateDate(-1); },
+    onNext: () => { haptics.selection(); navigateDate(1); },
+    nextDisabled: isViewingTomorrow,
+  };
   const dietLabel = (() => {
     if (!restrictions) return null;
     const parts = [
@@ -1107,7 +1119,7 @@ export default function MealPlan({ settingsVersion = 0, onOpenBuddies, onPersona
     ].filter(Boolean);
     return parts.length ? parts.slice(0, 2).join(' · ') : null;
   })();
-  const loudMeals = loudToday ? ['breakfast', 'lunch', 'dinner'].map((meal) => {
+  const loudMeals = loudData ? ['breakfast', 'lunch', 'dinner'].map((meal) => {
     const loc = selectedLocation[meal];
     const items = customMeals[meal]?.items ?? mealPlan[loc]?.[meal]?.items ?? [];
     return {
@@ -1120,21 +1132,21 @@ export default function MealPlan({ settingsVersion = 0, onOpenBuddies, onPersona
     };
   }) : [];
   // The rings count what was eaten, not what is planned: only confirmed meals.
-  const eatenTotals = loudToday ? activeMeals(shares).filter((meal) => confirmedMeals[meal]).reduce((t, meal) => {
+  const eatenTotals = loudData ? activeMeals(shares).filter((meal) => confirmedMeals[meal]).reduce((t, meal) => {
     const m = customMeals[meal]?.totals ?? mealPlan[selectedLocation[meal]]?.[meal]?.totals;
     return m ? { calories: t.calories + (m.calories ?? 0), protein: t.protein + (m.protein ?? 0) } : t;
   }, { calories: 0, protein: 0 }) : null;
-  const loudTargets = loudToday && targets ? (() => {
+  const loudTargets = loudData && targets ? (() => {
     const t = dayTargetsFor(targets, shares);
     return { calories: t.calories, protein: t.macros?.protein ?? 0 };
   })() : null;
   const friendsOut = loudToday ? hereNow(friends ?? []).map((f) => ({ name: f.display_name ?? 'A buddy', where: presenceLine(f), color: f.mascot_color ?? null })) : [];
 
   return (
-    <div className={`meal-plan${loudToday ? ' loud loud-page' : ''}`}>
+    <div className={`meal-plan${loud ? ' loud loud-page' : ''}`}>
       {loudToday && (
         <LoudToday
-          dateLabel={new Date(viewDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+          dateNav={dateNav}
           streak={streak.currentStreak}
           dietLabel={dietLabel}
           meals={loudMeals}
@@ -1149,9 +1161,18 @@ export default function MealPlan({ settingsVersion = 0, onOpenBuddies, onPersona
           confirming={confirmingMeals}
           onConfirm={handleConfirmMeal}
           onChangeDishes={(meal, opts) => { logAfterBrowse.current = opts?.thenLog ? meal : null; setLoudBrowse(meal); }}
-          onPrevDay={() => navigateDate(-1)}
-          onNextDay={() => navigateDate(1)}
           onFriends={onOpenBuddies}
+        />
+      )}
+      {loud && !loudToday && (
+        <LoudDay
+          dateNav={dateNav}
+          ready={loudDay}
+          past={isViewingPast}
+          meals={loudMeals}
+          eaten={eatenTotals}
+          planned={{ calories: dayTotals.calories, protein: dayTotals.protein }}
+          targets={loudTargets}
         />
       )}
       {loudToday && loudBrowse && (
@@ -1172,7 +1193,7 @@ export default function MealPlan({ settingsVersion = 0, onOpenBuddies, onPersona
           {loudMore ? 'Hide the full day' : 'See the full day: every meal, halls, servings'}
         </button>
       )}
-      {!loudToday && (
+      {!loud && (
       <header className="meal-plan-header">
         <div className="header-top">
           <BentoLogo className="header-logo-sm" />
@@ -1223,7 +1244,7 @@ export default function MealPlan({ settingsVersion = 0, onOpenBuddies, onPersona
         </div>
       )}
 
-      {!loudToday && boxOn && !dateLoading && mealPlan && targets && (() => {
+      {!loud && boxOn && !dateLoading && mealPlan && targets && (() => {
         const on = activeMeals(shares);
         const boxMeals = ['breakfast', 'lunch', 'dinner'].map((id) => ({
           id,
@@ -1276,7 +1297,7 @@ export default function MealPlan({ settingsVersion = 0, onOpenBuddies, onPersona
       {athleteOn && !dateLoading && (
         <TrainingDayBanner date={viewDate} load={load} source={loadSource} isToday={isViewingToday} weekAvailable={extrasOn} />
       )}
-      {!loudToday && !boxOn && !dateLoading && mealPlan && targets && (
+      {!loud && !boxOn && !dateLoading && mealPlan && targets && (
         <DailySummary totals={dayTotals} targets={dayTargetsFor(targets, shares)} />
       )}
 

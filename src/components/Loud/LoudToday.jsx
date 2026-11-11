@@ -36,8 +36,8 @@ function Ring({ value, unit, pct, color, flame = false }) {
  * Every action goes through the handlers the current Today already uses, so confirming, swapping and rating save the
  * same rows they always did. */
 export default function LoudToday({
-  dateLabel, streak, dietLabel, meals, totals, targets, friendsOut,
-  confirming, onConfirm, onChangeDishes, onPrevDay, onNextDay, onFriends, starter, onPersonalize, bentoSay, outfit, onCloset, now = new Date(),
+  dateNav, streak, dietLabel, meals, totals, targets, friendsOut,
+  confirming, onConfirm, onChangeDishes, onFriends, starter, onPersonalize, bentoSay, outfit, onCloset, now = new Date(),
 }) {
   const next = pickNextMeal(meals, now);
   const [logging, setLogging] = useState(false);
@@ -72,14 +72,8 @@ export default function LoudToday({
       <span className="loud-glow" style={{ background: 'var(--lc)', width: 220, height: 220, left: -60, top: 380 }} />
       <span className="loud-glow" style={{ background: 'var(--pk)', width: 200, height: 200, left: 200, top: 520 }} />
 
-      <div className="loud-top">
-        <span className="loud-date">
-          <button type="button" onClick={onPrevDay} aria-label="Previous day">‹</button>
-          {dateLabel}
-          <button type="button" onClick={onNextDay} aria-label="Next day">›</button>
-        </span>
-        {dietLabel ? <span>{dietLabel}</span> : null}
-      </div>
+      <LoudDateNav {...dateNav} />
+      {dietLabel ? <div className="loud-diet">{dietLabel}</div> : null}
 
       {bentoSay && (
         <div className="loud-says">
@@ -196,5 +190,62 @@ function LogSheet({ meals, confirming, onConfirm, onChangeDishes, onClose }) {
         ))}
       </div>
     </div>
+  );
+}
+
+const CHEV = { width: 26, height: 26, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.6, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true };
+
+/* The date, big and centered under the help and settings buttons, with day arrows big enough to hit. */
+export function LoudDateNav({ word, date, onPrev, onNext, nextDisabled = false }) {
+  return (
+    <nav className="loud-datenav" aria-label="Choose a day">
+      <button type="button" onClick={onPrev} aria-label="Previous day"><svg {...CHEV}><path d="M15 18l-6-6 6-6" /></svg></button>
+      <div className="loud-datenav-label" aria-live="polite">
+        <b>{word}</b>
+        {word !== date && <span>{date}</span>}
+      </div>
+      <button type="button" onClick={onNext} disabled={nextDisabled} aria-label="Next day"><svg {...CHEV}><path d="M9 18l6-6-6-6" /></svg></button>
+    </nav>
+  );
+}
+
+/* Any day but today. A past day shows what was eaten against the targets. Tomorrow shows what Bento planned.
+ * The meal cards below it (with log, undo and dish changes) come from the full day list. */
+export function LoudDay({ dateNav, ready, past, meals, eaten, planned, targets }) {
+  const active = meals.filter((m) => m.active);
+  const logged = active.filter((m) => m.confirmed).length;
+  const t = past ? eaten : planned;
+  const pct = (v, max) => (max ? Math.min(100, Math.round((v / max) * 100)) : 0);
+  const label = past ? 'Meals logged' : 'Bento planned';
+  const big = past ? `${logged} of ${active.length}` : `${active.length} ${active.length === 1 ? 'meal' : 'meals'}`;
+  const note = past
+    ? (logged === active.length && active.length > 0 ? 'Every meal logged. Nice day.' : 'Missed one? Log it below.')
+    : 'Plans can change. Swap dishes below.';
+
+  return (
+    <section className="loud loud-today loud-day" aria-label={dateNav.word}>
+      <span className="loud-glow" style={{ background: past ? 'var(--sk)' : 'var(--lc)', width: 240, height: 240, left: 120, top: 40 }} />
+      <span className="loud-glow" style={{ background: 'var(--pk)', width: 200, height: 200, left: -60, top: 260 }} />
+      <LoudDateNav {...dateNav} />
+      {ready && (
+        <>
+          <div className="loud-hero is-glass loud-glass">
+            <div className="loud-label">{label}</div>
+            <div className="loud-big">{big}</div>
+            <p className="loud-day-note">{note}</p>
+          </div>
+          {targets && t && (
+            <div className="loud-rings loud-rings-3">
+              <Ring value={Math.round(t.calories).toLocaleString()} unit={`of ${Math.round(targets.calories).toLocaleString()} cal${past ? '' : ' planned'}`}
+                pct={pct(t.calories, targets.calories)} color="var(--or)" />
+              <Ring value={`${Math.round(t.protein)}g`} unit={`of ${Math.round(targets.protein)}g protein`}
+                pct={pct(t.protein, targets.protein)} color="var(--li)" />
+              <Ring value={past ? `${logged}/${active.length}` : active.length} unit={past ? 'meals' : 'meals planned'}
+                pct={past ? pct(logged, active.length) : 100} color="var(--sk)" />
+            </div>
+          )}
+        </>
+      )}
+    </section>
   );
 }
