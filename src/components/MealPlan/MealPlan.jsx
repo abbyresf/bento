@@ -56,7 +56,8 @@ import BadgeCelebration from '../Badges/BadgeCelebration';
 import RatingSheet from './RatingSheet';
 import MenuBrowser from './MenuBrowser';
 import LoudToday from '../Loud/LoudToday';
-import { loudOn } from '../Loud/loudFlag';
+import LoudStreak from '../Loud/LoudStreak';
+import { loudOn, streakDemo } from '../Loud/loudFlag';
 import { likedIdsFrom, withLikes } from '../Loud/likes';
 import { useFriends } from '../../lib/friendsStore';
 import { hereNow, presenceLine } from '../../data/duo';
@@ -133,7 +134,8 @@ export default function MealPlan({ settingsVersion = 0, onOpenBuddies, onPersona
   const loud = useMemo(loudOn, []);   // the Loud redesign pilot, off unless switched on (see Loud/loudFlag.js)
   const [loudBrowse, setLoudBrowse] = useState(null);   // the meal whose menu is open from "Change dishes"
   const logAfterBrowse = useRef(null);                    // a meal picked in "Log a meal": log it once its dishes are set
-  const [loudMore, setLoudMore] = useState(false);       // the full day plan under the Loud hero   // the day box prototype, off unless switched on (see DayBox.jsx)
+  const [loudMore, setLoudMore] = useState(false);       // the full day plan under the Loud hero
+  const [demoStreak, setDemoStreak] = useState(streakDemo);   // development only, see loudFlag.js   // the day box prototype, off unless switched on (see DayBox.jsx)
   // Athlete mode: the day's targets follow that date's training load, and a snack between meals comes out of what is left
   // for the meals not yet decided. With the mode off, or migration 064 missing, both do nothing.
   const athlete = useAthlete();
@@ -1369,14 +1371,18 @@ export default function MealPlan({ settingsVersion = 0, onOpenBuddies, onPersona
 
       {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}
 
-      {showStreakCelebration && (
+      {showStreakCelebration && loud && (
+        <LoudStreak streak={streak.currentStreak} onDismiss={handleStreakCelebrationDismiss} />
+      )}
+      {demoStreak > 0 && <LoudStreak streak={demoStreak} onDismiss={() => setDemoStreak(0)} />}
+      {showStreakCelebration && !loud && (
         <StreakCelebration
           streak={streak.currentStreak}
           onDismiss={handleStreakCelebrationDismiss}
         />
       )}
 
-      {newBadge && (
+      {newBadge && !loud && (
         <BadgeCelebration
           badge={newBadge}
           onDismiss={() => setNewBadge(null)}

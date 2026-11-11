@@ -18,3 +18,10 @@ if (import.meta.env?.VITE_LOUD === '1') on = true;
 if (on && typeof document !== 'undefined') document.documentElement.classList.add('loud-app');
 
 export const loudOn = () => on;
+
+// Development only: ?streakdemo=N shows the streak moment for day N, to check each of its looks. Release builds skip it.
+let demo = 0;
+if (import.meta.env?.DEV) {
+  try { demo = parseInt(new URLSearchParams(window.location.search).get('streakdemo') ?? '0', 10) || 0; } catch { /* none */ }
+}
+export const streakDemo = () => (on ? demo : 0);

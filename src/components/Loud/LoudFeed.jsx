@@ -7,6 +7,7 @@ import { UNIVERSITIES } from '../../data/universities';
 import { COLOR_IDS } from '../../data/mascotColors';
 import Mascot from '../Mascot/Mascot';
 import PolicyModal from '../Community/PolicyModal';
+import { haptics } from '../../lib/haptics';
 import { sortPosts, topRated, autoPosts, colorForPost, timeAgo } from './campus.js';
 import './loud.css';
 import './loud-feed.css';
@@ -52,6 +53,7 @@ export default function LoudFeed() {
   const top = useMemo(() => topRated(aggregates), [aggregates]);
 
   const vote = async (post, dir) => {
+    haptics.light();
     const mine = votes.get(post.id) ?? 0;
     const next = mine === dir ? 0 : dir;
     // Show it at once, then settle on what the server counted.
@@ -128,11 +130,9 @@ export default function LoudFeed() {
                   </div>
                   <p>{p.content}</p>
                   <div className="lf-foot">
-                    {full && (
-                      <button type="button" onClick={() => setThread(p)}>
-                        {p.reply_count ? `${p.reply_count} ${p.reply_count === 1 ? 'reply' : 'replies'}` : 'Reply'}
-                      </button>
-                    )}
+                    <button type="button" onClick={() => { haptics.light(); setThread(p); }}>
+                      {p.reply_count ? `${p.reply_count} ${p.reply_count === 1 ? 'reply' : 'replies'}` : 'Reply'}
+                    </button>
                     <button type="button" onClick={() => report(p)} disabled={reported.has(p.id)}>
                       {reported.has(p.id) ? 'Reported' : 'Report'}
                     </button>
@@ -160,7 +160,7 @@ export default function LoudFeed() {
           onPosted={() => { setComposing(false); setView('new'); load(); }}
         />, document.body,
       )}
-      {thread && createPortal(<Thread post={thread} onClose={() => { setThread(null); load(); }} />, document.body)}
+      {thread && createPortal(<Thread post={thread} enabled={full} onClose={() => { setThread(null); load(); }} />, document.body)}
       {showPolicy && createPortal(<PolicyModal onClose={() => setShowPolicy(false)} />, document.body)}
     </section>
   );
@@ -172,7 +172,7 @@ function Compose({ schoolName, onPolicy, onClose, onPosted }) {
   const [error, setError] = useState(null);
   const post = async () => {
     setBusy(true); setError(null);
-    try { await submitSuggestion(text.trim()); onPosted(); } catch { setError('That did not post. Check your connection and try again.'); setBusy(false); }
+    try { await submitSuggestion(text.trim()); haptics.success(); onPosted(); } catch { setError('That did not post. Check your connection and try again.'); setBusy(false); }
   };
   return (
     <div className="lf-overlay" onClick={onClose}>
@@ -189,7 +189,7 @@ function Compose({ schoolName, onPolicy, onClose, onPosted }) {
   );
 }
 
-function Thread({ post, onClose }) {
+function Thread({ post, enabled, onClose }) {
   const [replies, setReplies] = useState(null);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -197,12 +197,12 @@ function Thread({ post, onClose }) {
   const load = useCallback(() => getReplies(post.id).then(setReplies), [post.id]);
   useEffect(() => {
     let live = true;
-    getReplies(post.id).then((r) => { if (live) setReplies(r); });
+    (enabled ? getReplies(post.id) : Promise.resolve([])).then((r) => { if (live) setReplies(r); });
     return () => { live = false; };
-  }, [post.id]);
+  }, [post.id, enabled]);
   const send = async () => {
     setBusy(true);
-    try { await submitReply(post.id, text.trim()); setText(''); await load(); } finally { setBusy(false); }
+    try { await submitReply(post.id, text.trim()); haptics.success(); setText(''); await load(); } finally { setBusy(false); }
   };
   return (
     <div className="lf-overlay" onClick={onClose}>
@@ -211,7 +211,8 @@ function Thread({ post, onClose }) {
         <p className="lf-op">{post.content}</p>
         <div className="lf-replies">
           {replies === null && <p className="lf-empty">Loading…</p>}
-          {replies?.length === 0 && <p className="lf-empty">No replies yet.</p>}
+          {!enabled && <p className="lf-empty">Replies are not switched on for this school yet.</p>}
+          {enabled && replies?.length === 0 && <p className="lf-empty">No replies yet. Start the thread.</p>}
           {replies?.map((r) => (
             <div key={r.id} className="lf-reply">
               <span className="lf-av"><Mascot size={20} hop={false} color={colorForPost(r.id, COLOR_IDS)} /></span>
@@ -225,11 +226,11 @@ function Thread({ post, onClose }) {
             </div>
           ))}
         </div>
-        <div className="lf-reply-box">
+        {enabled && <div className="lf-reply-box">
           <input value={text} maxLength={200} placeholder="Reply anonymously" onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && text.trim() && !busy) send(); }} />
           <button type="button" disabled={!text.trim() || busy} onClick={send}>Reply</button>
-        </div>
+        </div>}
       </div>
     </div>
   );

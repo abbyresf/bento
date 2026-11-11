@@ -13,7 +13,7 @@
 
 .ly-card { border-radius: 20px; padding: 14px; margin-bottom: 10px; }
 .ly-card-head { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--mu); }
-.ly-card-head .hit { color: var(--accent-text); }
+.ly-card-head .hit { color: var(--lacc); }
 .ly-chart { position: relative; display: flex; align-items: flex-end; gap: 6px; height: 90px; margin-top: 14px; }
 .ly-chart::before { content: ""; position: absolute; left: 0; right: 0; bottom: var(--goal); border-top: 1.5px dashed var(--fa); }
 .ly-chart i { flex: 1; border-radius: 6px 6px 3px 3px; background: rgba(127,127,127,.28); }
@@ -24,7 +24,7 @@
 .ly-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 12px; }
 .ly-cal i { aspect-ratio: 1; border-radius: 7px; background: rgba(127,127,127,.2); }
 .ly-cal i.on { background: var(--or); }
-.ly-cal i.today { box-shadow: inset 0 0 0 2px var(--accent-text); }
+.ly-cal i.today { box-shadow: inset 0 0 0 2px var(--lacc); }
 
 .ly-links { border-radius: 20px; padding: 2px 14px; }
 .ly-links button { display: flex; justify-content: space-between; width: 100%; background: none; border: 0; border-top: 1px solid var(--ln); font: inherit; font-size: 15px; font-weight: 700; color: var(--tx); padding: 15px 2px; cursor: pointer; text-align: left; }
@@ -63,3 +63,5 @@ html.loud-app .badges-panel { background: var(--bg); color: var(--tx); }
 html.loud-app .badge-row { background: var(--s1); border: 0; box-shadow: inset 0 0 0 1px var(--ln); color: var(--tx); }
 html.loud-app .badge-row-desc, html.loud-app .badge-row-adds, html.loud-app .badges-hero-sub { color: var(--mu); }
 html.loud-app .badges-hero-name, html.loud-app .badge-row-name { font-family: var(--disp); font-weight: 800; font-stretch: 84%; text-transform: uppercase; color: var(--tx); }
+/* The filling bento box (badges) is gone from the pilot. */
+.loud-you .streak-badges-btn { display: none; }

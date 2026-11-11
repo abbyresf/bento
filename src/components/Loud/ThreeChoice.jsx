@@ -1,4 +1,5 @@
 import { REACTIONS, reactionFor } from './reactions.js';
+import { haptics } from '../../lib/haptics';
 import './loud.css';
 
 /* Not good, Fine, Loved it. One control everywhere a dish is rated in the Loud pilot: the rating sheet, onboarding
@@ -16,7 +17,8 @@ export default function ThreeChoice({ value, onChange, allowClear = false, label
           className={r.cls}
           aria-pressed={current === r.stars}
           onClick={() => {
-            if (current === r.stars) { if (allowClear) onChange(0); return; }
+            if (current === r.stars) { if (allowClear) { haptics.selection(); onChange(0); } return; }
+            haptics.selection();
             onChange(r.stars);
           }}
         >{r.label}</button>

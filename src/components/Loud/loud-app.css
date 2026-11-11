@@ -40,7 +40,7 @@ html.loud-app .meal-card h3, html.loud-app .meal-title-row h3 {
   font-family: var(--disp); font-weight: 800; font-stretch: 80%; text-transform: uppercase; letter-spacing: -.02em; font-size: 26px; color: var(--tx);
 }
 html.loud-app .meal-time, html.loud-app .meal-out-sub, html.loud-app .pending-note, html.loud-app .meal-off-note { color: var(--mu); }
-html.loud-app .confirmed-badge { background: none; color: var(--accent-text); padding: 0; font-weight: 800; border: 0; }
+html.loud-app .confirmed-badge { background: none; color: var(--lacc); padding: 0; font-weight: 800; border: 0; }
 html.loud-app .past-badge { background: none; color: var(--mu); padding: 0; border: 0; }
 html.loud-app .undo-btn { background: none; color: var(--mu); text-decoration: underline; text-underline-offset: 3px; }
 html.loud-app .meal-chip { background: var(--s2); color: var(--tx); border: 0; border-radius: 999px; }
@@ -70,7 +70,7 @@ html.loud-app .food-item-macros, html.loud-app .macro-label, html.loud-app .nutr
 html.loud-app .macro-value, html.loud-app .nutrition-value { color: var(--tx); }
 /* Tags read as plain text, not pills. */
 html.loud-app .food-tag { background: none !important; border: 0 !important; padding: 0 8px 0 0 !important; color: var(--mu) !important; font-weight: 700; }
-html.loud-app .students-like-badge { background: none; color: var(--accent-text); padding: 0; border: 0; }
+html.loud-app .students-like-badge { background: none; color: var(--lacc); padding: 0; border: 0; }
 html.loud-app .servings-btn { background: var(--s2); color: var(--tx); border: 0; }
 html.loud-app .servings-count { color: var(--tx); }
 html.loud-app .expand-btn, html.loud-app .remove-btn { color: var(--fa); background: none; }
@@ -99,7 +99,7 @@ html.loud-app .location-closed { color: var(--mu); }
 
 /* Notices on Today */
 html.loud-app .cache-warning { background: var(--s1); color: var(--tx); border: 0; box-shadow: inset 0 0 0 1px var(--ln); border-radius: 14px; margin: 8px 16px; }
-html.loud-app .cache-warning button { color: var(--accent-text); }
+html.loud-app .cache-warning button { color: var(--lacc); }
 html.loud-app .cache-warning-error { background: rgba(255,90,90,.14); }
 html.loud-app .save-error { background: #FF5A5A; color: #141418; border-radius: 16px; }
 html.loud-app .fb-trigger { color: var(--mu); }
@@ -177,3 +177,18 @@ html.loud-app .bottom-nav-label { font-size: 9.5px; }
 html.loud-app .tab-content { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
 html.loud-app .lf-fab { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
 html.loud-app .rating-sheet-footer { background: linear-gradient(to top, var(--bg) 75%, transparent); border: 0; }
+
+/* The tab island, thin and long: nearly full width, short, icon and label side by side. */
+html.loud-app .bottom-nav {
+  left: 14px; right: 14px; transform: none; width: auto; height: auto; min-height: 0;
+  padding: 4px; bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+}
+html.loud-app .bottom-nav-tab { flex-direction: row; justify-content: center; gap: 5px; padding: 7px 4px; min-height: 0; height: auto; }
+html.loud-app .bottom-nav-tab svg { width: 17px; height: 17px; flex: none; }
+html.loud-app .bottom-nav-label { font-size: 11.5px; line-height: 1; }
+html.loud-app .tab-content { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
+html.loud-app .lf-fab { bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+
+/* The "a buddy is out" dot sits on the icon now that icon and label share a row. */
+html.loud-app .bottom-nav-tab { position: relative; }
+html.loud-app .bottom-nav-dot { top: 5px; right: auto; left: calc(50% - 22px); }

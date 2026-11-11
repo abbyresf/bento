@@ -30,7 +30,7 @@ export default function LoudYou({ onOpenSettings }) {
   }, [page]);
 
   if (page === 'ratings') return <Sub title="Your ratings" onBack={() => setPage('home')}><LoudMyRatings tabMode /></Sub>;
-  if (page === 'insights') return <Sub title="Badges and insights" onBack={() => setPage('home')}><InsightsPanel tabMode onClose={() => setPage('home')} /></Sub>;
+  if (page === 'insights') return <Sub title="Insights" onBack={() => setPage('home')}><InsightsPanel tabMode onClose={() => setPage('home')} /></Sub>;
 
   const week = data ? weekSummary(data.history, data.proteinTarget) : null;
   const cal = data ? activeDays(data.history) : [];
@@ -81,7 +81,7 @@ export default function LoudYou({ onOpenSettings }) {
 
       <div className="ly-links loud-glass">
         <button type="button" onClick={() => setPage('ratings')}>Your ratings<span>›</span></button>
-        <button type="button" onClick={() => setPage('insights')}>Badges and insights<span>›</span></button>
+        <button type="button" onClick={() => setPage('insights')}>Insights<span>›</span></button>
         <button type="button" onClick={onOpenSettings}>Settings<span>›</span></button>
       </div>
     </section>

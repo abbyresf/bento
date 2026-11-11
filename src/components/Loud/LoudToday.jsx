@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { formatClock } from '../../utils/mealHours';
 import Mascot from '../Mascot/Mascot';
+import { haptics } from '../../lib/haptics';
 import { nowHours, countdown, pickNextMeal } from './heroTiming.js';
 import './loud.css';
 
@@ -44,6 +45,14 @@ export default function LoudToday({
   const planned = meals.filter((m) => m.active).length;
   const eaten = meals.filter((m) => m.active && m.confirmed).length;
   const allLogged = planned > 0 && eaten === planned;
+  // When a meal is logged the rings flash and the hero bounces. Tracked as derived state, so it fires on the change
+  // itself and never on first load.
+  const [prevEaten, setPrevEaten] = useState(eaten);
+  const [flash, setFlash] = useState(0);
+  if (eaten !== prevEaten) {
+    setPrevEaten(eaten);
+    if (eaten > prevEaten) setFlash((n) => n + 1);
+  }
   const label = !next ? (allLogged ? 'Every meal logged' : 'The halls are closed for today')
     : isBefore ? `${MEAL_LABEL[next.meal]} at ${next.hall} opens in`
     : `${next.hall} · open till ${formatClock(next.hours.end)}`;
@@ -63,25 +72,27 @@ export default function LoudToday({
           {dateLabel}
           <button type="button" onClick={onNextDay} aria-label="Next day">›</button>
         </span>
-        {dietLabel ? <span>{dietLabel}</span>
-          : streak > 0 ? <span className="loud-streak">{streak}-day streak</span> : null}
+        {dietLabel ? <span>{dietLabel}</span> : null}
       </div>
 
       {bentoSay && (
         <div className="loud-says">
-          <button type="button" className="loud-says-bento" onClick={onCloset} aria-label="Open Bento's closet">
-            <Mascot mood={bentoSay.mood} size={58} outfit={outfit} />
-          </button>
+          <div className="loud-says-side">
+            <button type="button" className="loud-says-bento" onClick={() => { haptics.light(); onCloset(); }} aria-label="Open Bento's closet">
+              <Mascot mood={bentoSay.mood} size={58} outfit={outfit} />
+            </button>
+            {streak > 0 && <span className="loud-says-streak" aria-label={`${streak}-day streak`}>{streak}</span>}
+          </div>
           <div className="loud-says-bubble loud-glass" key={bentoSay.text}>{bentoSay.text}</div>
         </div>
       )}
 
-      <div className={`loud-hero ${heroClass}${heroClass === 'is-glass' ? ' loud-glass' : ''}`}>
+      <div key={`hero-${flash}`} className={`loud-hero ${heroClass}${heroClass === 'is-glass' ? ' loud-glass' : ''}${flash ? ' is-logged' : ''}${allLogged && flash ? ' is-done' : ''}`}>
         <div className="loud-label" style={isBefore ? { color: 'var(--pk)', opacity: 1 } : undefined}>{label}</div>
         <div className="loud-big">{big}</div>
 
         {!next && !allLogged && (
-          <button type="button" className="loud-primary is-li" onClick={() => setLogging(true)}>Log a meal you ate</button>
+          <button type="button" className="loud-primary is-li" onClick={() => { haptics.light(); setLogging(true); }}>Log a meal you ate</button>
         )}
         {next && (
           <>
@@ -98,16 +109,16 @@ export default function LoudToday({
             <button
               type="button"
               className={`loud-primary ${primaryInk ? 'is-ink' : 'is-li'}`}
-              onClick={() => onConfirm(next.meal)}
+              onClick={() => { haptics.medium(); onConfirm(next.meal); }}
               disabled={isBefore || confirming[next.meal] || next.items.length === 0}
             >
               {isBefore ? `Opens at ${formatClock(next.hours.start)}` : confirming[next.meal] ? 'Saving…' : 'I ate this'}
             </button>
-            <button type="button" className="loud-secondary" onClick={() => onChangeDishes(next.meal)}>Change dishes</button>
+            <button type="button" className="loud-secondary" onClick={() => { haptics.selection(); onChangeDishes(next.meal); }}>Change dishes</button>
           </>
         )}
         {next && missed.length > 0 && (
-          <button type="button" className="loud-missed" onClick={() => setLogging(true)}>
+          <button type="button" className="loud-missed" onClick={() => { haptics.light(); setLogging(true); }}>
             Missed {missed.map((m) => MEAL_LABEL[m.meal].toLowerCase()).join(' and ')}? Log it
           </button>
         )}
@@ -115,6 +126,7 @@ export default function LoudToday({
 
       {targets && (
         <div className="loud-rings">
+          {flash > 0 && <span key={`flash-${flash}`} className="loud-rings-flash" aria-hidden="true" />}
           <Ring value={Math.round(totals.calories).toLocaleString()} unit={`of ${Math.round(targets.calories).toLocaleString()} cal${starter ? ' · starter' : ''}`}
             pct={pct(totals.calories, targets.calories)} color="var(--or)" />
           <Ring value={`${Math.round(totals.protein)}g`} unit={`of ${Math.round(targets.protein)}g protein`}
@@ -169,7 +181,7 @@ function LogSheet({ meals, confirming, onConfirm, onChangeDishes, onClose }) {
             <p>{m.items.length ? m.items.map((i) => i.name).join(', ') : 'No plan for this meal.'}</p>
             <div className="loud-log-acts">
               <button type="button" className="ghost" onClick={() => onChangeDishes(m.meal)}>I ate something else</button>
-              <button type="button" className="go" disabled={!m.items.length || confirming[m.meal]} onClick={() => onConfirm(m.meal)}>
+              <button type="button" className="go" disabled={!m.items.length || confirming[m.meal]} onClick={() => { haptics.medium(); onConfirm(m.meal); }}>
                 {confirming[m.meal] ? 'Saving…' : 'I ate this'}
               </button>
             </div>

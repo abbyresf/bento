@@ -44,7 +44,7 @@
 }
 .loud-buddies .ft-claimed { background: none; color: var(--mu); padding: 0; border: 0; font-weight: 800; }
 .loud-buddies .qd-stars button { color: var(--fa); }
-.loud-buddies .fr-ok { color: var(--accent-text); }
+.loud-buddies .fr-ok { color: var(--lacc); }
 
 /* Your buddies */
 .loud-buddies .fr-friend { background: var(--s1); border: 0; border-radius: 18px; box-shadow: inset 0 0 0 1px var(--ln); color: var(--tx); }
@@ -77,3 +77,20 @@ html.loud-app .closet-done { background: var(--li); color: #141418; border: 0; b
 .loud-buddies .ft-card > .fr-btn-quiet, .loud-buddies .ft-card .fr-list + .fr-btn-quiet, .loud-buddies .fr-btn-quiet {
   background: var(--s2); color: var(--tx); border: 0; border-radius: 999px; font-weight: 700; padding: 10px 16px;
 }
+
+/* Contrast. Secondary text is stronger here than elsewhere, claimed quests no longer fade their text, and older
+ * Friends.css rules that colored text with the app's accent or fern are overridden. */
+.loud-buddies { --mu: color-mix(in srgb, var(--tx) 78%, transparent); }
+.loud-buddies .qd-card.claimed { opacity: 1; }
+.loud-buddies .qd-card.claimed .qd-title { color: var(--mu); }
+.loud-buddies .qd-card.fun:not(.can-claim) { background: var(--s1); box-shadow: inset 0 0 0 1px var(--ln); }
+.loud-buddies .ft-claimed { color: var(--tx); }
+.loud-buddies .qd-stars button { color: var(--tx); }
+.loud-buddies .fr-link { color: var(--lacc); }
+.loud-buddies .fr-ok { color: var(--tx); font-weight: 700; }
+.loud-buddies .fr-friend-sub, .loud-buddies .qd-what, .loud-buddies .qd-meta, .loud-buddies .ft-quests-head { color: var(--mu); }
+.loud-buddies .ft-out-card, .loud-buddies .ft-out-card * { color: #141418; }
+.loud-buddies .ft-out-card .ft-here { color: var(--li); }
+.loud-buddies .ft-out-card .fr-note, .loud-buddies .ft-out .fr-chip-line, .loud-buddies .ft-youhere .fr-friend-sub { color: rgba(20,20,24,.82); }
+html.loud-app .fr-sheet .fr-choice[aria-pressed="true"] { color: #141418; }
+html.loud-app .fr-sheet .fr-link { color: var(--lacc); }
