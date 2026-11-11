@@ -81,7 +81,7 @@ html.loud-app .alt-item, html.loud-app .rec-item { background: var(--s1); color:
 html.loud-app .alt-macros, html.loud-app .rec-macros, html.loud-app .rec-reason { color: var(--mu); }
 
 /* Plate totals and actions */
-html.loud-app .meal-totals { border-top: 1px solid var(--ln); background: none; }
+html.loud-app .meal-totals { border-top: 0; background: none; padding-top: 0; }
 html.loud-app .total-value { font-family: var(--disp); font-weight: 800; font-stretch: 82%; color: var(--tx); }
 html.loud-app .total-label { color: var(--mu); }
 html.loud-app .confirm-btn {
@@ -212,7 +212,7 @@ html:root.loud-app {
 }
 
 /* Meal card footer: part of the card, not a separate slab. */
-html.loud-app .meal-card-footer { background: none; border-top: 1px solid var(--ln); border-radius: 0 0 24px 24px; padding: 14px 18px 18px; }
+html.loud-app .meal-card-footer { background: rgba(127,127,127,.07); border-top: 1px solid var(--ln); border-radius: 0 0 24px 24px; padding: 14px 18px 18px; }
 html.loud-app .total-value { font-family: var(--disp); font-weight: 800; font-size: 20px; }
 
 /* The native status bar strip takes the page ground, not the old navy. */

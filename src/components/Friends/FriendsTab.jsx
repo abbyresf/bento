@@ -192,7 +192,17 @@ export default function FriendsTab() {
       {LOUD && <span className="loud-glow" style={{ background: 'var(--pk)', width: 240, height: 240, right: -60, top: 60 }} />}
       {LOUD && <span className="loud-glow" style={{ background: 'var(--li)', width: 200, height: 200, left: -70, top: 520 }} />}
       {LOUD && <div className="lb-top"><span>{friends.length} {friends.length === 1 ? 'buddy' : 'buddies'}</span></div>}
-      <h2 className="ft-title">Buddies</h2>
+      {LOUD && friends.length > 0 ? (
+        // With buddies, adding one more lives up top, next to the title, so it never sinks below a long list.
+        <div className="lb-head">
+          <h2 className="ft-title">Buddies</h2>
+          <button type="button" className="lb-add" onClick={() => setSheet('invite')} disabled={offline}>
+            <span aria-hidden="true">+</span> Add a buddy
+          </button>
+        </div>
+      ) : (
+        <h2 className="ft-title">Buddies</h2>
+      )}
 
       {offline && <p className="fr-offline">No connection. Showing the last list.</p>}
 
@@ -352,9 +362,11 @@ export default function FriendsTab() {
                 );
               })}
             </div>
-            <div className="fr-actions">
-              <button className="fr-btn-quiet" onClick={() => setSheet('invite')} disabled={offline}>Add a buddy</button>
-            </div>
+            {!LOUD && (
+              <div className="fr-actions">
+                <button className="fr-btn-quiet" onClick={() => setSheet('invite')} disabled={offline}>Add a buddy</button>
+              </div>
+            )}
           </section>
         </>
       )}

@@ -458,3 +458,7 @@ html.loud-app .loud-datenav { margin-top: 48px; }
 .loud-row-name { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .loud-row-name b { flex: none; }
 .loud-row-name small { font-size: 12.5px; font-weight: 700; opacity: .72; letter-spacing: .01em; }
+
+/* Ring tile text: number, "of 2,200", then a small caps label. One line each, so every tile lines up. */
+.loud-ring .loud-ring-of { font-size: 12px; font-weight: 700; color: var(--mu); margin-top: 3px; line-height: 1.2; white-space: nowrap; }
+.loud-ring .loud-ring-label { display: block; font-size: 9.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--fa); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

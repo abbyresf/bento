@@ -99,3 +99,16 @@ html.loud-app .closet h2, html.loud-app .closet h3:first-of-type { font-family: 
 /* Eat together sits on a bright gradient in both modes: everything on it is near-black. */
 .loud-buddies .ft-first p, .loud-buddies .ft-first .fr-note { color: rgba(20, 20, 24, .82); font-weight: 600; }
 .loud-buddies .ft-first .fr-link { color: #141418; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 2px; }
+
+/* Title row with the add button beside it. */
+.loud-buddies .lb-head { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.loud-buddies .lb-head .ft-title { margin-bottom: 0; }
+.loud-buddies .lb-add {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; border: 0; cursor: pointer;
+  background: var(--li); color: #141418; font: inherit; font-weight: 800; font-size: 15px;
+  padding: 12px 16px; border-radius: 999px; box-shadow: 0 3px 0 #7E9C12; -webkit-tap-highlight-color: transparent;
+}
+.loud-buddies .lb-add span { font-size: 20px; line-height: 1; margin-top: -2px; }
+.loud-buddies .lb-add:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #7E9C12; }
+.loud-buddies .lb-add:disabled { opacity: .5; }
+.loud-buddies .lb-head + * { margin-top: 18px; }

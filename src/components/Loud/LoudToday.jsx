@@ -11,7 +11,8 @@ const MEAL_LABEL = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
 const HERO = { open: 'is-or', safe: 'is-sk', before: 'is-glass', done: 'is-glass' };
 
 /* A progress ring in a glass tile. The ring fills clockwise from the top. */
-function Ring({ value, unit, pct, color, flame = false }) {
+/* Three even lines under the ring: the number, what it is measured against, and a small label. */
+function Ring({ value, of, label, pct, color, flame = false }) {
   const c = 2 * Math.PI * 22;
   return (
     <div className="loud-ring loud-glass">
@@ -27,7 +28,8 @@ function Ring({ value, unit, pct, color, flame = false }) {
         </svg>
       )}
       <b>{value}</b>
-      <span>{unit}</span>
+      <span className="loud-ring-of">{of ?? '\u00a0'}</span>
+      <small className="loud-ring-label">{label}</small>
     </div>
   );
 }
@@ -127,12 +129,12 @@ export default function LoudToday({
       {targets && (
         <div className="loud-rings">
           {flash > 0 && <span key={`flash-${flash}`} className="loud-rings-flash" aria-hidden="true" />}
-          <Ring value={Math.round(totals.calories).toLocaleString()} unit={`of ${Math.round(targets.calories).toLocaleString()} cal${starter ? ' · starter' : ''}`}
+          <Ring value={Math.round(totals.calories).toLocaleString()} of={`of ${Math.round(targets.calories).toLocaleString()}`} label="Calories"
             pct={pct(totals.calories, targets.calories)} color="var(--or)" />
-          <Ring value={`${Math.round(totals.protein)}g`} unit={`of ${Math.round(targets.protein)}g protein`}
+          <Ring value={`${Math.round(totals.protein)}g`} of={`of ${Math.round(targets.protein)}g`} label="Protein"
             pct={pct(totals.protein, targets.protein)} color="var(--li)" />
-          <Ring value={`${eaten}/${planned}`} unit="meals" pct={pct(eaten, planned)} color="var(--sk)" />
-          <Ring value={streak} unit={streak === 1 ? 'day streak' : 'day streak'} pct={pct(streak, nextMilestone(streak))} color="var(--or)" flame />
+          <Ring value={eaten} of={`of ${planned}`} label="Meals" pct={pct(eaten, planned)} color="var(--sk)" />
+          <Ring value={streak} of={streak === 1 ? 'day' : 'days'} label="Streak" pct={pct(streak, nextMilestone(streak))} color="var(--or)" flame />
         </div>
       )}
 
@@ -236,11 +238,11 @@ export function LoudDay({ dateNav, ready, past, meals, eaten, planned, targets }
           </div>
           {targets && t && (
             <div className="loud-rings loud-rings-3">
-              <Ring value={Math.round(t.calories).toLocaleString()} unit={`of ${Math.round(targets.calories).toLocaleString()} cal${past ? '' : ' planned'}`}
+              <Ring value={Math.round(t.calories).toLocaleString()} of={`of ${Math.round(targets.calories).toLocaleString()}`} label={past ? 'Calories' : 'Cal planned'}
                 pct={pct(t.calories, targets.calories)} color="var(--or)" />
-              <Ring value={`${Math.round(t.protein)}g`} unit={`of ${Math.round(targets.protein)}g protein`}
+              <Ring value={`${Math.round(t.protein)}g`} of={`of ${Math.round(targets.protein)}g`} label={past ? 'Protein' : 'Protein planned'}
                 pct={pct(t.protein, targets.protein)} color="var(--li)" />
-              <Ring value={past ? `${logged}/${active.length}` : active.length} unit={past ? 'meals' : 'meals planned'}
+              <Ring value={past ? logged : active.length} of={past ? `of ${active.length}` : 'meals'} label={past ? 'Meals' : 'Planned'}
                 pct={past ? pct(logged, active.length) : 100} color="var(--sk)" />
             </div>
           )}
