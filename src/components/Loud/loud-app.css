@@ -192,3 +192,9 @@ html.loud-app .lf-fab { bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 /* The "a buddy is out" dot sits on the icon now that icon and label share a row. */
 html.loud-app .bottom-nav-tab { position: relative; }
 html.loud-app .bottom-nav-dot { top: 5px; right: auto; left: calc(50% - 22px); }
+
+/* Meal card header: the condensed meal name is wide, so the hours wrap under it instead of running beneath the hall picker. */
+html.loud-app .meal-card-header { gap: 10px; align-items: flex-start; }
+html.loud-app .meal-header-left { flex: 1 1 auto; min-width: 0; }
+html.loud-app .meal-title-row { flex-wrap: wrap; row-gap: 0; column-gap: 8px; align-items: baseline; }
+html.loud-app .meal-header-right { flex: none; }
