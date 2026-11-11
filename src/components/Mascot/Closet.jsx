@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Mascot from './Mascot';
 import { OUTFITS, closetOrder, isUnlocked, unlockHint, visibleOutfits } from '../../data/mascotOutfits';
 import { setOutfit, useOutfit } from '../../lib/mascotOutfit';
@@ -15,6 +15,37 @@ import './Closet.css';
  * Tapping the piece being worn takes it off. */
 export default function Closet({ onClose }) {
   const worn = useOutfit();
+  // Swipe down to close: when the sheet is scrolled to the top, dragging down moves it with the finger. Let go past
+  // 90px, or with a quick flick, and it closes. Anything less springs back.
+  const sheetRef = useRef(null);
+  const drag = useRef(null);
+  const onTouchStart = (e) => {
+    const el = sheetRef.current;
+    if (!el || el.scrollTop > 0) { drag.current = null; return; }
+    drag.current = { y: e.touches[0].clientY, t: Date.now(), dy: 0 };
+  };
+  const onTouchMove = (e) => {
+    const d = drag.current; const el = sheetRef.current;
+    if (!d || !el) return;
+    d.dy = e.touches[0].clientY - d.y;
+    if (d.dy <= 0 || el.scrollTop > 0) { el.style.transform = ''; return; }
+    el.style.transition = 'none';
+    el.style.transform = `translateY(${d.dy}px)`;
+  };
+  const onTouchEnd = () => {
+    const d = drag.current; const el = sheetRef.current;
+    drag.current = null;
+    if (!d || !el) return;
+    const fast = d.dy > 40 && d.dy / Math.max(1, Date.now() - d.t) > 0.6;
+    el.style.transition = 'transform .22s ease';
+    if (d.dy > 90 || fast) {
+      haptics.light();
+      el.style.transform = 'translateY(100%)';
+      setTimeout(onClose, 200);
+    } else {
+      el.style.transform = '';
+    }
+  };
   const color = useMascotColor();
   const [perks, setPerks] = useState(undefined);   // buddy quests claimed, or null when Buddies is not there
   const [ctx, setCtx] = useState(null);
@@ -52,7 +83,8 @@ export default function Closet({ onClose }) {
 
   return (
     <div className="closet-overlay" onClick={onClose}>
-      <div className="closet" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Bento's closet">
+      <div className="closet" ref={sheetRef} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Bento's closet"
+        onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} onTouchCancel={onTouchEnd}>
         <div className="closet-handle" />
         <div className="closet-stage">
           <Mascot mood="cheer" size={120} outfit={worn} key={`${worn ?? 'none'}-${color ?? 'classic'}`} />

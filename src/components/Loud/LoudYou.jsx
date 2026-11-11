@@ -6,6 +6,7 @@ import Mascot from '../Mascot/Mascot';
 import LoudMyRatings from '../MyRatings/LoudMyRatings';
 import InsightsPanel from '../Insights/InsightsPanel';
 import Closet from '../Mascot/Closet';
+import { useDisplayOutfit } from '../../lib/mascotOutfit';
 import { weekSummary, activeDays } from './youStats.js';
 import './loud.css';
 import './loud-you.css';
@@ -25,6 +26,7 @@ export default function LoudYou({ onOpenSettings }) {
   const [data, setData] = useState(null);
   const [page, setPage] = useState('home');   // home | ratings | insights
   const [closet, setCloset] = useState(false);
+  const outfit = useDisplayOutfit();   // the same look Bento wears on Today, sunglasses and all
 
   useEffect(() => {
     let live = true;
@@ -48,7 +50,7 @@ export default function LoudYou({ onOpenSettings }) {
       <span className="loud-glow" style={{ background: 'var(--sk)', width: 220, height: 220, left: -70, top: 440 }} />
 
       <div className="ly-head">
-        <button type="button" className="ly-av" onClick={() => setCloset(true)} aria-label="Open Bento's closet"><Mascot size={48} hop={false} /></button>
+        <button type="button" className="ly-av" onClick={() => setCloset(true)} aria-label="Open Bento's closet"><Mascot size={48} hop={false} outfit={outfit} /></button>
         <div>
           <h1 className="ly-title">You</h1>
           <span className="ly-sub">{school?.shortName ?? school?.name ?? ''}{school && streak ? ' · ' : ''}{streak ? `${streak}-day streak` : ''}</span>
