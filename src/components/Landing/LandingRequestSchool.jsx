@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { submitUniversityRequest } from '../../lib/db';
 import ALL_UNIVERSITIES from '../../data/usUniversities.json';
+import './landingLoud.css';
 import './LandingRequestSchool.css';
 
 const REFERRAL_OPTIONS = [
@@ -72,14 +73,13 @@ export default function LandingRequestSchool() {
 
   if (status === 'success') {
     return (
-      <div className="lrs-page">
-        <div className="lrs-inner">
-          <div className="lrs-success">
-            <div className="lrs-success-icon">🍱</div>
-            <h2>You're on the list.</h2>
+      <div className="ld ld-page ld-request">
+        <div className="ld-page-inner">
+          <div className="ld-done">
+            <span className="ld-done-check ld-done-check--box" aria-hidden="true">🍱</span>
+            <h2>You’re on the list.</h2>
             <p>
-              We see you, and we're moving fast. The more people who rep their school,
-              the faster it happens. Send this to your friends and let's get {fields.university || 'your campus'} added.
+              Every request counts. Send this page to friends at {fields.university || 'your school'} to move up faster.
             </p>
           </div>
         </div>
@@ -88,104 +88,76 @@ export default function LandingRequestSchool() {
   }
 
   return (
-    <div className="lrs-page">
-      <div className="lrs-inner">
-        <h1 className="lrs-heading">Don't see your school? <br></br>Let's change that.</h1>
-        <p className="lrs-sub">
-          Bento is expanding and your campus could be next! Add your school to the waitlist and help us get there faster.
-        </p>
+    <div className="ld ld-page ld-request">
+      <div className="ld-glow" style={{ width: 400, height: 400, background: 'var(--ld-li)', left: '-8%', top: -40, opacity: .22 }} />
+      <div className="ld-page-inner">
+        <h1 className="ld-page-h1 ld-enter">Don’t see your school?<br /><span className="o">Let’s change that.</span></h1>
+        <p className="ld-page-sub ld-enter">Add your school. Every request moves your campus up the list.</p>
 
-        <form className="lrs-form" onSubmit={handleSubmit} noValidate>
-          <div className="lrs-field">
-            <label htmlFor="university">Which university do you attend? <span className="lrs-required">*</span></label>
-            <div className="lrs-autocomplete-wrap">
-              <input
-                id="university"
-                name="university"
-                type="text"
-                placeholder="Search your school…"
-                value={fields.university}
-                onChange={handleUniversityChange}
-                required
-                autoComplete="off"
-              />
-            </div>
+        <form className="ld-form ld-enter" onSubmit={handleSubmit} noValidate>
+          <div className="ld-field ld-ac">
+            <label htmlFor="university">Which university do you attend? <span className="ld-req">*</span></label>
+            <input
+              className="ld-input"
+              id="university"
+              name="university"
+              type="text"
+              placeholder="Search your school…"
+              value={fields.university}
+              onChange={handleUniversityChange}
+              required
+              autoComplete="off"
+            />
             {suggestions.length > 0 && (
-              <ul className="lrs-suggestions">
+              <ul className="ld-suggest">
                 {suggestions.map(s => (
                   <li key={s}>
-                    <button type="button" className="lrs-suggestion" onClick={() => pickSuggestion(s)}>
-                      {s}
-                    </button>
+                    <button type="button" onClick={() => pickSuggestion(s)}>{s}</button>
                   </li>
                 ))}
               </ul>
             )}
           </div>
 
-          <div className="lrs-row">
-            <div className="lrs-field">
-              <label htmlFor="email">Your email <span className="lrs-required">*</span></label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="you@university.edu"
-                value={fields.email}
-                onChange={handleChange}
-                required
-              />
+          <div className="ld-row">
+            <div className="ld-field">
+              <label htmlFor="email">Your email <span className="ld-req">*</span></label>
+              <input className="ld-input" id="email" name="email" type="email" placeholder="you@university.edu"
+                value={fields.email} onChange={handleChange} required />
             </div>
-            <div className="lrs-field">
-              <label htmlFor="name">Your name <span className="lrs-optional">(optional)</span></label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                placeholder="Jane Smith"
-                value={fields.name}
-                onChange={handleChange}
-              />
+            <div className="ld-field">
+              <label htmlFor="name">Your name <span className="ld-opt">optional</span></label>
+              <input className="ld-input" id="name" name="name" type="text" placeholder="Jane Smith"
+                value={fields.name} onChange={handleChange} />
             </div>
           </div>
 
-          <div className="lrs-field">
-            <label htmlFor="referral">How'd you find out about Bento? <span className="lrs-optional">(optional)</span></label>
-            <select
-              id="referral"
-              name="referral"
-              value={fields.referral}
-              onChange={handleChange}
-            >
+          <div className="ld-field">
+            <label htmlFor="referral">How’d you find Bento? <span className="ld-opt">optional</span></label>
+            <select className="ld-input" id="referral" name="referral" value={fields.referral} onChange={handleChange}>
               <option value="">Select one…</option>
               {REFERRAL_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
             </select>
           </div>
 
-          <label className="lrs-notify-label">
-            <input
-              type="checkbox"
-              name="notify"
-              checked={fields.notify}
-              onChange={handleChange}
-              className="lrs-notify-hidden"
-            />
-            <span className={`lrs-toggle ${fields.notify ? 'on' : ''}`}>
-              <span className="lrs-toggle-thumb" />
-            </span>
-            <span className="lrs-notify-text">Notify me when Bento comes to my school</span>
+          <label className="ld-switch">
+            <input type="checkbox" name="notify" checked={fields.notify} onChange={handleChange} />
+            <span className="ld-switch-track" aria-hidden="true"><span /></span>
+            <span>Email me when Bento comes to my school</span>
           </label>
 
           {status === 'error' && (
-            <p className="lrs-error">
+            <p className="ld-error">
               Something went wrong. Try again, or email us at{' '}
               <a href="mailto:bentodining@gmail.com">bentodining@gmail.com</a>.
             </p>
           )}
 
-          <button className="lrs-btn" type="submit" disabled={status === 'sending'}>
-            {status === 'sending' ? 'Sending…' : 'Add my school →'}
-          </button>
+          <div className="ld-form-foot">
+            <button className="ld-btn ld-btn--li" type="submit" disabled={status === 'sending'}>
+              {status === 'sending' ? 'Sending…' : 'Add my school →'}
+            </button>
+          </div>
         </form>
       </div>
     </div>

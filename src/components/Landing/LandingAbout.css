@@ -1,188 +1,58 @@
-.landing-about {
-  background: var(--cream);
-  font-family: var(--ff-body);
-  color: var(--navy);
+/* About, Loud look. Page scaffolding (.ld-page, .ld-page-h1) lives in ldPage.css,
+   imported by each inner page so each works on its own. */
+@import './ldPage.css';
+
+.ld-about-hero { position: relative; }
+/* In a row with the intro paragraph, so it takes its own space and never sits over text. */
+.ld-about-intro { display: flex; align-items: flex-start; justify-content: space-between; gap: 40px; margin-top: 28px; }
+.ld-about-intro .ld-page-sub { margin-top: 0; }
+.ld-about-sticker {
+  flex: none; width: 140px; height: 130px; margin-right: 40px; rotate: 10deg;
+  animation: ld-pop-in .7s var(--ld-pop) .5s both, ld-wiggle-tilt 5s ease-in-out 1.4s infinite;
 }
+.ld-about .ld-marq { margin-top: 64px; }
 
-/* ── Hero ── */
-.lab-hero {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 72px 24px 64px;
+.ld-about-grid {
+  max-width: 1040px; margin: 0 auto; padding: 64px 24px 0;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
 }
-
-.lab-eyebrow {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--orange);
-  margin: 0 0 20px;
+.ld-about-blk { border-radius: 28px; padding: 32px; color: var(--ld-bg); transition: transform .35s var(--ld-pop); }
+.ld-about-blk:nth-child(1) { animation-delay: .35s; }
+.ld-about-blk:nth-child(2) { animation-delay: .45s; }
+.ld-about-blk:hover { transform: translateY(-6px) rotate(-1deg); }
+.ld-about-blk h2 {
+  font-family: var(--ld-disp); font-weight: 800; font-stretch: 92%; font-size: 44px; line-height: .9;
+  letter-spacing: -.012em; text-transform: uppercase; margin: 0 0 16px;
 }
+.ld-about-blk p { margin: 0; font-size: 16px; line-height: 1.55; font-weight: 500; }
 
-.lab-heading {
-  font-family: var(--ff-disp);
-  font-size: clamp(2rem, 5vw, 3rem);
-  font-weight: 800;
-  line-height: 1.1;
-  color: var(--navy);
-  margin: 0 0 28px;
+.ld-founder { max-width: 1040px; margin: 0 auto; padding: 96px 24px 0; }
+.ld-founder-card {
+  display: grid; grid-template-columns: 280px 1fr; gap: 36px; align-items: center;
+  background: var(--ld-bg2); border: 1px solid var(--ld-line); border-radius: 32px; padding: 28px;
 }
-
-.lab-intro {
-  font-size: 1.05rem;
-  line-height: 1.75;
-  color: var(--muted);
-  max-width: 600px;
-  margin: 0;
+.ld-founder-photo { border-radius: 24px; overflow: hidden; rotate: -3deg; box-shadow: 0 20px 40px rgba(0,0,0,.45); transition: rotate .4s var(--ld-pop); }
+.ld-founder-card:hover .ld-founder-photo { rotate: 0deg; }
+.ld-founder-photo img { display: block; width: 100%; height: auto; }
+.ld-founder-tx h2 {
+  font-family: var(--ld-disp); font-weight: 800; font-stretch: 92%; font-size: 48px; line-height: .9;
+  letter-spacing: -.012em; text-transform: uppercase; margin: 0;
 }
+.ld-founder-role { color: var(--ld-or); font-weight: 600; margin: 10px 0 16px; }
+.ld-founder-tx p:last-child { color: var(--ld-cream2); font-size: 17px; line-height: 1.6; margin: 0; }
 
-/* ── What / Who ── */
-.lab-what {
-  border-top: 1px solid var(--lh-border);
-  padding: 64px 24px;
-}
+.ld-about-contact { max-width: 1040px; margin: 0 auto; padding: 110px 24px 120px; text-align: center; }
+.ld-about-contact .ld-page-sub { margin-left: auto; margin-right: auto; }
+.ld-about-contact .ld-btn { margin-top: 26px; }
 
-.lab-what-inner {
-  max-width: 760px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 48px;
-}
+/* Below this the paragraph runs the full width, so there is no free space for the sticker. */
+@media (max-width: 920px) { .ld-about-sticker { display: none; } }
 
-.lab-block-title {
-  font-family: var(--ff-disp);
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--navy);
-  margin: 0 0 14px;
-}
+@media (max-width: 760px) {
 
-.lab-block-body {
-  font-size: 0.95rem;
-  line-height: 1.75;
-  color: var(--muted);
-  margin: 0;
-}
-
-/* ── Team ── */
-.lab-team {
-  border-top: 1px solid var(--lh-border);
-  padding: 64px 24px;
-  max-width: 760px;
-  margin: 0 auto;
-}
-
-.lab-team-list {
-  display: flex;
-  flex-direction: column;
-  gap: 48px;
-  margin-top: 32px;
-}
-
-.lab-card {
-  display: flex;
-  flex-direction: row;
-  gap: 36px;
-  align-items: flex-start;
-}
-
-.lab-card-photo-wrap {
-  flex-shrink: 0;
-  width: 180px;
-  height: 238px;
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  background: var(--lh-border);
-}
-
-.lab-card-photo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top center;
-  display: block;
-}
-
-.lab-card-text {
-  padding-top: 6px;
-}
-
-.lab-card-name {
-  font-family: var(--ff-disp);
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--navy);
-  margin: 0 0 4px;
-}
-
-.lab-card-role {
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--orange);
-  margin: 0 0 14px;
-}
-
-.lab-card-bio {
-  font-size: 0.95rem;
-  line-height: 1.75;
-  color: var(--muted);
-  margin: 0;
-  max-width: 480px;
-}
-
-/* ── Contact ── */
-.lab-contact {
-  border-top: 1px solid var(--lh-border);
-  padding: 64px 24px 100px;
-  max-width: 760px;
-  margin: 0 auto;
-}
-
-.lab-contact-hed {
-  font-family: var(--ff-disp);
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--navy);
-  margin: 0 0 12px;
-}
-
-.lab-contact-body {
-  font-size: 0.95rem;
-  color: var(--muted);
-  margin: 0 0 20px;
-  line-height: 1.6;
-}
-
-.lab-contact-link {
-  display: inline-block;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--orange);
-  text-decoration: none;
-  border-bottom: 1.5px solid var(--orange);
-  padding-bottom: 2px;
-}
-
-.lab-contact-link:hover { opacity: 0.8; }
-
-/* ── Responsive ── */
-@media (max-width: 600px) {
-  .lab-what-inner {
-    grid-template-columns: 1fr;
-    gap: 32px;
-  }
-
-  .lab-card {
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  .lab-card-photo-wrap {
-    width: 140px;
-    height: 185px;
-  }
+  .ld-about-grid { grid-template-columns: 1fr; padding: 48px 16px 0; }
+  .ld-founder { padding: 72px 16px 0; }
+  .ld-founder-card { grid-template-columns: 1fr; padding: 20px; }
+  .ld-founder-photo { max-width: 260px; }
+  .ld-about-contact { padding: 90px 16px 100px; }
 }

@@ -8,6 +8,10 @@ import TermsPage from '../Terms/TermsPage';
 import PrivacyPage from '../Terms/PrivacyPage';
 import { APP_STORE_URL } from '../../data/links';
 import './LandingPage.css';
+import './landingLoud.css';
+
+/* Every page on the site takes the Loud look, so the nav and footer never switch style between tabs. */
+const LOUD_TABS = new Set(['home', 'about', 'contact', 'request', 'universities', 'terms', 'privacy']);
 
 const NAV_TABS = [
   { id: 'home',         label: 'For Students' },
@@ -27,6 +31,19 @@ export default function LandingPage({ onGetStarted, initialTab = 'home' }) {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  const loud = LOUD_TABS.has(activeTab);
+  useEffect(() => {
+    document.documentElement.classList.toggle('ld-site', loud);
+    // Browser chrome matches the dark site, and goes back to the app's color on the way out.
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const prev = meta?.getAttribute('content');
+    if (loud && meta) meta.setAttribute('content', '#0D0D10');
+    return () => {
+      document.documentElement.classList.remove('ld-site');
+      if (meta && prev) meta.setAttribute('content', prev);
+    };
+  }, [loud]);
+
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
     setDrawerOpen(false);
@@ -34,7 +51,7 @@ export default function LandingPage({ onGetStarted, initialTab = 'home' }) {
   };
 
   return (
-    <div className="landing-page">
+    <div className={`landing-page${loud ? ' ld' : ''}`}>
 
       {/* ── Nav ── */}
       <header className={`landing-nav${scrolled ? ' scrolled' : ''}`}>
@@ -51,7 +68,9 @@ export default function LandingPage({ onGetStarted, initialTab = 'home' }) {
 
           {/* Logo */}
           <button className="landing-nav-logo-btn" onClick={() => handleTabChange('home')} aria-label="Bento home">
-            <img src="/logo-cropped.png" alt="Bento" className="landing-logo-img" />
+            {loud
+              ? <img src="/logo-cropped-beige.png" alt="Bento" className="ld-logo" width="717" height="241" />
+              : <img src="/logo-cropped.png" alt="Bento" className="landing-logo-img" />}
           </button>
 
           {/* Desktop links */}
@@ -70,10 +89,17 @@ export default function LandingPage({ onGetStarted, initialTab = 'home' }) {
           {/* Desktop CTA */}
           {/* Labelled with the platform, so nobody learns it is iOS only after
               the click. The hero below carries the browser option. */}
-          <a className="landing-nav-badge" href={APP_STORE_URL}
-            target="_blank" rel="noopener noreferrer">
-            <img src="/app-store-badge.svg" alt="Download on the App Store" width="120" height="40" />
-          </a>
+          {loud ? (
+            <a className="ld-btn landing-nav-get" href={APP_STORE_URL}
+              target="_blank" rel="noopener noreferrer">
+              Get the app
+            </a>
+          ) : (
+            <a className="landing-nav-badge" href={APP_STORE_URL}
+              target="_blank" rel="noopener noreferrer">
+              <img src="/app-store-badge.svg" alt="Download on the App Store" width="120" height="40" />
+            </a>
+          )}
 
           {/* Mobile spacer */}
           <div className="landing-nav-spacer" aria-hidden="true" />
@@ -115,7 +141,7 @@ export default function LandingPage({ onGetStarted, initialTab = 'home' }) {
       {/* ── Content ── */}
       <main className="landing-main">
         {activeTab === 'home' && (
-          <LandingHome onGoUniversities={() => handleTabChange('universities')} />
+          <LandingHome onGoUniversities={() => handleTabChange('universities')} onGetStarted={onGetStarted} />
         )}
         {activeTab === 'universities' && (
           <LandingUniversities />

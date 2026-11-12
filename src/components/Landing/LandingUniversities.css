@@ -1,1013 +1,128 @@
 @import './landingTokens.css';
 
-/* ── Bento Pulse landing section ─────────────────────────────────────────────
-   All rules scoped under .landing-universities to avoid conflicts.
-   Token variables defined locally on .landing-universities.
+/* ── Bento Pulse ──────────────────────────────────────────────────────────────
+   The site's Loud palette and type, held back for an administrator audience:
+   sentence-case headings, orange as the one accent, hairline structure, no
+   stickers or glows. The --lpu-* names stay because PulseCarousel.css reads them.
 ────────────────────────────────────────────────────────────────────────────── */
 
 .landing-universities {
-  --lpu-bg:      #0c1523;
-  --lpu-surface: #111e2e;
-  --lpu-border:  rgba(255,255,255,0.07);
-  --lpu-orange:  #fd8f2a;
-  --lpu-green:   #77be3d;
-  --lpu-text:    #edf1f7;
-  --lpu-muted:   rgba(237,241,247,0.62);
-  --lpu-faint:   rgba(237,241,247,0.22);
-  --lpu-font:    -apple-system, 'Instrument Sans', 'Inter', 'Segoe UI', sans-serif;
-
-  background: var(--lpu-bg);
-  background-image: radial-gradient(rgba(255,255,255,0.045) 1px, transparent 1px);
-  background-size: 26px 26px;
-  color: var(--lpu-text);
-  font-family: var(--lpu-font);
-  font-size: var(--t-base);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ── SHARED UTILITIES ────────────────────────────────────────────────────────*/
-
-.landing-universities .lpu-section-inner {
-  max-width: 980px;
-  margin: 0 auto;
-}
-
-.landing-universities .lpu-s-label {
-  font-size: var(--t-xs);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  /* Was --lpu-faint, which composites to 1.9:1 on the dark ground: not a
-     quiet label, an unreadable one. Orange is already the label colour on the
-     student page and measures around 8:1 here. */
-  color: var(--lpu-orange);
-  margin-bottom: 0.75rem;
-}
-
-.landing-universities .lpu-s-head {
-  font-size: clamp(var(--t-lg), 3.5vw, var(--t-2xl));
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--lpu-text);
-  line-height: 1.2;
-  text-wrap: balance;
-}
-
-.landing-universities .lpu-s-sub {
-  font-size: var(--t-base);
-  color: var(--lpu-muted);
-  line-height: 1.75;
-}
-
-/* ── HERO ────────────────────────────────────────────────────────────────────*/
-
-.landing-universities .lpu-hero {
-  position: relative;
-  padding: 5rem 1.5rem 5rem;
-  text-align: center;
-  /* No background of its own. The hero was the one white band on an otherwise
-     dark page, so it inherits the page ground and Pulse reads as a single
-     surface: light and warm for students, dark and analytical here. The
-     earlier fades between the two were patching a seam that should not have
-     existed. */
-  overflow: hidden;
-}
-
-.landing-universities .lpu-hero-inner {
-  position: relative;
-  max-width: 700px;
-  margin: 0 auto;
-}
-
-.landing-universities .lpu-hero-logo {
-  height: 52px;
-  width: auto;
-  margin-bottom: 2.25rem;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.landing-universities .lpu-hero-headline {
-  font-size: clamp(var(--t-2xl), 5.5vw, var(--t-4xl));
-  font-weight: 600;
-  line-height: 1.1;
-  letter-spacing: -0.025em;
-  color: var(--lpu-text);
-  margin-bottom: 1.4rem;
-  text-wrap: balance;
-}
-
-.landing-universities .lpu-hero-headline em {
-  font-style: normal;
-  color: var(--lpu-orange);
-}
-
-/* Two sentences, two lines. Left to wrap on its own the headline broke as
-   "Your system knows what's / served. Bento knows / what students choose.",
-   which orphans "served." and starts the orange clause mid-line. Only above
-   700px, because forcing the break on a phone would make each line wrap
-   again anyway. */
-@media (min-width: 700px) {
-  .landing-universities .lpu-hero-headline em { display: block; }
-}
-
-.landing-universities .lpu-hero-sub {
-  font-size: var(--t-md);
-  color: var(--lpu-muted);
-  font-weight: 300;
-  line-height: 1.7;
-  max-width: 560px;
-  margin: 0 auto 2.5rem;
-}
-
-.landing-universities .lpu-hero-actions {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.85rem;
-  flex-wrap: wrap;
-}
-
-.landing-universities .lpu-btn-primary {
-  background: var(--lpu-orange);
-  color: #0c1523;
-  border: none;
-  border-radius: 6px;
-  padding: 0.72rem 1.6rem;
-  font-size: var(--t-sm);
-  font-weight: 600;
-  cursor: pointer;
-  font-family: var(--lpu-font);
-  transition: opacity 0.15s;
-}
-
-.landing-universities .lpu-btn-primary:hover { opacity: 0.88; }
-
-.landing-universities .lpu-btn-ghost {
-  background: transparent;
-  color: var(--lpu-muted);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 6px;
-  padding: 0.72rem 1.4rem;
-  font-size: var(--t-sm);
-  font-weight: 500;
-  cursor: pointer;
-  font-family: var(--lpu-font);
-  transition: color 0.15s, border-color 0.15s;
-}
-
-.landing-universities .lpu-btn-ghost:hover {
-  color: var(--lpu-text);
-  border-color: rgba(255, 255, 255, 0.45);
-}
-
-/* ── STATS STRIP ─────────────────────────────────────────────────────────────*/
-
-.landing-universities .lpu-stats {
-  border-top: 1px solid var(--lpu-border);
-  border-bottom: 1px solid var(--lpu-border);
-  background: var(--lpu-bg);
-}
-
-.landing-universities .lpu-stats-inner {
-  max-width: 980px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-}
-
-.landing-universities .lpu-stat {
-  padding: 2rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  border-right: 1px solid var(--lpu-border);
-}
-
-.landing-universities .lpu-stat:last-child { border-right: none; }
-
-.landing-universities .lpu-stat-num {
-  font-size: var(--t-2xl);
-  font-weight: 600;
-  letter-spacing: -0.04em;
-  color: var(--lpu-text);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-
-.landing-universities .lpu-stat-label {
-  font-size: var(--t-sm);
-  color: var(--lpu-muted);
-  line-height: 1.5;
-}
-
-/* ── MOCKUP SECTION ──────────────────────────────────────────────────────────*/
-
-.landing-universities .lpu-mockup-section {
-  padding: 5rem 1.5rem 6rem;
-}
-
-.landing-universities .lpu-mockup-head {
-  text-align: center;
-  margin-bottom: 3rem;
-}
-
-.landing-universities .lpu-mockup-head .lpu-s-sub {
-  max-width: 520px;
-  margin: 0.75rem auto 0;
-  text-align: center;
-}
-
-.landing-universities .lpu-mockup-wrap {
-  border-radius: 10px;
-  overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.1);
-  box-shadow:
-    0 0 0 1px rgba(253,143,42,0.06),
-    0 40px 100px rgba(0,0,0,0.55),
-    0 0 80px rgba(253,143,42,0.04);
-}
-
-/* ── DASHBOARD UI ────────────────────────────────────────────────────────────*/
-
-.landing-universities .lpu-mockup {
-  background: #f7f4f0;
-  font-family: var(--lpu-font);
-  color: #1a2b3c;
-}
-
-.landing-universities .lpu-db-bar {
-  background: white;
-  border-bottom: 1px solid #e8e3dd;
-  height: 50px;
-  padding: 0 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.landing-universities .lpu-db-logo {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  font-size: var(--t-sm);
-  font-weight: 700;
-  color: #1a2b3c;
-  letter-spacing: -0.01em;
-}
-
-.landing-universities .lpu-db-logo-mark {
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  background: #fd8f2a;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.landing-universities .lpu-db-right {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.landing-universities .lpu-db-period-group {
-  display: flex;
-  align-items: center;
-  border: 1px solid #e8e3dd;
-  border-radius: 5px;
-  overflow: hidden;
-}
-
-.landing-universities .lpu-db-period {
-  font-size: var(--t-xs);
-  font-weight: 600;
-  color: #94a3b8;
-  padding: 0.22rem 0.55rem;
-  cursor: default;
-  border-right: 1px solid #e8e3dd;
-  background: white;
-}
-
-.landing-universities .lpu-db-period:last-child { border-right: none; }
-.landing-universities .lpu-db-period.on { background: #1a2b3c; color: white; }
-
-.landing-universities .lpu-db-export {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: var(--t-xs);
-  font-weight: 600;
-  color: #64748b;
-  border: 1px solid #e8e3dd;
-  background: white;
-  border-radius: 5px;
-  padding: 0.22rem 0.65rem;
-  cursor: default;
-}
-
-.landing-universities .lpu-db-body {
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-}
-
-/* KPI cards */
-.landing-universities .lpu-db-kpi-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.75rem;
-}
-
-.landing-universities .lpu-db-kpi {
-  background: white;
-  border-radius: 8px;
-  padding: 1rem 1.1rem 0.85rem;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.04);
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.landing-universities .lpu-db-kpi-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-}
-
-.landing-universities .lpu-db-kpi-lbl {
-  font-size: var(--t-xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: #94a3b8;
-}
-
-.landing-universities .lpu-db-kpi-chg {
-  font-size: var(--t-xs);
-  font-weight: 700;
-  padding: 0.1rem 0.35rem;
-  border-radius: 3px;
-}
-
-.landing-universities .lpu-db-kpi-chg.up   { background: rgba(119,190,61,0.1);  color: #59a02a; }
-.landing-universities .lpu-db-kpi-chg.down  { background: rgba(239,68,68,0.1);   color: #dc2626; }
-
-.landing-universities .lpu-db-kpi-val {
-  font-size: var(--t-xl);
-  font-weight: 700;
-  color: #1a2b3c;
-  letter-spacing: -0.03em;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.landing-universities .lpu-kpi-spark {
-  width: 80px;
-  height: 20px;
-  display: block;
-  margin-top: 0.2rem;
-  overflow: visible;
-}
-
-/* Charts row */
-.landing-universities .lpu-db-charts {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr;
-  gap: 0.85rem;
-}
-
-.landing-universities .lpu-db-card {
-  background: white;
-  border-radius: 8px;
-  padding: 1rem 1.1rem;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.04);
-}
-
-.landing-universities .lpu-db-card-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.85rem;
-}
-
-.landing-universities .lpu-db-card-ttl {
-  font-size: var(--t-xs);
-  font-weight: 700;
-  color: #1a2b3c;
-}
-
-.landing-universities .lpu-db-card-meta {
-  font-size: var(--t-xs);
-  color: #94a3b8;
-}
-
-/* Area chart */
-.landing-universities .lpu-area-svg {
-  width: 100%;
-  height: auto;
-  display: block;
-  overflow: visible;
-}
-
-.landing-universities .lpu-area-legend {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  margin-top: 0.6rem;
-  font-size: var(--t-xs);
-  color: #94a3b8;
-}
-
-.landing-universities .lpu-legend-swatch {
-  display: inline-block;
-  width: 10px;
-  height: 2px;
-  border-radius: 1px;
-  flex-shrink: 0;
-}
-
-/* Dietary breakdown */
-.landing-universities .lpu-dietary {
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-}
-
-.landing-universities .lpu-diet-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.landing-universities .lpu-diet-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: var(--t-xs);
-}
-
-.landing-universities .lpu-diet-name { font-weight: 600; color: #334155; }
-.landing-universities .lpu-diet-val  { font-weight: 700; color: #1a2b3c; font-variant-numeric: tabular-nums; }
-
-.landing-universities .lpu-diet-track {
-  height: 5px;
-  background: #f0ece8;
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.landing-universities .lpu-diet-bar {
-  height: 100%;
-  border-radius: 3px;
-}
-
-/* Top items table */
-.landing-universities .lpu-items { display: flex; flex-direction: column; }
-
-.landing-universities .lpu-items-head {
-  display: grid;
-  grid-template-columns: 24px 1fr 120px 60px 48px;
-  gap: 0.5rem;
-  padding: 0 0.4rem 0.5rem;
-  border-bottom: 1px solid #f0ece8;
-  font-size: var(--t-xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: #94a3b8;
-}
-
-.landing-universities .lpu-item {
-  display: grid;
-  grid-template-columns: 24px 1fr 120px 60px 48px;
-  gap: 0.5rem;
-  padding: 0.55rem 0.4rem;
-  align-items: center;
-  border-bottom: 1px solid #f7f4f0;
-}
-
-.landing-universities .lpu-item:last-child { border-bottom: none; }
-
-.landing-universities .lpu-item-rank  { font-size: var(--t-xs); font-weight: 700; color: #cbd5e1; }
-.landing-universities .lpu-item-name  { font-size: var(--t-xs); color: #334155; font-weight: 500; }
-.landing-universities .lpu-item-count { font-size: var(--t-xs); font-weight: 700; color: #1a2b3c; font-variant-numeric: tabular-nums; }
-.landing-universities .lpu-item-pct   { font-size: var(--t-xs); color: #94a3b8; font-variant-numeric: tabular-nums; }
-
-.landing-universities .lpu-item-track {
-  height: 4px;
-  background: #f0ece8;
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.landing-universities .lpu-item-bar {
-  height: 100%;
-  background: #fd8f2a;
-  border-radius: 2px;
-}
-
-/* ── FEATURES ────────────────────────────────────────────────────────────────*/
-
-.landing-universities .lpu-features {
-  padding: 5rem 1.5rem;
-  border-top: 1px solid var(--lpu-border);
-}
-
-.landing-universities .lpu-features .lpu-s-label { margin-bottom: 0.75rem; }
-.landing-universities .lpu-features .lpu-s-head  { margin-bottom: 3rem; }
-
-.landing-universities .lpu-features-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0;
-}
-
-.landing-universities .lpu-feature {
-  padding: 2.25rem 0;
-  border-bottom: 1px solid var(--lpu-border);
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.landing-universities .lpu-feature:nth-child(odd)        { padding-right: 3rem; border-right: 1px solid var(--lpu-border); }
-.landing-universities .lpu-feature:nth-child(even)       { padding-left: 3rem; }
-/* Clears the bottom rule from the final row of the two-column grid.
-   nth-last-child(-n+2) was meant to do that, but the full-width suggestions
-   card is the fifth child, so it matched cells 4 and 5 and left cell 3 with a
-   rule its neighbour did not have: a line that stopped halfway across. Three
-   from the end covers both cells of the last row plus the wide card. */
-.landing-universities .lpu-feature:nth-last-child(-n+3)  { border-bottom: none; }
-
-/* Suggestions card spans full width */
-/* Doubled class so this outranks :nth-child(odd) above, which is one level
-   more specific and otherwise decides this card's right-hand edge.
-   The border-right/border-bottom resets that used to sit here were dead: the
-   `border` shorthand two lines down reset all four edges anyway, which is
-   what gives this card its outline. */
-.landing-universities .lpu-feature.lpu-feature--wide {
-  grid-column: 1 / -1;
-  padding: 2.25rem 2rem;
-  background: rgba(253,143,42,0.05);
-  border: 1px solid rgba(253,143,42,0.15);
-  border-radius: var(--r-sm, 10px);
-  margin-top: 1.5rem;
-}
-
-.landing-universities .lpu-feature-icon {
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--lpu-orange);
-  margin-bottom: 0.2rem;
-}
-
-.landing-universities .lpu-feature-title {
-  font-size: var(--t-base);
-  font-weight: 600;
-  color: var(--lpu-text);
-  line-height: 1.3;
-}
-
-.landing-universities .lpu-feature-desc {
-  font-size: var(--t-base);
-  color: var(--lpu-muted);
-  line-height: 1.75;
-}
-
-/* ── HOW IT WORKS ────────────────────────────────────────────────────────────*/
-
-.landing-universities .lpu-how {
-  padding: 5rem 1.5rem;
-  border-top: 1px solid var(--lpu-border);
-}
-
-.landing-universities .lpu-how-inner {
-  max-width: 480px;
-  margin: 0 auto;
-}
-
-.landing-universities .lpu-how .lpu-s-head { margin-top: 0.75rem; margin-bottom: 0; }
-
-.landing-universities .lpu-steps {
-  margin-top: 2.5rem;
-  position: relative;
-}
-
-.landing-universities .lpu-steps::before {
-  content: '';
-  position: absolute;
-  left: 15px;
-  top: 30px;
-  bottom: 30px;
-  width: 1px;
-  background: linear-gradient(to bottom, var(--lpu-orange), rgba(253,143,42,0.08));
-}
-
-.landing-universities .lpu-step {
-  display: flex;
-  gap: 1.5rem;
-  align-items: flex-start;
-  padding-bottom: 2.75rem;
-}
-
-.landing-universities .lpu-step:last-child { padding-bottom: 0; }
-
-.landing-universities .lpu-step-num {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 1px solid var(--lpu-orange);
-  color: var(--lpu-orange);
-  font-size: var(--t-xs);
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  background: var(--lpu-bg);
-  position: relative;
-  z-index: 1;
-}
-
-.landing-universities .lpu-step-content { padding-top: 0.2rem; }
-
-.landing-universities .lpu-step-title {
-  font-size: var(--t-base);
-  font-weight: 600;
-  color: var(--lpu-text);
-  margin-bottom: 0.35rem;
-}
-
-.landing-universities .lpu-step-desc {
-  font-size: var(--t-sm);
-  color: var(--lpu-muted);
-  line-height: 1.75;
-}
-
-/* ── TRUST ───────────────────────────────────────────────────────────────────*/
-
-.landing-universities .lpu-trust {
-  border-top: 1px solid var(--lpu-border);
-  padding: 4rem 1.5rem;
-}
-
-.landing-universities .lpu-trust-inner {
-  max-width: 980px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0;
-}
-
-.landing-universities .lpu-trust-item {
-  padding-right: 2.5rem;
-  margin-right: 2.5rem;
-  border-right: 1px solid var(--lpu-border);
-}
-
-.landing-universities .lpu-trust-item:last-child {
-  border-right: none;
-  padding-right: 0;
-  margin-right: 0;
-}
-
-.landing-universities .lpu-trust-heading {
-  font-size: var(--t-sm);
-  font-weight: 600;
-  color: var(--lpu-text);
-  margin-bottom: 0.4rem;
-}
-
-.landing-universities .lpu-trust-body {
-  font-size: var(--t-sm);
-  color: var(--lpu-muted);
-  line-height: 1.7;
-}
-
-/* ── CONSULTATION ────────────────────────────────────────────────────────────*/
-
-.landing-universities .lpu-consult {
-  border-top: 1px solid var(--lpu-border);
-  padding: 5.5rem 1.5rem 6rem;
-  position: relative;
-  overflow: hidden;
-}
-
-.landing-universities .lpu-consult::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse 60% 60% at 50% 100%, rgba(253,143,42,0.08) 0%, transparent 65%);
-  pointer-events: none;
-}
-
-.landing-universities .lpu-consult-inner {
-  max-width: 540px;
-  margin: 0 auto;
-  position: relative;
-  text-align: center;
-}
-
-.landing-universities .lpu-consult-heading {
-  font-size: clamp(var(--t-lg), 3.5vw, var(--t-2xl));
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--lpu-text);
-  margin-bottom: 0.75rem;
-  text-wrap: balance;
-  line-height: 1.2;
-}
-
-.landing-universities .lpu-consult-sub {
-  font-size: var(--t-sm);
-  color: var(--lpu-muted);
-  line-height: 1.75;
-  margin-bottom: 1.5rem;
-}
-
-.landing-universities .lpu-consult-meta {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  font-size: var(--t-xs);
-  color: var(--lpu-faint);
-  margin-bottom: 2.25rem;
-}
-
-.landing-universities .lpu-cmeta-dot {
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: var(--lpu-faint);
-  flex-shrink: 0;
-}
-
-.landing-universities .lpu-consult-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  text-align: left;
-}
-
-.landing-universities .lpu-form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-}
-
-.landing-universities .lpu-form-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.landing-universities .lpu-form-label {
-  font-size: var(--t-xs);
-  font-weight: 600;
-  color: var(--lpu-muted);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.landing-universities .lpu-form-input {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--lpu-border);
-  border-radius: 5px;
-  padding: 0.65rem 0.85rem;
-  font-size: var(--t-sm);
-  color: var(--lpu-text);
-  font-family: var(--lpu-font);
-  outline: none;
-  transition: border-color 0.15s;
-  width: 100%;
-}
-
-.landing-universities .lpu-form-input::placeholder { color: var(--lpu-faint); }
-.landing-universities .lpu-form-input:focus        { border-color: rgba(253,143,42,0.4); }
-
-.landing-universities .lpu-form-submit {
-  background: var(--lpu-orange);
-  color: #0c1523;
-  border: none;
-  border-radius: 5px;
-  padding: 0.78rem;
-  font-size: var(--t-sm);
-  font-weight: 600;
-  cursor: pointer;
-  font-family: var(--lpu-font);
-  transition: opacity 0.15s;
-  width: 100%;
-  margin-top: 0.25rem;
-}
-
-.landing-universities .lpu-form-submit:hover:not(:disabled) { opacity: 0.88; }
-.landing-universities .lpu-form-submit:disabled { opacity: 0.45; cursor: not-allowed; }
-
-.landing-universities .lpu-consult-error {
-  font-size: var(--t-sm);
-  color: #ff8888;
-  background: rgba(255,100,100,0.08);
-  border: 1px solid rgba(255,100,100,0.2);
-  border-radius: 8px;
-  padding: 0.6rem 0.875rem;
-  margin: 0;
-  line-height: 1.5;
-}
-
-.landing-universities .lpu-consult-error a {
-  color: #ff9999;
-  font-weight: 600;
-}
-
-.landing-universities .lpu-consult-success {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 2.5rem 1rem;
-  text-align: center;
-}
-
-.landing-universities .lpu-consult-check {
-  font-size: var(--t-2xl);
-  color: var(--lpu-green);
-}
-
-.landing-universities .lpu-consult-success-hed {
-  font-size: var(--t-md);
-  font-weight: 800;
-  color: var(--lpu-text);
-  margin: 0;
-}
-
-.landing-universities .lpu-consult-success-sub {
-  font-size: var(--t-sm);
-  color: var(--lpu-muted);
-  margin: 0;
-  max-width: 320px;
-  line-height: 1.6;
-}
-
-.landing-universities .lpu-consult-note {
-  margin-top: 1rem;
-  font-size: var(--t-xs);
-  color: var(--lpu-faint);
-  line-height: 1.6;
-}
-
-/* ── RESPONSIVE ──────────────────────────────────────────────────────────────*/
-
-@media (max-width: 700px) {
-  .landing-universities .lpu-stats-inner {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .landing-universities .lpu-stat {
-    border-right: none;
-    border-bottom: 1px solid var(--lpu-border);
-  }
-
-  .landing-universities .lpu-stat:nth-child(odd)        { border-right: 1px solid var(--lpu-border); }
-  .landing-universities .lpu-stat:nth-last-child(-n+2)  { border-bottom: none; }
-
-  .landing-universities .lpu-db-kpi-row { grid-template-columns: repeat(2, 1fr); }
-  .landing-universities .lpu-db-charts  { grid-template-columns: 1fr; }
-
-  .landing-universities .lpu-db-period:not(.on) { display: none; }
-
-  .landing-universities .lpu-items-head,
-  .landing-universities .lpu-item {
-    grid-template-columns: 24px 1fr 80px 48px;
-  }
-
-  .landing-universities .lpu-item-pct { display: none; }
-
-  .landing-universities .lpu-features-grid { grid-template-columns: 1fr; }
-
-  .landing-universities .lpu-feature:nth-child(odd)  {
-    padding-right: 0;
-    border-right: none;
-    border-bottom: 1px solid var(--lpu-border);
-  }
-
-  .landing-universities .lpu-feature:nth-child(even) { padding-left: 0; }
-
-  .landing-universities .lpu-feature:nth-last-child(-n+2):not(.lpu-feature--wide) {
-    border-bottom: 1px solid var(--lpu-border);
-  }
-
-  .landing-universities .lpu-trust-inner { grid-template-columns: 1fr; }
-
-  .landing-universities .lpu-trust-item {
-    border-right: none;
-    padding-right: 0;
-    margin-right: 0;
-    border-bottom: 1px solid var(--lpu-border);
-    padding-bottom: 2rem;
-  }
-
-  .landing-universities .lpu-trust-item:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-  }
-
-  .landing-universities .lpu-form-row { grid-template-columns: 1fr; }
-}
-
-/* Marks the dashboard figures as illustrative. Bento is live at two campuses,
-   so the numbers in the mockup are a layout demonstration, not results. */
-.lpu-db-sample {
-  margin-left: 0.5rem;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: rgba(100, 116, 139, 0.12);
-  color: #64748b;
-  font-size: var(--t-xs);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.lpu-s-note {
-  margin: 0.6rem auto 0;
-  max-width: 54ch;
-  font-size: var(--t-sm);
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.55);
-}
-
-
-/* ── Pulse wordmark ──
-   Mark plus live text, so it inherits the page's colours. The bentopulse.png
-   wordmark drew "Bento" in near-black and only worked on a white ground. */
-.landing-universities .lpu-wordmark {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin-bottom: 1.75rem;
-}
-
-.landing-universities .lpu-wordmark-mark {
-  width: 34px;
-  height: 34px;
-  display: block;
-}
-
-.landing-universities .lpu-wordmark-text {
-  font-size: var(--t-xl);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--lpu-text);
-}
-
-.landing-universities .lpu-wordmark-text span {
-  color: var(--lpu-orange);
-  margin-left: 0.28em;
-}
-
-/* ═══════════════════════════════════════════
-   CONTAINER
-   The same width and the same edges as the student page, from the shared
-   token. Pulse sized its own containers (980px and several one-offs), so the
-   two pages did not line up with each other even where they showed the same
-   kind of content.
-═══════════════════════════════════════════ */
-.landing-universities .lpu-section-inner,
-.landing-universities .lpu-hero-inner,
-.landing-universities .lpu-stats-inner,
-.landing-universities .lpu-how-inner,
-.landing-universities .lpu-trust-inner,
-.landing-universities .lpu-consult-inner {
-  max-width: var(--container);
-  margin-inline: auto;
-}
-
-/* Restores the lockup to the height the wordmark image had. The image was
-   52px tall; swapping it for mark-plus-text dropped the whole thing to about
-   34px, which is a third smaller and reads as an afterthought at the top of
-   the page. */
-.landing-universities .lpu-wordmark-mark {
-  width: 52px;
-  height: 52px;
-}
-
-.landing-universities .lpu-wordmark-text {
-  font-size: var(--t-2xl);
-}
-
-.landing-universities .lpu-wordmark {
-  gap: 0.75rem;
-  margin-bottom: 2.25rem;
+  --lpu-bg: #0D0D10; --lpu-surface: #16161B; --lpu-surface-2: #1D1D23;
+  --lpu-border: rgba(247,241,230,.1); --lpu-border-2: rgba(247,241,230,.18);
+  --lpu-orange: #FF6A13; --lpu-green: #D2FF3D;
+  --lpu-text: #F7F1E6; --lpu-muted: rgba(247,241,230,.66); --lpu-faint: rgba(247,241,230,.42);
+  --lpu-disp: 'Bricolage Grotesque', system-ui, sans-serif;
+  --lpu-font: 'Geist', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  background: var(--lpu-bg); color: var(--lpu-text); font-family: var(--lpu-font);
+  font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased;
+}
+.lpu-wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+/* Type */
+.lpu-h1, .lpu-h2, .lpu h3 { font-family: var(--lpu-disp); font-weight: 700; font-stretch: 96%; letter-spacing: -.02em; margin: 0; }
+.lpu-h1 { font-size: clamp(40px, 5.6vw, 72px); line-height: 1.02; max-width: 960px; }
+.lpu-h1 span { color: var(--lpu-orange); }
+.lpu-h2 { font-size: clamp(30px, 3.6vw, 44px); line-height: 1.08; }
+.lpu h3 { font-size: 20px; line-height: 1.25; }
+.lpu-lede { font-size: 19px; line-height: 1.6; color: var(--lpu-muted); max-width: 640px; margin: 28px 0 0; }
+.lpu-sub { font-size: 17px; line-height: 1.6; color: var(--lpu-muted); max-width: 620px; margin: 16px 0 0; }
+.lpu-note { font-size: 13px; color: var(--lpu-faint); margin: 18px 0 0; }
+
+/* Buttons */
+.lpu-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 36px; }
+.lpu-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;
+  font: 600 15px/1 var(--lpu-font); padding: 15px 22px; border-radius: 12px; border: 1px solid transparent;
+  transition: background .2s, border-color .2s, transform .2s;
+}
+.lpu-btn--primary { background: var(--lpu-orange); color: #fff; }
+.lpu-btn--primary:hover { background: #FF7C2E; transform: translateY(-1px); }
+.lpu-btn--ghost { background: transparent; color: var(--lpu-text); border-color: var(--lpu-border-2); }
+.lpu-btn--ghost:hover { background: rgba(247,241,230,.06); border-color: rgba(247,241,230,.32); }
+.lpu-btn:disabled { opacity: .5; cursor: default; transform: none; }
+.lpu-btn:focus-visible, .lpu input:focus-visible { outline: 2px solid var(--lpu-green); outline-offset: 3px; }
+
+/* Hero */
+.lpu-hero { padding: 96px 0 88px; border-bottom: 1px solid var(--lpu-border); }
+.lpu-wordmark { display: block; height: 40px; width: auto; margin-bottom: 32px; }
+.lpu-hero .lpu-h1, .lpu-hero .lpu-lede, .lpu-hero .lpu-actions, .lpu-wordmark { animation: lpu-in .7s cubic-bezier(.22,1,.36,1) both; }
+.lpu-hero .lpu-h1 { animation-delay: .06s; }
+.lpu-hero .lpu-lede { animation-delay: .14s; }
+.lpu-hero .lpu-actions { animation-delay: .22s; }
+@keyframes lpu-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+/* Stats */
+.lpu-stats { border-bottom: 1px solid var(--lpu-border); }
+.lpu-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
+.lpu-stat { padding: 32px 24px 32px 0; display: flex; flex-direction: column; gap: 6px; }
+.lpu-stat + .lpu-stat { padding-left: 24px; border-left: 1px solid var(--lpu-border); }
+.lpu-stat-num { font-family: var(--lpu-disp); font-weight: 700; font-size: 40px; line-height: 1; letter-spacing: -.02em; }
+.lpu-stat-label { font-size: 14px; line-height: 1.45; color: var(--lpu-muted); }
+
+/* Sections */
+.lpu-section { padding: 104px 0 0; }
+.lpu-head { margin-bottom: 40px; }
+
+/* Features: a hairline grid, no icons */
+.lpu-features { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--lpu-border); border-left: 1px solid var(--lpu-border); }
+.lpu-feature { padding: 28px; border-right: 1px solid var(--lpu-border); border-bottom: 1px solid var(--lpu-border); transition: background .2s; }
+.lpu-feature:hover { background: var(--lpu-surface); }
+.lpu-feature p, .lpu-step p, .lpu-trust-item p { margin: 10px 0 0; font-size: 15px; line-height: 1.6; color: var(--lpu-muted); }
+
+/* Steps */
+.lpu-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+.lpu-step { border-top: 2px solid var(--lpu-border-2); padding-top: 22px; }
+.lpu-step:first-child { border-top-color: var(--lpu-orange); }
+.lpu-step-num { display: block; font-family: var(--lpu-disp); font-weight: 700; font-size: 15px; color: var(--lpu-orange); margin-bottom: 14px; }
+
+/* Trust */
+.lpu-trust-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.lpu-trust-item { background: var(--lpu-surface); border: 1px solid var(--lpu-border); border-radius: 16px; padding: 28px; }
+
+/* Consultation */
+.lpu-consult { padding-bottom: 120px; }
+.lpu-consult-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 48px; align-items: start; }
+.lpu-terms { list-style: none; margin: 28px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.lpu-terms li { padding-left: 20px; position: relative; color: var(--lpu-text); font-size: 15px; }
+.lpu-terms li::before { content: ''; position: absolute; left: 0; top: .62em; width: 8px; height: 2px; background: var(--lpu-orange); }
+.lpu-form { background: var(--lpu-surface); border: 1px solid var(--lpu-border); border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 16px; }
+.lpu-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.lpu-field { display: flex; flex-direction: column; gap: 8px; }
+.lpu-field span { font-size: 13px; font-weight: 600; color: var(--lpu-muted); }
+.lpu-field input {
+  font: 500 15px/1.4 var(--lpu-font); color: var(--lpu-text); background: var(--lpu-bg);
+  border: 1px solid var(--lpu-border-2); border-radius: 10px; padding: 12px 14px; transition: border-color .2s;
+}
+.lpu-field input::placeholder { color: var(--lpu-faint); }
+.lpu-field input:focus { border-color: var(--lpu-orange); outline: none; }
+.lpu-form .lpu-btn { align-self: flex-start; margin-top: 4px; }
+.lpu-error { margin: 0; color: #FF9A9A; font-size: 14px; }
+.lpu-error a { color: inherit; }
+.lpu-done { background: var(--lpu-surface); border: 1px solid var(--lpu-border); border-left: 3px solid var(--lpu-green); border-radius: 20px; padding: 32px; }
+.lpu-done p { margin: 8px 0 0; color: var(--lpu-muted); }
+
+/* Carousel: the demo label as plain text, matching the page */
+.landing-universities .pc-demo-tag { border: 0; padding: 0; border-radius: 0; margin-left: .6rem; font-weight: 500; color: var(--lpu-faint); }
+.landing-universities .pc-caption-title { font-family: var(--lpu-disp); font-weight: 700; letter-spacing: -.01em; }
+.landing-universities .pc-frame { border-radius: 16px; border-color: var(--lpu-border); }
+
+@media (max-width: 900px) {
+  .lpu-stats-grid { grid-template-columns: 1fr 1fr; }
+  .lpu-stat:nth-child(3) { padding-left: 0; border-left: 0; }
+  .lpu-stat:nth-child(n+3) { border-top: 1px solid var(--lpu-border); }
+  .lpu-features { grid-template-columns: 1fr 1fr; }
+  .lpu-steps, .lpu-trust-grid { grid-template-columns: 1fr; }
+  .lpu-consult-grid { grid-template-columns: 1fr; gap: 32px; }
+}
+@media (max-width: 600px) {
+  .lpu-wrap { padding: 0 16px; }
+  .lpu-hero { padding: 56px 0 56px; }
+  .lpu-section { padding-top: 72px; }
+  .lpu-features { grid-template-columns: 1fr; }
+  .lpu-form-row { grid-template-columns: 1fr; }
+  .lpu-form { padding: 20px; }
+  .lpu-btn { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lpu *, .lpu *::before { animation: none !important; transition: none !important; }
 }

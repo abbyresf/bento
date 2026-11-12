@@ -1,0 +1,47 @@
+/* Shared scaffolding for the Loud inner pages: About, Contact, Request school. */
+
+.ld-page { position: relative; overflow: hidden; }
+.ld-page-inner { position: relative; z-index: 1; max-width: 1040px; margin: 0 auto; padding: 72px 24px 0; }
+.ld-page-h1 {
+  font-family: var(--ld-disp); font-weight: 800; font-stretch: 92%; text-transform: uppercase;
+  font-size: clamp(44px, 6.4vw, 88px); line-height: .94; letter-spacing: -.012em; margin: 0;
+}
+.ld-page-h1 .o { color: var(--ld-or); }
+.ld-page-h1 .l { color: var(--ld-li); }
+.ld-page-sub { font-size: 18px; line-height: 1.6; color: var(--ld-cream2); max-width: 600px; margin: 24px 0 0; }
+
+/* Entrance for content above the fold. Plain CSS, so it never hides anything from no-JS readers. */
+.ld-enter { animation: ld-fade-up .8s var(--ld-ease) both; }
+.ld-enter:nth-child(1) { animation-delay: 0s; }
+.ld-enter:nth-child(2) { animation-delay: .08s; }
+.ld-enter:nth-child(3) { animation-delay: .18s; }
+.ld-enter:nth-child(4) { animation-delay: .28s; }
+@keyframes ld-fade-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@keyframes ld-pop-in { from { opacity: 0; scale: .4; } to { opacity: 1; scale: 1; } }
+@keyframes ld-wiggle-tilt { 0%, 100% { rotate: 10deg; } 8% { rotate: 2deg; } 16% { rotate: 16deg; } 24% { rotate: 10deg; } }
+
+/* Forms */
+.ld-form { margin-top: 44px; max-width: 760px; display: flex; flex-direction: column; gap: 22px; padding-bottom: 120px; }
+.ld-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.ld-field { position: relative; margin: 0; padding: 0; border: 0; min-width: 0; }
+.ld-req { color: var(--ld-or); }
+.ld-opt { text-transform: none; letter-spacing: 0; font-family: var(--ld-sans); font-weight: 500; color: var(--ld-cream3); margin-left: 4px; }
+.ld-form-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; margin-top: 6px; }
+.ld-form-foot p { margin: 0; font-size: 14px; color: var(--ld-cream3); }
+.ld-form-foot a, .ld-error a { color: var(--ld-li); }
+
+.ld-done {
+  margin: 44px 0 120px; max-width: 620px; padding: 36px; border-radius: 32px; background: var(--ld-li); color: var(--ld-bg);
+  animation: ld-pop-in .55s var(--ld-pop) both;
+}
+.ld-done h2 { font-family: var(--ld-disp); font-weight: 800; font-stretch: 92%; font-size: 56px; text-transform: uppercase; letter-spacing: -.012em; line-height: .9; margin: 16px 0 12px; }
+.ld-done p { margin: 0 0 22px; font-size: 17px; line-height: 1.55; font-weight: 500; }
+.ld-done-check { display: inline-grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--ld-bg); color: var(--ld-li); font-size: 26px; font-weight: 800; }
+.ld-done-check--box { background: transparent; font-size: 48px; width: auto; height: auto; }
+.ld-done .ld-btn { background: var(--ld-bg); color: var(--ld-cream); box-shadow: 0 5px 0 rgba(13,13,16,.35); }
+
+@media (max-width: 640px) {
+  .ld-page-inner { padding: 44px 16px 0; }
+  .ld-row { grid-template-columns: 1fr; }
+  .ld-done { padding: 26px; }
+}

@@ -2,270 +2,132 @@ import { useState, useEffect, useRef } from 'react';
 import { submitWaitlistEntry } from '../../lib/db';
 import { UNIVERSITIES } from '../../data/universities';
 import { APP_STORE_URL } from '../../data/links';
+import { BentoSticker, HallMarquee } from './LoudSticker';
 import './LandingHome.css';
 
-/* ── SVG Icon Library ── */
-const Icon = {
-  school: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-      <polyline points="9 22 9 12 15 12 15 22"/>
-    </svg>
-  ),
-  menu: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
-      <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-    </svg>
-  ),
-  sparkle: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z"/>
-    </svg>
-  ),
-  target: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
-    </svg>
-  ),
-  check: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 6 9 17 4 12"/>
-    </svg>
-  ),
-  shield: (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#77BE3D" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-      <polyline points="9 12 11 14 15 10"/>
-    </svg>
-  ),
-  arrow: (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  people: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-      <circle cx="9" cy="7" r="4"/>
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-    </svg>
-  ),
-  calendar: (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-      <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-      <line x1="3" y1="10" x2="21" y2="10"/>
-    </svg>
-  ),
-  star: (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-    </svg>
-  ),
-  phone: (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
-      <line x1="12" y1="18" x2="12.01" y2="18"/>
-    </svg>
-  ),
-  lock: (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-    </svg>
-  ),
-  free: (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10"/>
-      <polyline points="9 12 11 14 15 10"/>
-    </svg>
-  ),
-  settings: (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="3"/>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-    </svg>
-  ),
-};
+/* The homepage is prerendered, and main.jsx mounts with createRoot, which throws
+   the prerendered nodes away and builds new ones. CSS animations restart on new
+   nodes, so the hero intro would play twice. This runs before that first render,
+   while the prerendered markup is still in #root: if it is there, the intro has
+   already played on it and the React copy starts settled. */
+const PRERENDERED = typeof document !== 'undefined' && !!document.querySelector('#root .ld-hero');
 
-/* ── Data ── */
-/* Three steps, each one showing the screen it describes.
- *
- * This was four steps of prose with an `img` on every one that the component
- * never rendered, so menu.png and bentos-pick.png existed in the repo and
- * appeared nowhere on the site. The page asked students to read four
- * paragraphs about an app it would not show them. Showing the real screens
- * says more than the paragraphs did, so the copy shrank to fit under them. */
+const Arrow = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+/* ── Copy ── */
 const STEPS = [
   {
-    num: '01',
-    icon: 'menu',
-    title: 'See today’s menu',
-    desc: 'Every station and every special at your dining hall, pulled live each morning. Know what is there before you leave your dorm.',
+    num: '01', tone: 'or',
+    title: 'Check the menu.',
+    desc: 'Every station, every special, live each morning. Know what’s out before you leave your dorm.',
     img: '/screenshots/menu.png',
-    alt: 'The Bento menu screen listing today’s dishes by dining station.',
+    alt: 'The Bento menu screen listing tonight’s dishes by station, with calories and macros.',
   },
   {
-    num: '02',
-    icon: 'target',
-    title: 'Find your fit',
-    desc: 'Set your goals and restrictions once. Bento matches them against what is being served today and shows you what works.',
-    img: '/screenshots/bentos-pick.png',
-    alt: 'A suggested meal in Bento, with its calories and macros against the day’s targets.',
-  },
-  {
-    num: '03',
-    icon: 'people',
-    title: 'Eat, then weigh in',
-    desc: 'Confirm your meal and rate the dishes. Ratings and dietary gaps reach your dining team as anonymous totals.',
+    num: '02', tone: 'li',
+    title: 'Get your plate.',
+    desc: 'Set your goals and restrictions once. Bento picks a plate from today’s menu to hit them.',
     img: '/screenshots/today.png',
-    alt: 'The Bento home screen showing confirmed meals and daily progress.',
+    alt: 'The Bento Today screen with a dinner plate picked from North Hall and the day’s totals.',
   },
-];
-
-
-/* Four claims, but not four equal claims. The live menu is the one nobody else
-   can make, so it takes the wide compartment and the action hue; the other
-   three are reassurances and share the positive hue. The old list gave each a
-   different colour by position, which is what made the palette read as
-   decoration. */
-const STATS = [
-  { icon: 'calendar', label: 'Live menu every morning', sublabel: 'Your actual dining hall, not a recipe database', tone: 'action', wide: true },
-  { icon: 'phone',    label: 'On iPhone, or in any browser', sublabel: 'Download on the App Store, or open Bento on the web.', tone: 'positive' },
-  { icon: 'free',     label: 'Free, always', sublabel: 'No subscription, no paywall, no catch', tone: 'positive' },
-  { icon: 'lock',     label: 'Your data stays private', sublabel: 'Goals and restrictions belong to you alone', tone: 'positive' },
+  {
+    num: '03', tone: 'pk',
+    title: 'Eat and rate.',
+    desc: 'Tap I ate this, then rate the dishes. Your dining team sees the totals.',
+    img: '/screenshots/feed.png',
+    alt: 'The Bento Feed with top-rated dishes and student requests for the dining hall.',
+  },
 ];
 
 const FEATURES = [
-  { num: '01', icon: 'menu',    title: "Your actual dining hall, every day.", desc: "Every morning, Bento pulls your campus menu live. Rotating stations, daily specials, all of it. No recipe database has ever done this.", tone: 'action' },
-  { num: '02', icon: 'target',  title: "Your targets, hit at every meal.", desc: "Set your calorie and macro goals once. Bento maps every suggestion to those exact numbers using what is available today.", tone: 'action' },
-  { num: '03', icon: 'shield2', title: "Your restrictions, always enforced.", desc: "Vegan, nut-free, kosher, gluten-free. Set it once and Bento filters everything automatically. No label checking required.", tone: 'positive' },
-  { num: '04', icon: 'people',  title: "Your feedback actually changes things.", desc: "Rate dishes, flag dietary gaps, and submit suggestions anonymously. Dining staff sees it. It actually influences what gets served.", tone: 'action' },
+  { tone: 'or', title: 'Your hall. Today.', desc: 'Bento pulls your campus menu every morning. Rotating stations and daily specials included.' },
+  { tone: 'li', title: 'Your numbers, every meal.', desc: 'Set calories and macros once. Every pick fits today’s menu and your targets.' },
+  { tone: 'sk', title: 'Your restrictions, every plate.', desc: 'Vegan, nut-free, kosher, gluten-free. Set once. Bento filters every suggestion.' },
+  { tone: 'pk', title: 'Eat with friends.', desc: 'See who’s at the hall. Team up on quests. Keep a streak together.' },
+  { tone: 'bu', title: 'Streaks and fits.', desc: 'Log meals, keep your streak, dress up your Bento with new looks.' },
+  { tone: 'lc', title: 'Your vote reaches the kitchen.', desc: 'Rate dishes, flag gaps, post ideas in the Feed. Dining staff see the totals.' },
+];
+
+const HOME_FAQS = [
+  { q: 'Is Bento free to use?', a: 'Yes. Free for every student. No subscription, no credit card.' },
+  { q: 'How does Bento get the dining hall menu?', a: 'Bento reads your dining hall’s published menu each morning, so your plan matches what’s served today. No manual entry.' },
+  { q: 'How does the meal recommendation work?', a: 'Bento scores every dish on today’s menu against your calories, macros, restrictions and the dishes you rate highly. The top scorers become your plate.' },
+  { q: 'Which universities does Bento support?', a: 'Brandeis University and Boston University, with more schools on the way. Search yours below to check.' },
+  { q: 'Can I use Bento if I have food allergies?', a: 'Yes. Set your allergies and preferences during setup and Bento filters your recommendations. Always confirm allergen information with dining staff before you eat.' },
+  { q: 'Is Bento affiliated with my university?', a: 'No. Bento is independent. No university or dining service sponsors or endorses Bento.' },
 ];
 
 /* ── Phone frame ── */
-function Phone({ src, alt = '', className = '' }) {
+function Phone({ src, alt = '', className = '', eager = false }) {
   return (
-    <div className={`lh-phone ${className}`}>
-      <div className="lh-phone-screen">
-        {/* Real pixel size of every screenshot. Present so the browser can
-            reserve the box before the file arrives, or before the stylesheet
-            does. */}
-        <img
-          src={src}
-          alt={alt}
-          className="lh-phone-img"
-          width="1170"
-          height="2532"
-          loading="lazy"
-        />
+    <div className={`ld-phone ${className}`}>
+      <div className="ld-phone-screen">
+        <img src={src} alt={alt} width="645" height="1398" loading={eager ? 'eager' : 'lazy'} />
       </div>
     </div>
   );
 }
 
 /* ── FAQ ── */
-const HOME_FAQS = [
-  { q: 'Is Bento free to use?', a: 'Yes. Bento is completely free for all university students. No account, no subscription, and no credit card needed.' },
-  { q: 'How does Bento get the dining hall menu?', a: 'Bento pulls your university\'s live dining menu directly so your meal plan always reflects what\'s actually being served that day. No manual data entry required.' },
-  { q: 'How does the meal recommendation work?', a: 'Bento uses a scoring algorithm that weighs your macro targets, calorie budget, dietary restrictions, and the dishes you have rated highly to find the best options from what\'s available at each station.' },
-  { q: 'Which universities does Bento support?', a: 'Bento is currently available at Brandeis University and Boston University, with more schools being added. During onboarding you can see which universities are supported and choose yours.' },
-  { q: 'Can I use Bento if I have food allergies?', a: 'Yes. You can specify allergies and dietary preferences during setup and Bento will filter meal recommendations accordingly. Always verify allergen information directly with dining staff before eating.' },
-  { q: 'Is Bento affiliated with my university?', a: 'No. Bento is an independent application and is not affiliated with, endorsed by, or sponsored by any university or its dining services.' },
-];
-
-function HomeFAQItem({ q, a }) {
+function FAQItem({ q, a }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className={`lh-faq-item${open ? ' open' : ''}`}>
-      <button className="lh-faq-question" onClick={() => setOpen(v => !v)} aria-expanded={open}>
+    <div className={`ld-faq-item${open ? ' open' : ''}`}>
+      <button className="ld-faq-q" onClick={() => setOpen(v => !v)} aria-expanded={open}>
         <span>{q}</span>
-        <span className="lh-faq-chevron" aria-hidden="true">{open ? '−' : '+'}</span>
+        <span className="ld-faq-plus" aria-hidden="true" />
       </button>
-      <p className="lh-faq-answer">{a}</p>
+      {/* Always in the DOM, for the FAQ structured data and for crawlers. */}
+      <div className="ld-faq-a"><p>{a}</p></div>
     </div>
   );
 }
 
-/* ── Shield icon for trust section ── */
-function ShieldIcon() {
-  return (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#77BE3D" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-      <polyline points="9 12 11 14 15 10"/>
-    </svg>
-  );
-}
-
-/* ── School availability ──
- *
- * The page used to ask "Don't see your school?" without ever showing which
- * schools there were, so a student had to start onboarding to find out. This
- * reads the same UNIVERSITIES list onboarding uses, so what it reports is
- * always what the app actually supports.
- *
- * Matching mirrors UniversityPicker: name or alias, case-insensitive. A school
- * in the list but not live yet is a real answer, not a miss, so it is stated
- * plainly rather than being dropped into the waitlist as if unknown.
- */
+/* ── School check. Reads the same list onboarding uses, so it reports what the app supports ── */
 function SchoolCheck() {
   const [query, setQuery] = useState('');
   const q = query.trim().toLowerCase();
-
   const matches = q
-    ? UNIVERSITIES.filter(u =>
-        u.name.toLowerCase().includes(q) || u.aliases?.some(a => a.includes(q)))
+    ? UNIVERSITIES.filter(u => u.id !== 'demo' &&
+        (u.name.toLowerCase().includes(q) || u.aliases?.some(a => a.includes(q))))
     : [];
   const live = matches.filter(u => u.available);
   const listed = matches.filter(u => !u.available);
 
   return (
-    <div className="lh-school-check">
-      <label className="lh-school-label" htmlFor="lh-school-input">
-        Search for your university
-      </label>
-      <input
-        id="lh-school-input"
-        className="lh-school-input"
-        type="text"
-        autoComplete="off"
-        placeholder="Start typing your school"
-        value={query}
-        onChange={e => setQuery(e.target.value)}
-      />
-
-      {/* Announced politely so a screen reader hears the answer without having
-          the focus pulled out of the field mid-word. */}
-      <div className="lh-school-results" role="status" aria-live="polite">
+    <div className="ld-school">
+      <label className="ld-fieldlabel" htmlFor="ld-school-input">Search for your university</label>
+      <input id="ld-school-input" className="ld-input" type="text" autoComplete="off"
+        placeholder="Start typing your school" value={query} onChange={e => setQuery(e.target.value)} />
+      <div className="ld-school-results" role="status" aria-live="polite">
         {live.map(u => (
-          <div key={u.id} className="lh-school-hit lh-school-hit--live">
-            <span className="lh-school-dot" aria-hidden="true" />
-            <div>
-              <p className="lh-school-hit-name">{u.name}</p>
-              <p className="lh-school-hit-note">Bento is live here. {u.location}</p>
+          <div key={u.id} className="ld-hit ld-hit--live">
+            <span className="ld-hit-dot" aria-hidden="true" />
+            <div className="ld-hit-tx">
+              <b>{u.name}</b>
+              <span>Bento is live here. {u.location}</span>
             </div>
-            <a className="lh-school-hit-btn" href={APP_STORE_URL}
-              target="_blank" rel="noopener noreferrer">
-              Get the app {Icon.arrow}
+            <a className="ld-btn ld-btn--li ld-hit-btn" href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
+              Get the app <Arrow />
             </a>
           </div>
         ))}
-
         {listed.map(u => (
-          <div key={u.id} className="lh-school-hit">
-            <span className="lh-school-dot lh-school-dot--soon" aria-hidden="true" />
-            <div>
-              <p className="lh-school-hit-name">{u.name}</p>
-              <p className="lh-school-hit-note">Not live yet. Join the waitlist below.</p>
+          <div key={u.id} className="ld-hit">
+            <span className="ld-hit-dot ld-hit-dot--soon" aria-hidden="true" />
+            <div className="ld-hit-tx">
+              <b>{u.name}</b>
+              <span>Not live yet. Join the waitlist below.</span>
             </div>
           </div>
         ))}
-
         {q && matches.length === 0 && (
-          <p className="lh-school-none">
-            No match for &ldquo;{query}&rdquo;. Join the waitlist below and we will reach out
-            when Bento comes to your dining hall.
+          <p className="ld-school-none">
+            No match for &ldquo;{query}&rdquo;. Join the waitlist below and we’ll email you when Bento comes to your dining hall.
           </p>
         )}
       </div>
@@ -273,11 +135,11 @@ function SchoolCheck() {
   );
 }
 
-/* ── Waitlist form ── */
+/* ── Waitlist ── */
 function WaitlistForm() {
   const [school, setSchool] = useState('');
   const [email, setEmail] = useState('');
-  const [status, setStatus] = useState(null); // null | 'loading' | 'success' | 'error'
+  const [status, setStatus] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -293,70 +155,35 @@ function WaitlistForm() {
 
   if (status === 'success') {
     return (
-      <div className="lh-waitlist-success">
-        <span className="lh-waitlist-check" aria-hidden="true">✓</span>
-        <p className="lh-waitlist-success-hed">You're on the list.</p>
-        <p className="lh-waitlist-success-sub">We'll reach out when Bento comes to {school}.</p>
+      <div className="ld-wait-done">
+        <span className="ld-wait-check" aria-hidden="true">✓</span>
+        <p className="ld-wait-done-hed">You’re on the list.</p>
+        <p>We’ll email you when Bento comes to {school}.</p>
       </div>
     );
   }
 
   return (
-    <form className="lh-waitlist-form" onSubmit={handleSubmit} noValidate>
-      <div className="lh-waitlist-fields">
-        <input
-          className="lh-waitlist-input"
-          type="text"
-          placeholder="Your school"
-          value={school}
-          onChange={e => setSchool(e.target.value)}
-          required
-          disabled={status === 'loading'}
-        />
-        <input
-          className="lh-waitlist-input"
-          type="email"
-          placeholder="Your email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          required
-          disabled={status === 'loading'}
-        />
-      </div>
-      {status === 'error' && (
-        <p className="lh-waitlist-error">Something went wrong. Try again.</p>
-      )}
-      <button
-        className="lh-waitlist-btn"
-        type="submit"
-        disabled={status === 'loading' || !school.trim() || !email.trim()}
-      >
-        {status === 'loading' ? 'Submitting…' : 'Join the waitlist'}
+    <form className="ld-wait-form" onSubmit={handleSubmit} noValidate>
+      <input className="ld-input" type="text" placeholder="Your school" aria-label="Your school"
+        value={school} onChange={e => setSchool(e.target.value)} required disabled={status === 'loading'} />
+      <input className="ld-input" type="email" placeholder="Your email" aria-label="Your email"
+        value={email} onChange={e => setEmail(e.target.value)} required disabled={status === 'loading'} />
+      <button className="ld-btn ld-btn--or" type="submit"
+        disabled={status === 'loading' || !school.trim() || !email.trim()}>
+        {status === 'loading' ? 'Adding…' : 'Join the waitlist'}
       </button>
+      {status === 'error' && <p className="ld-error">Something went wrong. Try again.</p>}
     </form>
   );
 }
 
-/* ── Settle-in ──
- *
- * A bento box is compartments that lock together, so things on this page
- * settle into place: a short rise, a hair of scale, one easing, one duration.
- * It is the only motion on the page now that the drifting blobs and the
- * cursor-chasing glow are gone, and it reads as one gesture rather than
- * ambient decoration.
- *
- * Two rules it has to obey.
- *
- * Nothing is hidden in the stylesheet. The homepage is prerendered so that
- * readers without JavaScript get the whole page, and a CSS-only hidden state
- * would blank it for exactly those readers. The hidden class is added here, by
- * script, so no-JS sees everything.
- *
- * Only elements below the fold are touched. The prerendered markup paints
- * before React mounts, so hiding something already on screen would flash it
- * away and back. Anything visible at mount is left exactly as it is.
- */
-function useSettleIn(rootRef) {
+/* ── Motion ──
+   Reveal: anything below the fold at mount rises in as it scrolls into view.
+   The hidden class is added here, by script, so the prerendered page and
+   no-JS readers see everything. Elements on screen at mount are left alone.
+   Parallax: one scroll value written to a CSS variable, read by the hero. */
+function useLoudMotion(rootRef) {
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
@@ -365,259 +192,195 @@ function useSettleIn(rootRef) {
     const io = new IntersectionObserver((entries) => {
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
-        entry.target.classList.add('is-settled');
-        io.unobserve(entry.target);
+        const el = entry.target;
+        el.classList.add('is-in');
+        io.unobserve(el);
+        // Hand the transform back once the entrance is done, so hover effects work.
+        setTimeout(() => el.classList.remove('ld-hide'), 1400 + (parseFloat(el.style.transitionDelay) || 0));
       }
-    }, { threshold: 0.1, rootMargin: '0px 0px -6% 0px' });
+    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
 
-    for (const node of root.querySelectorAll('[data-settle]')) {
+    for (const node of root.querySelectorAll('[data-reveal]')) {
       if (node.getBoundingClientRect().top < window.innerHeight) continue;
-      node.classList.add('lh-settle');
+      node.classList.add('ld-hide');
       io.observe(node);
     }
-    return () => io.disconnect();
+
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        root.style.setProperty('--sy', String(Math.min(window.scrollY, 1400)));
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => { io.disconnect(); window.removeEventListener('scroll', onScroll); cancelAnimationFrame(raf); };
   }, [rootRef]);
 }
 
-/* ── Main component ── */
-export default function LandingHome({ onGoUniversities }) {
-  const heroRef = useRef(null);
+const delay = (i, step = 80) => ({ transitionDelay: `${i * step}ms` });
+
+/* ── Page ── */
+export default function LandingHome({ onGoUniversities, onGetStarted }) {
   const pageRef = useRef(null);
-  useSettleIn(pageRef);
+  useLoudMotion(pageRef);
 
   return (
-    <div className="landing-home" ref={pageRef}>
+    <div className="ld-home" ref={pageRef}>
 
       {/* HERO */}
-      <section className="lh-hero" ref={heroRef}>
+      <section className={`ld-hero${PRERENDERED ? ' ld-hero--settled' : ''}`}>
+        <div className="ld-glow" style={{ width: 460, height: 460, background: 'var(--ld-or)', right: '8%', top: 20 }} />
+        <div className="ld-glow" style={{ width: 320, height: 320, background: 'var(--ld-lc)', right: '-4%', top: 360, opacity: .38, animationDelay: '-6s' }} />
 
-        <div className="lh-hero-inner">
-          <div className="lh-hero-copy-top">
-            <div className="lh-social-row">
-              <span className="lh-rating-sub">Free at Brandeis and BU</span>
-            </div>
-
-            {/* The old headline was "Healthy eating made effortless", which could
-                sit on any calorie app and made a health claim Bento should not
-                make. The ownable claim was buried in the paragraph below: Bento
-                is the only app that reads YOUR dining hall's menu today. That
-                belongs in the largest type on the page. */}
-            <h1 className="lh-hero-headline">
-              Today&apos;s menu,<br />built around{' '}
-              <span className="lh-hero-accent" aria-label="your goals">
-                your goals.
-                <svg className="lh-underline-svg" viewBox="0 0 220 18" fill="none" aria-hidden="true">
-                  <path d="M4 12 Q110 3 216 12" stroke="#FD8F2A" strokeWidth="3.5"
-                    strokeLinecap="round" className="lh-underline-path" />
-                </svg>
-              </span>
-            </h1>
+        <div className="ld-hero-copy">
+          <h1 className="ld-hero-h1">
+            <span className="ld-line"><span>Know the menu</span></span>
+            <span className="ld-line"><span><span className="ld-hl">before</span> you go<span className="o">.</span></span></span>
+          </h1>
+          <p className="ld-hero-sub">
+            No other app reads your dining hall’s menu. Bento pulls <b>today’s real menu</b> every
+            morning, matches each dish to your goals and restrictions, and tells you what to grab.
+          </p>
+          <div className="ld-hero-ctas">
+            <a className="ld-store" href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
+              <img src="/app-store-badge.svg" alt="Download on the App Store" width="150" height="50" />
+            </a>
+            <span className="ld-hero-note">Live at Brandeis and BU. Free on iPhone.</span>
           </div>
+        </div>
 
-          <div className="lh-hero-phone-col" aria-hidden="true">
-            <div className="lh-hero-phone-wrap">
-              <div className="lh-phone-anchor">
-                <Phone className="lh-phone--hero" src="/screenshots/today.png" alt="Bento Today tab" />
-              </div>
-            </div>
+        <div className="ld-hero-art" aria-hidden="true">
+          <div className="ld-hero-par">
+            <Phone className="ld-phone--back" src="/screenshots/buddies.png" />
+            <Phone className="ld-phone--front" src="/screenshots/today.png" eager />
           </div>
-
-          <div className="lh-hero-copy-bottom">
-            <p className="lh-hero-sub">
-              No other app knows what your dining hall is serving today. Bento
-              reads your live menu every morning, matches it to your calorie and
-              macro goals, and tells you what to grab.
-            </p>
-            <div className="lh-hero-ctas">
-              {/* A real link, not a button with a handler: it leaves the site.
-                  rel noopener because target _blank without it hands the new
-                  tab a reference back to this window. */}
-              <a className="lh-store-badge" href={APP_STORE_URL}
-                target="_blank" rel="noopener noreferrer">
-                <img src="/app-store-badge.svg" alt="Download on the App Store" className="lh-store-badge-img" width="150" height="50" />
-              </a>
-            </div>
-            <p className="lh-platform-note">iPhone &bull; Free, always</p>
-          </div>
+          <BentoSticker className="ld-hero-sticker" />
+          <div className="ld-chip ld-chip--a" style={{ background: 'var(--ld-bu)' }}>14 day streak</div>
+          <div className="ld-chip ld-chip--b" style={{ background: 'var(--ld-sk)' }}>Vegan, set once</div>
+          <div className="ld-chip ld-chip--c" style={{ background: 'var(--ld-pk)' }}>Maya is at Commons</div>
         </div>
       </section>
 
-      {/* STATS */}
-      <section className="lh-stats">
-        <div className="lh-stats-inner">
-          {STATS.map((stat, i) => (
-            <div
-              key={stat.label}
-              data-settle
-              style={{ transitionDelay: `${i * 70}ms` }}
-              className={`lh-stat-card lh-stat-card--${stat.tone}${stat.wide ? ' lh-stat-card--wide' : ''}`}
-            >
-              <div className={`lh-stat-icon lh-stat-icon--${stat.tone}`}>
-                {Icon[stat.icon]}
-              </div>
-              <p className="lh-stat-label">{stat.label}</p>
-              <p className="lh-stat-sub">{stat.sublabel}</p>
-            </div>
-          ))}
+      <HallMarquee />
+      <HallMarquee reverse outline />
+
+      {/* BLOCKS */}
+      <section className="ld-blocks">
+        <div className="ld-blk ld-s4" data-reveal style={{ background: 'var(--ld-li)', ...delay(0) }}>
+          <h2>The real menu.<br />Not a guess.</h2>
+          <p>Other apps search a food database. Bento pulls your hall’s menu every morning, station by station.</p>
+        </div>
+        <div className="ld-blk ld-s2 ld-blk--num" data-reveal style={{ background: 'var(--ld-or)', color: '#fff', '--ld-r': '3deg', ...delay(1) }}>
+          <span className="ld-num">3</span>
+          <p>plates a day, built around your numbers.</p>
+        </div>
+        <div className="ld-blk ld-s2" data-reveal style={{ background: 'var(--ld-sk)', '--ld-r': '-3deg', ...delay(2) }}>
+          <h2>Free.<br />Always.</h2>
+          <p>No subscription. No paywall.</p>
+        </div>
+        <div className="ld-blk ld-s2" data-reveal style={{ background: 'var(--ld-bu)', '--ld-r': '2deg', ...delay(3) }}>
+          <h2>Private by<br />default.</h2>
+          <p>Your school sees totals, never names.</p>
+        </div>
+        <div className="ld-blk ld-s2 ld-blk--grad" data-reveal style={{ '--ld-r': '-2deg', ...delay(4) }}>
+          <h2>iPhone or<br />any browser.</h2>
+          <p>Get the app, or <button type="button" className="ld-inline-link" onClick={onGetStarted}>open Bento on the web</button>.</p>
+          <BentoSticker className="ld-blk-sticker" mood="happy" />
         </div>
       </section>
 
       {/* HOW IT WORKS */}
-      <section className="lh-how">
-        <div className="lh-how-inner">
-          <p className="lh-eyebrow">How it works</p>
-          <h2 className="lh-section-heading lh-how-heading">Three steps.<br />Zero thinking.</h2>
-
-          <ol className="lh-how-steps">
-            {STEPS.map((step, i) => (
-              <li key={step.num} className="lh-step" data-settle style={{ transitionDelay: `${i * 90}ms` }}>
-                <Phone className="lh-phone--step" src={step.img} alt={step.alt} />
-                <div className="lh-step-body">
-                  <div className="lh-step-num-row">
-                    <span className="lh-step-icon">{Icon[step.icon]}</span>
-                    <span className="lh-step-num-label">{step.num}</span>
-                  </div>
-                  <h3 className="lh-step-title">{step.title}</h3>
-                  <p className="lh-step-desc">{step.desc}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
+      <section className="ld-how">
+        <h2 className="ld-h2" data-reveal>Three steps.<br /><span className="l">Zero thinking.</span></h2>
+        <ol className="ld-steps">
+          {STEPS.map((s, i) => (
+            <li key={s.num} className={`ld-step ld-step--${s.tone}`} data-reveal style={{ '--ld-r': `${i % 2 ? 3 : -3}deg`, ...delay(i, 120) }}>
+              <span className="ld-step-num" aria-hidden="true">{s.num}</span>
+              <Phone className="ld-phone--step" src={s.img} alt={s.alt} />
+              <h3>{s.title}</h3>
+              <p>{s.desc}</p>
+            </li>
+          ))}
+        </ol>
       </section>
 
-      {/* FEATURES */}
-      <section className="lh-features">
-        <div className="lh-features-inner">
-          <p className="lh-eyebrow">Why Bento</p>
-          <h2 className="lh-section-heading">The only app built<br />for your dining hall.</h2>
-          <div className="lh-features-grid">
-            {FEATURES.map((f, i) => {
-              const iconEl = f.icon === 'shield2'
-                ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-                : Icon[f.icon];
-              return (
-                <div key={f.num} data-settle style={{ transitionDelay: `${i * 70}ms` }} className="lh-feat-card">
-                  {/* No 01-04 here. These are four parallel benefits, not an
-                      order of events, so numbering them labelled a sequence
-                      that does not exist, and they rendered at 1.17:1 against
-                      the card, which is invisible rather than subtle. How it
-                      works keeps its numbers, because those steps are a
-                      sequence.
-
-                      All four share one tone: they are parallel
-                      capabilities with identical structure, so a single
-                      odd-coloured one among them reads as a mistake rather
-                      than as meaning. */}
-                  <div className="lh-feat-card-top">
-                    <span className="lh-feat-icon">{iconEl}</span>
-                  </div>
-                  <h3 className="lh-feat-title">{f.title}</h3>
-                  <p className="lh-feat-desc">{f.desc}</p>
-                </div>
-              );
-            })}
+      {/* FRIENDS BAND */}
+      <section className="ld-band">
+        <div className="ld-band-inner" data-reveal>
+          <div className="ld-band-copy">
+            <h2 className="ld-h2">Dinner w/<br />Maya + 2.</h2>
+            <p>See who’s at the hall right now. Tap I’m here, team up on quests that reset every Monday, and keep a streak going together.</p>
           </div>
-
-          {/* Sits with the dietary claim, not only in the footer. Bento reads
-              the labels the dining hall publishes; it cannot see the kitchen,
-              so it cannot speak to cross-contact. */}
-          <p className="lh-allergen-note">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FD8F2A"
-              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="13" />
-              <line x1="12" y1="16.5" x2="12.01" y2="16.5" />
-            </svg>
-            <span>
-              Bento filters on the dietary labels your dining hall publishes. It
-              cannot account for cross-contact in the kitchen. If you have a food
-              allergy, confirm ingredients and preparation with dining staff
-              before you eat.
-            </span>
-          </p>
+          <Phone className="ld-phone--band" src="/screenshots/buddies.png" alt="The Bento Buddies tab showing Maya at Commons and this week’s quests." />
+          <BentoSticker className="ld-band-sticker" />
         </div>
       </section>
 
+      {/* WHY BENTO */}
+      <section className="ld-why">
+        <h2 className="ld-h2" data-reveal>The only app built<br />for your <span className="o">dining hall.</span></h2>
+        <div className="ld-feats">
+          {FEATURES.map((f, i) => (
+            <div key={f.title} className={`ld-feat ld-feat--${f.tone}`} data-reveal style={delay(i % 3, 90)}>
+              <h3>{f.title}</h3>
+              <p>{f.desc}</p>
+            </div>
+          ))}
+        </div>
+        {/* Bento reads the labels the dining hall publishes. It cannot see the kitchen. */}
+        <p className="ld-allergen" data-reveal>
+          Bento filters on the dietary labels your dining hall publishes. It cannot account for
+          cross-contact in the kitchen. If you have a food allergy, confirm ingredients and
+          preparation with dining staff before you eat.
+        </p>
+      </section>
 
       {/* TRUST */}
-      <div className="lh-trust">
-        <div className="lh-trust-inner">
-          <div className="lh-trust-shield-wrap"><ShieldIcon /></div>
-          <div className="lh-trust-copy">
-            <p className="lh-trust-hed">Your personal data stays yours.</p>
-            <p className="lh-trust-bod">Your goals, restrictions, and usage are private. What we share with your school is anonymous: aggregated dietary needs that actually change what gets served. No names, no individual records, ever.</p>
-          </div>
-        </div>
-      </div>
+      <section className="ld-trust" data-reveal>
+        <h2>Your data stays yours.</h2>
+        <p>Your goals and restrictions are private. Your school sees anonymous totals, never names or individual records.</p>
+      </section>
 
       {/* FAQ */}
-      <section className="lh-faq-section">
-        <div className="lh-faq-inner">
-          <h2 className="lh-faq-heading">Common questions about Bento</h2>
-          <div className="lh-faq-list">
-            {HOME_FAQS.map(item => <HomeFAQItem key={item.q} {...item} />)}
-          </div>
+      <section className="ld-faq">
+        <h2 className="ld-h2 ld-faq-h" data-reveal>Common questions<br /><span className="p">about Bento</span></h2>
+        <div className="ld-faq-list" data-reveal>
+          {HOME_FAQS.map(item => <FAQItem key={item.q} {...item} />)}
         </div>
       </section>
 
       {/* WAITLIST */}
-      <section className="lh-waitlist" id="lh-availability">
-        <div className="lh-waitlist-inner">
-          <p className="lh-waitlist-eyebrow">Campus availability</p>
-          <h2 className="lh-waitlist-hed">Is Bento at your school?</h2>
-          <p className="lh-waitlist-sub">
-            Bento is live at Brandeis and Boston University, Tufts is coming soon, and we're adding more campuses. Check
-            yours, then join the waitlist if it isn't there yet.
-          </p>
+      <section className="ld-wait" id="lh-availability">
+        <div className="ld-wait-card" data-reveal>
+          <h2 className="ld-h2">Is Bento at<br /><span className="l">your school?</span></h2>
+          <p className="ld-wait-sub">Live at Brandeis and BU. Tufts is next. Search your school, or join the waitlist.</p>
           <SchoolCheck />
           <WaitlistForm />
         </div>
       </section>
 
-      {/* UNIVERSITIES
-          Above the closing CTA on purpose. This sat dead last, underneath the
-          "Get Started" that ends the student pitch, so the only section aimed at
-          the people who actually buy Bento was the one section nobody scrolled
-          to. The student CTA now closes the page, which is where a close
-          belongs. */}
-      <section className="lh-uni">
-        <div className="lh-uni-inner">
-          <p className="lh-uni-eyebrow">For dining administrators</p>
-          <h2 className="lh-uni-hed">Turn student demand<br />into dining decisions.</h2>
-          <p className="lh-uni-text">
-            Bento Pulse gives your team real-time insight into what students want.
-            Dietary needs, station feedback, and gaps in the current menu. No
-            surveys. No guesswork.
-          </p>
-          <button className="lh-uni-btn" onClick={onGoUniversities}>
-            Learn about Bento for Universities {Icon.arrow}
-          </button>
-        </div>
+      {/* UNIVERSITIES */}
+      <section className="ld-uni" data-reveal>
+        <h2 className="ld-h2">Turn student demand<br />into dining decisions.</h2>
+        <p>Bento Pulse shows your team what students want: dietary needs, dish ratings, menu gaps. No surveys.</p>
+        <button className="ld-btn" onClick={onGoUniversities}>For dining teams <Arrow /></button>
       </section>
 
       {/* FINAL CTA */}
-      <section className="lh-cta">
-        <div className="lh-cta-inner">
-          <div className="lh-cta-copy">
-            <h2 className="lh-cta-hed">
-              Your dining hall<br />has good food.<br />
-              <span className="lh-cta-accent">Bento finds it.</span>
-            </h2>
-            <p className="lh-cta-sub">Free forever. Two minutes to set up. Works at your dining hall today.</p>
-            <div className="lh-cta-btns">
-              <a className="lh-store-badge" href={APP_STORE_URL}
-                target="_blank" rel="noopener noreferrer">
-                <img src="/app-store-badge.svg" alt="Download on the App Store" className="lh-store-badge-img" width="150" height="50" />
-              </a>
-            </div>
-            <a className="lh-cta-secondary" href="#lh-availability">
-              See if my school is supported
-            </a>
-            <p className="lh-cta-note">Free, always &bull; iPhone</p>
-          </div>
+      <section className="ld-final">
+        <div className="ld-glow" style={{ width: 520, height: 300, background: 'var(--ld-pk)', left: '50%', top: 40, marginLeft: -260, opacity: .3 }} />
+        <h2 className="ld-final-h" data-reveal>Your dining hall<br />has good food.<br /><span>Bento finds it.</span></h2>
+        <p className="ld-final-sub" data-reveal>Free. Two minutes to set up.</p>
+        <div className="ld-final-ctas" data-reveal>
+          <a className="ld-store" href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
+            <img src="/app-store-badge.svg" alt="Download on the App Store" width="150" height="50" />
+          </a>
+          <a className="ld-final-link" href="#lh-availability">See if my school is live <Arrow /></a>
         </div>
       </section>
-
     </div>
   );
 }

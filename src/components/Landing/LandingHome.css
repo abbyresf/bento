@@ -1,1670 +1,299 @@
-@import './landingTokens.css';
-
-/* ── Grounds ──
-   Two light grounds and one dark close, and no fades between them.
-
-   This page ran six grounds (#FFFDF9, #FEF4E8, #FFFFFF, #F7F3EE, plus two
-   darks) joined by five 60-80px gradient fades, so every section announced
-   itself with a colour change and none of the changes meant anything. For
-   comparison: Handshake runs the whole page on one ground, Amplitude
-   alternates two, and neither fades between sections. Section separation here
-   comes from space and from the cards, which is what those sites do.
-
-   One light ground, cream, for the whole page, with white kept for cards so a
-   card always has something to sit on. Alternating the sections was the first
-   attempt and it put white cards on a white section, where they vanished.
-   Separation comes from space and from the cards themselves.
-
-   The single dark block at the end carries both the universities pitch and the
-   closing CTA, so dark appears exactly once and means "this is the end of the
-   page".
-*/
-
-/* ═══════════════════════════════════════════
-   DESIGN TOKENS
-═══════════════════════════════════════════ */
-
-
-/* ═══════════════════════════════════════════
-   BASE
-═══════════════════════════════════════════ */
-.landing-home {
-  overflow-x: clip;
-  background: var(--cream);
-  font-family: var(--ff-body);
-  color: var(--navy);
-}
-
-/* ═══════════════════════════════════════════
-   SHARED TYPOGRAPHY
-═══════════════════════════════════════════ */
-.lh-eyebrow {
-  font-size: var(--t-xs);
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--orange-text);
-  margin: 0 0 0.75rem;
-}
-
-.lh-section-heading {
-  font-family: var(--ff-disp);
-  font-size: clamp(var(--t-xl), 6vw, var(--t-3xl));
-  font-weight: 800;
-  line-height: 1.08;
-  letter-spacing: -0.02em;
-  color: var(--navy);
-  margin: 0 0 1.5rem;
-  text-wrap: balance;
-}
-
-/* ═══════════════════════════════════════════
-   PHONE FRAME
-═══════════════════════════════════════════ */
-.lh-phone {
-  background: #18182a;
-  border-radius: var(--r-device);
-  padding: 9px;
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,0.07),
-    0 20px 60px rgba(119,190,61,0.35),
-    0 5px 20px rgba(119,190,61,0.20);
-  display: inline-flex;
-  flex-direction: column;
-}
-
-.lh-phone-screen {
-  border-radius: var(--r-device-screen);
-  overflow: hidden;
-  position: relative;
-  line-height: 0;
-}
-
-.lh-phone-img {
-  display: block;
-  width: 100%;
-  height: auto;
-  /* Every screenshot is 1170x2532. Without this an image that has not loaded
-     yet has no intrinsic height, so height:auto resolves to 0, and a
-     zero-height loading="lazy" image never satisfies the viewport check that
-     would load it. The three How it works phones deadlocked exactly that way
-     in production: correct width, zero height, never requested. Reserving the
-     ratio breaks the cycle and removes the layout shift on load. */
-  aspect-ratio: 1170 / 2532;
-}
-
-
-/* ═══════════════════════════════════════════
-   HERO
-═══════════════════════════════════════════ */
-.lh-hero {
-  position: relative;
-  padding: 5.5rem 1.5rem 1.5rem;
-}
-
-
-
-
-
-
-
-
-
-
-
-.lh-hero-inner {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  max-width: 440px;
-  margin: 0 auto;
-}
-
-/* Social proof */
-.lh-social-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 1.25rem;
-}
-
-.lh-avatars { display: flex; }
-
-.lh-avatar {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 2px solid var(--cream);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--t-xs);
-  font-weight: 700;
-  color: white;
-  margin-left: -8px;
-  flex-shrink: 0;
-}
-
-.lh-avatar:first-child { margin-left: 0; }
-.lh-avatar--0 { background: linear-gradient(135deg, #FD8F2A, #ff6b35); }
-.lh-avatar--1 { background: linear-gradient(135deg, #77BE3D, #5a9e2a); }
-.lh-avatar--2 { background: linear-gradient(135deg, #2B97FD, #1a7de0); }
-.lh-avatar--3 { background: linear-gradient(135deg, #FD8F2A, #fd5f2a); }
-
-.lh-rating { display: flex; flex-direction: column; gap: 2px; }
-
-.lh-stars-row {
-  display: flex;
-  gap: 1px;
-  color: #FD8F2A;
-}
-
-.lh-star-icon { display: flex; align-items: center; }
-
-.lh-rating-sub {
-  font-size: var(--t-xs);
-  color: var(--muted);
-  line-height: 1;
-}
-
-/* Headline */
-.lh-hero-headline {
-  font-family: var(--ff-disp);
-  /* Capped well below 5rem here. The two-column hero starts at 960px, and
-     until then the headline shares one narrow column with everything else;
-     at 768px the old 5rem cap made it four lines and pushed the CTA below
-     the fold. The full size is restored with the two-column layout. */
-  font-size: clamp(var(--t-2xl), 10.5vw, var(--t-3xl));
-  font-weight: 900;
-  line-height: 1.02;
-  letter-spacing: -0.03em;
-  color: var(--navy);
-  margin: 0;
-}
-
-.lh-hero-accent {
-  /* Fraunces italic, not a script family. Same emphasis, one less voice. */
-  font-family: var(--ff-disp);
-  font-style: italic;
-  font-weight: 700;
-  font-size: 1.08em;
-  color: var(--orange);
-  position: relative;
-  display: inline-block;
-}
-
-.lh-underline-svg {
-  position: absolute;
-  left: 0;
-  bottom: -6px;
-  width: 100%;
-  height: auto;
-  overflow: visible;
-}
-
-.lh-underline-path {
-  stroke-dasharray: 230;
-  stroke-dashoffset: 230;
-  animation: draw-underline 1.2s 0.3s cubic-bezier(.4,0,.2,1) forwards;
-}
-
-/* Hero phone */
-.lh-hero-phone-col {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem 0 1.5rem;
-  position: relative;
-}
-
-.lh-hero-phone-wrap {
-  position: relative;
-  display: inline-flex;
-  justify-content: center;
-}
-
-.lh-phone--hero {
-  width: 170px;
-  flex-shrink: 0;
-  animation: float 6s ease-in-out infinite;
-}
-
-.lh-tag {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  position: absolute;
-  background: white;
-  border: 1.5px solid color-mix(in srgb, var(--tc) 30%, transparent);
-  border-radius: var(--r-md);
-  padding: 4px 9px 4px 6px;
-  font-size: var(--t-xs);
-  font-weight: 700;
-  color: var(--tc);
-  white-space: nowrap;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-  z-index: 2;
-}
-
-.lh-tag-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--tc);
-  flex-shrink: 0;
-}
-
-/* left-side chips */
-.lh-tag--tl { top: 26%;    right: calc(100% + 8px); animation: tag-tl 4s   ease-in-out infinite; }
-.lh-tag--bl { bottom: 22%; right: calc(100% + 8px); animation: tag-bl 5.5s ease-in-out infinite -0.5s; }
-/* right-side chips */
-.lh-tag--tr { top: 20%;    left: calc(100% + 8px);  animation: tag-tr 5s   ease-in-out infinite -1s; }
-.lh-tag--br { bottom: 28%; left: calc(100% + 8px);  animation: tag-br 4.5s ease-in-out infinite -2s; }
-
-/* Hero bottom */
-.lh-hero-copy-bottom { text-align: left; }
-
-.lh-hero-sub {
-  font-size: var(--t-base);
-  line-height: 1.65;
-  color: var(--muted);
-  margin: 0 0 1.75rem;
-}
-
-/* Buttons */
-.lh-hero-ctas {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.lh-btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: var(--orange);
-  color: white;
-  border: none;
-  padding: 1rem 1.5rem;
-  border-radius: var(--r-pill);
-  font-family: var(--ff-body);
-  font-size: var(--t-base);
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
-  box-shadow: 0 4px 20px rgba(253,143,42,0.3);
-  min-height: 52px;
-  width: 100%;
-}
-
-.lh-btn-primary:hover {
-  background: #e87f20;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 28px rgba(253,143,42,0.38);
-}
-
-.lh-btn-outline {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: transparent;
-  color: var(--navy);
-  border: 1.5px solid var(--lh-border);
-  padding: 1rem 1.5rem;
-  border-radius: var(--r-pill);
-  font-family: var(--ff-body);
-  font-size: var(--t-base);
-  font-weight: 600;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-  min-height: 52px;
-  width: 100%;
-}
-
-.lh-btn-outline:hover {
-  border-color: var(--orange);
-  background: rgba(253,143,42,0.04);
-}
-
-.lh-platform-note {
-  font-size: var(--t-xs);
-  color: var(--muted);
-  margin: 0;
-}
-
-/* ═══════════════════════════════════════════
-   STATS — icon cards, no fake numbers
-═══════════════════════════════════════════ */
-.lh-stats {
-  padding: 2rem 1.25rem 3rem;
-  background: var(--cream);
-}
-
-.lh-stats-inner {
-  display: grid;
-  gap: var(--s-3);
-  grid-template-columns: 1fr;
-}
-
-.lh-stat-card {
-  background: white;
-  border-radius: var(--r-lg);
-  padding: 1.2rem 1rem;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-}
-
-.lh-stat-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--r-sm);
-  margin-bottom: 0.7rem;
-}
-
-.lh-stat-icon--action   { background: rgba(253,143,42,0.12); color: var(--action); }
-.lh-stat-icon--positive { background: rgba(119,190,61,0.12); color: var(--positive); }
-
-.lh-stat-label {
-  font-size: var(--t-sm);
-  font-weight: 700;
-  color: var(--navy);
-  margin: 0 0 0.25rem;
-  line-height: 1.3;
-}
-
-.lh-stat-sub {
-  font-size: var(--t-xs);
-  line-height: 1.4;
-  color: var(--muted);
-  margin: 0;
-}
-
-/* ═══════════════════════════════════════════
-   HOW IT WORKS
-═══════════════════════════════════════════ */
-.lh-how {
-  padding: 3.5rem 1.25rem 4rem;
-  background: var(--cream);
-}
-
-.lh-how-inner {
-  /* Wider than the old 900px: this holds three phones side by side now, not a
-     single column of prose. */
-  max-width: 1080px;
-  margin: 0 auto;
-}
-
-/* Left, like the hero and like Why Bento. Centring just this one section put
-   a centred heading directly above a left-aligned one, which reads as an
-   inconsistency rather than as emphasis. */
-.lh-how .lh-eyebrow,
-.lh-how-heading { text-align: left; }
-
-/* An ordered list, because the steps are a sequence and a screen reader should
-   say so. list-style is dropped since the visible 01/02/03 labels carry it. */
-.lh-how-steps {
-  list-style: none;
-  margin: 2.5rem 0 0;
-  padding: 0;
-  display: grid;
-  gap: 2.5rem 1.75rem;
-  grid-template-columns: repeat(3, 1fr);
-}
-
-.lh-step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 1.25rem;
-}
-
-.lh-phone--step {
-  width: 100%;
-  max-width: 240px;
-}
-
-.lh-step-body { width: 100%; }
-
-.lh-step-num-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-bottom: 0.6rem;
-}
-
-.lh-step-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--r-sm);
-  background: rgba(253,143,42,0.10);
-  color: var(--orange);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.lh-step-num-label {
-  font-size: var(--t-xs);
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.lh-step-title {
-  font-family: var(--ff-disp);
-  font-size: var(--t-md);
-  font-weight: 800;
-  color: var(--navy);
-  margin: 0 0 0.4rem;
-  line-height: 1.2;
-}
-
-.lh-step-desc {
-  font-size: var(--t-sm);
-  line-height: 1.6;
-  color: var(--muted);
-  margin: 0;
-  max-width: 30ch;
-  margin-inline: auto;
-}
-
-/* One column below the tablet breakpoint. Three phones side by side at phone
-   width would each be about 100px wide, which shows nothing. */
-@media (max-width: 699px) {
-  .lh-how-steps { grid-template-columns: 1fr; gap: 2.75rem; }
-  .lh-phone--step { max-width: 210px; }
-}
-
-/* ═══════════════════════════════════════════
-   FEATURES
-═══════════════════════════════════════════ */
-.lh-features {
-  padding: 3.5rem 1.25rem;
-  background: var(--cream);
-}
-
-.lh-features-inner { max-width: 900px; margin: 0 auto; }
-
-.lh-features-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.875rem;
-  margin-top: 0.5rem;
-}
-
-.lh-feat-card {
-  background: white;
-  border-radius: var(--r-lg);
-  padding: 1.4rem 1.25rem;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  position: relative;
-  overflow: hidden;
-}
-
-.lh-feat-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0;
-  width: 4px;
-  height: 100%;
-  border-radius: 0 2px 2px 0;
-}
-
-/* One tone for all four. These are parallel capabilities with identical
-   structure, so a single odd-coloured bar among them reads as an error rather
-   than as meaning. Semantic colour still does real work where the reader can
-   see the difference it marks: the wide stats compartment, the availability
-   dots, the trust panel. */
-.lh-feat-card::before { background: var(--action); }
-
-.lh-feat-card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-}
-
-.lh-feat-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--r-sm);
-}
-
-.lh-feat-icon { background: rgba(253,143,42,0.12); color: var(--action); }
-
-
-
-.lh-feat-title {
-  font-family: var(--ff-disp);
-  font-size: var(--t-base);
-  font-weight: 800;
-  color: var(--navy);
-  margin: 0 0 0.4rem;
-  line-height: 1.25;
-}
-
-.lh-feat-desc {
-  font-size: var(--t-sm);
-  line-height: 1.6;
-  color: var(--muted);
-  margin: 0;
-}
-
-/* ═══════════════════════════════════════════
-   TESTIMONIALS
-═══════════════════════════════════════════ */
-.lh-testimonials {
-  padding: 3.5rem 0;
-  background: linear-gradient(180deg, #f7f3ee 0%, var(--cream) 80px, var(--cream) 100%);
-  overflow: hidden;
-}
-
-.lh-testimonials-hd {
-  padding: 0 1.25rem;
-  margin-bottom: 1.5rem;
-}
-
-.lh-marquee-wrap {
-  overflow: hidden;
-  mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
-}
-
-.lh-marquee {
-  display: flex;
-  gap: 1rem;
-  width: max-content;
-  animation: marquee 36s linear infinite;
-}
-
-.lh-marquee:hover { animation-play-state: paused; }
-
-.lh-tcard {
-  background: white;
-  border-radius: var(--r-lg);
-  padding: 1.25rem;
-  width: 270px;
-  flex-shrink: 0;
-  box-shadow: 0 2px 14px rgba(0,0,0,0.07);
-}
-
-.lh-tcard-stars {
-  display: flex;
-  gap: 1px;
-  color: var(--orange);
-  margin-bottom: 0.6rem;
-}
-
-.lh-tcard-star { display: flex; align-items: center; }
-
-.lh-tcard-text {
-  font-size: var(--t-sm);
-  line-height: 1.65;
-  color: var(--navy);
-  margin: 0 0 0.85rem;
-}
-
-.lh-tcard-attr {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-}
-
-.lh-tcard-av {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: var(--av, #FD8F2A);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--t-xs);
-  font-weight: 700;
-  color: white;
-  flex-shrink: 0;
-  opacity: 0.85;
-}
-
-.lh-tcard-name { font-size: var(--t-xs); font-weight: 700; color: var(--navy); }
-.lh-tcard-role { font-size: var(--t-xs); color: var(--muted); }
-
-/* ═══════════════════════════════════════════
-   TRUST
-═══════════════════════════════════════════ */
-.lh-trust {
-  /* Was a full-bleed green stripe, a third colour family showing up for one
-     sentence between a cream section and a white one. It is a compartment on
-     the page's own ground now, like everything else here, and the green does
-     its work in the icon and the border instead of a band. */
-  background: var(--cream);
-  padding: var(--s-5) 1.25rem var(--s-6);
-}
-
-.lh-trust-inner {
-  background: #fff;
-  border: 1px solid rgba(119,190,61,0.35);
-  border-radius: var(--r-lg);
-  padding: var(--s-4) var(--s-5);
-}
-
-.lh-trust-inner {
-  max-width: 680px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.lh-trust-shield-wrap { flex-shrink: 0; display: flex; }
-
-.lh-trust-copy { flex: 1; }
-
-.lh-trust-hed {
-  font-family: var(--ff-disp);
-  font-size: var(--t-base);
-  font-weight: 800;
-  color: var(--navy);
-  margin: 0 0 0.4rem;
-}
-
-.lh-trust-bod {
-  font-size: var(--t-sm);
-  line-height: 1.65;
-  color: var(--muted);
-  margin: 0;
-}
-
-.lh-trust-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.lh-trust-pill {
-  background: rgba(119,190,61,0.14);
-  color: #4a8a1e;
-  font-size: var(--t-xs);
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: var(--r-md);
-}
-
-/* ═══════════════════════════════════════════
-   FINAL CTA
-═══════════════════════════════════════════ */
-.lh-cta {
-  position: relative;
-  background: var(--navy-d);
-  padding: 4rem 1.5rem 4.5rem;
-  overflow: hidden;
-  /* The universities section now sits directly above this one, and both are
-     navy. Without a rule the two tones met at a hard seam that read as a
-     rendering fault rather than a section change. */
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-}
-
-
-
-
-
-
-
-.lh-cta-inner {
-  position: relative;
-  z-index: 1;
-  max-width: 900px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 2.5rem;
-  align-items: center;
-}
-
-.lh-cta-copy { text-align: center; }
-
-.lh-cta-hed {
-  font-family: var(--ff-disp);
-  font-size: clamp(var(--t-2xl), 9vw, var(--t-4xl));
-  font-weight: 900;
-  line-height: 1.06;
-  letter-spacing: -0.03em;
-  color: white;
-  margin: 0 0 1rem;
-}
-
-.lh-cta-accent { color: var(--orange); }
-
-.lh-cta-sub {
-  font-size: var(--t-base);
-  color: rgba(255,255,255,0.55);
-  margin: 0 0 1.75rem;
-}
-
-.lh-cta-btns {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
-.lh-btn-primary--inv {
-  background: var(--orange);
-  box-shadow: 0 4px 24px rgba(253,143,42,0.35);
-}
-
-.lh-btn-ghost {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.8);
-  border: 1.5px solid rgba(255,255,255,0.15);
-  padding: 1rem 1.5rem;
-  border-radius: var(--r-pill);
-  font-family: var(--ff-body);
-  font-size: var(--t-base);
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
-  min-height: 52px;
-  width: 100%;
-}
-
-.lh-btn-ghost:hover {
-  background: rgba(255,255,255,0.13);
-  border-color: rgba(255,255,255,0.25);
-}
-
-.lh-cta-note {
-  font-size: var(--t-xs);
-  color: rgba(255,255,255,0.35);
-  margin: 0;
-}
-
-/* ═══════════════════════════════════════════
-   WAITLIST
-═══════════════════════════════════════════ */
-.lh-waitlist {
-  background: var(--cream);
-  padding: 3.5rem 1.5rem 4rem;
-  border-top: 1px solid var(--lh-border);
-}
-
-.lh-waitlist-inner {
-  max-width: 480px;
-  margin: 0 auto;
-  text-align: center;
-}
-
-.lh-waitlist-eyebrow {
-  font-size: var(--t-xs);
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--orange);
-  margin: 0 0 0.6rem;
-}
-
-.lh-waitlist-hed {
-  font-family: var(--ff-disp);
-  font-size: clamp(var(--t-xl), 6vw, var(--t-2xl));
-  font-weight: 900;
-  line-height: 1.08;
-  letter-spacing: -0.02em;
-  color: var(--navy);
-  margin: 0 0 0.75rem;
-}
-
-.lh-waitlist-sub {
-  font-size: var(--t-sm);
-  line-height: 1.65;
-  color: var(--muted);
-  margin: 0 0 2rem;
-}
-
-.lh-waitlist-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.lh-waitlist-fields {
-  display: flex;
-  flex-direction: column;
-  gap: 0.625rem;
-}
-
-.lh-waitlist-input {
-  width: 100%;
-  padding: 0.875rem 1rem;
-  background: white;
-  border: 1px solid var(--lh-border);
-  border-radius: var(--r-sm);
-  font-family: var(--ff-body);
-  font-size: var(--t-base);
-  color: var(--navy);
-  outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
-  box-sizing: border-box;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-}
-
-.lh-waitlist-input::placeholder { color: var(--muted); opacity: 0.6; }
-
-.lh-waitlist-input:focus {
-  border-color: var(--orange);
-  box-shadow: 0 0 0 3px rgba(253,143,42,0.12);
-}
-
-.lh-waitlist-input:disabled { opacity: 0.5; }
-
-.lh-waitlist-btn {
-  width: 100%;
-  padding: 0.95rem 1.5rem;
-  background: var(--orange);
-  color: white;
-  border: none;
-  border-radius: var(--r-pill);
-  font-family: var(--ff-body);
-  font-size: var(--t-base);
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
-  box-shadow: 0 4px 20px rgba(253,143,42,0.3);
-  min-height: 50px;
-}
-
-.lh-waitlist-btn:hover:not(:disabled) {
-  background: #e87f20;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 28px rgba(253,143,42,0.38);
-}
-
-.lh-waitlist-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-
-.lh-waitlist-error {
-  font-size: var(--t-sm);
-  color: #dc2626;
-  margin: 0;
-}
-
-.lh-waitlist-success {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 2rem 0 1rem;
-}
-
-.lh-waitlist-check {
-  font-size: var(--t-2xl);
-  color: var(--green);
-}
-
-.lh-waitlist-success-hed {
-  font-family: var(--ff-disp);
-  font-size: var(--t-lg);
-  font-weight: 800;
-  color: var(--navy);
-  margin: 0;
-}
-
-.lh-waitlist-success-sub {
-  font-size: var(--t-sm);
-  color: var(--muted);
-  margin: 0;
-}
-
-/* ═══════════════════════════════════════════
-   UNIVERSITIES
-═══════════════════════════════════════════ */
-.lh-uni {
-  background: var(--navy-d);
-  padding: 4rem 1.5rem 4.5rem;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-}
-
-
-
-
-
-.lh-uni-inner {
-  max-width: 560px;
-  margin: 0 auto;
-  position: relative;
-  z-index: 1;
-}
-
-.lh-uni-eyebrow {
-  font-size: var(--t-xs);
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--blue);
-  margin: 0 0 0.75rem;
-}
-
-.lh-uni-hed {
-  font-family: var(--ff-disp);
-  font-size: clamp(var(--t-xl), 7vw, var(--t-3xl));
-  font-weight: 900;
-  line-height: 1.08;
-  letter-spacing: -0.02em;
-  color: white;
-  margin: 0 0 1rem;
-  text-wrap: balance;
-}
-
-.lh-uni-text {
-  font-size: var(--t-sm);
-  line-height: 1.7;
-  color: rgba(255,255,255,0.5);
-  margin: 0 0 2rem;
-}
-
-.lh-uni-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--blue);
-  border: none;
-  color: white;
-  padding: 1rem 1.75rem;
-  border-radius: var(--r-pill);
-  font-family: var(--ff-body);
-  font-size: var(--t-base);
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
-  min-height: 52px;
-  box-shadow: 0 4px 20px rgba(43,151,253,0.35);
-}
-
-.lh-uni-btn:hover {
-  background: #1a87f0;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 28px rgba(43,151,253,0.45);
-}
-
-/* ═══════════════════════════════════════════
-   ANIMATIONS
-═══════════════════════════════════════════ */
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-14px); }
-}
-
-@keyframes float-food {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50%       { transform: translateY(-12px) rotate(8deg); }
-}
-
-
-
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-
-@keyframes draw-underline {
-  from { stroke-dashoffset: 230; }
-  to   { stroke-dashoffset: 0; }
-}
-
-/* ═══════════════════════════════════════════
-   MOBILE CHIPS (below desktop breakpoint)
-═══════════════════════════════════════════ */
-@media (max-width: 959px) {
-  /* Break phone col out to full viewport width so chips have room */
-  .lh-hero-phone-col {
-    margin-left: -1.5rem;
-    margin-right: -1.5rem;
-    width: calc(100% + 3rem);
-  }
-
-  .lh-phone-anchor {
-    position: relative;
-    display: inline-flex;
-  }
-}
-
-/* ═══════════════════════════════════════════
-   TABLET+ (min-width: 600px)
-═══════════════════════════════════════════ */
-@media (min-width: 600px) {
-  /* Compartments two across from large phones through tablets, with the
-     differentiating claim spanning both. Below 960px the grid was a single
-     column, so four full-width bars read as a list rather than a box. */
-  .lh-stats-inner { grid-template-columns: 1fr 1fr; }
-  .lh-stat-card--wide { grid-column: span 2; }
-
-  .lh-hero-ctas,
-  .lh-cta-btns {
-    flex-direction: row;
-  }
-
-  .lh-btn-primary,
-  .lh-btn-secondary,
-  .lh-btn-outline,
-  .lh-btn-primary--inv,
-  .lh-btn-ghost {
-    width: auto;
-    min-width: 180px;
-    /* Side by side these are flex items that may shrink, and the row is
-       narrower than the two labels want. Left to shrink, "Join the iOS beta"
-       collapsed to its 180px minimum and broke across two lines next to a
-       wider sibling. */
-    flex-shrink: 0;
-  }
-
-  .lh-features-grid { grid-template-columns: 1fr 1fr; }
-}
-
-/* ═══════════════════════════════════════════
-   DESKTOP (min-width: 960px)
-═══════════════════════════════════════════ */
-@media (min-width: 960px) {
-  /* Two-column hero: the headline has its own column, so it can be big. */
-  .lh-hero-headline { font-size: clamp(var(--t-2xl), 5.6vw, var(--t-5xl)); }
-
-  .lh-hero {
-    padding: 8rem 4rem 6rem;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-  }
-
-  .lh-hero-inner {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto;
-    grid-template-areas:
-      "copy-top   phone"
-      "copy-bottom phone";
-    gap: 0 4rem;
-    align-items: center;
-    max-width: 1140px;
-    margin: 0 auto;
-  }
-
-  .lh-hero-copy-top    { grid-area: copy-top; }
-  .lh-hero-phone-col   { grid-area: phone; grid-row: 1 / 3; align-self: center; padding: 0; }
-  .lh-hero-copy-bottom { grid-area: copy-bottom; }
-
-  .lh-phone--hero { width: 260px; }
-
-  .lh-hero-phone-wrap { padding: 3rem 2rem; }
-
-  .lh-phone-anchor {
-    position: relative;
-    display: inline-flex;
-  }
-
-  /* Desktop chips: larger size and wider gap */
-  .lh-tag { font-size: var(--t-xs); gap: 6px; padding: 5px 11px 5px 7px; }
-  .lh-tag-dot { width: 7px; height: 7px; }
-
-  /* left-side chips: right edge 14px past phone's left edge */
-  .lh-tag--tl { top: 26%;    right: calc(100% + 14px); }
-  .lh-tag--bl { bottom: 22%; right: calc(100% + 14px); }
-  /* right-side chips: left edge 14px past phone's right edge */
-  .lh-tag--tr { top: 20%;    left: calc(100% + 14px); }
-  .lh-tag--br { bottom: 28%; left: calc(100% + 14px); }
-
-  /* Stats */
-  .lh-stats { padding: 4.5rem 4rem; }
-  /* Two columns of compartments, with the first claim spanning both. Four
-     identical cards in a row was the most generic shape on the page, and this
-     one is at least the shape the product is named after. */
-  .lh-stats-inner {
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--s-3);
-  }
-  .lh-stat-card--wide { grid-column: span 3; }
-  .lh-stat-card { padding: 1.5rem; }
-
-  /* How It Works */
-  .lh-how { padding: 5rem 4rem 6rem; }
-
-  .lh-how-inner {
-    /* Was 640px, from when this section was one narrow column of prose. It now
-       holds three phones side by side, and 640px squeezed each to 195px on a
-       1920px screen while the hero beside it ran to 1140px. */
-    max-width: 1080px;
-  }
-
-  /* Features */
-  .lh-features { padding: 5rem 4rem; }
-
-  /* Testimonials */
-  .lh-testimonials { padding: 5rem 0; }
-  .lh-testimonials-hd { padding: 0 4rem; }
-
-  /* Trust */
-  .lh-trust { padding: 3rem 4rem; }
-  .lh-trust-inner {
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 1.75rem;
-  }
-
-  /* CTA */
-  .lh-cta { padding: 6rem 4rem; }
-
-  .lh-cta-inner {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    gap: 4rem;
-  }
-
-  .lh-cta-copy { text-align: left; max-width: 480px; }
-  /* align-items centre because the secondary action is a text link sitting
-     beside a pill button: left to align on the baseline it rides high against
-     the button's centre, which is what made that row look off. */
-  .lh-cta-btns { flex-direction: row; align-items: center; }
-
-  /* Universities. Left, and on the same container width as the CTA below it,
-     so the two messages in this one dark block share a left edge instead of
-     one being centred above the other. */
-  .lh-uni { padding: 6rem 4rem 3rem; text-align: left; }
-  .lh-uni-inner { max-width: 900px; }
-  .lh-uni-text { margin-inline: 0; max-width: 560px; }
-}
-
-/* ═══════════════════════════════════════════
-   TAG ANIMATIONS (desktop only, controlled
-   by .lh-tag display:none default)
-═══════════════════════════════════════════ */
-@keyframes tag-tl {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-7px); }
-}
-
-@keyframes tag-tr {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-7px); }
-}
-
-@keyframes tag-br {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(7px); }
-}
-
-@keyframes tag-bl {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(7px); }
-}
-
-/* ═══════════════════════════════════════════
-   REDUCED MOTION
-═══════════════════════════════════════════ */
-@media (prefers-reduced-motion: reduce) {
-  .lh-phone--hero,
-  .lh-tag,
-  .lh-marquee { animation: none; }
-
-  .lh-underline-path {
-    stroke-dashoffset: 0;
-    animation: none;
-  }
-}
-
-/* ═══════════════════════════════════════════
-   FAQ SECTION
-═══════════════════════════════════════════ */
-.lh-faq-section {
-  padding: 80px 24px;
-  background: var(--cream);
-}
-
-.lh-faq-inner {
-  max-width: 720px;
-  margin: 0 auto;
-}
-
-.lh-faq-heading {
-  font-size: clamp(var(--t-lg), 3vw, var(--t-2xl));
-  font-weight: 700;
-  color: #1a2b3c;
-  margin: 0 0 40px;
-}
-
-.lh-faq-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  border-top: 1px solid #e8e3dd;
-}
-
-.lh-faq-item {
-  border-bottom: 1px solid #e8e3dd;
-}
-
-.lh-faq-question {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  padding: 20px 0;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: var(--t-base);
-  font-weight: 600;
-  color: #1a2b3c;
-  text-align: left;
-  font-family: inherit;
-}
-
-.lh-faq-chevron {
-  flex-shrink: 0;
-  font-size: var(--t-md);
-  color: #fd8f2a;
-  line-height: 1;
-}
-
-.lh-faq-answer {
-  font-size: var(--t-base);
-  line-height: 1.65;
-  color: #4a5a6a;
-  max-height: 0;
-  overflow: hidden;
-  margin: 0;
-  padding: 0;
-  transition: max-height 0.3s ease, padding 0.3s ease;
-}
-
-.lh-faq-item.open .lh-faq-answer {
-  max-height: 300px;
-  padding-bottom: 20px;
-}
-
-/* ═══════════════════════════════════════════
-   SCHOOL AVAILABILITY
-   Reads src/data/universities.js, the same list onboarding uses, so what it
-   reports is always what the app supports.
-═══════════════════════════════════════════ */
-.lh-school-check {
-  max-width: 460px;
-  margin: 0 auto 1.5rem;
-  text-align: left;
-}
-
-.lh-school-label {
-  display: block;
-  font-size: var(--t-xs);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 0.45rem;
-}
-
-.lh-school-input {
-  width: 100%;
-  padding: 0.85rem 1rem;
-  font-family: inherit;
-  font-size: var(--t-base);
-  color: var(--navy);
-  background: #fff;
-  border: 1.5px solid var(--lh-border);
-  border-radius: var(--r-sm);
-}
-
-.lh-school-input:focus-visible {
-  outline: 2px solid var(--orange);
-  outline-offset: 2px;
-  border-color: var(--orange);
-}
-
-.lh-school-results:not(:empty) { margin-top: 0.75rem; }
-
-.lh-school-hit {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.8rem 0.9rem;
-  background: #fff;
-  border: 1.5px solid var(--lh-border);
-  border-radius: var(--r-sm);
-}
-
-.lh-school-hit + .lh-school-hit { margin-top: 0.5rem; }
-.lh-school-hit--live { border-color: rgba(119,190,61,0.55); }
-
-.lh-school-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #77BE3D;
-  flex-shrink: 0;
-}
-
-.lh-school-dot--soon { background: var(--muted); }
-
-.lh-school-hit-name {
-  font-weight: 700;
-  font-size: var(--t-sm);
-  color: var(--navy);
-  margin: 0;
-}
-
-.lh-school-hit-note {
-  font-size: var(--t-xs);
-  color: var(--muted);
-  margin: 2px 0 0;
-}
-
-.lh-school-hit-btn {
-  margin-left: auto;
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 0.85rem;
-  font-family: inherit;
-  font-size: var(--t-sm);
-  font-weight: 700;
-  color: #fff;
-  background: var(--orange);
-  border: none;
-  border-radius: var(--r-pill);
-  cursor: pointer;
-}
-
-.lh-school-hit-btn:hover { filter: brightness(0.95); }
-
-.lh-school-none {
-  font-size: var(--t-sm);
-  line-height: 1.6;
-  color: var(--muted);
-  margin: 0;
-  padding: 0.8rem 0.9rem;
-  background: #fff;
-  border: 1.5px dashed var(--lh-border);
-  border-radius: var(--r-sm);
-}
-
-/* On a narrow phone the button below the text beats a squeezed row. */
-@media (max-width: 460px) {
-  .lh-school-hit { flex-wrap: wrap; }
-  .lh-school-hit-btn { margin-left: 0; width: 100%; justify-content: center; }
-}
-
-/* ═══════════════════════════════════════════
-   ALLERGEN NOTE
-   Bento filters on the dietary labels the dining hall publishes. It cannot see
-   a kitchen, so it cannot speak to cross-contact. Stated next to the dietary
-   claim rather than only in the footer.
-═══════════════════════════════════════════ */
-.lh-allergen-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.7rem;
-  max-width: 760px;
-  margin: 1.75rem auto 0;
-  padding: 0.9rem 1rem;
-  background: rgba(253,143,42,0.07);
-  border: 1px solid rgba(253,143,42,0.28);
-  border-radius: var(--r-sm);
-  font-size: var(--t-sm);
-  line-height: 1.6;
-  color: var(--navy);
-  text-align: left;
-}
-
-.lh-allergen-note svg { flex-shrink: 0; margin-top: 1px; }
-
-.lh-cta-secondary {
-  display: inline-block;
-  margin-left: var(--s-3);
-  font-size: var(--t-sm);
-  font-weight: 600;
-  color: rgba(255,255,255,0.82);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.lh-cta-secondary:hover { color: #fff; }
-
-@media (max-width: 560px) {
-  .lh-cta-secondary { display: block; margin: 1rem 0 0; }
-}
-
-
-/* ═══════════════════════════════════════════
-   SETTLE-IN
-   The page's only motion. Compartments rise a little and lock into place, one
-   easing and one duration everywhere, staggered by an inline transition-delay.
-   The hidden state is applied by script (see useSettleIn) and never from this
-   stylesheet, because the homepage is prerendered and a CSS-only hidden state
-   would blank it for readers without JavaScript.
-═══════════════════════════════════════════ */
-.lh-settle {
-  opacity: 0;
-  transform: translateY(14px) scale(0.992);
-  will-change: opacity, transform;
-}
-
-.lh-settle.is-settled {
-  opacity: 1;
-  transform: none;
-  transition:
-    opacity   var(--dur-settle) var(--ease-settle),
-    transform var(--dur-settle) var(--ease-settle);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  /* useSettleIn returns before touching anything under this preference, so
-     nothing is ever hidden. This is belt and braces for a preference that
-     changes after load. */
-  .lh-settle { opacity: 1; transform: none; }
-  .lh-settle.is-settled { transition: none; }
-}
-
-/* The wide compartment carries the claim nobody else can make, so it gets
-   room to breathe and a tint rather than another outlined box. */
-.lh-stat-card--wide {
-  /* White underneath, warm wash on top. This was a lone gradient, and because
-     `background` is a shorthand it wiped the white from .lh-stat-card, so the
-     tile sat transparent on the peach section while the other three were solid
-     white cards. That is what made this corner look washed out and its
-     subtext hard to read. */
-  background: linear-gradient(135deg, rgba(253,143,42,0.10), rgba(253,143,42,0.03)), #fff;
-  border: 1px solid rgba(253,143,42,0.28);
-}
-
-/* The wide compartment stacked its icon above its text, so a 1294px box held
-   about 300px of content hugging the top left and read as an empty banner.
-   Across the width it reads as the one claim that earned the extra room. */
-@media (min-width: 600px) {
-  .lh-stat-card--wide {
-    display: flex;
-    align-items: center;
-    gap: var(--s-4);
-    padding: var(--s-4) var(--s-5);
-  }
-  .lh-stat-card--wide .lh-stat-icon {
-    margin-bottom: 0;
-    flex-shrink: 0;
-    width: 48px;
-    height: 48px;
-  }
-  .lh-stat-card--wide .lh-stat-label { font-size: var(--t-base); }
-}
-
-/* ═══════════════════════════════════════════
-   CONTAINER
-   One width and one left edge for the whole page.
-
-   Measured at 1440px before this block, the content in each section started
-   at x = 146, 64, 176, 266, 376, 356, 476, 266, 266, across seven different
-   container widths (none, none, 1080, 900, 680, 720, 480, 900, 900). Each
-   section had been given a width that suited it alone, so nothing lined up
-   with anything above or below it and the page read as a stack of unrelated
-   blocks. Every comparable site runs one container: content either sits on a
-   single left edge or is centred, and it does not alternate.
-
-   So: one max-width, one gutter, and one alignment. Sections that need a
-   narrower measure constrain the text or the form inside the container rather
-   than moving the container itself, which keeps the left edge fixed.
-═══════════════════════════════════════════ */
-.lh-hero,
-.lh-stats,
-.lh-how,
-.lh-features,
-.lh-trust,
-.lh-faq-section,
-.lh-waitlist,
-.lh-uni,
-.lh-cta {
-  padding-inline: var(--gutter);
-}
-
-.lh-hero-inner,
-.lh-stats-inner,
-.lh-how-inner,
-.lh-features-inner,
-.lh-trust-inner,
-.lh-faq-inner,
-.lh-waitlist-inner,
-.lh-uni-inner,
-.lh-cta-inner {
-  max-width: var(--container);
-  margin-inline: auto;
-}
-
-/* Everything reads from the same edge. The waitlist was the one centred
-   section left on the page, which made it the odd block in the stack. */
-.lh-waitlist-inner,
-.lh-waitlist-inner .lh-waitlist-hed,
-.lh-waitlist-inner .lh-waitlist-sub {
-  text-align: left;
-}
-
-.lh-waitlist-sub,
-.lh-school-check,
-.lh-waitlist-form,
-.lh-waitlist-success {
-  margin-inline: 0;
-}
-
-/* The form and the trust copy keep a comfortable measure, set on the content
-   rather than on the container so the left edge does not move. */
-.lh-waitlist-sub { max-width: 54ch; }
-.lh-school-check,
-.lh-waitlist-form { max-width: 460px; }
-.lh-trust-bod { max-width: 70ch; }
-
-/* ═══════════════════════════════════════════
-   SECONDARY ACTION
-   The web app, offered beside the App Store link. The app is iPhone
-   only, so every place that promotes it also shows this: an Android or laptop
-   visitor must never reach a dead end.
-═══════════════════════════════════════════ */
-.lh-btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: 52px;
-  padding: 1rem 1.5rem;
-  border-radius: var(--r-pill);
-  background: transparent;
-  color: var(--navy);
-  border: 1.5px solid var(--lh-border);
-  font-family: var(--ff-body);
-  font-size: var(--t-base);
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
-}
-
-.lh-btn-secondary:hover {
-  background: #fff;
-  border-color: var(--muted);
-}
-
-/* On the dark closing section. */
-.lh-btn-secondary--inv {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.lh-btn-secondary--inv:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.55);
-}
-
-/* The primary action is an <a> now, because it leaves the site. Anchors carry
-   an underline and do not size like buttons. */
-a.lh-btn-primary,
-a.lh-school-hit-btn {
-  text-decoration: none;
-  box-sizing: border-box;
-}
-
-
-/* Action labels never break mid-phrase. "Join the iOS beta" wrapping to "Join
-   the iOS / beta" reads as a layout fault, and these labels are short enough
-   that a line break is never the right answer. */
-.lh-btn-primary,
-.lh-btn-secondary {
-  white-space: nowrap;
-}
-
-/* Source order matters here. The .lh-btn-secondary base rule sits after the
-   600px media query in this file, so its width:100% was beating the width:auto
-   that puts side-by-side buttons on their content width. The secondary ended
-   up 508px wide beside a 200px primary, which inverts the hierarchy: the
-   browser fallback looked like the main action. */
-@media (min-width: 600px) {
-  .lh-btn-secondary {
-    width: auto;
-  }
-}
-
-/* ═══════════════════════════════════════════
-   APP STORE BADGE
-   Apple's own artwork, unaltered. Apple asks for the badge as supplied, with
-   clear space around it, so it is only ever sized, never recolored or cropped.
-   The badge is black, so on the dark closing section it keeps a thin light
-   outline, which Apple's guidelines allow for dark backgrounds.
-═══════════════════════════════════════════ */
-.lh-store-badge {
-  display: inline-flex;
-  align-items: center;
-  line-height: 0;
-  border-radius: 9px;
-  align-self: flex-start;
-  width: fit-content;
-}
-.lh-store-badge-img { display: block; height: 50px; width: auto; }
-.lh-cta .lh-store-badge { outline: 1px solid rgba(255, 255, 255, 0.55); outline-offset: -1px; }
-
-/* The badge stands alone under the copy, so on phones and tablets it sits in
-   the middle with its note. On wide screens the copy is left aligned and the
-   badge follows it. */
-@media (max-width: 959px) {
-  .lh-hero-ctas { align-items: center; }
-  .lh-hero-copy-bottom .lh-platform-note { text-align: center; }
-  .lh-cta-btns { align-items: center; }
-  .lh-store-badge { align-self: center; }
-}
+/* ── Home, Loud look. Shell tokens live in landingLoud.css ── */
+
+.ld-home { --sy: 0; position: relative; }
+.ld-home section { position: relative; }
+
+/* ── Phone frame ── */
+.ld-phone {
+  width: 280px; aspect-ratio: 645 / 1398; border-radius: 44px; padding: 8px;
+  background: #24242B; box-shadow: 0 30px 60px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.06);
+}
+.ld-phone-screen { width: 100%; height: 100%; border-radius: 36px; overflow: hidden; background: #F6EFE3; }
+.ld-phone-screen img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+
+/* ── Hero ── */
+.ld-hero {
+  max-width: 1240px; margin: 0 auto; padding: 64px 24px 72px;
+  display: grid; grid-template-columns: minmax(0, 1fr) 580px; gap: 24px; align-items: center; min-height: 680px;
+}
+/* The art is laid out for a 580px column, so the hero stacks before that column would squeeze it. */
+@media (max-width: 1100px) {
+  .ld-hero { grid-template-columns: 1fr; min-height: 0; padding-top: 40px; }
+  .ld-hero-art { height: 560px; max-width: 580px; width: 100%; margin: 0 auto; }
+}
+.ld-hero-copy { position: relative; z-index: 2; }
+
+.ld-hero-h1 {
+  font-family: var(--ld-disp); font-weight: 800; font-stretch: 92%; text-transform: uppercase;
+  font-size: clamp(44px, 5.4vw, 84px); line-height: .94; letter-spacing: -.012em; margin: 0;
+}
+.ld-line { display: block; overflow: hidden; padding: .04em 0 .06em; margin-bottom: -.06em; }
+.ld-line > span { display: inline-block; }
+@media (min-width: 641px) { .ld-line > span { white-space: nowrap; } }
+.ld-hl {
+  position: relative; display: inline-block; color: var(--ld-bg); padding: 0 .08em; z-index: 0;
+  transform: rotate(-2deg);
+}
+.ld-hl::before {
+  content: ''; position: absolute; inset: .02em -.02em .04em; background: var(--ld-li); border-radius: .12em; z-index: -1;
+  transform-origin: left center;
+}
+.ld-hero-h1 .o { color: var(--ld-or); }
+.ld-hero-sub { font-size: 19px; line-height: 1.55; color: var(--ld-cream2); max-width: 470px; margin: 30px 0 0; }
+.ld-hero-sub b { color: var(--ld-cream); font-weight: 600; }
+.ld-hero-ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 30px; }
+.ld-store { display: inline-block; transition: transform .2s var(--ld-pop); }
+.ld-store:hover { transform: translateY(-3px) rotate(-2deg); }
+.ld-store img { display: block; height: 52px; width: auto; }
+.ld-hero-note { font-size: 13px; color: var(--ld-cream3); }
+
+/* Hero art. Parallax reads --sy, written on scroll. */
+.ld-hero-art { position: relative; height: 620px; }
+.ld-hero-par { position: absolute; inset: 0; transform: translateY(calc(var(--sy) * -0.12px)); }
+.ld-phone--front { position: absolute; right: 70px; top: 20px; transform: rotate(6deg); animation: ld-bob 7s ease-in-out infinite; }
+.ld-phone--back  { position: absolute; right: 290px; top: 70px; width: 240px; transform: rotate(-8deg); opacity: .9; animation: ld-bob 8s ease-in-out -3s infinite; }
+@keyframes ld-bob { 50% { translate: 0 -14px; } }
+.ld-hero-sticker {
+  position: absolute; width: 150px; height: 140px; right: 300px; bottom: 10px; z-index: 3;
+  transform: translateY(calc(var(--sy) * -0.3px)) rotate(-12deg);
+  animation: ld-wiggle 5s ease-in-out infinite; transform-origin: 50% 80%;
+}
+@keyframes ld-wiggle { 0%, 100% { rotate: 0deg; } 8% { rotate: -8deg; } 16% { rotate: 6deg; } 24% { rotate: 0deg; } }
+.ld-chip {
+  position: absolute; z-index: 4; white-space: nowrap; color: var(--ld-bg);
+  font-family: var(--ld-disp); font-weight: 800; font-size: 18px; padding: 10px 16px; border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.4);
+}
+.ld-chip--a { right: 330px; top: 40px; rotate: -8deg; animation: ld-float 6s ease-in-out infinite; }
+.ld-chip--b { right: 0; top: 330px; rotate: -6deg; animation: ld-float 7s ease-in-out -2s infinite; }
+.ld-chip--c { right: 40px; top: 530px; rotate: 4deg; animation: ld-float 6.5s ease-in-out -4s infinite; }
+@keyframes ld-float { 50% { translate: 0 -10px; } }
+
+/* Intro. Plays once on first paint. Skipped on the React copy of a prerendered page. */
+.ld-hero .ld-line > span { animation: ld-rise .9s var(--ld-ease) both; }
+.ld-hero .ld-line:nth-child(2) > span { animation-delay: .12s; }
+.ld-hero .ld-hl::before { animation: ld-wipe .6s var(--ld-ease) .55s both; }
+.ld-hero-sub, .ld-hero-ctas { animation: ld-fade .8s var(--ld-ease) both; }
+.ld-hero-sub { animation-delay: .3s; }
+.ld-hero-ctas { animation-delay: .42s; }
+.ld-hero-par { animation: ld-slide-in 1.1s var(--ld-ease) .15s both; }
+.ld-chip--a { animation: ld-pop-in .6s var(--ld-pop) .7s both, ld-float 6s ease-in-out 1.3s infinite; }
+.ld-chip--b { animation: ld-pop-in .6s var(--ld-pop) .85s both, ld-float 7s ease-in-out 1.45s infinite; }
+.ld-chip--c { animation: ld-pop-in .6s var(--ld-pop) 1s both, ld-float 6.5s ease-in-out 1.6s infinite; }
+.ld-hero-sticker { animation: ld-pop-in .7s var(--ld-pop) 1.1s both, ld-wiggle 5s ease-in-out 2s infinite; }
+.ld-hero--settled .ld-line > span, .ld-hero--settled .ld-hl::before,
+.ld-hero--settled .ld-hero-sub, .ld-hero--settled .ld-hero-ctas, .ld-hero--settled .ld-hero-par { animation: none; }
+.ld-hero--settled .ld-chip--a { animation: ld-float 6s ease-in-out infinite; }
+.ld-hero--settled .ld-chip--b { animation: ld-float 7s ease-in-out -2s infinite; }
+.ld-hero--settled .ld-chip--c { animation: ld-float 6.5s ease-in-out -4s infinite; }
+.ld-hero--settled .ld-hero-sticker { animation: ld-wiggle 5s ease-in-out infinite; }
+
+@keyframes ld-rise { from { transform: translateY(105%); } to { transform: none; } }
+@keyframes ld-wipe { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes ld-fade { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes ld-pop-in { from { opacity: 0; scale: .4; } to { opacity: 1; scale: 1; } }
+@keyframes ld-slide-in { from { opacity: 0; transform: translate(80px, 40px) rotate(6deg); } to { opacity: 1; } }
+
+/* ── Blocks ── */
+.ld-blocks {
+  max-width: 1240px; margin: 0 auto; padding: 64px 24px 24px;
+  display: grid; grid-template-columns: repeat(8, 1fr); gap: 12px;
+}
+.ld-blk {
+  border-radius: 28px; padding: 28px; position: relative; overflow: hidden; min-height: 250px;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 24px; color: var(--ld-bg);
+  transition: transform .35s var(--ld-pop);
+}
+.ld-blk:hover { transform: translateY(-6px) rotate(-1deg); }
+.ld-blk h2 {
+  font-family: var(--ld-disp); font-weight: 800; font-stretch: 92%; font-size: clamp(36px, 4vw, 52px);
+  line-height: .88; letter-spacing: -.012em; text-transform: uppercase; margin: 0;
+}
+.ld-blk p { font-size: 15px; line-height: 1.45; font-weight: 500; max-width: 320px; margin: 0; opacity: .85; }
+.ld-num { font-family: var(--ld-disp); font-weight: 800; font-size: 150px; line-height: .78; letter-spacing: -.012em; }
+.ld-blk--num:hover .ld-num { animation: ld-jelly .6s var(--ld-pop); }
+@keyframes ld-jelly { 30% { scale: 1.15 .85; } 55% { scale: .92 1.08; } 100% { scale: 1; } }
+.ld-s4 { grid-column: span 5; }
+.ld-s2 { grid-column: span 3; }
+.ld-blocks .ld-s2:nth-child(n+3) { grid-column: span 8; }
+@media (min-width: 900px) {
+  .ld-blocks { grid-template-columns: repeat(12, 1fr); }
+  .ld-s4 { grid-column: span 8; }
+  .ld-s2, .ld-blocks .ld-s2:nth-child(n+3) { grid-column: span 4; }
+}
+.ld-blk--grad { background: linear-gradient(160deg, var(--ld-pk), var(--ld-lc)); }
+.ld-blk--grad h2 { padding-right: 96px; }
+.ld-blk-sticker { position: absolute; width: 84px; height: 78px; right: 20px; top: 20px; rotate: 10deg; transition: rotate .4s var(--ld-pop); }
+.ld-blk--grad:hover .ld-blk-sticker { rotate: -8deg; }
+
+/* ── How it works ── */
+.ld-how, .ld-why, .ld-faq { max-width: 1240px; margin: 0 auto; padding: 110px 24px 20px; }
+.ld-steps { list-style: none; margin: 56px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+.ld-step { position: relative; display: flex; flex-direction: column; align-items: flex-start; }
+.ld-step-num {
+  position: absolute; top: -34px; left: -6px; z-index: 0;
+  font-family: var(--ld-disp); font-weight: 800; font-stretch: 92%; font-size: 150px; line-height: 1;
+  letter-spacing: -.012em; color: transparent; -webkit-text-stroke: 2px var(--tone);
+}
+.ld-step--or { --tone: var(--ld-or); } .ld-step--li { --tone: var(--ld-li); } .ld-step--pk { --tone: var(--ld-pk); }
+.ld-phone--step { position: relative; z-index: 1; width: 100%; max-width: 300px; margin: 60px 0 0 28px; transition: transform .45s var(--ld-pop); }
+.ld-step:nth-child(odd)  .ld-phone--step { transform: rotate(-3deg); }
+.ld-step:nth-child(even) .ld-phone--step { transform: rotate(3deg); }
+.ld-step:hover .ld-phone--step { transform: rotate(0) translateY(-10px) scale(1.02); }
+.ld-step h3 {
+  font-family: var(--ld-disp); font-weight: 800; font-stretch: 92%; font-size: 36px; text-transform: uppercase;
+  letter-spacing: -.012em; line-height: .9; margin: 28px 0 10px; color: var(--tone);
+}
+.ld-step p { font-size: 16px; line-height: 1.55; color: var(--ld-cream2); margin: 0; max-width: 320px; }
+
+/* ── Friends band ── */
+.ld-band { padding: 110px 24px 0; }
+.ld-band-inner {
+  max-width: 1192px; margin: 0 auto; position: relative; overflow: hidden;
+  border-radius: 36px; background: linear-gradient(150deg, var(--ld-pk) 0%, var(--ld-lc) 100%); color: var(--ld-bg);
+  display: grid; grid-template-columns: 1.2fr 1fr; align-items: center; gap: 24px; padding: 56px 56px 0;
+}
+.ld-band-copy { padding-bottom: 56px; }
+.ld-band-copy > p:last-child { font-size: 17px; line-height: 1.55; font-weight: 500; max-width: 440px; margin: 22px 0 0; }
+.ld-phone--band { width: 300px; justify-self: center; margin-bottom: -120px; transform: translateY(calc(var(--sy) * 0.04px - 30px)) rotate(-4deg); }
+.ld-band-sticker { position: absolute; width: 130px; height: 120px; right: 48px; top: 36px; rotate: 14deg; animation: ld-wiggle 6s ease-in-out infinite; }
+
+/* ── Why Bento ── */
+.ld-feats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 48px; }
+.ld-feat {
+  background: var(--ld-bg2); border: 1px solid var(--ld-line); border-radius: 26px; padding: 26px;
+  transition: transform .35s var(--ld-pop), border-color .25s, background .25s;
+}
+.ld-feat:hover { transform: translateY(-6px); border-color: var(--tone); background: var(--ld-bg3); }
+.ld-feat--or { --tone: var(--ld-or); } .ld-feat--li { --tone: var(--ld-li); } .ld-feat--sk { --tone: var(--ld-sk); }
+.ld-feat--pk { --tone: var(--ld-pk); } .ld-feat--bu { --tone: var(--ld-bu); } .ld-feat--lc { --tone: var(--ld-lc); }
+.ld-feat h3 {
+  font-family: var(--ld-disp); font-weight: 800; font-stretch: 92%; font-size: 26px; line-height: .95;
+  letter-spacing: -.012em; text-transform: uppercase; margin: 0 0 12px; color: var(--tone);
+}
+.ld-feat p { font-size: 15px; line-height: 1.55; color: var(--ld-cream2); margin: 0; }
+.ld-allergen {
+  margin: 28px 0 0; padding: 4px 0 4px 18px; border-left: 3px solid var(--ld-or);
+  font-size: 14px; line-height: 1.6; color: var(--ld-cream2); max-width: 860px;
+}
+
+/* ── Trust ── */
+.ld-trust {
+  max-width: 1192px; margin: 80px auto 0;
+  padding: 30px 32px; border-radius: 28px; background: var(--ld-bg2); border: 1px solid var(--ld-line);
+}
+.ld-trust h2 { font-family: var(--ld-disp); font-weight: 800; font-stretch: 92%; font-size: 34px; text-transform: uppercase; letter-spacing: -.012em; line-height: .95; margin: 0 0 8px; }
+.ld-trust p { margin: 0; font-size: 16px; line-height: 1.55; color: var(--ld-cream2); max-width: 720px; }
+
+/* ── FAQ ── */
+.ld-faq { display: grid; grid-template-columns: .9fr 1.1fr; gap: 48px; align-items: start; }
+.ld-faq-h { position: sticky; top: 100px; font-size: clamp(44px, 5.6vw, 76px); }
+.ld-faq-list { display: flex; flex-direction: column; gap: 10px; }
+.ld-faq-item { background: var(--ld-bg2); border: 1px solid var(--ld-line); border-radius: 22px; overflow: hidden; transition: border-color .2s; }
+.ld-faq-item.open { border-color: rgba(255,122,200,.5); }
+.ld-faq-q {
+  width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 16px; text-align: left;
+  background: none; border: 0; color: var(--ld-cream); cursor: pointer; padding: 20px 22px; font: 600 17px/1.35 var(--ld-sans);
+}
+.ld-faq-plus { position: relative; flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--ld-bg3); transition: background .25s, transform .35s var(--ld-pop); }
+.ld-faq-plus::before, .ld-faq-plus::after { content: ''; position: absolute; left: 50%; top: 50%; width: 12px; height: 2px; margin: -1px 0 0 -6px; background: var(--ld-cream); border-radius: 2px; transition: transform .3s var(--ld-ease); }
+.ld-faq-plus::after { transform: rotate(90deg); }
+.ld-faq-item.open .ld-faq-plus { background: var(--ld-pk); transform: rotate(180deg); }
+.ld-faq-item.open .ld-faq-plus::before, .ld-faq-item.open .ld-faq-plus::after { background: var(--ld-bg); }
+.ld-faq-item.open .ld-faq-plus::after { transform: rotate(0); }
+.ld-faq-a { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .4s var(--ld-ease); }
+.ld-faq-a p { overflow: hidden; margin: 0; padding: 0 22px; color: var(--ld-cream2); font-size: 15px; line-height: 1.6; }
+.ld-faq-item.open .ld-faq-a { grid-template-rows: 1fr; }
+.ld-faq-item.open .ld-faq-a p { padding-bottom: 20px; }
+
+/* ── Waitlist ── */
+.ld-wait { max-width: 1240px; margin: 0 auto; padding: 110px 24px 0; scroll-margin-top: 70px; }
+.ld-wait-card { max-width: 760px; margin: 0 auto; text-align: center; }
+.ld-wait-sub { color: var(--ld-cream2); font-size: 17px; line-height: 1.55; margin: 20px auto 30px; max-width: 520px; }
+.ld-school { text-align: left; }
+.ld-school-results { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.ld-hit {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 18px; background: var(--ld-bg2);
+  border: 1px solid var(--ld-line); animation: ld-pop-in .35s var(--ld-pop) both;
+}
+.ld-hit--live { border-color: rgba(210,255,61,.45); }
+.ld-hit-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--ld-li); }
+.ld-hit-dot--soon { background: var(--ld-bu); }
+.ld-hit-tx { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.ld-hit-tx b { font-weight: 700; }
+.ld-hit-tx span { font-size: 13px; color: var(--ld-cream2); }
+.ld-hit-btn { padding: 10px 14px; font-size: 13px; }
+.ld-school-none { color: var(--ld-cream2); font-size: 14px; margin: 6px 0 0; }
+.ld-wait-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; margin-top: 18px; text-align: left; }
+.ld-wait-form .ld-error { grid-column: 1 / -1; margin: 0; }
+.ld-wait-done { margin-top: 24px; padding: 28px; border-radius: 24px; background: var(--ld-li); color: var(--ld-bg); animation: ld-pop-in .5s var(--ld-pop) both; }
+.ld-wait-done p { margin: 0; font-weight: 500; }
+.ld-wait-check { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--ld-bg); color: var(--ld-li); font-weight: 800; font-size: 22px; }
+.ld-wait-done .ld-wait-done-hed { font-family: var(--ld-disp); font-weight: 800; font-size: 34px; text-transform: uppercase; letter-spacing: -.012em; margin: 12px 0 6px; }
+
+/* ── Universities ── */
+.ld-uni {
+  max-width: 1192px; margin: 110px auto 0; padding: 56px; border-radius: 36px; background: var(--ld-bu); color: var(--ld-bg);
+}
+.ld-uni .ld-h2 { font-size: clamp(40px, 5.6vw, 76px); }
+.ld-uni > p { font-size: 17px; line-height: 1.55; font-weight: 500; max-width: 560px; margin: 20px 0 28px; }
+.ld-uni .ld-btn { background: var(--ld-bg); color: var(--ld-cream); box-shadow: 0 5px 0 rgba(13,13,16,.35); }
+
+/* ── Final ── */
+.ld-final { padding: 130px 24px 120px; text-align: center; overflow: hidden; }
+.ld-final-h {
+  position: relative; margin: 0; font-family: var(--ld-disp); font-weight: 800; font-stretch: 92%;
+  font-size: clamp(46px, 7.4vw, 100px); line-height: .92; letter-spacing: -.012em; text-transform: uppercase;
+}
+.ld-final-h span { color: var(--ld-pk); display: inline-block; }
+.ld-final-h.is-in span { animation: ld-jelly .8s var(--ld-pop) .5s; }
+.ld-final-sub { position: relative; color: var(--ld-cream2); font-size: 18px; margin: 26px 0 0; }
+.ld-final-ctas { position: relative; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 22px; margin-top: 30px; }
+.ld-final-link { display: inline-flex; align-items: center; gap: 8px; color: var(--ld-li); font-weight: 600; text-decoration: none; }
+.ld-final-link svg { transition: transform .25s var(--ld-pop); }
+.ld-final-link:hover svg { transform: translateX(5px); }
+
+/* ── Tablet ── */
+@media (max-width: 1000px) {
+  .ld-steps { grid-template-columns: 1fr; gap: 64px; max-width: 420px; margin-left: auto; margin-right: auto; }
+  .ld-feats { grid-template-columns: 1fr 1fr; }
+  .ld-band-inner { grid-template-columns: 1fr; padding: 40px 32px 0; }
+  .ld-band-copy { padding-bottom: 0; }
+  .ld-phone--band { margin-bottom: -160px; }
+  .ld-faq { grid-template-columns: 1fr; gap: 28px; }
+  .ld-faq-h { position: static; }
+}
+
+/* ── Phone ── */
+@media (max-width: 640px) {
+  .ld-hero { padding: 28px 16px 40px; }
+  .ld-hero-h1 { font-size: clamp(38px, 11vw, 56px); }
+  .ld-hero-sub { font-size: 17px; }
+  .ld-hero-art { height: 470px; }
+  .ld-phone--front { width: 220px; right: 8%; }
+  .ld-phone--back { width: 180px; right: auto; left: 2%; top: 60px; }
+  .ld-hero-sticker { width: 96px; height: 90px; right: auto; left: 0; bottom: 8px; transform: rotate(-12deg); }
+  .ld-hero-par { transform: none; }
+  .ld-chip { font-size: 15px; padding: 8px 12px; }
+  .ld-chip--a { right: auto; left: 0; top: 4px; }
+  .ld-chip--b { right: 0; top: 300px; }
+  .ld-chip--c { display: none; }
+  .ld-blocks { padding: 40px 16px 8px; grid-template-columns: 1fr; }
+  .ld-blocks .ld-blk { grid-column: auto !important; min-height: 200px; }
+  .ld-how, .ld-why, .ld-faq { padding: 80px 16px 8px; }
+  .ld-feats { grid-template-columns: 1fr; }
+  .ld-band { padding: 80px 16px 0; }
+  .ld-band-inner { border-radius: 28px; padding: 32px 22px 0; }
+  .ld-band-sticker { width: 86px; height: 80px; right: 16px; top: 18px; }
+  .ld-phone--band { width: 240px; }
+  .ld-trust { margin: 60px 16px 0; padding: 24px; }
+  .ld-wait { padding: 80px 16px 0; }
+  .ld-wait-form { grid-template-columns: 1fr; }
+  .ld-hit { flex-wrap: wrap; }
+  .ld-uni { margin: 80px 16px 0; padding: 32px 24px; border-radius: 28px; }
+  .ld-final { padding: 100px 16px 90px; }
+  .ld-step-num { font-size: 120px; }
+}
+
+.ld-inline-link { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.ld-inline-link:hover { text-decoration-thickness: 2px; }
