@@ -6,6 +6,7 @@ import Mascot from '../Mascot/Mascot';
 import LoudMyRatings from '../MyRatings/LoudMyRatings';
 import InsightsPanel from '../Insights/InsightsPanel';
 import Closet from '../Mascot/Closet';
+import PolicyModal from '../Community/PolicyModal';
 import { useDisplayOutfit } from '../../lib/mascotOutfit';
 import { weekSummary, activeDays } from './youStats.js';
 import './loud.css';
@@ -26,6 +27,7 @@ export default function LoudYou({ onOpenSettings }) {
   const [data, setData] = useState(null);
   const [page, setPage] = useState('home');   // home | ratings | insights
   const [closet, setCloset] = useState(false);
+  const [guidelines, setGuidelines] = useState(false);
   const outfit = useDisplayOutfit();   // the same look Bento wears on Today, sunglasses and all
 
   useEffect(() => {
@@ -88,9 +90,11 @@ export default function LoudYou({ onOpenSettings }) {
         <button type="button" onClick={() => setCloset(true)}>Closet<span>›</span></button>
         <button type="button" onClick={() => setPage('ratings')}>Your ratings<span>›</span></button>
         <button type="button" onClick={() => setPage('insights')}>Insights<span>›</span></button>
+        <button type="button" onClick={() => setGuidelines(true)}>Community guidelines<span>›</span></button>
         <button type="button" onClick={onOpenSettings}>Settings<span>›</span></button>
       </div>
       {closet && createPortal(<Closet onClose={() => setCloset(false)} />, document.body)}
+      {guidelines && createPortal(<PolicyModal onClose={() => setGuidelines(false)} />, document.body)}
     </section>
   );
 }

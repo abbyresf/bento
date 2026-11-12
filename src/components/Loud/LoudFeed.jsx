@@ -8,6 +8,7 @@ import { COLOR_IDS } from '../../data/mascotColors';
 import Mascot from '../Mascot/Mascot';
 import PolicyModal from '../Community/PolicyModal';
 import { haptics } from '../../lib/haptics';
+import { RULES_SUMMARY } from '../../data/communityGuidelines';
 import { sortPosts, topRated, autoPosts, colorForPost, timeAgo } from './campus.js';
 import './loud.css';
 import './loud-feed.css';
@@ -30,6 +31,11 @@ async function fetchFeed() {
 
 const VIEWS = [['hot', 'Hot'], ['new', 'New'], ['top', 'Top rated']];
 
+// The short rules show once per device, the first time someone opens the Feed.
+const RULES_KEY = 'bento_feed_rules_seen';
+const rulesSeen = () => { try { return localStorage.getItem(RULES_KEY) === '1'; } catch { return true; } };
+const markRulesSeen = () => { try { localStorage.setItem(RULES_KEY, '1'); } catch { /* shows again next time */ } };
+
 /* The Feed tab in the Loud pilot: Campus, the anonymous feed for one school. Posts are the community suggestions, so
  * dining staff still see them as before. With migration 072, posts also take downvotes and anonymous replies. */
 export default function LoudFeed() {
@@ -43,6 +49,7 @@ export default function LoudFeed() {
   const [thread, setThread] = useState(null);
   const [composing, setComposing] = useState(false);
   const [showPolicy, setShowPolicy] = useState(false);
+  const [showRules, setShowRules] = useState(() => !rulesSeen());
   const [reported, setReported] = useState(new Set());
   const [canRepost, setCanRepost] = useState(false);
   const [reposted, setReposted] = useState(new Set());
@@ -109,7 +116,7 @@ export default function LoudFeed() {
   // Reporting hides the post for you at once. Three reports from your school hide it for everyone (migration 074).
   const report = async (post) => {
     haptics.light();
-    if (!window.confirm('Report this post? It will be hidden for you, and three reports hide it for everyone.')) return;
+    if (!window.confirm('Report this post? It will be hidden for you.')) return;
     haptics.medium();
     setReported((s) => new Set(s).add(post.id));
     try { await flagSuggestion(post.id); } catch { /* still hidden on this screen */ }
@@ -120,7 +127,8 @@ export default function LoudFeed() {
       <span className="loud-glow" style={{ background: 'var(--li)', width: 220, height: 220, right: -40, top: 20 }} />
       <span className="loud-glow" style={{ background: 'var(--pk)', width: 240, height: 240, left: -80, top: 420 }} />
 
-      <div className="lf-top"><span>{schoolName} · Campus</span><span>Anonymous</span></div>
+      <div className="lf-top"><span>{schoolName} · Campus</span>
+        <button type="button" className="lf-top-link" onClick={() => setShowPolicy(true)}>Guidelines</button></div>
       <h1 className="lf-title">Feed</h1>
 
       <div className="lf-seg" role="tablist">
@@ -226,6 +234,12 @@ export default function LoudFeed() {
           onPosted={() => { setQuoting(null); setView('new'); load(); }}
         />, document.body,
       )}
+      {showRules && createPortal(
+        <RulesSheet
+          onDone={() => { markRulesSeen(); setShowRules(false); }}
+          onMore={() => { markRulesSeen(); setShowRules(false); setShowPolicy(true); }}
+        />, document.body,
+      )}
       {showPolicy && createPortal(<PolicyModal onClose={() => setShowPolicy(false)} />, document.body)}
     </section>
   );
@@ -301,6 +315,22 @@ function Thread({ post, enabled, onClose }) {
             onKeyDown={(e) => { if (e.key === 'Enter' && text.trim() && !busy) send(); }} />
           <button type="button" disabled={!text.trim() || busy} onClick={send}>Reply</button>
         </div>}
+      </div>
+    </div>
+  );
+}
+
+/* The first time someone opens the Feed: the rules in five lines, before they read or post. */
+function RulesSheet({ onDone, onMore }) {
+  return (
+    <div className="lf-overlay">
+      <div className="lf-sheet loud lf-rules" role="dialog" aria-modal="true" aria-labelledby="lf-rules-title">
+        <i className="lf-grab" />
+        <h2 id="lf-rules-title">Campus rules</h2>
+        <p className="lf-rules-lead">Campus is anonymous and open to your whole school. Dining staff read posts too.</p>
+        <ul>{RULES_SUMMARY.map((r) => <li key={r}>{r}</li>)}</ul>
+        <button type="button" className="lf-link" onClick={onMore}>Read the full guidelines</button>
+        <button type="button" className="loud-primary is-li" onClick={onDone}>Got it</button>
       </div>
     </div>
   );
