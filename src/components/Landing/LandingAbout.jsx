@@ -1,86 +1,57 @@
+import { BentoSticker, HallMarquee } from './LoudSticker';
+import './landingLoud.css';
 import './LandingAbout.css';
-
-const TEAM = [
-  {
-    name: 'Abigail Resheff',
-    role: 'Founder, CEO & CTO',
-    photo: '/team-abigail.jpg',
-    bio: 'Abigail designed and built Bento from the ground up, out of frustration with her own dining hall experience at Brandeis. A software engineer and data scientist, she currently develops machine learning systems for NASA\'s Airspace Operations Laboratory, and believes the same rigor that goes into flight simulation should go into figuring out what to eat for lunch.',
-  },
-  {
-    name: 'Allison Fuller',
-    role: 'Head of Strategy & Marketing',
-    photo: '/team-allison.jpg',
-    bio: 'Allison leads Bento\'s business strategy and marketing, working to connect the product with the students and universities that need it most.',
-  },
-];
 
 export default function LandingAbout() {
   return (
-    <div className="landing-about">
-
-      <section className="lab-hero">
-        <p className="lab-eyebrow">About</p>
-        <h1 className="lab-heading">
-          Built for the dining hall.<br />
-          By people who eat there.
-        </h1>
-        <p className="lab-intro">
-          Bento started as a simple question: why is it so hard to eat well at a dining hall?
-          The menu changes every day, nutrition data is buried in PDFs, and nothing helps you
-          figure out what to actually put on your plate. We built Bento to fix that.
-        </p>
+    <div className="ld ld-page ld-about">
+      <div className="ld-glow" style={{ width: 420, height: 420, background: 'var(--ld-or)', right: '-4%', top: -40, opacity: .32 }} />
+      <section className="ld-page-inner ld-about-hero">
+        <h1 className="ld-page-h1 ld-enter">Built for the dining hall.<br /><span className="o">By people who eat there.</span></h1>
+        <div className="ld-about-intro">
+          <p className="ld-page-sub ld-enter">
+            Bento started with one question: why is eating well at a dining hall so hard? The menu changes
+            daily. Nutrition facts hide in PDFs. Nothing tells you what to put on your plate. So we built Bento.
+          </p>
+          <BentoSticker className="ld-about-sticker" />
+        </div>
       </section>
 
-      <section className="lab-what">
-        <div className="lab-what-inner">
-          <div className="lab-what-block">
-            <h2 className="lab-block-title">What we do</h2>
-            <p className="lab-block-body">
-              Bento pulls your university's live dining menu and builds a personalized meal plan
-              around your nutrition goals and dietary restrictions. No logging every bite. No
-              spreadsheets. Just a clear answer to "what should I eat today?"
-            </p>
+      <HallMarquee />
+
+      <section className="ld-about-grid">
+        <div className="ld-about-blk ld-enter" style={{ background: 'var(--ld-li)' }}>
+          <h2>What we do</h2>
+          <p>Bento reads your school’s live menu and builds a plate around your goals and restrictions. No logging every bite. One clear answer to “what should I eat today?”</p>
+        </div>
+        <div className="ld-about-blk ld-enter" style={{ background: 'var(--ld-sk)' }}>
+          <h2>Who we are</h2>
+          <p>Students building for students. Bento is independent, with no ties to any university or dining service.</p>
+        </div>
+      </section>
+
+      <section className="ld-founder">
+        <div className="ld-founder-card">
+          <div className="ld-founder-photo">
+            <img src="/team-abigail.jpg" alt="Abigail Resheff" width="600" height="793" loading="lazy" />
           </div>
-          <div className="lab-what-block">
-            <h2 className="lab-block-title">Who we are</h2>
-            <p className="lab-block-body">
-              Bento is an independent product built by students, for students. We are not
-              affiliated with any university or dining service. We just think campus nutrition
-              can be a lot better.
+          <div className="ld-founder-tx">
+            <h2>Abigail Resheff</h2>
+            <p className="ld-founder-role">Founder, CEO &amp; CTO</p>
+            <p>
+              Abigail designed and built Bento after one too many confusing meals at Brandeis. She’s a software
+              engineer and data scientist building machine learning systems at NASA’s Airspace Operations
+              Laboratory. She brings the same rigor to lunch.
             </p>
           </div>
         </div>
       </section>
 
-      <section className="lab-team">
-        <p className="lab-eyebrow">The team</p>
-        <div className="lab-team-list">
-          {TEAM.map(({ name, role, photo, bio }) => (
-            <div key={name} className="lab-card">
-              <div className="lab-card-photo-wrap">
-                <img src={photo} alt={name} className="lab-card-photo" />
-              </div>
-              <div className="lab-card-text">
-                <p className="lab-card-name">{name}</p>
-                <p className="lab-card-role">{role}</p>
-                <p className="lab-card-bio">{bio}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+      <section className="ld-about-contact">
+        <h2 className="ld-page-h1">Say hi.</h2>
+        <p className="ld-page-sub">Questions, feedback, or want Bento at your school?</p>
+        <a className="ld-btn ld-btn--or" href="mailto:bentodining@gmail.com">bentodining@gmail.com</a>
       </section>
-
-      <section className="lab-contact">
-        <h2 className="lab-contact-hed">Get in touch</h2>
-        <p className="lab-contact-body">
-          Questions, feedback, or want to bring Bento to your school?
-        </p>
-        <a className="lab-contact-link" href="mailto:bentodining@gmail.com">
-          bentodining@gmail.com
-        </a>
-      </section>
-
     </div>
   );
 }

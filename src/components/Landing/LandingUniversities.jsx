@@ -3,150 +3,38 @@ import emailjs from '@emailjs/browser';
 import PulseCarousel from './PulseCarousel';
 import './LandingUniversities.css';
 
-// ── Static chart data ─────────────────────────────────────────────────────────
+/* Bento Pulse, for dining administrators. The Loud palette and type, held back:
+ * sentence case, one accent, no stickers, so it reads as a product a director can
+ * take to leadership. */
 
-const ENGAGEMENT_DATA = [520,710,490,840,920,660,310,780,880,540,810,970,720,390,860,1010,750,580,930,820,440,700,870,640,760,990,810,510,940,750];
-
-const f = v => v.toFixed(1);
-
-function bezierPath(data, W, H, pL, pR, pT, pB) {
-  const n = data.length;
-  const max = Math.max(...data);
-  const plotW = W - pL - pR, plotH = H - pT - pB;
-  const xs = data.map((_, i) => pL + (i / (n - 1)) * plotW);
-  const ys = data.map(d => pT + (1 - d / max) * plotH);
-  let p = `M ${f(xs[0])} ${f(ys[0])}`;
-  for (let i = 1; i < n; i++) {
-    const cx = f((xs[i] + xs[i - 1]) / 2);
-    p += ` C ${cx} ${f(ys[i - 1])}, ${cx} ${f(ys[i])}, ${f(xs[i])} ${f(ys[i])}`;
-  }
-  return { line: p, xs, ys };
-}
-
-const CHART = (() => {
-  const W = 500, H = 130, pL = 2, pR = 2, pT = 12, pB = 18;
-  const { line, xs, ys } = bezierPath(ENGAGEMENT_DATA, W, H, pL, pR, pT, pB);
-  const n = ENGAGEMENT_DATA.length;
-  const plotH = H - pT - pB;
-  const area = line + ` L ${f(xs[n - 1])} ${f(pT + plotH)} L ${f(xs[0])} ${f(pT + plotH)} Z`;
-  const weekends = ENGAGEMENT_DATA.map((_, i) => {
-    if (i % 7 !== 5 && i % 7 !== 6) return null;
-    const x0 = i > 0 ? (xs[i] + xs[i - 1]) / 2 : xs[i];
-    const x1 = i < n - 1 ? (xs[i] + xs[i + 1]) / 2 : xs[i];
-    return { x: f(x0), w: f(x1 - x0), key: i };
-  }).filter(Boolean);
-  const peak = { x: f(xs[28]), y: f(ys[28]) };
-  return { line, area, weekends, peak, W, H, pT, plotH };
-})();
-
-const SPARK_DATA = [
-  [13100, 13400, 13700, 13900, 14100, 14200, 14287],
-  [7200, 7800, 8400, 8900, 9200, 9600, 9841],
-  [14000, 16000, 17500, 19000, 20500, 21200, 22156],
-  [395, 400, 405, 408, 412, 415, 418],
+const STATS = [
+  { num: '0',   label: 'hours of data entry for your staff' },
+  { num: '7',   label: 'dietary needs tracked from day one' },
+  { num: 'No',  label: 'integration with your dining system' },
+  { num: 'CSV', label: 'export for stakeholder reports' },
 ];
-const SPARK_COLORS = ['#94a3b8', '#fd8f2a', '#fd8f2a', '#77be3d'];
-
-const SPARKS = SPARK_DATA.map((data, idx) => {
-  const W = 80, H = 20, pad = 2;
-  const { line, xs, ys } = bezierPath(data, W, H, pad, pad, pad, pad);
-  const n = data.length;
-  const plotH = H - 2 * pad;
-  const area = line + ` L ${f(xs[n - 1])} ${f(pad + plotH)} L ${f(xs[0])} ${f(pad + plotH)} Z`;
-  return { line, area, lx: f(xs[n - 1]), ly: f(ys[n - 1]), color: SPARK_COLORS[idx], id: `lpu-sg${idx}` };
-});
-
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function Sparkline({ idx }) {
-  const s = SPARKS[idx];
-  return (
-    <svg className="lpu-kpi-spark" viewBox="0 0 80 20" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id={s.id} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={s.color} stopOpacity="0.15" />
-          <stop offset="100%" stopColor={s.color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={s.area} fill={`url(#${s.id})`} />
-      <path d={s.line} fill="none" stroke={s.color} strokeWidth="1.4" strokeLinejoin="round" />
-      <circle cx={s.lx} cy={s.ly} r="2" fill={s.color} />
-    </svg>
-  );
-}
-
-const KPI_CARDS = [
-  { label: 'Registered Students', value: '14,287', chg: null,   chgUp: false },
-  { label: 'Active This Period',   value: '9,841',  chg: '+8%',  chgUp: true  },
-  { label: 'Meals Confirmed',      value: '22,156', chg: '+11%', chgUp: true  },
-  { label: 'Avg Calories / Meal',  value: '418',    chg: '+3%',  chgUp: true  },
-];
-
-const DIETARY = [
-  { name: 'Vegetarian',  pct: 34, val: '3,346', color: '#fd8f2a', barW: '100%' },
-  { name: 'Gluten-free', pct: 18, val: '1,771', color: '#77be3d', barW: '53%'  },
-  { name: 'Nut allergy', pct: 15, val: '1,476', color: '#64a8d1', barW: '44%'  },
-  { name: 'Vegan',       pct: 12, val: '1,181', color: '#a78bfa', barW: '35%'  },
-  { name: 'Kosher',      pct: 8,  val: '787',   color: '#f59e0b', barW: '24%'  },
-  { name: 'Halal',       pct: 7,  val: '689',   color: '#ec4899', barW: '21%'  },
-];
-
-const TOP_ITEMS = [
-  { name: 'Grilled Chicken Breast', count: '1,842', pct: '18.7%', w: '100%' },
-  { name: 'Greek Yogurt Parfait',   count: '1,724', pct: '17.5%', w: '94%'  },
-  { name: 'Pasta Primavera',        count: '1,651', pct: '16.8%', w: '90%'  },
-  { name: 'Roasted Vegetables',     count: '1,587', pct: '16.1%', w: '86%'  },
-  { name: 'Caesar Salad',           count: '1,243', pct: '12.6%', w: '67%'  },
-];
-
-
-// ── Main component ────────────────────────────────────────────────────────────
 
 const FEATURES = [
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <path d="M3 14l4-4 3 3 4-5 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-    title: 'Back menu decisions with real usage data.',
-    desc: 'See which items students choose, how often, and at which meal. When leadership asks why a menu changed, you have the numbers to show them.',
-  },
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <circle cx="10" cy="10" r="7.5" stroke="currentColor" strokeWidth="1.5" />
-        <path d="M10 6v4.5l2.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-    ),
-    title: 'Catch problems before semester-end surveys do.',
-    desc: 'Week-over-week comparisons surface declining participation and menu gaps while there is still time to respond.',
-  },
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <path d="M10 2a8 8 0 100 16A8 8 0 0010 2z" stroke="currentColor" strokeWidth="1.5" />
-        <path d="M7 10h6M10 7v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-    ),
-    title: 'Know your accommodation picture with precision.',
-    desc: 'See the exact share of students with vegetarian, kosher, halal, gluten-free, vegan, and allergy needs. Plan menus around what your campus actually requires.',
-  },
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <rect x="3" y="4" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
-        <path d="M3 8h14M7 12h2M7 15h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-    ),
-    title: 'Give leadership the report they asked for.',
-    desc: 'Every chart and metric exports to CSV in one click. Bring your findings to the next board meeting without spending an afternoon building a deck from scratch.',
-  },
+  { title: 'Back menu decisions with usage data.', desc: 'See which dishes students choose, how often, and at which meal. When leadership asks why a menu changed, you have the numbers.' },
+  { title: 'Spot problems before end-of-semester surveys.', desc: 'Week-over-week comparisons show falling participation and menu gaps while there’s still time to respond.' },
+  { title: 'Know your accommodation needs.', desc: 'See the share of students who report vegetarian, vegan, kosher, halal, gluten-free, dairy-free and nut-free needs. Plan menus around your campus’s real numbers.' },
+  { title: 'Hand leadership the report.', desc: 'Export charts and metrics to CSV. Bring the numbers to your next meeting without building a deck from scratch.' },
+  { title: 'Student suggestions in one place.', desc: 'Students post suggestions from the Bento app and upvote each other’s. Every one lands in Pulse, sorted and searchable.' },
+  { title: 'Ask students directly.', desc: 'Send a one-question survey to every student or to one dietary group, and watch the results arrive while it runs.' },
 ];
 
-// No onContact prop: the consultation form lives on this page, and the CTAs
-// scroll to it. A prop routing to the generic contact tab was passed in and
-// never read, which read as a wired-up path that did not exist.
+const STEPS = [
+  { title: 'Students plan meals with Bento.', desc: 'Each student gets a daily plan built from your dining hall menu, their dietary needs and their goals. Every meal they confirm is a data point.' },
+  { title: 'Pulse builds your dashboard.', desc: 'Confirmed meals flow into your dashboard as students log them. No uploads, no integration with your dining system, nothing for IT to set up.' },
+  { title: 'Your team acts on the numbers.', desc: 'Find your most popular dishes, track nutrition trends, spot accommodation gaps, read student suggestions and share findings with leadership.' },
+];
+
+const TRUST = [
+  { title: 'Aggregates only.', body: 'Pulse shows totals and shares, never individual students. No names, no individual records, and nothing crosses to another campus.' },
+  { title: 'No work for IT.', body: 'Bento reads your published dining menus. No API, no data migration, nothing for your technical staff to build or maintain.' },
+  { title: 'Built for dining staff.', body: 'No analyst needed. Pulse is made for the people who run campus dining.' },
+];
+
 export default function LandingUniversities() {
   const [consultStatus, setConsultStatus] = useState('idle'); // idle | sending | success | error
 
@@ -177,217 +65,147 @@ export default function LandingUniversities() {
     }
   };
 
-  const scrollToForm = () => {
-    document.getElementById('lpu-consult')?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
 
   return (
-    <div className="landing-universities">
+    <div className="landing-universities lpu">
 
-      {/* ── Hero ── */}
       <section className="lpu-hero">
-        <div className="lpu-hero-inner">
-          {/* Set as live text rather than the bentopulse.png wordmark. That file
-              draws "Bento" in near-black, so it only ever worked on a white
-              hero, and it was the reason this page had a white band in an
-              otherwise dark design. Text takes the page's colours and works on
-              any ground. */}
-          <div className="lpu-wordmark">
-            <img src="/BentoNoWords.svg" alt="" className="lpu-wordmark-mark" />
-            <span className="lpu-wordmark-text">Bento<span>Pulse</span></span>
-          </div>
-          <h1 className="lpu-hero-headline">
-            Your system knows what's served.{' '}
-            <em>Bento knows what students choose.</em>
+        <div className="lpu-wrap">
+          <img className="lpu-wordmark" src="/bentopulse-light.png" alt="Bento Pulse" width="1075" height="257" />
+          <h1 className="lpu-h1">
+            Your system knows what’s served.<br />
+            <span>Pulse shows what students choose.</span>
           </h1>
-          <p className="lpu-hero-sub">
-            Bento Pulse shows your dining team what participating students confirm at each meal, the dietary needs they report, and the feedback they leave. Recorded as students use the app, organized into one dashboard.
+          <p className="lpu-lede">
+            Pulse shows your dining team what students confirm at each meal, the dietary needs
+            they report and the feedback they leave. One dashboard, scoped to your campus.
           </p>
-          <div className="lpu-hero-actions">
-            <button className="lpu-btn-primary" onClick={scrollToForm}>Book a free consultation</button>
-            <button className="lpu-btn-ghost" onClick={() => document.getElementById('lpu-mockup-section')?.scrollIntoView({ behavior: 'smooth' })}>See the dashboard</button>
+          <div className="lpu-actions">
+            <button className="lpu-btn lpu-btn--primary" onClick={() => scrollTo('lpu-consult')}>Book a free consultation</button>
+            <button className="lpu-btn lpu-btn--ghost" onClick={() => scrollTo('lpu-mockup-section')}>See the dashboard</button>
           </div>
         </div>
       </section>
 
-      {/* ── Stats strip ── */}
-      <div className="lpu-stats">
-        <div className="lpu-stats-inner">
-          {[
-            { num: '0',      label: 'manual data entry for your dining staff' },
-            { num: '5+',     label: 'dietary categories tracked without any configuration' },
-            { num: 'No API', label: 'integration with your dining system required' },
-            { num: '1 click',label: 'to export any dataset for stakeholder reports' },
-          ].map(s => (
-            <div key={s.num} className="lpu-stat">
+      <section className="lpu-stats" aria-label="At a glance">
+        <div className="lpu-wrap lpu-stats-grid">
+          {STATS.map(s => (
+            <div key={s.label} className="lpu-stat">
               <span className="lpu-stat-num">{s.num}</span>
               <span className="lpu-stat-label">{s.label}</span>
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* ── Dashboard carousel ── */}
-      <section className="lpu-mockup-section" id="lpu-mockup-section">
-        <div className="lpu-section-inner">
-          <div className="lpu-mockup-head">
-            <p className="lpu-s-label">The dashboard</p>
-            <h2 className="lpu-s-head">Built around what your campus needs to know.</h2>
-            <p className="lpu-s-sub">
-              Every dining program measures something different. We set Pulse up
-              around the questions your team is already asking, so the screens you
-              open each morning are the ones that answer them. Tell us what matters
-              on your campus and we will track it.
-            </p>
-            <p className="lpu-s-note">
-              These are screens from a demo account. The figures are generated, and
-              your view would show your own campus.
+      <section className="lpu-section" id="lpu-mockup-section">
+        <div className="lpu-wrap">
+          <div className="lpu-head">
+            <h2 className="lpu-h2">Built around your team’s questions.</h2>
+            <p className="lpu-sub">
+              Every dining program tracks something different. We set Pulse up around the questions
+              your team already asks. Tell us what matters on your campus and we’ll track it.
             </p>
           </div>
           <PulseCarousel />
+          <p className="lpu-note">Screens from a demo account with generated figures. Your view shows your own campus.</p>
         </div>
       </section>
 
-      {/* ── Features ── */}
-      <section className="lpu-features">
-        <div className="lpu-section-inner">
-          <p className="lpu-s-label">What your team gets</p>
-          <h2 className="lpu-s-head">The data your dining program deserves. Finally within reach.</h2>
-          <div className="lpu-features-grid">
-            {FEATURES.map(feat => (
-              <div key={feat.title} className="lpu-feature">
-                <div className="lpu-feature-icon">{feat.icon}</div>
-                <div className="lpu-feature-title">{feat.title}</div>
-                <div className="lpu-feature-desc">{feat.desc}</div>
-              </div>
-            ))}
-            {/* Suggestions, full-width highlight */}
-            <div className="lpu-feature lpu-feature--wide">
-              <div className="lpu-feature-icon">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M16 3H4a1 1 0 00-1 1v8a1 1 0 001 1h3l3 3 3-3h3a1 1 0 001-1V4a1 1 0 00-1-1z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-                  <path d="M7 8h6M7 11h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
-              </div>
-              <div className="lpu-feature-title">Student suggestions, straight to your dashboard.</div>
-              <div className="lpu-feature-desc">Students submit feedback directly from the Bento app. Every suggestion lands in your Pulse dashboard, organized and searchable. No paper forms, no overflowing boxes, no guessing what the campus actually wants. The suggestion box finally works because it lives in the phone everyone already carries.</div>
-            </div>
+      <section className="lpu-section">
+        <div className="lpu-wrap">
+          <div className="lpu-head">
+            <h2 className="lpu-h2">Answers your team can act on.</h2>
           </div>
-        </div>
-      </section>
-
-      {/* ── How it works ── */}
-      <section className="lpu-how">
-        <div className="lpu-how-inner">
-          <p className="lpu-s-label">How it works</p>
-          <h2 className="lpu-s-head">Live on your campus in under a week.</h2>
-          <div className="lpu-steps">
-            {[
-              {
-                n: '1',
-                title: 'Students use Bento to plan their meals.',
-                desc: 'Students get a personalized daily meal plan built around your dining hall menu, their dietary needs, and their nutrition goals. Every meal they confirm is a real data point.',
-              },
-              {
-                n: '2',
-                title: 'Bento Pulse builds your dashboard from that activity.',
-                desc: 'Student meal confirmations roll into your administrative view in real time. No manual upload, no integration with your dining system, and nothing for your IT department to set up.',
-              },
-              {
-                n: '3',
-                title: 'Your team acts on data, not instinct.',
-                desc: 'Identify your most popular items, track nutrition trends, surface accommodation gaps, review student suggestions, and share findings with administrators. All from one dashboard scoped to your campus only.',
-              },
-            ].map(s => (
-              <div key={s.n} className="lpu-step">
-                <div className="lpu-step-num">{s.n}</div>
-                <div className="lpu-step-content">
-                  <div className="lpu-step-title">{s.title}</div>
-                  <div className="lpu-step-desc">{s.desc}</div>
-                </div>
+          <div className="lpu-features">
+            {FEATURES.map(f => (
+              <div key={f.title} className="lpu-feature">
+                <h3>{f.title}</h3>
+                <p>{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Trust ── */}
-      <section className="lpu-trust">
-        <div className="lpu-trust-inner">
-          {[
-            {
-              title: 'Your data stays within your institution.',
-              body: 'Bento Pulse is scoped strictly to your campus. No student information crosses institutional lines, and aggregate views are anonymized by default.',
-            },
-            {
-              title: 'Your IT team is not involved.',
-              body: 'Bento reads your existing dining hall menus. There is no API integration, no data migration, and nothing for your technical staff to build or maintain.',
-            },
-            {
-              title: 'Built for dining staff, not data teams.',
-              body: 'Your team should not need a data analyst to read a dashboard. Bento Pulse is designed for the people who actually run campus dining operations.',
-            },
-          ].map(t => (
+      <section className="lpu-section">
+        <div className="lpu-wrap">
+          <div className="lpu-head">
+            <h2 className="lpu-h2">Live on your campus in under a week.</h2>
+          </div>
+          <ol className="lpu-steps">
+            {STEPS.map((s, i) => (
+              <li key={s.title} className="lpu-step">
+                <span className="lpu-step-num" aria-hidden="true">{i + 1}</span>
+                <h3>{s.title}</h3>
+                <p>{s.desc}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section className="lpu-section lpu-trust">
+        <div className="lpu-wrap lpu-trust-grid">
+          {TRUST.map(t => (
             <div key={t.title} className="lpu-trust-item">
-              <div className="lpu-trust-heading">{t.title}</div>
-              <div className="lpu-trust-body">{t.body}</div>
+              <h3>{t.title}</h3>
+              <p>{t.body}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── Consultation ── */}
-      <section className="lpu-consult" id="lpu-consult">
-        <div className="lpu-consult-inner">
-          <h2 className="lpu-consult-heading">Let's talk about your campus.</h2>
-          <p className="lpu-consult-sub">
-            Pricing is scoped to your institution's size and needs. We work through it together. Start with a free 30-minute call and we will walk through exactly what Bento Pulse would look like for your dining program.
-          </p>
-          <div className="lpu-consult-meta">
-            <span>Custom pricing</span>
-            <span className="lpu-cmeta-dot" />
-            <span>Sized to your student body</span>
-            <span className="lpu-cmeta-dot" />
-            <span>Free to explore</span>
+      <section className="lpu-section lpu-consult" id="lpu-consult">
+        <div className="lpu-wrap lpu-consult-grid">
+          <div>
+            <h2 className="lpu-h2">Let’s talk about your campus.</h2>
+            <p className="lpu-sub">
+              Pricing depends on your campus size and needs. Start with a free 30-minute call and
+              we’ll walk you through Pulse for your dining program.
+            </p>
+            <ul className="lpu-terms">
+              <li>Custom pricing, sized to your student body</li>
+              <li>Free first consultation</li>
+              <li>Reply within one business day</li>
+            </ul>
           </div>
+
           {consultStatus === 'success' ? (
-            <div className="lpu-consult-success">
-              <span className="lpu-consult-check">✓</span>
-              <p className="lpu-consult-success-hed">Request received.</p>
-              <p className="lpu-consult-success-sub">We'll reach out within one business day to find a time that works.</p>
+            <div className="lpu-done" role="status">
+              <h3>Request received.</h3>
+              <p>We’ll reply within one business day to set up a time.</p>
             </div>
           ) : (
-            <>
-              <form className="lpu-consult-form" onSubmit={handleConsultSubmit}>
-                <div className="lpu-form-row">
-                  <div className="lpu-form-field">
-                    <label className="lpu-form-label">Your name</label>
-                    <input className="lpu-form-input" name="name" type="text" placeholder="Jane Smith" required />
-                  </div>
-                  <div className="lpu-form-field">
-                    <label className="lpu-form-label">Institution</label>
-                    <input className="lpu-form-input" name="institution" type="text" placeholder="State University" required />
-                  </div>
-                </div>
-                <div className="lpu-form-row">
-                  <div className="lpu-form-field">
-                    <label className="lpu-form-label">Work email</label>
-                    <input className="lpu-form-input" name="email" type="email" placeholder="jane@university.edu" required />
-                  </div>
-                  <div className="lpu-form-field">
-                    <label className="lpu-form-label">Your role</label>
-                    <input className="lpu-form-input" name="role" type="text" placeholder="Director of Dining Services" />
-                  </div>
-                </div>
-                {consultStatus === 'error' && (
-                  <p className="lpu-consult-error">Something went wrong. Email us directly at <a href="mailto:bentodining@gmail.com">bentodining@gmail.com</a>.</p>
-                )}
-                <button className="lpu-form-submit" type="submit" disabled={consultStatus === 'sending'}>
-                  {consultStatus === 'sending' ? 'Sending…' : 'Request a free consultation'}
-                </button>
-              </form>
-              <p className="lpu-consult-note">We respond within one business day to find a time that works.</p>
-            </>
+            <form className="lpu-form" onSubmit={handleConsultSubmit}>
+              <div className="lpu-form-row">
+                <label className="lpu-field">
+                  <span>Your name</span>
+                  <input name="name" type="text" placeholder="Jane Smith" required />
+                </label>
+                <label className="lpu-field">
+                  <span>Institution</span>
+                  <input name="institution" type="text" placeholder="State University" required />
+                </label>
+              </div>
+              <div className="lpu-form-row">
+                <label className="lpu-field">
+                  <span>Work email</span>
+                  <input name="email" type="email" placeholder="jane@university.edu" required />
+                </label>
+                <label className="lpu-field">
+                  <span>Your role</span>
+                  <input name="role" type="text" placeholder="Director of Dining Services" />
+                </label>
+              </div>
+              {consultStatus === 'error' && (
+                <p className="lpu-error">Something went wrong. Email us at <a href="mailto:bentodining@gmail.com">bentodining@gmail.com</a>.</p>
+              )}
+              <button className="lpu-btn lpu-btn--primary" type="submit" disabled={consultStatus === 'sending'}>
+                {consultStatus === 'sending' ? 'Sending…' : 'Request a free consultation'}
+              </button>
+            </form>
           )}
         </div>
       </section>

@@ -26,7 +26,16 @@ const waitFor = async (fn, tries = 60) => { for (let i = 0; i < tries; i++) { if
   const questTitle = shot.startsWith('quest:') ? shot.slice(6) : null;           // quest:Rainbow plate
   if (questTitle) window.__mockFresh = true;
   const tab = { buddies: 'Buddies', here: 'Buddies', insights: 'Insights', badges: 'Insights', community: 'Community', ratings: 'My Ratings' }[shot];
-  if (tab || questTitle) { click('button', tab ?? 'Buddies'); await sleep(1200); }
+  // The Loud look renames Community to Feed and Insights to You, with Insights one tap further in.
+  const loudTab = { Community: 'Feed', Insights: 'You', 'My Ratings': 'You' }[tab];
+  if (tab || questTitle) {
+    if (!click('button', tab ?? 'Buddies') && loudTab && click('button', loudTab)) {
+      await sleep(1200);
+      if (tab === 'Insights') click('button', 'Insights›');
+      if (tab === 'My Ratings') click('button', 'Your ratings›');
+    }
+    await sleep(1200);
+  }
   if (shot === 'here') { click('button', "I'm here"); await sleep(800); }
   if (questTitle) {
     await sleep(600);
@@ -37,6 +46,7 @@ const waitFor = async (fn, tries = 60) => { for (let i = 0; i < tries; i++) { if
     await sleep(2500);
   }
   if (shot === 'badges') { await waitFor(() => click('button', 'badges', false)); await sleep(1200); }
+  if (shot === 'menu') { await waitFor(() => click('button', 'Change dishes', false)); await sleep(1200); }
   if (shot === 'closet') { await waitFor(() => click('button', 'Closet')); await sleep(1000); }
   const y = Number(query.get('y') || 0);
   if (y) { window.scrollTo(0, y); document.querySelectorAll('*').forEach((e) => { if (e.scrollHeight > e.clientHeight + 40 && getComputedStyle(e).overflowY !== 'visible') e.scrollTop = y; }); }

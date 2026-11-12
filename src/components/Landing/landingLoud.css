@@ -1,0 +1,184 @@
+/* ── Loud site shell ──────────────────────────────────────────────────────────
+   The Loud look for bentodining.com, from the Draft B board. Scoped to
+   .landing-page.ld so the Universities, Terms and Privacy pages keep their
+   current look until they get their own pass.
+────────────────────────────────────────────────────────────────────────────── */
+
+.ld {
+  --ld-bg: #0D0D10; --ld-bg2: #16161B; --ld-bg3: #202027; --ld-line: rgba(247,241,230,.1);
+  --ld-cream: #F7F1E6; --ld-cream2: rgba(247,241,230,.66); --ld-cream3: rgba(247,241,230,.42);
+  --ld-or: #FF6A13; --ld-li: #D2FF3D; --ld-pk: #FF7AC8; --ld-lc: #A99CFF; --ld-bu: #FFD84D; --ld-sk: #7FD8FF;
+  --ld-disp: 'Bricolage Grotesque', system-ui, sans-serif;
+  --ld-sans: 'Geist', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --ld-ease: cubic-bezier(.22, 1, .36, 1);
+  --ld-pop: cubic-bezier(.34, 1.56, .64, 1);
+  background: var(--ld-bg);
+  color: var(--ld-cream);
+  font-family: var(--ld-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+html.ld-site, html.ld-site body { background: #0D0D10; }
+.ld ::selection { background: var(--ld-li); color: var(--ld-bg); }
+
+/* ── Shared type ── */
+.ld-label {
+  font-family: var(--ld-disp); font-weight: 700; font-size: 13px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ld-cream3); margin: 0 0 14px;
+}
+.ld-h2 {
+  font-family: var(--ld-disp); font-weight: 800; font-stretch: 92%; text-transform: uppercase;
+  font-size: clamp(40px, 5.8vw, 76px); line-height: .94; letter-spacing: -.012em; margin: 0;
+}
+.ld-h2 .o { color: var(--ld-or); }
+.ld-h2 .l { color: var(--ld-li); }
+.ld-h2 .p { color: var(--ld-pk); }
+
+/* ── Chunky buttons ── */
+.ld-btn {
+  display: inline-flex; align-items: center; gap: 8px; border: 0; cursor: pointer;
+  font-family: var(--ld-sans); font-weight: 700; font-size: 15px; text-decoration: none;
+  padding: 14px 22px; border-radius: 999px; background: var(--ld-cream); color: var(--ld-bg);
+  box-shadow: 0 5px 0 rgba(247,241,230,.35);
+  transition: transform .15s var(--ld-ease), box-shadow .15s var(--ld-ease);
+}
+.ld-btn:hover { transform: translateY(-2px); box-shadow: 0 7px 0 rgba(247,241,230,.35); }
+.ld-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 rgba(247,241,230,.35); }
+.ld-btn--or { background: var(--ld-or); color: #fff; box-shadow: 0 5px 0 #A83E00; }
+.ld-btn--or:hover { box-shadow: 0 7px 0 #A83E00; }
+.ld-btn--or:active { box-shadow: 0 1px 0 #A83E00; }
+.ld-btn--li { background: var(--ld-li); color: var(--ld-bg); box-shadow: 0 5px 0 #7E9C12; }
+.ld-btn--li:hover { box-shadow: 0 7px 0 #7E9C12; }
+.ld-btn--li:active { box-shadow: 0 1px 0 #7E9C12; }
+.ld-btn:disabled { opacity: .45; cursor: default; transform: none; }
+.ld-btn:focus-visible, .ld a:focus-visible, .ld button:focus-visible, .ld input:focus-visible,
+.ld select:focus-visible, .ld textarea:focus-visible { outline: 3px solid var(--ld-li); outline-offset: 3px; }
+
+/* ── Glows. Slow drift, never behind text that needs contrast ── */
+.ld-glow {
+  position: absolute; border-radius: 50%; filter: blur(80px); opacity: .5; pointer-events: none;
+  animation: ld-drift 18s ease-in-out infinite alternate;
+}
+@keyframes ld-drift {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(30px, -24px) scale(1.08); }
+  100% { transform: translate(-20px, 18px) scale(.96); }
+}
+
+/* ── Sticker edge ── */
+.ld-stk {
+  filter: drop-shadow(2.5px 0 0 #fff) drop-shadow(-2.5px 0 0 #fff) drop-shadow(0 2.5px 0 #fff)
+          drop-shadow(0 -2.5px 0 #fff) drop-shadow(0 10px 14px rgba(0,0,0,.45));
+}
+
+/* ── Marquee ── */
+.ld-marq {
+  border-top: 1px solid var(--ld-line); border-bottom: 1px solid var(--ld-line);
+  overflow: hidden; white-space: nowrap; padding: 18px 0; background: var(--ld-bg2);
+}
+.ld-marq-track { display: inline-block; animation: ld-mq 34s linear infinite; }
+.ld-marq--rev { background: var(--ld-bg); border-top: 0; }
+.ld-marq--rev .ld-marq-track { animation-direction: reverse; animation-duration: 40s; }
+.ld-marq:hover .ld-marq-track { animation-play-state: paused; }
+.ld-marq-item {
+  font-family: var(--ld-disp); font-weight: 800; font-stretch: 92%; font-size: clamp(26px, 3.4vw, 40px);
+  text-transform: uppercase; letter-spacing: -.01em; margin: 0 4px;
+}
+.ld-marq-item i { display: inline-block; width: 10px; height: 10px; margin: 0 26px; background: var(--ld-or); border-radius: 2px; vertical-align: middle; transform: translateY(-.12em); }
+.ld-marq--outline .ld-marq-item { color: transparent; -webkit-text-stroke: 1.5px var(--ld-cream3); }
+.ld-marq--outline .ld-marq-item i { background: var(--ld-li); }
+@keyframes ld-mq { to { transform: translateX(-50%); } }
+
+/* ── Reveal on scroll. The hidden state is added by script, so prerendered and
+   no-JS readers always see everything ── */
+.ld .ld-hide { opacity: 0; transform: translateY(36px) scale(.97) rotate(var(--ld-r, 0deg)); }
+.ld .ld-hide.is-in {
+  opacity: 1; transform: none;
+  transition: opacity .7s var(--ld-ease), transform .8s var(--ld-pop);
+}
+
+/* ── Nav ── */
+.ld .landing-nav {
+  background: rgba(13,13,16,.72); border-bottom: 1px solid transparent;
+  backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%);
+  font-family: var(--ld-sans);
+}
+.ld .landing-nav.scrolled { border-bottom-color: var(--ld-line); box-shadow: none; }
+.ld .landing-nav-inner { max-width: 1240px; height: 70px; padding: 0 24px; }
+.ld-logo { display: block; height: 30px; width: auto; transition: transform .3s var(--ld-pop); }
+.ld .landing-nav-logo-btn:hover .ld-logo { transform: scale(1.04); }
+
+/* The app's mascot as a sticker. The component sets its own height inline, so the box drives it here. */
+.ld-sticker { display: block; }
+.ld-sticker > svg { width: 100% !important; height: 100% !important; }
+.ld .landing-nav-link {
+  position: relative; color: var(--ld-cream2); font-weight: 500; font-size: 14px; padding: 8px 12px;
+  background: transparent; border-radius: 0; transition: color .2s;
+}
+.ld .landing-nav-link::after {
+  content: ''; position: absolute; left: 12px; right: 12px; bottom: 2px; height: 2px; background: var(--ld-or);
+  transform: scaleX(0); transform-origin: left; transition: transform .3s var(--ld-ease);
+}
+.ld .landing-nav-link:hover { color: var(--ld-cream); background: transparent; }
+.ld .landing-nav-link.active { color: var(--ld-cream); background: transparent; }
+.ld .landing-nav-link.active::after, .ld .landing-nav-link:hover::after { transform: scaleX(1); }
+.ld .landing-nav-get { margin-left: auto; flex-shrink: 0; padding: 11px 18px; font-size: 14px; }
+.ld .landing-hamburger span { background: var(--ld-cream); }
+@media (max-width: 767px) {
+  .ld .landing-nav-get { display: none; }
+}
+
+/* ── Drawer ── */
+.ld .landing-drawer { background: var(--ld-bg2); border-right: 1px solid var(--ld-line); }
+.ld .landing-drawer-header { border-bottom-color: var(--ld-line); }
+.ld .landing-drawer-item { color: var(--ld-cream2); font-family: var(--ld-disp); font-weight: 800; font-stretch: 92%; font-size: 28px; text-transform: uppercase; letter-spacing: -.012em; }
+.ld .landing-drawer-item.active { color: var(--ld-li); background: transparent; }
+.ld .landing-drawer-divider { background: var(--ld-line); }
+
+/* ── Footer ── */
+.ld .landing-footer { background: var(--ld-bg); border-top: 1px solid var(--ld-line); padding: 48px 24px 56px; }
+.ld .landing-footer-disclaimer { color: var(--ld-cream3); }
+.ld .landing-footer-link { color: var(--ld-cream2); }
+.ld .landing-footer-link:hover { color: var(--ld-li); }
+.ld .landing-footer-links span, .ld .landing-footer-copy { color: var(--ld-cream3); }
+
+/* ── Form fields, shared by waitlist, contact and request ── */
+.ld-field label, .ld-fieldlabel {
+  display: block; font-family: var(--ld-disp); font-weight: 700; font-size: 12px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ld-cream3); margin-bottom: 8px;
+}
+.ld-input {
+  width: 100%; font: 500 16px/1.4 var(--ld-sans); color: var(--ld-cream);
+  background: var(--ld-bg2); border: 1.5px solid var(--ld-line); border-radius: 18px; padding: 14px 16px;
+  transition: border-color .2s, background .2s;
+}
+.ld-input::placeholder { color: var(--ld-cream3); }
+.ld-input:hover { border-color: rgba(247,241,230,.22); }
+.ld-input:focus { border-color: var(--ld-li); background: var(--ld-bg3); outline: none; }
+select.ld-input { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ld-cream2) 50%), linear-gradient(135deg, var(--ld-cream2) 50%, transparent 50%); background-position: calc(100% - 22px) 52%, calc(100% - 16px) 52%; background-size: 6px 6px; background-repeat: no-repeat; }
+select.ld-input option { background: var(--ld-bg2); color: var(--ld-cream); }
+textarea.ld-input { resize: vertical; min-height: 140px; }
+.ld-error { color: var(--ld-pk); font-size: 14px; }
+.ld-error a { color: inherit; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ld *, .ld *::before, .ld *::after { animation: none !important; transition: none !important; }
+  .ld .ld-hide { opacity: 1; transform: none; }
+}
+
+/* ── Terms and Privacy. They read the app's colour variables, so the site maps them to the dark tokens ── */
+.ld .landing-terms-wrap {
+  --text-primary: var(--ld-cream); --text-secondary: var(--ld-cream2); --text-body: var(--ld-cream2);
+  --text-disabled: var(--ld-cream3); --border-soft: var(--ld-line); --surface: var(--ld-bg2); --accent-text: var(--ld-or);
+  max-width: 760px; padding: 0 8px;
+}
+.ld .terms-page { padding-top: 64px; min-height: 0; }
+.ld .terms-page-header { border-bottom-width: 1px; padding-bottom: 20px; margin-bottom: 28px; }
+.ld .terms-page-header h1 {
+  font-family: var(--ld-disp); font-weight: 800; font-stretch: 92%; text-transform: uppercase;
+  font-size: clamp(40px, 6vw, 64px); line-height: .94; letter-spacing: -.012em; margin-bottom: 10px;
+}
+.ld .terms-page-intro { box-shadow: none; border-radius: 16px; border: 1px solid var(--ld-line); border-left: 3px solid var(--ld-or); }
+.ld .terms-page-section h2 { font-family: var(--ld-disp); font-size: 15px; letter-spacing: .06em; }
+.ld .terms-page-section p { font-size: 15px; }
+.ld .terms-page a { color: var(--ld-li); }
