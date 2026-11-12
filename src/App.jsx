@@ -47,6 +47,7 @@ import BentoLogo from './components/common/BentoLogo';
 const PulseApp = lazy(() => import('./components/Pulse/PulseApp'));
 const PulseJoin = lazy(() => import('./components/Pulse/PulseJoin'));
 const RutgersWaitlist = lazy(() => import('./components/Waitlist/RutgersWaitlist'));
+const ModeratorApp = lazy(() => import('./components/Moderator/ModeratorApp'));
 const OnboardingWizard = lazy(() => import('./components/Onboarding/OnboardingWizard'));
 const LoudFeed = lazy(() => import('./components/Loud/LoudFeed'));
 const LoudYou = lazy(() => import('./components/Loud/LoudYou'));
@@ -318,6 +319,8 @@ function App() {
 
   if (joinMatch) return <Suspense fallback={loadingScreen}><PulseJoin token={joinMatch[1]} /></Suspense>;
   if (location.pathname.startsWith('/admin')) return <Suspense fallback={loadingScreen}><PulseApp /></Suspense>;
+  // Campus feed moderation for Bento staff (migration 078). Web only.
+  if (location.pathname.replace(/\/$/, '') === '/moderator' && !isNative) return <Suspense fallback={loadingScreen}><ModeratorApp /></Suspense>;
   // Rutgers waitlist, shared by the campus ambassador. Public, works signed in or out.
   if (location.pathname.replace(/\/$/, '') === '/rutgers') return <Suspense fallback={null}><RutgersWaitlist /></Suspense>;
   if (location.pathname === '/preview') {

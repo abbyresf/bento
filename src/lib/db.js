@@ -764,6 +764,31 @@ export async function flagReply(replyId) {
   if (error) throw error;
 }
 
+// ── Feed moderation (migration 078) ────────────────────────────────────────
+// False for everyone until 078 runs and the person is added to feed_moderators by hand.
+export async function isFeedModerator() {
+  const { data, error } = await supabase.rpc('is_feed_moderator');
+  return !error && data === true;
+}
+
+// Recent posts and replies, hidden ones included, for bentodining.com/moderator. university null means every school.
+// before (an ISO time) pages back through older items.
+export async function getModFeedItems(university = null, before = null) {
+  const { data, error } = await supabase.rpc('mod_feed_items', { p_university: university, p_limit: 200, p_before: before });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function modSetPostHidden(suggestionId, hidden) {
+  const { error } = await supabase.rpc('mod_set_post_hidden', { p_suggestion_id: suggestionId, p_hidden: hidden });
+  if (error) throw error;
+}
+
+export async function modSetReplyHidden(replyId, hidden) {
+  const { error } = await supabase.rpc('mod_set_reply_hidden', { p_reply_id: replyId, p_hidden: hidden });
+  if (error) throw error;
+}
+
 export async function submitSuggestion(content) {
   const { data, error } = await supabase.rpc('submit_suggestion', { p_content: content });
   if (error) throw error;
