@@ -46,6 +46,18 @@
 .ld-store:hover { transform: translateY(-3px) rotate(-2deg); }
 .ld-store img { display: block; height: 52px; width: auto; }
 .ld-hero-note { font-size: 13px; color: var(--ld-cream3); }
+/* The App Store badge with the Android way in under it. */
+.ld-store-stack { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.ld-store-stack--center { align-items: center; }
+/* Beside the badge on wide screens, the note lines up with the badge, not with
+ * the badge and the Android link together. */
+.ld-hero-ctas { align-items: flex-start; }
+.ld-hero-ctas > .ld-hero-note { min-height: 52px; display: flex; align-items: center; }
+@media (max-width: 600px) { .ld-hero-ctas > .ld-hero-note { min-height: 0; } }
+.ld-android { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--ld-li); text-decoration: none; min-height: 32px; }
+.ld-android svg { transition: transform .25s var(--ld-pop); }
+.ld-android:hover svg { transform: translateX(4px); }
+.ld-android:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 /* Hero art. Parallax reads --sy, written on scroll. */
 .ld-hero-art { position: relative; height: 620px; }

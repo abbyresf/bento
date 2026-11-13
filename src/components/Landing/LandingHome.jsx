@@ -223,6 +223,18 @@ function useLoudMotion(rootRef) {
 const delay = (i, step = 80) => ({ transitionDelay: `${i * step}ms` });
 
 /* ── Page ── */
+/* Under each App Store badge: the way in for Android, which has no store app.
+ * A real link to /login, so it works in the prerendered page before the app
+ * loads, and an in-app route once it has. */
+function AndroidLink({ onGetStarted }) {
+  return (
+    <a className="ld-android" href="/login"
+       onClick={(e) => { if (onGetStarted) { e.preventDefault(); onGetStarted(); } }}>
+      On Android? Use the web app <Arrow />
+    </a>
+  );
+}
+
 export default function LandingHome({ onGoUniversities, onGetStarted }) {
   const pageRef = useRef(null);
   useLoudMotion(pageRef);
@@ -245,9 +257,12 @@ export default function LandingHome({ onGoUniversities, onGetStarted }) {
             morning, matches each dish to your goals and restrictions, and tells you what to grab.
           </p>
           <div className="ld-hero-ctas">
-            <a className="ld-store" href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
-              <img src="/app-store-badge.svg" alt="Download on the App Store" width="150" height="50" />
-            </a>
+            <div className="ld-store-stack">
+              <a className="ld-store" href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
+                <img src="/app-store-badge.svg" alt="Download on the App Store" width="150" height="50" />
+              </a>
+              <AndroidLink onGetStarted={onGetStarted} />
+            </div>
             <span className="ld-hero-note">Live at Brandeis and BU. Free on iPhone.</span>
           </div>
         </div>
@@ -375,9 +390,12 @@ export default function LandingHome({ onGoUniversities, onGetStarted }) {
         <h2 className="ld-final-h" data-reveal>Your dining hall<br />has good food.<br /><span>Bento finds it.</span></h2>
         <p className="ld-final-sub" data-reveal>Free. Two minutes to set up.</p>
         <div className="ld-final-ctas" data-reveal>
-          <a className="ld-store" href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
-            <img src="/app-store-badge.svg" alt="Download on the App Store" width="150" height="50" />
-          </a>
+          <div className="ld-store-stack ld-store-stack--center">
+            <a className="ld-store" href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
+              <img src="/app-store-badge.svg" alt="Download on the App Store" width="150" height="50" />
+            </a>
+            <AndroidLink onGetStarted={onGetStarted} />
+          </div>
           <a className="ld-final-link" href="#lh-availability">See if my school is live <Arrow /></a>
         </div>
       </section>
