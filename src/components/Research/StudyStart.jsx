@@ -11,12 +11,18 @@ import './Research.css';
  * research team's records already hold. After it works, the reminders step (the
  * phone's notification permission) is offered right here, because the first
  * reminder comes within hours. */
-export default function StudyStart({ initialCode = '', onStarted, onLater }) {
+export default function StudyStart({ initialCode = '', onStarted, onLater, startedAs = null }) {
   const [code, setCode] = useState(initialCode);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [started, setStarted] = useState(null);     // { dayNumber, totalDays }
+  // startedAs: the week already started when they joined (one code). Show the
+  // started state and the reminders step straight away, with no code to enter.
+  const [started, setStarted] = useState(startedAs); // { dayNumber, totalDays }
   const [pushOn, setPushOn] = useState(null);       // null until known
+  useEffect(() => {
+    if (!startedAs) return;
+    getPushEnabled().then(setPushOn).catch(() => setPushOn(false));
+  }, [startedAs]);
   const [pushNote, setPushNote] = useState('');
 
   const start = async (e, withCode = code) => {

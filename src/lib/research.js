@@ -60,8 +60,10 @@ export async function checkStudyCode(code) {
 }
 
 /* Step 2, after the student ticks the acknowledgement.
- * { ok: true } or { ok: false, status, message }. The week has not started yet.
- * The group is decided by the research team and never comes back to the app. */
+ * { ok: true, started, endsAt } or { ok: false, status, message }. started is true
+ * when joining also started the week (one code, given at the snack pickup), and
+ * false when the study still waits for a start code. The group never comes back
+ * to the app. */
 export async function enrollInStudy(code, acknowledged) {
   if (!researchEnabled()) return OFF;
   const { data, error } = await supabase.rpc('research_enroll', {
@@ -75,7 +77,7 @@ export async function enrollInStudy(code, acknowledged) {
   if (!row || row.status !== 'ok') {
     return { ok: false, status: row?.status ?? 'error', message: studyText(row?.status) };
   }
-  return { ok: true };
+  return { ok: true, started: Boolean(row.window_ends_at), endsAt: row.window_ends_at ?? null };
 }
 
 /* { status: 'ok' | 'unavailable' | 'offline', study } where study is

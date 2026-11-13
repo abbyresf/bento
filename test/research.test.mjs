@@ -4,7 +4,7 @@ import {
   researchEnabledFor, studyPlatformFor, dayText, parseStartLink, safeExternalUrl, surveyPages, pageReady,
   START_PENDING_NOTE, START_HELP, normalizeStudyCode, studyCodeProblem, studyText, summarizeStudy,
   daysLeftText, endDateText, pushResultText, isMissingFeature,
-  ACK_TEXT, LEAVE_NOTE, DELETE_NOTE, CODE_MAX,
+  ACK_TEXT, CODE_HELP, LEAVE_NOTE, DELETE_NOTE, CODE_MAX,
   NOT_ON_LIST_BEFORE, NOT_ON_LIST_LINK, NOT_ON_LIST_AFTER,
   summarizeSurvey, answerProblem, answerFor, surveyReady, buildAnswers, msUntil, MAX_WAIT_MS,
   visibleQuestions, ratingAnchors, ratingHint,
@@ -77,7 +77,7 @@ test('an error raised by the database reads the same as the status', () => {
 });
 
 test('the copy follows the Bento voice: no em dashes, no semicolons, no banned words', () => {
-  const all = [ACK_TEXT, LEAVE_NOTE, DELETE_NOTE, pushResultText({ ok: true }), pushResultText({ reason: 'blocked' }),
+  const all = [ACK_TEXT, CODE_HELP, LEAVE_NOTE, DELETE_NOTE, pushResultText({ ok: true }), pushResultText({ reason: 'blocked' }),
     pushResultText({}), ...['invalid_code', 'not_on_list', 'too_many_attempts', 'already_enrolled',
       'acknowledgement_required', 'ios_only', 'not_signed_in', 'unavailable', 'x'].map(studyText), studyCodeProblem('')];
   for (const t of all) {

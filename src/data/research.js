@@ -102,6 +102,7 @@ export function dayText(dayNumber, totalDays) {
 
 // ── Starting the week ────────────────────────────────────────────────────────
 
+export const CODE_HELP = 'You get this code at the snack pickup station, with your snack box.';
 export const START_TITLE = 'Start your week';
 export const START_HELP = 'Scan the QR code at the snack pickup station with your phone camera, or type the code printed there. Your reminders and daily questions begin when you do.';
 export const START_PENDING_NOTE = 'You joined the study. Your week starts when you enter the code at the snack pickup station. Until then Bento sends you no study reminders.';

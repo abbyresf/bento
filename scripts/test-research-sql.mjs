@@ -16,7 +16,7 @@ const dir = process.env.MIGRATIONS_DIR
   ? process.env.MIGRATIONS_DIR
   : new URL('../supabase/migrations/', import.meta.url).pathname;
 const migrations = ['054_research_foundation.sql', '055_research_collection.sql', '056_research_reminders_and_survey.sql',
-  '057_research_dashboard.sql', '058_research_setup.sql', '059_research_randomisation.sql', '060_research_wide_survey.sql', '061_research_roster_views.sql', '062_research_dinner_reminders.sql', '063_research_open_enrolment.sql', '066_research_one_group_start_code_pages.sql', '075_research_participant_numbers.sql', '079_research_days_from_start.sql']
+  '057_research_dashboard.sql', '058_research_setup.sql', '059_research_randomisation.sql', '060_research_wide_survey.sql', '061_research_roster_views.sql', '062_research_dinner_reminders.sql', '063_research_open_enrolment.sql', '066_research_one_group_start_code_pages.sql', '075_research_participant_numbers.sql', '079_research_days_from_start.sql', '080_research_start_on_join.sql']
   .map((f) => readFileSync(`${dir}/${f}`, 'utf8'));
 const db = new PGlite();
 
@@ -133,6 +133,9 @@ const newStudy = async ({ code = CODE, cap = 40, open = true, test: isTest = fal
   const [{ create_study: id }] = await owner(
     'select research.create_study($1,$2,$3,array[\'S\',\'L\'],$4,$5)', ['Study', code, cap, window, isTest]);
   if (open) await owner('update research.studies set is_open = true where id = $1', [id]);
+  // These tests were written for joining and starting as two steps. 080 makes one
+  // code do both by default, and its own tests below cover that.
+  await owner('update research.studies set start_on_join = false where id = $1', [id]);
   return id;
 };
 // Puts a student on the researchers' list. Returns the user id.
@@ -1918,7 +1921,7 @@ await test('a column is set from the dashboard only by a researcher on a multi-f
 
 const startStudy = async ({ code, groups = ['S'], window = 7 } = {}) => {
   const [{ create_study: id }] = await owner(`select research.create_study('Study', $1, 50, $2::text[], $3, false)`, [code, groups, window]);
-  await owner('update research.studies set is_open = true where id = $1', [id]);
+  await owner('update research.studies set is_open = true, start_on_join = false where id = $1', [id]);
   await owner(`select research.set_activation_code($1, 'PICKUP-777')`, [id]);
   return id;
 };
@@ -2196,6 +2199,59 @@ await test('Days in counts from the start code, stops when they leave, and is 0 
   assert.equal(await days(left), 1, 'stops counting on the day they left');
   const cols = (await owner(`select string_agg(column_name, ',' order by ordinal_position) c from information_schema.columns where table_schema = 'research' and table_name = 'grid_activity'`))[0].c;
   assert.ok(cols.includes('days_enrolled'), 'the dashboard view still has the column');
+});
+
+// ── One code: joining starts the week (080) ──────────────────────────────────
+
+await test('one code: joining starts the week at once, and reminders and the survey follow', async () => {
+  const [{ create_study: st }] = await owner(`select research.create_study('One code', 'SNACKBOX-01', 50, array['S']::text[], 7, false)`);
+  await owner('update research.studies set is_open = true where id = $1', [st]);
+  assert.equal((await owner('select start_on_join from research.studies where id = $1', [st]))[0].start_on_join, true, 'on by default for a new study');
+  const u = await user();
+  const r = await rawEnroll(u, 'SNACKBOX-01');
+  assert.equal(r.status, 'ok');
+  assert.ok(r.window_ends_at, 'the end of the week comes back from joining');
+  const p = await part(u);
+  assert.equal(p.grp, 'S');
+  assert.ok(p.activated_at, 'started');
+  assert.equal(new Date(p.activated_at).getTime(), new Date(p.enrolled_at).getTime(), 'started the moment they joined');
+  const days = (await owner(`select (($1::timestamptz - interval '1 second') at time zone 'America/New_York')::date - (now() at time zone 'America/New_York')::date + 1 n,
+                                    ($1::timestamptz at time zone 'America/New_York')::time::text t`, [p.window_ends_at]))[0];
+  assert.deepEqual([days.n, days.t], [7, '00:00:00'], 'seven calendar days, ending at midnight Eastern');
+  const s = await status(u);
+  assert.deepEqual([s.status, s.activated, s.day_number, s.total_days], ['active', true, 1, 7]);
+  assert.equal((await owner('select count(*)::int c from research.active_user_ids(array[$1]::uuid[])', [u]))[0].c, 1, 'ordinary pushes stop at once');
+  // Entering a code again, as the app's start screen invites, is harmless.
+  const again = (await call(u, `select * from public.research_activate('SNACKBOX-01', 'ios')`))[0];
+  assert.equal(again.status, 'already_started');
+  // Tomorrow at 10:31 and 20:01 the snack reminder and the survey are due.
+  await owner(`select research.add_schedule($1, null, 'reminder', '10:30', 'Snack time', 'Eat your snack.')`, [st]);
+  await owner(`select research.add_schedule($1, null, 'survey', '20:00', 'Today''s questions')`, [st]);
+  const at = (t) => owner(`select c.kind from research.claim_due_prompts((((now() at time zone 'America/New_York')::date + 1) + $1::time) at time zone 'America/New_York') c where c.user_id = $2`, [t, u]);
+  assert.deepEqual((await at('10:31')).map((x) => x.kind), ['reminder']);
+  assert.deepEqual((await at('20:01')).map((x) => x.kind), ['survey']);
+});
+
+await test('one code: someone who joined before it, and never started, is started by the migration', async () => {
+  const st = await newStudy({ code: 'BACKFILL-01', window: 7 });       // the two-step path
+  const u = await user();
+  assert.equal((await rawEnroll(u, 'BACKFILL-01')).status, 'ok');
+  assert.equal((await part(u)).activated_at, null, 'waiting for a start code');
+  const left = await user();
+  await rawEnroll(left, 'BACKFILL-01');
+  await owner(`update research.participants set status = 'withdrawn', withdrawn_at = now() where user_id = $1`, [left]);
+  // Run 080 again: it turns the setting on and starts whoever is waiting.
+  await db.exec(readFileSync(new URL('../supabase/migrations/080_research_start_on_join.sql', import.meta.url), 'utf8'));
+  assert.equal((await owner('select start_on_join from research.studies where id = $1', [st]))[0].start_on_join, true);
+  const p = await part(u);
+  assert.ok(p.activated_at, 'started');
+  assert.ok(p.window_ends_at, 'with an end date');
+  assert.equal((await status(u)).day_number, 1);
+  assert.equal((await part(left)).activated_at, null, 'someone who left is not started');
+  // Running it a third time moves nobody's start.
+  const before = p.activated_at;
+  await db.exec(readFileSync(new URL('../supabase/migrations/080_research_start_on_join.sql', import.meta.url), 'utf8'));
+  assert.equal(new Date((await part(u)).activated_at).getTime(), new Date(before).getTime());
 });
 
 console.log(`\nall ${n} research SQL tests passed`);
