@@ -36,6 +36,14 @@ export function timeText(t) {
 }
 
 export function groupLabel(grp) { return grp ? `Group ${grp}` : 'Everyone'; }
+/* True when a schedule or question belongs to this study as it is now: for everyone,
+ * or only for groups the study still has. The study once had a group L (loop and
+ * plan). It was dropped and everyone takes the snack, so anything left over for L is
+ * hidden rather than shown as a switched-off or retired row. */
+export function inStudyGroups(grps, studyGroups = []) {
+  const list = Array.isArray(grps) ? grps : grps ? [grps] : [];
+  return list.every((g) => studyGroups.includes(g));
+}
 export function groupsLabel(grps) { return !grps || grps.length === 0 ? 'Everyone' : grps.map((g) => `Group ${g}`).join(' and '); }
 export const kindLabel = (k) => (k === 'survey' ? 'End-of-day questions' : k === 'final' ? 'Last-day reminder' : 'Reminder');
 
@@ -183,7 +191,7 @@ export function answerChoices(parent) {
   return [];
 }
 
-export function validateQuestionForm(form, { questions = [], groups = ['S', 'L'] } = {}) {
+export function validateQuestionForm(form, { questions = [], groups = ['S'] } = {}) {
   const out = [];
   const text = String(form.text ?? '').trim();
   if (text.length < 1 || text.length > 300) out.push('The question is 1 to 300 characters.');

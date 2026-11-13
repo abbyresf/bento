@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  daysLabel, timeInput, timeText, groupLabel, groupsLabel, kindLabel, zonedInput, fromZonedInput,
+  daysLabel, timeInput, timeText, groupLabel, groupsLabel, inStudyGroups, kindLabel, zonedInput, fromZonedInput,
   studyForm, validateStudyForm, studyChanges, enrolmentState,
   scheduleForm, validateScheduleForm, scheduleChanges, lateText,
   parseOptionLines, emptyQuestionForm, formFromQuestion, nextPosition, answerChoices, validateQuestionForm,
@@ -36,6 +36,15 @@ test('labels for groups and kinds', () => {
   assert.equal(groupLabel('S'), 'Group S'); assert.equal(groupLabel(null), 'Everyone');
   assert.equal(groupsLabel([]), 'Everyone'); assert.equal(groupsLabel(['S', 'L']), 'Group S and Group L');
   assert.equal(kindLabel('survey'), 'End-of-day questions'); assert.equal(kindLabel('reminder'), 'Reminder');
+});
+
+test('leftovers from the dropped group L are not part of the study', () => {
+  assert.equal(inStudyGroups(null, ['S']), true, 'a schedule for everyone');
+  assert.equal(inStudyGroups([], ['S']), true, 'a question for everyone');
+  assert.equal(inStudyGroups('S', ['S']), true);
+  assert.equal(inStudyGroups('L', ['S']), false, 'an old loop-and-plan reminder');
+  assert.equal(inStudyGroups(['L'], ['S']), false, 'an old loop-and-plan question');
+  assert.equal(inStudyGroups(['S', 'L'], ['S']), false);
 });
 
 test('Eastern time converts through daylight saving in both directions', () => {

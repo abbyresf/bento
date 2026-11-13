@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { SHEETS } from './sheets.js';
 import { useLiveSheet } from './useLiveSheet.js';
 import { fetchStudy } from './data.js';
-import { liveSummary, groupBalance } from './live.js';
+import { liveSummary } from './live.js';
 import { displayValue } from './rows.js';
 
 const sheet = (id) => SHEETS.find((s) => s.id === id);
@@ -43,14 +43,13 @@ export default function LivePage() {
           <p className="rs-sub">{s.active} active, {s.completed} finished, {s.withdrawn} left</p>
         </article>
         <article className="rs-card">
-          <h2>Groups</h2>
-          <p className="rs-big">S {s.groups.S}<small> and </small>L {s.groups.L}</p>
-          <p className="rs-sub">{groupBalance(s.groups) === 0 ? 'Even' : `${groupBalance(s.groups)} apart`}, among active participants</p>
+          <h2>Started</h2>
+          <p className="rs-big">{s.started}<small> of {s.active}</small></p>
+          <p className="rs-sub">{s.waiting} active {s.waiting === 1 ? 'participant has' : 'participants have'} not entered the start code yet</p>
         </article>
         <article className="rs-card">
           <h2>Survey response rate</h2>
           <p className="rs-big">{pct(s.rates.all.rate)}</p>
-          <p className="rs-sub">S {pct(s.rates.S.rate)}. L {pct(s.rates.L.rate)}.</p>
           <p className="rs-sub">{s.rates.all.answered} answered of {s.rates.all.due} due</p>
         </article>
         <article className="rs-card">
@@ -69,11 +68,11 @@ export default function LivePage() {
         <h2>Latest activity</h2>
         {s.recent.length === 0 ? <p className="rs-sub">Nothing yet.</p> : (
           <table>
-            <thead><tr><th>When</th><th>Participant</th><th>Group</th><th>What</th></tr></thead>
+            <thead><tr><th>When</th><th>Participant</th><th>What</th></tr></thead>
             <tbody>
               {s.recent.map((e) => (
                 <tr key={e.row_id}>
-                  <td>{displayValue(e.at, 'datetime')}</td><td>{e.participant_code}</td><td>{e.grp}</td><td>{e.kind.replace(/_/g, ' ')}</td>
+                  <td>{displayValue(e.at, 'datetime')}</td><td>{e.participant_code}</td><td>{e.kind.replace(/_/g, ' ')}</td>
                 </tr>
               ))}
             </tbody>

@@ -18,7 +18,6 @@ export const SHEETS = [
     watch: ['participants'],
     columns: [
       { field: 'participant_code', header: 'Participant', type: 'text', width: 120, pinned: true },
-      { field: 'grp', header: 'Group', type: 'text', width: 90 },
       { field: 'status', header: 'Status', type: 'text', width: 110 },
       { field: 'full_name', header: 'Name', type: 'text', width: 180 },
       { field: 'email', header: 'Email', type: 'text', width: 240 },
@@ -51,7 +50,6 @@ export const SHEETS = [
     watch: ['responses', 'survey_days'],
     columns: [
       { field: 'participant_code', header: 'Participant', type: 'text', width: 120, pinned: true },
-      { field: 'grp', header: 'Group', type: 'text', width: 90 },
       { field: 'for_date', header: 'Survey for', type: 'date', width: 120 },
       { field: 'late', header: 'Late', type: 'bool', width: 80 },
       { field: 'submitted_at', header: 'Submitted', type: 'datetime', width: 170 },
@@ -71,7 +69,6 @@ export const SHEETS = [
     columns: [
       { field: 'row_id', header: 'ResponseId', type: 'text', width: 120, pinned: true },
       { field: 'participant_code', header: 'id', type: 'text', width: 100 },
-      { field: 'grp', header: 'group', type: 'text', width: 80 },
       { field: 'for_date', header: 'for_date', type: 'date', width: 120 },
       { field: 'submitted_at', header: 'RecordedDate', type: 'datetime', width: 170 },
       { field: 'late', header: 'late', type: 'bool', width: 80 },
@@ -82,7 +79,6 @@ export const SHEETS = [
     watch: ['meals'],
     columns: [
       { field: 'participant_code', header: 'Participant', type: 'text', width: 120, pinned: true },
-      { field: 'grp', header: 'Group', type: 'text', width: 90 },
       { field: 'meal_date', header: 'Date', type: 'date', width: 120 },
       { field: 'meal_type', header: 'Meal', type: 'text', width: 110 },
       { field: 'dining_hall', header: 'Hall', type: 'text', width: 130 },
@@ -97,7 +93,6 @@ export const SHEETS = [
     watch: ['meals'],
     columns: [
       { field: 'participant_code', header: 'Participant', type: 'text', width: 120, pinned: true },
-      { field: 'grp', header: 'Group', type: 'text', width: 90 },
       { field: 'meal_date', header: 'Date', type: 'date', width: 120 },
       { field: 'meal_type', header: 'Meal', type: 'text', width: 110 },
       { field: 'dining_hall', header: 'Hall', type: 'text', width: 130 },
@@ -117,7 +112,6 @@ export const SHEETS = [
     watch: ['profile_snapshots'],
     columns: [
       { field: 'participant_code', header: 'Participant', type: 'text', width: 120, pinned: true },
-      { field: 'grp', header: 'Group', type: 'text', width: 90 },
       { field: 'taken_at', header: 'Taken', type: 'datetime', width: 170 },
       { field: 'reason', header: 'Why', type: 'text', width: 120 },
       { field: 'university', header: 'University', type: 'text', width: 130 },
@@ -142,7 +136,6 @@ export const SHEETS = [
     watch: ['events'],
     columns: [
       { field: 'participant_code', header: 'Participant', type: 'text', width: 120, pinned: true },
-      { field: 'grp', header: 'Group', type: 'text', width: 90 },
       { field: 'at', header: 'When', type: 'datetime', width: 170 },
       { field: 'kind', header: 'What', type: 'text', width: 160 },
       { field: 'detail', header: 'Detail', type: 'text', width: 320 },
@@ -153,7 +146,6 @@ export const SHEETS = [
     watch: ['prompts'],
     columns: [
       { field: 'participant_code', header: 'Participant', type: 'text', width: 120, pinned: true },
-      { field: 'grp', header: 'Group', type: 'text', width: 90 },
       { field: 'local_date', header: 'Day', type: 'date', width: 120 },
       { field: 'kind', header: 'Kind', type: 'text', width: 110 },
       { field: 'title', header: 'Title', type: 'text', width: 220 },
@@ -168,7 +160,6 @@ export const SHEETS = [
     watch: ['participants', 'prompts', 'survey_days', 'meals', 'events'],
     columns: [
       { field: 'participant_code', header: 'Participant', type: 'text', width: 120, pinned: true },
-      { field: 'grp', header: 'Group', type: 'text', width: 90 },
       { field: 'status', header: 'Status', type: 'text', width: 110 },
       { field: 'enrolled_at', header: 'Enrolled', type: 'datetime', width: 170 },
       { field: 'days_enrolled', header: 'Days in', type: 'number', width: 100 },

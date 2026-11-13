@@ -16,7 +16,7 @@ const dir = process.env.MIGRATIONS_DIR
   ? process.env.MIGRATIONS_DIR
   : new URL('../supabase/migrations/', import.meta.url).pathname;
 const migrations = ['054_research_foundation.sql', '055_research_collection.sql', '056_research_reminders_and_survey.sql',
-  '057_research_dashboard.sql', '058_research_setup.sql', '059_research_randomisation.sql', '060_research_wide_survey.sql', '061_research_roster_views.sql', '062_research_dinner_reminders.sql', '063_research_open_enrolment.sql', '066_research_one_group_start_code_pages.sql', '075_research_participant_numbers.sql']
+  '057_research_dashboard.sql', '058_research_setup.sql', '059_research_randomisation.sql', '060_research_wide_survey.sql', '061_research_roster_views.sql', '062_research_dinner_reminders.sql', '063_research_open_enrolment.sql', '066_research_one_group_start_code_pages.sql', '075_research_participant_numbers.sql', '079_research_days_from_start.sql']
   .map((f) => readFileSync(`${dir}/${f}`, 'utf8'));
 const db = new PGlite();
 
@@ -1555,8 +1555,10 @@ await test('every column the dashboard shows exists in the database view it read
     const have = fields.map((f) => f.name);
     for (const c of sheet.columns) assert.ok(have.includes(c.field), `${sheet.id}: the database has no column ${c.field}`);
     assert.ok(have.includes(sheet.rowId ?? 'row_id'), `${sheet.id}: no row id`);
-    // A view column nobody shows is a column researchers cannot see: say so.
-    const shown = new Set([sheet.rowId ?? 'row_id', ...sheet.columns.map((c) => c.field), ...(sheet.extraSelect ?? [])]);
+    // A view column nobody shows is a column researchers cannot see: say so. The
+    // one exception is grp: the study has one group (everyone takes the snack), so
+    // the dashboard leaves it out on purpose. It stays in the views for the record.
+    const shown = new Set([sheet.rowId ?? 'row_id', 'grp', ...sheet.columns.map((c) => c.field), ...(sheet.extraSelect ?? [])]);
     const hidden = have.filter((f) => !shown.has(f));
     assert.deepEqual(hidden, [], `${sheet.id}: columns in the database that the sheet does not show`);
     // What the view orders by must exist too.
@@ -2173,6 +2175,27 @@ await test('a participant number is never reused, even after a row is removed', 
   assert.equal((await part(d)).participant_code, 'P-004', 'the next number after the highest, not the count');
   const codes = (await owner('select participant_code from research.participants where study_id = $1 order by 1', [st])).map((x) => x.participant_code);
   assert.deepEqual(codes, ['P-001', 'P-003', 'P-004']);
+});
+
+await test('Days in counts from the start code, stops when they leave, and is 0 before they start', async () => {
+  const st = await startStudy({ code: 'DAYSIN-0001' });
+  const days = async (u) => (await owner('select a.days_enrolled d from research.activity a join research.participants p on p.id = a.participant_id where p.user_id = $1', [u]))[0].d;
+  const joined = await rawEnrollIn(st, 'DAYSIN-0001');
+  const started = await rawEnrollIn(st, 'DAYSIN-0001');
+  const left = await rawEnrollIn(st, 'DAYSIN-0001');
+  await owner('alter table research.participants disable trigger participants_guard');
+  await owner(`update research.participants set enrolled_at = now() - interval '5 days' where user_id = $1`, [joined]);
+  for (const u of [started, left]) {
+    await owner(`update research.participants set enrolled_at = now() - interval '5 days', activated_at = now() - interval '3 days',
+      window_ends_at = now() + interval '4 days' where user_id = $1`, [u]);
+  }
+  await owner(`update research.participants set status = 'withdrawn', withdrawn_at = now() - interval '2 days' where user_id = $1`, [left]);
+  await owner('alter table research.participants enable trigger participants_guard');
+  assert.equal(await days(joined), 0, 'joined five days ago but never started');
+  assert.equal(await days(started), 3, 'three days since the start code, not five since joining');
+  assert.equal(await days(left), 1, 'stops counting on the day they left');
+  const cols = (await owner(`select string_agg(column_name, ',' order by ordinal_position) c from information_schema.columns where table_schema = 'research' and table_name = 'grid_activity'`))[0].c;
+  assert.ok(cols.includes('days_enrolled'), 'the dashboard view still has the column');
 });
 
 console.log(`\nall ${n} research SQL tests passed`);

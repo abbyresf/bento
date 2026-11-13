@@ -108,13 +108,10 @@ export function withQuestions(sheet, questions, rows = []) {
 export function highlights(rows, questions) {
   const people = new Set(rows.map((r) => r.participant_code));
   const late = rows.filter((r) => r.late === true).length;
-  const groups = {};
-  for (const r of rows) groups[r.grp] = (groups[r.grp] ?? 0) + 1;
   const out = [
     { label: 'Submissions', value: rows.length.toLocaleString() },
     { label: 'Participants answering', value: people.size.toLocaleString() },
     { label: 'Answered late', value: rows.length ? `${Math.round((late / rows.length) * 100)}%` : '0%' },
-    ...Object.keys(groups).sort().map((g) => ({ label: `Group ${g}`, value: groups[g].toLocaleString() })),
   ];
   const byId = new Map(questions.map((q) => [q.id, q]));
   const sums = new Map();

@@ -6,7 +6,7 @@ import {
   safeText, csvCell, toCsv, xlsxCell, sheetMatrix, sheetName, workbookParts, fileName, anyIdentity,
 } from '../src/research/exporting.js';
 import { nextStep, cleanCode, codeProblem, signInProblem, IDLE_MINUTES, IDLE_MS } from '../src/research/steps.js';
-import { todayEastern, responseRates, liveSummary, groupBalance } from '../src/research/live.js';
+import { todayEastern, responseRates, liveSummary } from '../src/research/live.js';
 import { diffRows, rowIdOf, displayValue, PAGE, MAX_ROWS } from '../src/research/rows.js';
 import { fetchSheet, logAction } from '../src/research/data.js';
 
@@ -205,28 +205,25 @@ test('today is Eastern, including late evenings that are already tomorrow in UTC
   assert.equal(todayEastern(new Date('2026-11-02T05:30:00Z')), '2026-11-02');
 });
 
-test('response rate is answered over due, per group, and empty before anything is due', () => {
+test('response rate is answered over due across everyone, one rate, and empty before anything is due', () => {
   const r = responseRates([
     { grp: 'S', surveys_answered: 8, surveys_due: 10 }, { grp: 'S', surveys_answered: 2, surveys_due: 10 },
-    { grp: 'L', surveys_answered: 9, surveys_due: 12 },
+    { grp: 'S', surveys_answered: 9, surveys_due: 12 },
   ]);
-  assert.deepEqual([r.S.answered, r.S.due, r.S.rate], [10, 20, 50]);
-  assert.deepEqual([r.L.answered, r.L.due, r.L.rate], [9, 12, 75]);
   assert.deepEqual([r.all.answered, r.all.due, r.all.rate], [19, 32, 59.4]);
-  const none = responseRates([{ grp: 'S', surveys_answered: 0, surveys_due: 0 }]);
-  assert.equal(none.S.rate, null);
-  assert.equal(none.all.rate, null);
+  assert.deepEqual(Object.keys(r), ['all'], 'no per-group rates: the study has one group');
+  assert.equal(responseRates([{ grp: 'S', surveys_answered: 0, surveys_due: 0 }]).all.rate, null);
   assert.equal(responseRates(null).all.rate, null);
-  assert.equal(responseRates([{ grp: 'X', surveys_answered: '3', surveys_due: '4' }]).all.rate, 75, 'strings from the database count, an unknown group is only in the total');
+  assert.equal(responseRates([{ grp: 'X', surveys_answered: '3', surveys_due: '4' }]).all.rate, 75, 'strings from the database count');
 });
 
-test('the live summary counts who is in, by group, and what went out today', () => {
+test('the live summary counts who is in, who has started, and what went out today', () => {
   const now = new Date('2026-10-13T18:00:00Z');
   const s = liveSummary({
     cap: 40, now,
     participants: [
-      { status: 'active', grp: 'S', push_status: 'on' }, { status: 'active', grp: 'S', push_status: 'off' },
-      { status: 'active', grp: 'L', push_status: 'on' }, { status: 'completed', grp: 'L', push_status: 'off' }, { status: 'withdrawn', grp: 'S', push_status: 'on' },
+      { status: 'active', grp: 'S', push_status: 'on', activated_at: '2026-10-12T15:00:00Z' }, { status: 'active', grp: 'S', push_status: 'off', activated_at: '2026-10-13T15:00:00Z' },
+      { status: 'active', grp: 'S', push_status: 'on', activated_at: null }, { status: 'completed', grp: 'S', push_status: 'off', activated_at: '2026-10-01T15:00:00Z' }, { status: 'withdrawn', grp: 'S', push_status: 'on', activated_at: null },
     ],
     activity: [{ grp: 'S', surveys_answered: 1, surveys_due: 2 }],
     prompts: [
@@ -236,14 +233,13 @@ test('the live summary counts who is in, by group, and what went out today', () 
     events: Array.from({ length: 20 }, (_, i) => ({ at: `2026-10-13T10:${String(i).padStart(2, '0')}:00Z`, kind: 'app_open' })),
   });
   assert.deepEqual([s.enrolled, s.cap, s.active, s.completed, s.withdrawn], [5, 40, 3, 1, 1]);
-  assert.deepEqual(s.groups, { S: 2, L: 1 });
+  assert.deepEqual([s.started, s.waiting], [2, 1], 'active people who entered the start code, and those who have not');
+  assert.equal(s.groups, undefined, 'no group split: the study has one group');
   assert.equal(s.pushOff, 1, 'only active participants count, and only those the push cannot reach');
   assert.deepEqual(s.prompts, { today: 4, sent: 2, failed: 1, noDevice: 1 });
-  assert.equal(s.rates.S.rate, 50);
+  assert.equal(s.rates.all.rate, 50);
   assert.equal(s.recent.length, 15);
   assert.equal(s.recent[0].at, '2026-10-13T10:19:00Z', 'newest first');
-  assert.equal(groupBalance(s.groups), 1);
-  assert.equal(groupBalance(null), 0);
 });
 
 test('an empty study still summarises', () => {
@@ -400,12 +396,12 @@ test('the sheet gets its question columns after the fixed ones, and a dictionary
   const base = sheetById('survey_wide');
   const sheet = withQuestions(base, [hall, loop], []);
   assert.deepEqual(sheet.columns.map((c) => c.field), [...base.columns.map((c) => c.field), 'lunchYN', 'lunch_loop']);
-  assert.equal(base.columns.length, 6, 'the shared definition is not changed');
+  assert.equal(base.columns.length, 5, 'the shared definition is not changed');
   const [row] = dictionaryRows([sheet]).filter((r) => r[2] === 'lunchYN');
   assert.match(row[5], /1 = Yes - in Usdan, 2 = Yes - in Sherman, 0 = No/);
   assert.match(columnMeaning(questionColumns([loop])[0]), /group L only/);
   assert.ok(dictionaryRows([sheet]).every((r) => r[5]), 'every column explains itself');
-  assert.deepEqual(base.columns.slice(0, 6).map((c) => c.header), ['ResponseId', 'id', 'group', 'for_date', 'RecordedDate', 'late']);
+  assert.deepEqual(base.columns.map((c) => c.header), ['ResponseId', 'id', 'for_date', 'RecordedDate', 'late'], 'no group column: the study has one group');
 });
 
 test('the highlights count submissions, people, late answers and the average of each rating', () => {
@@ -415,7 +411,8 @@ test('the highlights count submissions, people, late answers and the average of 
     { participant_code: 'P-002', grp: 'S', late: false, answers: { s: true } },
   ];
   const h = Object.fromEntries(highlights(raw, [loop, snack]).map((x) => [x.label, x.value]));
-  assert.deepEqual([h.Submissions, h['Participants answering'], h['Answered late'], h['Group L'], h['Group S'], h['lunch_loop, average']], ['3', '2', '33%', '2', '1', '4.50']);
+  assert.deepEqual([h.Submissions, h['Participants answering'], h['Answered late'], h['lunch_loop, average']], ['3', '2', '33%', '4.50']);
+  assert.ok(!Object.keys(h).some((k) => k.startsWith('Group')), 'no per-group counts: the study has one group');
   assert.equal(highlights([], []).find((x) => x.label === 'Answered late').value, '0%');
 });
 
