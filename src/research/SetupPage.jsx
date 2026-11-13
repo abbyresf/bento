@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { loadSetup, saveStudy, saveStudyCode, saveSchedule, addSchedule, addQuestion, setQuestion, tagQuestion, saveActivationCode, saveFinalSurveyUrl, savePage } from './setupApi.js';
 import {
-  WEEKDAYS, FORMATS, FORMAT_LABEL, daysLabel, timeText, groupLabel, groupsLabel, kindLabel, lateText, enrolmentState,
+  WEEKDAYS, FORMATS, FORMAT_LABEL, daysLabel, timeText, groupLabel, groupsLabel, inStudyGroups, kindLabel, lateText, enrolmentState,
   studyForm, validateStudyForm, studyChanges, scheduleForm, validateScheduleForm, scheduleChanges,
   emptyQuestionForm, formFromQuestion, validateQuestionForm, buildQuestionArgs, answerChoices, describeShowIf, changeWarning, retireWarning,
   followUpsOf, changeBreaks, wantsCodes, codesText, defaultCodesText, validateColumn, columnArgs,
@@ -250,7 +250,7 @@ function ScheduleFields({ form, set, kind }) {
   );
 }
 
-function ScheduleRow({ s, reload }) {
+function ScheduleRow({ s, reload, multi }) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(() => scheduleForm(s));
   const [state, run, reset] = useSave(reload);
@@ -263,7 +263,7 @@ function ScheduleRow({ s, reload }) {
     <li className={`rs-item-card${s.is_active ? '' : ' is-off'}`}>
       <div className="rs-itemhead">
         <div>
-          <strong>{kindLabel(s.kind)}</strong> <span className="rs-chip-static">{groupLabel(s.grp)}</span>
+          <strong>{kindLabel(s.kind)}</strong> {multi && <span className="rs-chip-static">{groupLabel(s.grp)}</span>}
           {!s.is_active && <span className="rs-chip-static rs-chip-warn">Off</span>}
           <div className="rs-sub">{timeText(s.send_time)}, {daysLabel(s.days)}. {s.title}{s.body ? `. ${s.body}` : ''}</div>
         </div>
@@ -304,10 +304,12 @@ function AddSchedule({ study, reload }) {
           <select value={form.kind} onChange={(e) => set({ kind: e.target.value, late_minutes: e.target.value === 'reminder' ? '30' : '180' })}>
             <option value="reminder">Reminder</option><option value="survey">End-of-day questions</option><option value="final">Last-day reminder</option>
           </select></label>
-        <label><span>For</span>
-          <select value={form.grp} onChange={(e) => set({ grp: e.target.value })}>
-            <option value="">Everyone</option>{(study.groups ?? []).map((g) => <option key={g} value={g}>{groupLabel(g)}</option>)}
-          </select></label>
+        {(study.groups ?? []).length > 1 && (
+          <label><span>For</span>
+            <select value={form.grp} onChange={(e) => set({ grp: e.target.value })}>
+              <option value="">Everyone</option>{(study.groups ?? []).map((g) => <option key={g} value={g}>{groupLabel(g)}</option>)}
+            </select></label>
+        )}
       </div>
       <ScheduleFields form={form} set={set} kind={form.kind} />
       <div className="rs-actions">
@@ -322,12 +324,26 @@ function AddSchedule({ study, reload }) {
 
 function TimesPanel({ data, reload }) {
   const { study, schedules } = data;
+  const [showOff, setShowOff] = useState(false);
+  const groups = study.groups ?? [];
+  const multi = groups.length > 1;
+  const mine = schedules.filter((s) => inStudyGroups(s.grp, groups));
+  const on = mine.filter((s) => s.is_active);
+  const off = mine.filter((s) => !s.is_active);
   return (
-    <Panel title="Reminder and survey times" intro="When each group is reminded, and when the end-of-day questions are due. All times are Eastern. A change is used by the next run of the sender.">
-      {schedules.length === 0 ? <p className="rs-sub">Nothing is scheduled yet.</p> : (
-        <ul className="rs-list">{schedules.map((s) => <ScheduleRow key={s.id} s={s} reload={reload} />)}</ul>
+    <Panel title="Reminder and survey times" intro="When students are reminded to eat their snack, and when the end-of-day questions are due. All times are Eastern. A change is used by the next run of the sender.">
+      {on.length === 0 ? <p className="rs-sub">Nothing is scheduled yet.</p> : (
+        <ul className="rs-list">{on.map((s) => <ScheduleRow key={s.id} s={s} reload={reload} multi={multi} />)}</ul>
       )}
       <AddSchedule study={study} reload={reload} />
+      {off.length > 0 && (
+        <div className="rs-retired">
+          <button type="button" className="rs-link" aria-expanded={showOff} onClick={() => setShowOff(!showOff)}>
+            {showOff ? 'Hide' : 'Show'} switched-off times ({off.length})
+          </button>
+          {showOff && <ul className="rs-list">{off.map((s) => <ScheduleRow key={s.id} s={s} reload={reload} multi={multi} />)}</ul>}
+        </div>
+      )}
     </Panel>
   );
 }
@@ -361,15 +377,17 @@ function QuestionForm({ initial, questions, groups, onSubmit, onCancel, submitLa
           <label><span>Label for 5 (optional)</span><input value={form.high} onChange={(e) => set({ high: e.target.value })} placeholder="Completely" /></label>
         </div>
       )}
-      <div className="rs-fullfield"><span className="rs-lbl">Who is asked</span>
-        <div className="rs-chips" role="group" aria-label="Who is asked">
-          <button type="button" className="rs-chip" aria-pressed={form.grps.length === 0} onClick={() => set({ grps: [] })}>Everyone</button>
-          {groups.map((g) => (
-            <button key={g} type="button" className="rs-chip" aria-pressed={form.grps.includes(g)}
-                    onClick={() => set({ grps: form.grps.includes(g) ? form.grps.filter((x) => x !== g) : [...form.grps, g] })}>{groupLabel(g)} only</button>
-          ))}
+      {groups.length > 1 && (
+        <div className="rs-fullfield"><span className="rs-lbl">Who is asked</span>
+          <div className="rs-chips" role="group" aria-label="Who is asked">
+            <button type="button" className="rs-chip" aria-pressed={form.grps.length === 0} onClick={() => set({ grps: [] })}>Everyone</button>
+            {groups.map((g) => (
+              <button key={g} type="button" className="rs-chip" aria-pressed={form.grps.includes(g)}
+                      onClick={() => set({ grps: form.grps.includes(g) ? form.grps.filter((x) => x !== g) : [...form.grps, g] })}>{groupLabel(g)} only</button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
       <label className="rs-checkrow"><input type="checkbox" checked={form.followUp} onChange={(e) => set({ followUp: e.target.checked, answers: [], parent: '' })} /><span>Only show this after a particular answer to an earlier question</span></label>
       {form.followUp && (
         <div className="rs-follow">
@@ -454,7 +472,7 @@ function QuestionRow({ q, data, byId, reload, onChange }) {
             {FORMAT_LABEL[q.format]}{q.format === 'multiple_choice' ? `: ${q.options.join(', ')}` : ''}{q.format === 'rating' && q.options?.length === 2 ? `: 1 is ${q.options[0]}, 5 is ${q.options[1]}` : ''}
           </div>
           <div className="rs-meta">
-            <span className="rs-chip-static">{groupsLabel(q.grps)}</span>
+            {(data.study.groups ?? []).length > 1 && <span className="rs-chip-static">{groupsLabel(q.grps)}</span>}
             <span className="rs-chip-static">Position {q.position}</span>
             <span className="rs-chip-static">{answers.toLocaleString()} {answers === 1 ? 'answer' : 'answers'}</span>
             {!q.is_active && <span className="rs-chip-static rs-chip-warn">Retired</span>}
@@ -482,8 +500,8 @@ function QuestionsPanel({ data, reload }) {
   const [showRetired, setShowRetired] = useState(false);
   const byId = useMemo(() => new Map(questions.map((q) => [q.id, q])), [questions]);
   const active = questions.filter((q) => q.is_active);
-  const retired = questions.filter((q) => !q.is_active);
   const groups = study.groups ?? [];
+  const retired = questions.filter((q) => !q.is_active && inStudyGroups(q.grps, groups));
   // Changing a question moves the questions that follow it. They also cannot be
   // picked as the question it follows, which would loop.
   const followUps = mode && mode !== 'add' ? followUpsOf(active, mode.id) : [];
@@ -529,7 +547,7 @@ function QuestionsPanel({ data, reload }) {
 
 function ListPanel({ data }) {
   return (
-    <Panel title="The researchers' list" intro="Who may join, and which group each person is in. It is loaded from the researchers' file by whoever runs Bento, and is not edited here.">
+    <Panel title="The researchers' list" intro="Who is expected to join. Anyone with the study code can join, and this list is checked against them by email. It is loaded from the researchers' file by whoever runs Bento, and is not edited here.">
       <div className="rs-cards rs-cards-tight">
         <article className="rs-card"><h3>On the list</h3><p className="rs-big">{data.onList}</p></article>
         <article className="rs-card"><h3>Enrolled</h3><p className="rs-big">{data.enrolled}</p></article>

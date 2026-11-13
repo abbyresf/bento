@@ -6,12 +6,11 @@ import { SHEETS, AUDIT_SHEET } from './sheets.js';
  * that nothing here is left over from a column that was removed. */
 
 const CODE = { source: 'Bento, at enrolment', meaning: 'The participant code, P-001 onward, issued in the order students enrolled. The key in every sheet.' };
-const GRP = { source: 'Bento, at enrolment', meaning: 'S is the snack group (PRELOAD) and L is the loop and plan group. Assigned by Bento when the person enrolled (each two people in order of arrival get one of each) and never changed.' };
 const DELETED = { source: 'App, when the student undoes a confirmation', meaning: 'When the student undid this confirmation. The row is kept and marked.' };
 
 export const DICTIONARY = {
   participants: {
-    participant_code: CODE, grp: GRP,
+    participant_code: CODE,
     status: { source: 'Bento', meaning: 'active, completed (the window ran out) or withdrawn. Final once it is not active.' },
     full_name: { source: "The researchers' list", meaning: 'The name on the researchers\' list, once this person is matched to it by email. Empty until then.' },
     on_list: { source: 'Bento, worked out when you read it', meaning: 'Whether the researchers\' list holds this person\'s email. Anyone with the study code can enrol, so this is how you find people who joined but are not on the list. It changes as the list is loaded.' },
@@ -21,7 +20,7 @@ export const DICTIONARY = {
     window_ends_at: { source: 'Bento', meaning: 'The end of the last day of their week (midnight Eastern), counted from the day they started. Empty until they start.' },
     withdrawn_at: { source: 'Bento', meaning: 'When they chose to leave. Empty if they did not.' },
     acknowledged_at: { source: 'App', meaning: 'When they ticked that they completed the consent form and are 18 or over.' },
-    platform: { source: 'App', meaning: 'The platform they enrolled from. Always ios.' },
+    platform: { source: 'App', meaning: 'The platform they enrolled from: ios (the iPhone app) or android (the Bento web app on an Android phone).' },
     push_status: { source: 'Bento, refreshed on every reminder run', meaning: 'on if the device can receive the study reminders, off if not. Off means the intervention reminder could not reach them.' },
     install_state: { source: 'Reserved', meaning: 'Reserved for later. Not used in this study yet.' },
   },
@@ -35,7 +34,7 @@ export const DICTIONARY = {
     claimed_at: { source: 'Bento', meaning: 'When the matching person enrolled. Empty if nobody with this email has.' },
   },
   responses: {
-    participant_code: CODE, grp: GRP,
+    participant_code: CODE,
     for_date: { source: 'Bento', meaning: 'The day the questions were for, in Eastern time.' },
     late: { source: 'Bento', meaning: 'Answered on a later day than it was for. A missed survey is offered once more the next day.' },
     submitted_at: { source: 'App', meaning: 'When the answers were sent.' },
@@ -45,7 +44,7 @@ export const DICTIONARY = {
     answer_text: { source: 'App', meaning: 'The answer as plain text: Yes or No, a number from 1 to 5, the option chosen, or the words typed. A follow-up that was not shown has no row.' },
   },
   meals: {
-    participant_code: CODE, grp: GRP,
+    participant_code: CODE,
     meal_date: { source: 'App', meaning: 'The day of the meal, in Eastern time.' },
     meal_type: { source: 'App', meaning: 'breakfast, lunch or dinner.' },
     dining_hall: { source: 'App', meaning: 'The hall the plate was built from. Empty for older plates.' },
@@ -55,7 +54,7 @@ export const DICTIONARY = {
     deleted_at: DELETED,
   },
   plate_items: {
-    participant_code: CODE, grp: GRP,
+    participant_code: CODE,
     meal_date: { source: 'App', meaning: 'The day of the meal, in Eastern time.' },
     meal_type: { source: 'App', meaning: 'breakfast, lunch or dinner.' },
     dining_hall: { source: 'App', meaning: 'The hall the plate was built from.' },
@@ -70,7 +69,7 @@ export const DICTIONARY = {
     deleted_at: DELETED,
   },
   snapshots: {
-    participant_code: CODE, grp: GRP,
+    participant_code: CODE,
     taken_at: { source: 'Bento', meaning: 'When this version of their profile was saved. A change adds a row and keeps the old one.' },
     reason: { source: 'Bento', meaning: 'enrolment (the first), profile, targets or restrictions: what changed.' },
     university: { source: 'App', meaning: 'The school they chose in the app.' },
@@ -90,13 +89,13 @@ export const DICTIONARY = {
     restrictions: { source: 'App', meaning: 'Every dietary flag as saved, including halal and kosher, which are religious data.' },
   },
   events: {
-    participant_code: CODE, grp: GRP,
+    participant_code: CODE,
     at: { source: 'Bento', meaning: 'When it happened.' },
     kind: { source: 'Bento', meaning: 'app_open, favorite_added, favorite_removed, streak_updated, push_added or push_removed.' },
     detail: { source: 'Bento', meaning: 'A few facts about the event. Never a token or a name.' },
   },
   prompts: {
-    participant_code: CODE, grp: GRP,
+    participant_code: CODE,
     local_date: { source: 'Bento', meaning: 'The day the prompt was for, in Eastern time.' },
     kind: { source: 'Bento', meaning: 'reminder (the snack reminder), survey (the evening questions) or final (the last-day push to finish the study).' },
     title: { source: 'Bento', meaning: 'The title the participant saw.' },
@@ -106,10 +105,10 @@ export const DICTIONARY = {
     error: { source: 'Apple', meaning: 'Why it failed, when it did.' },
   },
   activity: {
-    participant_code: CODE, grp: GRP,
+    participant_code: CODE,
     status: { source: 'Bento', meaning: 'active, completed or withdrawn.' },
     enrolled_at: { source: 'Bento', meaning: 'When they enrolled.' },
-    days_enrolled: { source: 'Bento', meaning: 'Whole days from enrolment to now, or to the end of their window.' },
+    days_enrolled: { source: 'Bento', meaning: 'Whole days since they entered the start code at the snack pickup station, up to now, the end of their week or the day they left. 0 until they start.' },
     prompts_claimed: { source: 'Bento', meaning: 'Reminders and survey prompts Bento decided to send.' },
     prompts_delivered: { source: 'Bento', meaning: 'Of those, how many Apple accepted.' },
     prompts_undelivered: { source: 'Bento', meaning: 'Of those, how many failed or had no device to send to.' },
@@ -124,7 +123,6 @@ export const DICTIONARY = {
   survey_wide: {
     row_id: { source: 'Bento', meaning: 'One survey day for one participant. Same as ResponseId in the researchers\' May export.' },
     participant_code: { ...CODE, meaning: 'The participant code. Takes the place of the typed email prefix in the May export.' },
-    grp: GRP,
     for_date: { source: 'Bento', meaning: 'The day the questions were for, in Eastern time.' },
     submitted_at: { source: 'App', meaning: 'When the answers were sent.' },
     late: { source: 'Bento', meaning: 'Answered on a later day than it was for.' },

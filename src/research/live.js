@@ -8,20 +8,17 @@ export function todayEastern(now = new Date()) {
 
 const rate = (answered, due) => (due > 0 ? Math.round((answered / due) * 1000) / 10 : null);
 
-/* Survey response rate per group and overall: answered over due, summed across
- * participants. null when nothing has come due yet. This is the number that has to
- * be published beside every waste figure, and the one that drives compensation. */
+/* Survey response rate: answered over due, summed across participants. null when
+ * nothing has come due yet. The study has one group (everyone takes the snack), so
+ * there is one rate. This is the number that drives compensation. */
 export function responseRates(activityRows) {
-  const out = { S: { answered: 0, due: 0 }, L: { answered: 0, due: 0 }, all: { answered: 0, due: 0 } };
+  const all = { answered: 0, due: 0 };
   for (const r of activityRows ?? []) {
-    const g = out[r.grp] ?? null;
-    const answered = Number(r.surveys_answered) || 0;
-    const due = Number(r.surveys_due) || 0;
-    if (g) { g.answered += answered; g.due += due; }
-    out.all.answered += answered; out.all.due += due;
+    all.answered += Number(r.surveys_answered) || 0;
+    all.due += Number(r.surveys_due) || 0;
   }
-  for (const k of Object.keys(out)) out[k].rate = rate(out[k].answered, out[k].due);
-  return out;
+  all.rate = rate(all.answered, all.due);
+  return { all };
 }
 
 export function liveSummary({ participants = [], activity = [], prompts = [], events = [], cap = null, now = new Date() }) {
@@ -35,7 +32,10 @@ export function liveSummary({ participants = [], activity = [], prompts = [], ev
     active: active.length,
     completed: by('completed'),
     withdrawn: by('withdrawn'),
-    groups: { S: active.filter((p) => p.grp === 'S').length, L: active.filter((p) => p.grp === 'L').length },
+    // Active people who have entered the start code at the snack pickup, and those
+    // who joined but have not yet. Nothing is sent or collected before it.
+    started: active.filter((p) => p.activated_at).length,
+    waiting: active.filter((p) => !p.activated_at).length,
     pushOff: active.filter((p) => p.push_status !== 'on').length,
     prompts: {
       today: todays.length,
@@ -48,5 +48,3 @@ export function liveSummary({ participants = [], activity = [], prompts = [], ev
   };
 }
 
-/* How far apart the two groups are, for the arm balance card. */
-export function groupBalance(groups) { return Math.abs((groups?.S ?? 0) - (groups?.L ?? 0)); }

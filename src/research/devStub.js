@@ -29,13 +29,14 @@ function build(extraPlateRows) {
   let eventId = 1;
   for (let i = 0; i < 24; i++) {
     const code = `P-${String(i + 1).padStart(3, '0')}`;
-    const grp = i % 2 === 0 ? 'S' : 'L';
+    const grp = 'S';   // one group: everyone takes the snack
     const enrolled = addDays(now, -(2 + (i % 14)));
     const status = i === 21 ? 'withdrawn' : i === 22 || i === 23 ? 'completed' : 'active';
     const email = `${FIRST[i].toLowerCase()}.${['cohen', 'lee', 'park', 'diaz', 'ng'][i % 5]}@example.edu`;
     const p = {
       row_id: `p${i}`, participant_code: code, grp, status, full_name: `${FIRST[i]} ${['Cohen', 'Lee', 'Park', 'Diaz', 'Ng'][i % 5]}`, email,
-      enrolled_at: iso(enrolled), window_ends_at: iso(addDays(enrolled, 21)), withdrawn_at: status === 'withdrawn' ? iso(addDays(enrolled, 5)) : null,
+      // Most start the week the day after joining. Every fifth has joined but not started.
+      enrolled_at: iso(enrolled), activated_at: i % 5 === 4 ? null : iso(addDays(enrolled, 1)), window_ends_at: i % 5 === 4 ? null : iso(addDays(enrolled, 8)), withdrawn_at: status === 'withdrawn' ? iso(addDays(enrolled, 5)) : null,
       acknowledged_at: iso(enrolled), platform: 'ios', push_status: i % 7 === 3 ? 'off' : 'on', install_state: null,
     };
     participants.push(p);
@@ -70,8 +71,8 @@ function build(extraPlateRows) {
     snaps.push({ row_id: `s${i}`, participant_code: code, grp, taken_at: iso(enrolled), reason: 'enrolment', university: 'brandeis', weight: 130 + Math.floor(r() * 60), weight_unit: 'lbs', height_feet: 5, height_inches: Math.floor(r() * 12), age: 18 + Math.floor(r() * 5), sex: i % 2 ? 'female' : 'male', activity_level: 'moderate', goal: 'maintain', skip_breakfast: r() > 0.7, calories: 1900 + Math.floor(r() * 500), protein: 100, carbs: 250, fat: 70, restrictions: i % 5 === 0 ? '{"vegetarian":true,"halal":true}' : '{}' });
     activity.push({ row_id: `p${i}`, participant_code: code, grp, status, enrolled_at: iso(enrolled), days_enrolled: days, prompts_claimed: claimed, prompts_delivered: delivered, prompts_undelivered: undelivered, surveys_due: due, surveys_answered: answered, surveys_late: late, plates_logged: plates, consumption_reports: reports, app_opens: opens, push_status: p.push_status });
   }
-  for (let i = 24; i < 30; i++) roster.push({ row_id: `r${i}`, email: `${FIRST[i].toLowerCase()}.new@example.edu`, full_name: `${FIRST[i]} New`, grp: i % 2 ? 'L' : 'S', enrolled: false, participant_code: null, participant_status: null, added_at: iso(addDays(now, -9)), claimed_at: null });
-  for (let k = 0; k < extraPlateRows; k++) plate.push({ row_id: `big:${k}`, participant_code: `P-${String(1 + (k % 24)).padStart(3, '0')}`, grp: k % 2 ? 'L' : 'S', meal_date: day(addDays(now, -(k % 20))), meal_type: k % 2 ? 'lunch' : 'dinner', dining_hall: 'Sherman', item_position: k % 5, item_name: FOODS[k % FOODS.length], servings: 1, consumed: (k % 5) / 4, calories: 100 + (k % 300), protein: k % 30, carbs: k % 60, fat: k % 20, deleted_at: null });
+  for (let i = 24; i < 30; i++) roster.push({ row_id: `r${i}`, email: `${FIRST[i].toLowerCase()}.new@example.edu`, full_name: `${FIRST[i]} New`, grp: null, enrolled: false, participant_code: null, participant_status: null, added_at: iso(addDays(now, -9)), claimed_at: null });
+  for (let k = 0; k < extraPlateRows; k++) plate.push({ row_id: `big:${k}`, participant_code: `P-${String(1 + (k % 24)).padStart(3, '0')}`, grp: 'S', meal_date: day(addDays(now, -(k % 20))), meal_type: k % 2 ? 'lunch' : 'dinner', dining_hall: 'Sherman', item_position: k % 5, item_name: FOODS[k % FOODS.length], servings: 1, consumed: (k % 5) / 4, calories: 100 + (k % 300), protein: k % 30, carbs: k % 60, fat: k % 20, deleted_at: null });
   const audit = [
     { id: 3, at: iso(addDays(now, -1)), email: 'researcher@example.edu', user_id: '00000000-0000-0000-0000-000000000001', action: 'export', detail: '{"sheet":"meals","format":"csv","rows":340,"filtered":false}' },
     { id: 2, at: iso(addDays(now, -1)), email: 'researcher@example.edu', user_id: '00000000-0000-0000-0000-000000000001', action: 'view_identities', detail: '{"sheet":"participants"}' },
@@ -80,20 +81,25 @@ function build(extraPlateRows) {
   const study = { id: 'study-1', name: 'Fall 2026 study', cap: 40, is_open: true, window_days: 7, final_survey_url: null, starts_at: null, ends_at: null, survey_intro: 'This is a 1-minute survey about your meal experiences today at Usdan and Sherman all-you-care-to-eat (AYCTE) dining halls. Please answer honestly and accurately, as best you can.', groups: ['S'], timezone: 'America/New_York', created_at: iso(addDays(now, -20)) };
   const sch = (id, grp, kind, time, title, body, late) => ({ id, study_id: 'study-1', grp, kind, send_time: time, days: [1, 2, 3, 4, 5, 6, 7], late_minutes: late, title, body, is_active: true, created_at: iso(addDays(now, -20)) });
   const schedules = [
-    sch('sch-s', 'S', 'reminder', '10:30:00', 'Snack time', 'Lunch opens at 11. Eat your snack now.', 30),
-    sch('sch-l', 'L', 'reminder', '10:30:00', 'Loop, plan, then plate', 'Walk the hall once and see what is offered. Decide what you want. Then fill your plate.', 30),
+    sch('sch-lunch', null, 'reminder', '10:30:00', 'Snack time', 'Eat your snack 30 minutes before you eat at the dining hall.', 30),
+    sch('sch-dinner', null, 'reminder', '16:30:00', 'Snack time', 'Eat your snack 30 minutes before you eat at the dining hall.', 30),
     sch('sch-q', null, 'survey', '20:00:00', "Today's questions", '', 180),
+    sch('sch-final', null, 'final', '12:00:00', 'Last day of the study', 'Open Bento to finish the study with the final survey.', 180),
+    // Left over from when the study had two groups, as on the live database. Setup hides these.
+    { ...sch('sch-old-s', 'S', 'reminder', '10:30:00', 'Snack time', 'Lunch opens at 11. Eat your snack now.', 30), is_active: false },
+    { ...sch('sch-old-l', 'L', 'reminder', '10:30:00', 'Loop, plan, then plate', 'Walk the hall once and see what is offered. Decide what you want. Then fill your plate.', 30), is_active: false },
   ];
   const Q = (id, text, format, options, grps, position, show_if = null, column_key = null, codes = null) => ({ id, study_id: 'study-1', text, format, options, grps, position, is_active: true, replaces: null, show_if, column_key, codes, created_at: iso(addDays(now, -20)) });
   const questions = [
     Q('q-where', 'Did you eat lunch in Usdan or Sherman all-you-care-to-eat (AYCTE) dining hall today?', 'multiple_choice', ['Yes - in Usdan', 'Yes - in Sherman', 'No'], [], 10, null, 'lunchYN', [1, 2, 0]),
-    Q('q-loop', 'When having lunch at Usdan/Sherman, did you use the "loop and plan" strategy before getting food?', 'rating', ['Not at all', 'Completely'], ['L'], 20, null, 'lunch_loop'),
-    Q('q-snack', 'Did you eat the snack given to you before lunch today?', 'yes_no', [], ['S'], 20, null, 'lunch_snack'),
-    Q('q-how', 'How long before lunch did you eat the snack?', 'multiple_choice', ['0-20 min before lunch', '21-60 min before lunch', 'More than 1 hour before lunch'], ['S'], 21, { question: 'q-snack', any_of: [true] }, 'lunch_snack_time'),
+    // Retired with group L. Setup hides it.
+    { ...Q('q-loop', 'When having lunch at Usdan/Sherman, did you use the "loop and plan" strategy before getting food?', 'rating', ['Not at all', 'Completely'], ['L'], 20, null, 'lunch_loop'), is_active: false },
+    Q('q-snack', 'Did you eat the snack given to you before lunch today?', 'yes_no', [], [], 20, null, 'lunch_snack'),
+    Q('q-how', 'How long before lunch did you eat the snack?', 'multiple_choice', ['0-20 min before lunch', '21-60 min before lunch', 'More than 1 hour before lunch'], [], 21, { question: 'q-snack', any_of: [true] }, 'lunch_snack_time'),
     Q('q-goals', 'To what extent were your lunch choices today consistent with your eating goals?', 'rating', ['Not at all', 'Completely'], [], 30, null, 'lunch_goals'),
     Q('q-left', 'How much food was left at the end of your meal? Imagine you put all your leftover food on a single plate (think of the most common size plate), estimate about how much of the plate it would cover.', 'multiple_choice', ['Little or None', '1/4 plate', '1/2 plate', '3/4 plate', '1 plate', '1+ plate'], [], 40, null, 'lunch_waste'),
   ];
-  const usage = [{ question_id: 'q-where', answers: 150 }, { question_id: 'q-loop', answers: 74 }, { question_id: 'q-snack', answers: 76 }, { question_id: 'q-how', answers: 51 }, { question_id: 'q-goals', answers: 150 }, { question_id: 'q-left', answers: 150 }];
+  const usage = [{ question_id: 'q-where', answers: 150 }, { question_id: 'q-loop', answers: 0 }, { question_id: 'q-snack', answers: 76 }, { question_id: 'q-how', answers: 51 }, { question_id: 'q-goals', answers: 150 }, { question_id: 'q-left', answers: 150 }];
   return { studies: [study], reminder_schedules: schedules, questions, question_usage: usage, grid_participants: participants, grid_roster: roster, grid_survey_wide: wide, grid_responses: responses, grid_meals: meals, grid_plate_items: plate, grid_events: events, grid_snapshots: snaps, grid_prompts: prompts, grid_activity: activity, audit_log: audit };
 }
 

@@ -88,3 +88,32 @@ creates it, so the two numbers cannot drift.
 - **App icon:** `ios/AppIcon-source.svg` is the artwork. The shipped PNG is a
   1024px opaque square with no transparency, which App Store Connect requires.
   iOS rounds the corners itself.
+
+## Shipping the researcher dashboard
+
+`research.bentodining.com` is its own Vercel project, `bento-research`, deployed
+from the CLI out of a clean copy of this repo. It is not deployed by a push.
+
+```bash
+git worktree add /tmp/research-deploy <sha> --detach
+cd /tmp/research-deploy
+rm -rf middleware.js api        # the main site's, see below
+node -e "const c=require('./vercel.research.json'); delete c['\$comment']; require('fs').writeFileSync('vercel.json', JSON.stringify(c, null, 2))"
+npx vercel link --yes --project bento-research
+npx vercel --yes                # a preview first
+```
+
+Check the preview serves the dashboard at `/` (`npx vercel curl <preview>/`), then
+`npx vercel promote <preview> --yes`. A promote builds again as production, and
+after a rollback the domain stays pinned, so promote that production build too.
+Confirm `curl -s https://research.bentodining.com/` names the new
+`assets/research-*.js`.
+
+Two traps, both paid for on 13 Nov 2026:
+
+- **`middleware.js` takes the dashboard down.** It sends `/` to `/home.html`, the
+  main site's prerendered homepage. The dashboard build has no such file, so `/`
+  returns 404. Delete it (and `api/`, which the dashboard does not use) from the
+  copy before deploying.
+- **`$comment` is refused.** Vercel rejects `vercel.json` with that key, so it is
+  stripped when the file is copied.
