@@ -46,6 +46,23 @@ export const UNIVERSITIES = [
     diningTeamName: 'BU Dining',
   },
   {
+    id:           'rutgers',
+    name:         'Rutgers University\u2013New Brunswick',
+    abbreviation: 'Rutgers',
+    location:     'New Brunswick, NJ',
+    // Off until Rutgers Dining agrees to Bento showing its menu. The menu feed (rutgers.api.nutrislice.com)
+    // disallows crawlers in robots.txt, the same as Tufts. The parser, /api/rutgers and tests are built and
+    // waiting. To turn it on: set this true, set RUTGERS_LIVE in api/rutgers.js and api/health.js, restore the
+    // RUTGERS line in warm-menu-cache.yml, and run migration 070.
+    available:    false,
+    aliases:      ['rutgers', 'scarlet knights', 'ru', 'new brunswick', 'rutgers new brunswick'],
+    hasKosher:    false,
+    labelHalal:   false,
+    itemPrefix:   'ru_',
+    diningPartner: false,
+    diningTeamName: 'Rutgers Dining',
+  },
+  {
     id: 'mit',
     name: 'Massachusetts Institute of Technology',
     abbreviation: 'MIT',
