@@ -61,11 +61,17 @@ const HOME_FAQS = [
   { q: 'Is Bento affiliated with my university?', a: 'No. Bento is independent. No university or dining service sponsors or endorses Bento.' },
 ];
 
-/* ── Phone frame ── */
+/* ── Phone frame ──
+ * The screenshots start at the very top of the app, with no status bar, so the
+ * frame's rounded corners clipped what sits in them. The screen now has a status
+ * bar above the screenshot and a little room below it, in the screenshot's own
+ * background, and is shaped to fit the screenshot whole. */
+const DARK_SHOTS = new Set(['/screenshots/menu.png']);
 function Phone({ src, alt = '', className = '', eager = false }) {
   return (
     <div className={`ld-phone ${className}`}>
-      <div className="ld-phone-screen">
+      <div className={`ld-phone-screen${DARK_SHOTS.has(src) ? ' ld-phone-screen--dark' : ''}`}>
+        <div className="ld-phone-bar" aria-hidden="true"><span>9:41</span><i /></div>
         <img src={src} alt={alt} width="645" height="1398" loading={eager ? 'eager' : 'lazy'} />
       </div>
     </div>
@@ -226,9 +232,9 @@ const delay = (i, step = 80) => ({ transitionDelay: `${i * step}ms` });
 /* Under each App Store badge: the way in for Android, which has no store app.
  * A real link to /login, so it works in the prerendered page before the app
  * loads, and an in-app route once it has. */
-function AndroidLink({ onGetStarted }) {
+function AndroidLink({ onGetStarted, className = 'ld-android' }) {
   return (
-    <a className="ld-android" href="/login"
+    <a className={className} href="/login"
        onClick={(e) => { if (onGetStarted) { e.preventDefault(); onGetStarted(); } }}>
       On Android? Use the web app <Arrow />
     </a>
@@ -273,9 +279,6 @@ export default function LandingHome({ onGoUniversities, onGetStarted }) {
             <Phone className="ld-phone--front" src="/screenshots/today.png" eager />
           </div>
           <BentoSticker className="ld-hero-sticker" />
-          <div className="ld-chip ld-chip--a" style={{ background: 'var(--ld-bu)' }}>14 day streak</div>
-          <div className="ld-chip ld-chip--b" style={{ background: 'var(--ld-sk)' }}>Vegan, set once</div>
-          <div className="ld-chip ld-chip--c" style={{ background: 'var(--ld-pk)' }}>Maya is at Commons</div>
         </div>
       </section>
 
@@ -389,14 +392,15 @@ export default function LandingHome({ onGoUniversities, onGetStarted }) {
         <div className="ld-glow" style={{ width: 520, height: 300, background: 'var(--ld-pk)', left: '50%', top: 40, marginLeft: -260, opacity: .3 }} />
         <h2 className="ld-final-h" data-reveal>Your dining hall<br />has good food.<br /><span>Bento finds it.</span></h2>
         <p className="ld-final-sub" data-reveal>Free. Two minutes to set up.</p>
+        {/* One centred column: the badge, then the two other ways forward side by side. */}
         <div className="ld-final-ctas" data-reveal>
-          <div className="ld-store-stack ld-store-stack--center">
-            <a className="ld-store" href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
-              <img src="/app-store-badge.svg" alt="Download on the App Store" width="150" height="50" />
-            </a>
-            <AndroidLink onGetStarted={onGetStarted} />
+          <a className="ld-store" href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
+            <img src="/app-store-badge.svg" alt="Download on the App Store" width="150" height="50" />
+          </a>
+          <div className="ld-final-links">
+            <AndroidLink onGetStarted={onGetStarted} className="ld-final-link" />
+            <a className="ld-final-link" href="#lh-availability">See if my school is live <Arrow /></a>
           </div>
-          <a className="ld-final-link" href="#lh-availability">See if my school is live <Arrow /></a>
         </div>
       </section>
     </div>
