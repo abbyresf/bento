@@ -10,7 +10,7 @@ import { setupProblem } from './setup.js';
 export async function loadSetup(client = defaultClient) {
   const r = client.schema('research');
   const { data: studies, error: e1 } = await r.from('studies')
-    .select('id,name,cap,is_open,window_days,starts_at,ends_at,survey_intro,groups,timezone,final_survey_url')
+    .select('id,name,cap,is_open,window_days,starts_at,ends_at,survey_intro,groups,timezone,final_survey_url,start_on_join')
     .order('created_at', { ascending: false }).limit(1);
   if (e1) throw new Error(e1.message || 'Could not read the study.');
   const study = studies?.[0];

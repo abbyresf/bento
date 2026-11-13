@@ -99,7 +99,7 @@ function StudyPanel({ data, reload }) {
         <label>
           <span>Days in the study</span>
           <input inputMode="numeric" value={form.window_days} onChange={(e) => set({ window_days: e.target.value })} />
-          <small>Counted in calendar days from the day each person starts, with the start code. The week ends at midnight after the last day. A change applies to people who start after it. Everyone already started keeps the end date they were given.</small>
+          <small>Counted in calendar days from the day each person starts. The week ends at midnight after the last day. A change applies to people who start after it. Everyone already started keeps the end date they were given.</small>
         </label>
         <label>
           <span>Enrolment opens (Eastern time)</span>
@@ -128,7 +128,9 @@ function StudyPanel({ data, reload }) {
 
       <div className="rs-sep" />
       <h3>Study code</h3>
-      <p className="rs-sub">Students type this code to join. It is stored scrambled, so nobody can read it back, including here. Changing it stops the old one at once. People already in are not affected.</p>
+      <p className="rs-sub">{study.start_on_join
+        ? 'Students get this code at the snack pickup station, with their snack box, and type it once. It enrols them and starts their week, and the reminders and daily questions begin then.'
+        : 'Students type this code to join.'} It is stored scrambled, so nobody can read it back, including here. Changing it stops the old one at once. People already in are not affected.</p>
       {!codeOpen ? (
         <button type="button" className="rs-btn" onClick={() => { setCodeOpen(true); resetCode(); }}>Change the code</button>
       ) : (
@@ -147,7 +149,8 @@ function StudyPanel({ data, reload }) {
       )}
       <Feedback state={codeState} />
 
-      <StartCodeBlock study={study} reload={reload} />
+      {/* With one code, joining starts the week, so there is no second code to set. */}
+      {!study.start_on_join && <StartCodeBlock study={study} reload={reload} />}
       <FinalLinkBlock study={study} reload={reload} />
     </Panel>
   );

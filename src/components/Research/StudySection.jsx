@@ -62,7 +62,7 @@ export default function StudySection({ state }) {
 
       {study.state === 'none' && (
         <>
-          <p className="section-note">Taking part in a study with a research team? Enter the code they gave you.</p>
+          <p className="section-note">Taking part in the dining study? Enter the code you got at the snack pickup station.</p>
           <button type="button" className="btn-secondary" onClick={() => setSheet(true)}>Join a study</button>
         </>
       )}

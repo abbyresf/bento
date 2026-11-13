@@ -45,7 +45,7 @@ export default function LivePage() {
         <article className="rs-card">
           <h2>Started</h2>
           <p className="rs-big">{s.started}<small> of {s.active}</small></p>
-          <p className="rs-sub">{s.waiting} active {s.waiting === 1 ? 'participant has' : 'participants have'} not entered the start code yet</p>
+          <p className="rs-sub">{s.waiting} active {s.waiting === 1 ? 'participant has' : 'participants have'} not started their week yet</p>
         </article>
         <article className="rs-card">
           <h2>Survey response rate</h2>
