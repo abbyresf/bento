@@ -5,7 +5,8 @@ import { loudOn } from '../Loud/loudFlag';
 import '../Loud/loud.css';
 
 const LOUD = loudOn();
-import { signIn, signUp, signInWithGoogle, signInWithApple, resetPasswordForEmail } from '../../lib/db';
+import { signIn, signInWithGoogle, signInWithApple, resetPasswordForEmail } from '../../lib/db';
+import { signUpWithReferral, rememberReferral, referralFromUrl } from '../../lib/referral';
 import './AuthScreen.css';
 import BentoLogo from '../common/BentoLogo';
 import ServiceDown from '../common/ServiceDown';
@@ -51,6 +52,7 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
   const [mode, setMode] = useState(initialMode); // 'login' | 'signup' | 'forgot'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [referredBy, setReferredBy] = useState(referralFromUrl);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -72,7 +74,7 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
     setLoading(true);
     try {
       if (mode === 'signup') {
-        await signUp(email, password);
+        await signUpWithReferral(email, password, referredBy);
         setConfirmSent(true);
       } else {
         await signIn(email, password);
@@ -104,6 +106,7 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
   const handleGoogleSignIn = async () => {
     setError(null);
     setGoogleLoading(true);
+    if (mode === 'signup') rememberReferral(referredBy);
     try {
       await signInWithGoogle();
       // On the web OAuth redirects the whole page away, so there is nothing to
@@ -122,6 +125,7 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
   const handleAppleSignIn = async () => {
     setError(null);
     setAppleLoading(true);
+    if (mode === 'signup') rememberReferral(referredBy);
     try {
       await signInWithApple();
     } catch (err) {
@@ -264,6 +268,22 @@ export default function AuthScreen({ onAuth, initialMode = 'login' }) {
                   </div>
                 )}
               </div>
+
+              {mode === 'signup' && (
+                <div className="auth-field">
+                  <label htmlFor="auth-referred-by">Who sent you? (optional)</label>
+                  <input
+                    id="auth-referred-by"
+                    type="text"
+                    value={referredBy}
+                    onChange={(e) => setReferredBy(e.target.value)}
+                    placeholder="Their Instagram handle or name"
+                    maxLength={60}
+                    autoComplete="off"
+                    autoCapitalize="none"
+                  />
+                </div>
+              )}
 
               {error && <p className="auth-error">{error}</p>}
 
