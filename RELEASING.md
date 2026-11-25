@@ -89,6 +89,65 @@ creates it, so the two numbers cannot drift.
   1024px opaque square with no transparency, which App Store Connect requires.
   iOS rounds the corners itself.
 
+## Live updates (iOS without App Review)
+
+The app carries its own copy of the web code (`webDir: 'dist'`), so a Vercel
+deploy does not change it. Capgo (`@capgo/capacitor-updater`, set up 25 Nov
+2026) lets web-only changes reach installed apps without a store build. The
+settings and the reasons for them are in `capacitor.config.ts`.
+
+**What can go live this way:** screens, copy, styles, logic. Anything in `src/`.
+
+**What still needs a store build:** a new or upgraded Capacitor plugin,
+Info.plist, entitlements, permissions, the icon, a Capacitor version bump.
+Shipping web code that calls a plugin the installed app lacks breaks it, which
+is what `--fail-on-incompatible` below is for.
+
+### Status
+
+Set up 25 Nov 2026: app `com.bentodining.app` in the "Bento Dining" Capgo
+organization, default channel `production`, first clean bundle 1.4.2. Tested
+end to end on the iOS simulator. The free trial ends **10 Dec 2026**: without a
+payment method on the Capgo plans page, phones stop receiving updates.
+
+The channel refuses to serve a bundle older than the native build
+(`disable_auto_update_under_native`) or a major version jump, so a stale
+upload cannot downgrade anyone.
+
+### One-time setup (done, kept for a rebuild)
+
+1. Make an account at capgo.app and copy an API key (Account, API keys).
+2. `npx @capgo/cli@latest login <API key>`
+3. `npx @capgo/cli@latest app add com.bentodining.app`
+4. In the Capgo dashboard, make a channel called `production` and set it as the
+   default channel for iOS.
+5. Ship one normal store build that contains the plugin (a version tag, see
+   "Shipping the iOS app"), and get it through App Review. Live updates only
+   reach phones running that build or later.
+
+### Shipping a live update
+
+After the usual `npm version patch`, push and web deploy, from the same clean
+worktree at the tag (it needs `.env.local` with the `VITE_SUPABASE_*` values,
+because the native build bakes them in):
+
+```bash
+npm run build:native
+npx @capgo/cli@latest bundle upload --channel production --fail-on-incompatible
+```
+
+The bundle takes its version from `package.json`, which `npm version` has just
+bumped, so every upload has a new number. Phones download it the next time the
+app opens and switch to it the next time the app goes to the background.
+
+If the upload fails as incompatible, the change touched native code: ship a
+store build instead.
+
+**Rollback:** if a bundle never draws the app, the plugin puts the phone back
+on the last good bundle by itself (`src/lib/liveUpdate.js`). For a bundle that
+draws but is wrong, set the previous bundle on the `production` channel in the
+Capgo dashboard.
+
 ## Shipping the researcher dashboard
 
 `research.bentodining.com` is its own Vercel project, `bento-research`, deployed

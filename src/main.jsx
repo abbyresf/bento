@@ -13,6 +13,7 @@ import ErrorBoundary from './components/common/ErrorBoundary.jsx'
 import HalloweenGift from './components/Mascot/HalloweenGift.jsx'
 import { initNativeAuthLinks } from './lib/nativeAuth'
 import { initKeyboardInset } from './lib/keyboard'
+import { initLiveUpdate } from './lib/liveUpdate'
 
 // Screenshot driver, design builds only. Removed from every release bundle.
 if (import.meta.env.VITE_UI_MOCK) {
@@ -47,6 +48,11 @@ if (Capacitor.isNativePlatform()) document.documentElement.classList.add('is-nat
 // Listens for the Google sign-in redirect on native. Does nothing on the web.
 initNativeAuthLinks()
 initKeyboardInset()
+// Confirms a live-updated bundle drew the app, or lets Capgo roll it back.
+// Not a bare CapacitorUpdater.notifyAppReady() at the bottom of this file, which
+// Capgo's onboarding adds: that fires before anything is drawn, so a bundle
+// that renders a blank screen would still be marked good.
+initLiveUpdate()
 
 // Above the router: App returns early for auth, landing and onboarding, so a
 // provider mounted inside it would leave those screens untethered to the theme.

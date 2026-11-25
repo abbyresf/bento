@@ -96,6 +96,12 @@ Two judgement calls to confirm:
   turns them into aggregate counts. That is the honest reading.
 - If crash monitoring is added later, add **Diagnostics, Crash Data** here and in
   the manifest.
+- **Capgo live updates** (added 25 Nov 2026). Each update check sends Capgo a
+  random per-install ID, the app version and the iOS version. Capgo works on
+  Bento's behalf, so this is not "shared", and the ID is covered by the existing
+  **Identifiers, Device ID** row for App Functionality. Capgo's crash and error
+  reporting is switched off (`statsUrl: ''` in `capacitor.config.ts`). Turning it
+  on means adding **Diagnostics, Crash Data** and **Other Diagnostic Data**.
 
 ## The privacy policy page
 

@@ -59,6 +59,35 @@ const config: CapacitorConfig = {
       // delivers it silently to the web layer and nothing appears on screen.
       presentationOptions: ['alert', 'sound'],
     },
+
+    // Live updates through Capgo (capgo.app). Web-only changes reach phones
+    // without App Review: `npm run build:native`, then
+    // `npx @capgo/cli bundle upload`. Anything native (a new plugin,
+    // Info.plist, permissions, a Capacitor bump) still needs a store build.
+    // See RELEASING.md, "Live updates".
+    //
+    // This reverses IOS_SPEC.md §3, which said no OTA for v1. Changed on
+    // 25 Nov 2026 so small fixes stop waiting on review.
+    //
+    // Capgo's onboarding tool rewrote this file once, deleting every comment
+    // and pinning `version: '0.0.0'`. A pinned version makes every phone
+    // report 0.0.0 forever, so it would accept any old bundle. Leave it out:
+    // the plugin reads the real version from the native build.
+    CapacitorUpdater: {
+      // Check when the app comes to the foreground, download in the
+      // background, and switch to the new bundle the next time the app is
+      // backgrounded. Nobody's screen changes under them mid-meal.
+      autoUpdate: true,
+      // A downloaded bundle must call notifyAppReady() (src/lib/liveUpdate.js)
+      // within this window or the plugin rolls back to the last good one.
+      // A bundle that crashes at startup can therefore never strand a phone.
+      appReadyTimeout: 10000,
+      // Off. The default sends crash and JavaScript error reports to Capgo,
+      // which would be a new "Diagnostics" privacy label (APP_STORE_ANSWERS.md
+      // lists none). Update checks still send a random per-install ID, the app
+      // version and the OS version, which is all Capgo needs to pick a bundle.
+      statsUrl: '',
+    },
   },
 
   server: {
